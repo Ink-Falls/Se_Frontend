@@ -24,10 +24,46 @@ This project is built with a modern front-end stack that leverages Vite for fast
 > Make sure you have Node.js and npm (or yarn) installed on your system.
 
 ### Installation
-1. Clone the repository:
-2. Install dependencies:
-3. Start the development server:
-4. View the app at [React Port](http://localhost:3000).
+
+1. On GitHub, navigate to the main page of the repository.
+
+2. Above the list of files, click <> Code.
+
+3. Copy the URL for the repository.
+    - To clone the repository using HTTPS, under "HTTPS", then copy the link.
+    - To clone the repository using an SSH key, including a certificate issued by your organization's SSH certificate authority, click SSH, then copy the link.
+    - To clone a repository using GitHub CLI, click GitHub CLI, then copy the link.
+
+4. Open Git Bash.
+
+5. Change the current working directory to the location where you want the cloned directory.
+
+6. Type `git clone`, and then paste the URL you copied earlier.
+```
+git clone https://github.com/YOUR-USERNAME/YOUR-REPOSITORY
+```
+
+7. Press Enter to create your local clone.
+```
+$ git clone https://github.com/YOUR-USERNAME/YOUR-REPOSITORY
+> Cloning into `Spoon-Knife`...
+> remote: Counting objects: 10, done.
+> remote: Compressing objects: 100% (8/8), done.
+> remove: Total 10 (delta 1), reused 10 (delta 1)
+> Unpacking objects: 100% (10/10), done.
+```
+
+8. Install dependencies:
+```
+npm install
+```
+
+9. Start the development server:
+```
+npm run dev
+```
+
+10. View the app at `[React](http://localhost:3000)`.
 
 ### Scripts
 - `npm run dev` — Runs the app in development mode.
@@ -57,10 +93,16 @@ This project is built with a modern front-end stack that leverages Vite for fast
 └── postcss.config.js         # PostCSS configuration
 ```
 
-> [!NOTE]
-> If the code is not working, contact me immediately. Thank you.
+> [!CAUTION]
+> This repository is a working prototype and currently lacks backend support.
+> The code serves solely as a foundation for frontend development.
+
+> [!IMPORTANT]
+> If any issues persist, please open a pull request or contact me directly so we can address the problem immediately. Thank you!
+
 
 Tailwind CSS Documentation:[^1]
+
 Lucide React Documentation:[^2] 
 
 [^1]: [Tailwind CSS](https://tailwindcss.com/docs/content-configuration).
