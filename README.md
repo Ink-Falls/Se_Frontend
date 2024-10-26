@@ -21,8 +21,8 @@ This project is built with a modern front-end stack that leverages Vite for fast
 - React Router DOM (routing)
 
 ## Getting Started
-> Prerequisites
-Make sure you have Node.js and npm (or yarn) installed on your system.
+> Prerequisites:
+> Make sure you have Node.js and npm (or yarn) installed on your system.
 
 ### Installation
 1. Clone the repository:
