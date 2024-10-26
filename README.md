@@ -31,10 +31,10 @@ Make sure you have Node.js and npm (or yarn) installed on your system.
 4. View the app at [React Port](http://localhost:3000).
 
 ### Scripts
-`npm run dev` — Runs the app in development mode.
-`npm run build` — Builds the app for production.
-`npm run preview` — Previews the production build locally.
-`npm run lint` — Runs linting checks.
+- `npm run dev` — Runs the app in development mode.
+- `npm run build` — Builds the app for production.
+- `npm run preview` — Previews the production build locally.
+- `npm run lint` — Runs linting checks.
 
 > [!NOTE]
 > If the code is not working, contact me immediately. Thank you.
