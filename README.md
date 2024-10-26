@@ -1,6 +1,5 @@
 # AralKademy Frontend
-A brief project description
-Example: A fast and modern web app built with React, Vite, and Tailwind CSS, offering a seamless UI and interactive experience.
+A fast and modern web app built with React, Vite, and Tailwind CSS, offering a seamless UI and interactive experience.
 This will be the frontend of AralKademy
 
 ## Project Overview
@@ -36,9 +35,33 @@ This project is built with a modern front-end stack that leverages Vite for fast
 - `npm run preview` — Previews the production build locally.
 - `npm run lint` — Runs linting checks.
 
+### Folder Structure
+```
+├── public/                   # Static files like favicon
+├── src/
+│   ├── assets/               # Images and assets
+│   ├── components/           # Reusable components
+│   │   ├── Announcement.jsx
+│   │   ├── Homepage.jsx
+│   │   └── Sidebar.jsx
+│   ├── App.css               # Global styles
+│   ├── App.jsx               # Main App component
+│   ├── index.css             # Tailwind and global CSS imports
+│   ├── main.jsx              # Entry file
+├── .gitignore
+├── index.html                # Root HTML file
+├── package.json
+├── README.md                 # Project documentation
+├── tailwind.config.js        # Tailwind CSS configuration
+├── vite.config.js            # Vite configuration
+└── postcss.config.js         # PostCSS configuration
+```
+
 > [!NOTE]
 > If the code is not working, contact me immediately. Thank you.
 
-[^1]: Tailwind CSS Documentation: [Tailwind CSS](https://tailwindcss.com/docs/content-configuration).
+Tailwind CSS Documentation:[^1]
+Lucide React Documentation:[^2] 
 
-[^2]: Lucide React Documentation: [Lucide React](https://lucide.dev/).
+[^1]: [Tailwind CSS](https://tailwindcss.com/docs/content-configuration).
+[^2]: [Lucide React](https://lucide.dev/).
