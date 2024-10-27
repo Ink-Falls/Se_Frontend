@@ -8,6 +8,7 @@ function Announcement() {
 
     const { expanded } = useContext(SidebarExpand);
 
+
     return (
         <div className="mt-8 ml-5 mb-8 w-full"> {/* Full width for outer container */}
             {/* Flex container for Course Name/Code and Profile */}
@@ -58,8 +59,30 @@ function Announcement() {
 
                 {/* Container for announcements with max height and scrolling */}
                 <div className="overflow-y-auto max-h-scroll-height"> {/* Set max height for scrolling */}
+            
                     {/* Additional content goes here */}
-                    <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-blue-600 mb-5`}>
+                    <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-grey-600 mb-5 has-[:checked]:bg-indigo-100`}>
+                        <div className="flex items-center"> {/* Added flex for alignment */}
+                            <input
+                                type="checkbox"
+                                className="w-8 h-8 text-grey-600 border-grey-300 rounded checked:ring-grey-500 mr-2 " // Added margin-right for spacing
+                            /> {/* Added checkbox with Tailwind classes */}
+
+                            {/* Vertical line */}
+                            <div className="w-px bg-gray-300 mx-2 h-10 mr-8" /> {/* Vertical line with height */}
+
+                            <img src={profile} className="w-12 h-12 rounded-md" /> {/* Image without extra margin */}
+
+                            <div className="ml-4"> {/* Added div for spacing */}
+                                <h3 className="text-xl font-bold font-['poppins'] -mb-1">All Announcements</h3>
+                                <span className="text-sm text-gray-600">Lorem ipsum dolor sit amet. Vel facilis ipsum ab repudiandae expedita ea galisum sequi At suscipit magnam ut unde quaerat ut saepe ullam.</span>
+                            </div>
+                        </div>
+                    </div>
+                    {/* </label> */}
+
+                    {/* Additional content goes here */}
+                    <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-grey-600 mb-5 has-[:checked]:bg-indigo-100`}>
                         <div className="flex items-center"> {/* Added flex for alignment */}
                             <input
                                 type="checkbox"
@@ -79,7 +102,7 @@ function Announcement() {
                     </div>
 
                     {/* Additional content goes here */}
-                    <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-blue-600 mb-5`}>
+                    <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-grey-600 mb-5 has-[:checked]:bg-indigo-100`}>
                         <div className="flex items-center"> {/* Added flex for alignment */}
                             <input
                                 type="checkbox"
@@ -99,7 +122,7 @@ function Announcement() {
                     </div>
 
                     {/* Additional content goes here */}
-                    <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-blue-600 mb-5`}>
+                    <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-grey-600 mb-5 has-[:checked]:bg-indigo-100`}>
                         <div className="flex items-center"> {/* Added flex for alignment */}
                             <input
                                 type="checkbox"
@@ -119,7 +142,7 @@ function Announcement() {
                     </div>
 
                     {/* Additional content goes here */}
-                    <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-blue-600 mb-5`}>
+                    <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-grey-600 mb-5 has-[:checked]:bg-indigo-100`}>
                         <div className="flex items-center"> {/* Added flex for alignment */}
                             <input
                                 type="checkbox"
@@ -139,27 +162,7 @@ function Announcement() {
                     </div>
 
                     {/* Additional content goes here */}
-                    <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-blue-600 mb-5`}>
-                        <div className="flex items-center"> {/* Added flex for alignment */}
-                            <input
-                                type="checkbox"
-                                className="w-8 h-8 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mr-2" // Added margin-right for spacing
-                            /> {/* Added checkbox with Tailwind classes */}
-
-                            {/* Vertical line */}
-                            <div className="w-px bg-gray-300 mx-2 h-10 mr-8" /> {/* Vertical line with height */}
-
-                            <img src={profile} className="w-12 h-12 rounded-md" /> {/* Image without extra margin */}
-
-                            <div className="ml-4"> {/* Added div for spacing */}
-                                <h3 className="text-xl font-bold font-['poppins'] -mb-1">All Announcements</h3>
-                                <span className="text-sm text-gray-600">Lorem ipsum dolor sit amet. Vel facilis ipsum ab repudiandae expedita ea galisum sequi At suscipit magnam ut unde quaerat ut saepe ullam.</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Additional content goes here */}
-                    <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-blue-600 mb-5`}>
+                    <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-grey-600 mb-5 has-[:checked]:bg-indigo-100`}>
                         <div className="flex items-center"> {/* Added flex for alignment */}
                             <input
                                 type="checkbox"
