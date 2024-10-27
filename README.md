@@ -1,9 +1,9 @@
 # AralKademy Frontend
-A fast and modern web app built with React, Vite, and Tailwind CSS, offering a seamless UI and interactive experience.
-This will be the frontend of AralKademy
+A fast, modern web application built with ReactJS, Vite, and Tailwind CSS, designed to deliver a smooth and interactive user experience. 
+This serves as the frontend for AralKademy.
 
 ## Project Overview
-This project is built with a modern front-end stack that leverages Vite for fast development, React for component-based architecture, and Tailwind CSS with PostCSS for utility-first styling. It also incorporates React Router for client-side routing and Lucide React for flexible icons, enabling efficient and flexible UI development.
+This project utilizes a cutting-edge front-end stack, featuring Vite for rapid development, ReactJS for a modular component-based architecture, and Tailwind CSS with PostCSS for utility-first, responsive styling. It includes React Router for efficient client-side navigation and Lucide React for a rich set of customizable icons, supporting a seamless and flexible UI development process.
 
 ## Features
 - ⚡ Lightning-fast development and build with Vite
@@ -13,15 +13,15 @@ This project is built with a modern front-end stack that leverages Vite for fast
 - 📱 Responsive design and mobile-first approach
 
 ## Tech Stack
-- React
+- ReactJS
 - Vite (bundler)
-- Tailwind CSS (styling) with PostCSS
-- Lucide React (icons)
+- Tailwind CSS (styling) with PostCSS[^1]
+- Lucide React (icons)[^2] 
 - React Router DOM (routing)
 
 ## Getting Started
 > Prerequisites:
-> Make sure you have Node.js and npm (or yarn) installed on your system.
+> Make sure you have Node.js[^3] and npm (or yarn) installed on your system.
 
 ### Installation
 
@@ -34,7 +34,7 @@ This project is built with a modern front-end stack that leverages Vite for fast
     - To clone the repository using an SSH key, including a certificate issued by your organization's SSH certificate authority, click SSH, then copy the link.
     - To clone a repository using GitHub CLI, click GitHub CLI, then copy the link.
 
-4. Open Git Bash.
+4. Open your terminal.
 
 5. Change the current working directory to the location where you want the cloned directory.
 
@@ -70,6 +70,8 @@ npm run dev
 - `npm run build` — Builds the app for production.
 - `npm run preview` — Previews the production build locally.
 - `npm run lint` — Runs linting checks.
+- `node -v` — Displays the current Node.js version.
+- `npm -v` — Displays the current npm version.
 
 ### Folder Structure
 ```
@@ -101,9 +103,6 @@ npm run dev
 > If any issues persist, please open a pull request or contact me directly so we can address the problem immediately. Thank you!
 
 
-Tailwind CSS Documentation:[^1]
-
-Lucide React Documentation:[^2] 
-
-[^1]: [Tailwind CSS](https://tailwindcss.com/docs/content-configuration).
-[^2]: [Lucide React](https://lucide.dev/).
+[^1]: Tailwind CSS documentation: [Tailwind CSS](https://tailwindcss.com/docs/content-configuration).
+[^2]: Lucide React icons: [Lucide React](https://lucide.dev/).
+[^3]: [Node.js installer](https://nodejs.org/en) — Download and run the installer. Click `"Next"` through each step to complete the installation. Once finished, open your terminal and type `npm -v` and `node -v` to verify the installation was successful.
