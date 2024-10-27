@@ -106,4 +106,4 @@ npm run dev
 [^1]: Tailwind CSS documentation: [Tailwind CSS](https://tailwindcss.com/docs/content-configuration).
 [^2]: Lucide React icons: [Lucide React](https://lucide.dev/).
 [^3]: [Node.js installer](https://nodejs.org/en) — Download and run the installer. Click `"Next"` through each step to complete the installation. Once finished, open your terminal and type `npm -v` and `node -v` to verify the installation was successful.
-[^4]: [Git installer](https://git-scm.com/downloads) — Download and run the installer. Click "Next" through each step to complete the installation. Once finished, open your terminal and type git --version to verify the installation was successful.
+[^4]: [Git installer](https://git-scm.com/downloads) — Download and run the installer. Click "Next" through each step to complete the installation. Once finished, open your terminal and type `git --version` to verify the installation was successful.
