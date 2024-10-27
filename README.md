@@ -21,7 +21,7 @@ This project utilizes a cutting-edge front-end stack, featuring Vite for rapid d
 
 ## Getting Started
 > Prerequisites:
-> Make sure you have Node.js[^3] and npm (or yarn) installed on your system.
+> Prerequisites: Make sure you have Node.js[^3] and npm (or yarn) installed on your system, as well as Git[^4].
 
 ### Installation
 
@@ -45,7 +45,7 @@ git clone https://github.com/YOUR-USERNAME/YOUR-REPOSITORY
 
 7. Press Enter to create your local clone.
 ```
-$ git clone https://github.com/YOUR-USERNAME/YOUR-REPOSITORY
+  git clone https://github.com/YOUR-USERNAME/YOUR-REPOSITORY
 > Cloning into `Spoon-Knife`...
 > remote: Counting objects: 10, done.
 > remote: Compressing objects: 100% (8/8), done.
@@ -106,3 +106,4 @@ npm run dev
 [^1]: Tailwind CSS documentation: [Tailwind CSS](https://tailwindcss.com/docs/content-configuration).
 [^2]: Lucide React icons: [Lucide React](https://lucide.dev/).
 [^3]: [Node.js installer](https://nodejs.org/en) — Download and run the installer. Click `"Next"` through each step to complete the installation. Once finished, open your terminal and type `npm -v` and `node -v` to verify the installation was successful.
+[^4]: [Git installer](https://git-scm.com/downloads) — Download and run the installer. Click "Next" through each step to complete the installation. Once finished, open your terminal and type git --version to verify the installation was successful.
