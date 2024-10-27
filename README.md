@@ -21,7 +21,7 @@ This project utilizes a cutting-edge front-end stack, featuring Vite for rapid d
 
 ## Getting Started
 > Prerequisites:
-> Prerequisites: Make sure you have Node.js[^3] and npm (or yarn) installed on your system, as well as Git[^4].
+> Prerequisites: Make sure you have Node.js[^3] and npm installed on your system, as well as Git[^4].
 
 ### Installation
 
