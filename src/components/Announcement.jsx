@@ -59,7 +59,7 @@ function Announcement() {
                         )}
                         <img
                             src={profile}
-                            className="w-10 h-10 md:w-12 md:h-12 rounded-md flex-shrink-0 " // Prevents shrinking of the image
+                            className=" w-10 h-10 md:w-12 md:h-12 rounded-md flex-shrink-0 " // Prevents shrinking of the image
                             alt="Profile"
                         />
                     </div>
@@ -80,11 +80,11 @@ function Announcement() {
 
 
                     {/* Additional content goes here */}
-                    <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-grey-600 mb-5 has-[:checked]:bg-indigo-100`}>
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center"> {/* Main container for responsive layout */}
+                    <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-grey-600 mb-5 has-[:checked]:bg-indigo-100 group`}>
+                        <div className="flex flex-col md:flex-row justify-start md:items-center"> {/* Flex direction changes on screen size */}
 
                             {/* Row for checkbox and image */}
-                            <div className="flex items-center mb-4 sm:mb-0 sm:mr-11"> {/* Adds responsive spacing between rows */}
+                            <div className="flex items-center mb-4 md:mb-0 md:mr-4"> {/* Adds responsive spacing between rows */}
                                 <input
                                     type="checkbox"
                                     className="w-8 h-8 text-grey-600 border-grey-300 rounded checked:ring-grey-500 mr-2 flex-none" // Added margin-right for spacing
@@ -97,17 +97,29 @@ function Announcement() {
                             </div>
 
                             {/* Text content row */}
-                            <div className="flex flex-col ml-0 sm:ml-4 w-full"> {/* Added div for spacing and text wrap */}
+                            {/* lg:1277px */}
+                            {/* md:1016px */}
+                            {/* sm:765 */}
+                            <div className="flex flex-col w-full sm:w-auto md:w-2/5 lg:w-3/5 xl:w-4/5 lg:ml-3 md:ml-10 mb-4 md:mb-0">
                                 <h3 className="md:text-xl font-bold font-['poppins'] -mb-1">All Announcements</h3>
-                                <span className="text-sm sm:text-xs text-gray-600 w-full sm:max-w-[60%] truncate overflow-hidden">
+                                <span className="text-sm md:text-xs text-gray-600 w-full md:max-w-[60%] truncate overflow-hidden">
                                     Lorem ipsum dolor sit amet. Vel facilis ipsum ab repudiandae expedita ea galisum sequi At suscipit magnam ut unde quaerat ut saepe ullam.
                                     Lorem ipsum dolor sit amet. Vel facilis ipsum ab repudiandae expedita ea galisum sequi At suscipit magnam ut unde quaerat ut saepe ullam.
                                     Lorem ipsum dolor sit amet. Vel facilis ipsum ab repudiandae expedita ea galisum sequi At suscipit magnam ut unde quaerat ut saepe ullam.
                                 </span>
                             </div>
+
+                            {/* View button */}
+                            <div className="flex-shrink-0 lg:w-auto md:ml-4 lg:ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out">
+                                <a
+                                    href="#"
+                                    className="w-full px-9 py-2 bg-indigo-400 text-white font-['poppins'] rounded-md shadow hover:bg-indigo-450 transition duration-500 ease-in-out text-center block sm:inline-block transform hover:scale-105"
+                                >
+                                    View
+                                </a>
+                            </div>
                         </div>
                     </div>
-
 
 
                     {/* Repeat announcement items here */}
