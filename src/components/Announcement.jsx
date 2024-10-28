@@ -15,7 +15,7 @@ function Announcement() {
         <div className="mt-8 ml-5 mb-8 w-full overflow-x-hidden"> {/* Full width for outer container */}
             {/* Flex container for Course Name/Code and Profile */}
             {/* border-2 border-red-500 */}
-            <div className="flex flex-col md:flex-row justify-between items-center mr-4 p-4 rounded-lg border-2 border-red-500" style={{ width: '100%' }}> {/* Adjusted layout for responsive */}
+            <div className="flex flex-col md:flex-row justify-between items-center mr-4 p-4 rounded-lg" style={{ width: '100%' }}> {/* Adjusted layout for responsive */}
                 {/* Course Name and Code */}
                 <div className="mb-4 md:mb-0"> {/* Added bottom margin for small screens */}
                     <h1 className="text-3xl font-extrabold mb-1 font-['poppins']">Course Name</h1>
@@ -23,7 +23,7 @@ function Announcement() {
                 </div>
 
                 {/* Search and Info */}
-                <div className="flex flex-col lg:flex-row items-center justify-start sm:justify-end w-full sm:w-[90%] md:w-[80%] lg:w-[70%] xl:w-[43%] transition-all duration-300 border-2 border-blue-500">
+                <div className="flex flex-col lg:flex-row items-center justify-start sm:justify-end w-full sm:w-[90%] md:w-[80%] lg:w-[70%] xl:w-[43%] transition-all duration-300">
                     {/* Full width on mobile */}
 
                     {/* Search Container */}
@@ -45,12 +45,12 @@ function Announcement() {
 
                     {/* Profile Information Container */}
                     <div
-                        className={`flex items-center transition-all ${expanded ? "sm:ml-0" : "sm:ml-0"} ${expanded ? "md:ml-10" : "md:ml-2"} rounded-2xl border shadow-md border-gray-200 p-2 md:-mr-3 border-2 border-yellow-500 overflow-hidden`}
+                        className={`flex items-center transition-all duration-1000 ease-in-out ${expanded ? "sm:ml-0" : "sm:ml-0"} ${expanded ? "md:ml-10" : "md:ml-2"} rounded-2xl border shadow-md border-gray-200 p-2 md:-mr-3 overflow-hidden`}
                         style={{ maxWidth: '500px' }} // Removed whiteSpace nowrap
                     >
                         {!expanded && (
                             <div
-                                className="flex flex-col sm:mr-0 md:mr-4 md:px-2 px-1 border-2 border-green-500 flex-grow"
+                                className="flex flex-col sm:mr-0 md:mr-4 md:px-2 px-1 flex-grow "
                                 style={{ minWidth: '0' }} // Allows container to shrink flexibly on small screens
                             >
                                 <h4 className="font-semibold sm:text-sm md:text-lg truncate">Satella Vivienne Evernight</h4>
@@ -59,7 +59,7 @@ function Announcement() {
                         )}
                         <img
                             src={profile}
-                            className="w-10 h-10 md:w-12 md:h-12 rounded-md flex-shrink-0" // Prevents shrinking of the image
+                            className="w-10 h-10 md:w-12 md:h-12 rounded-md flex-shrink-0 " // Prevents shrinking of the image
                             alt="Profile"
                         />
                     </div>
@@ -73,7 +73,7 @@ function Announcement() {
 
             {/* CONTENT */}
             <div className="bg-white rounded-2xl shadow-md p-5 transition-all mr-4 mb-5 border border-grey-600 h-content-height" style={{ flex: 1, marginTop: '20px', width: '100%' }}>
-                <h3 className="text-xl font-bold ml-2 font-['poppins'] mb-7">Remaining Space</h3>
+                {/* <h3 className="text-xl font-bold ml-2 font-['poppins'] mb-7">Remaining Space</h3> */}
 
                 {/* Container for announcements with max height and scrolling */}
                 <div className="overflow-y-auto max-h-scroll-height"> {/* Set max height for scrolling */}
@@ -84,7 +84,7 @@ function Announcement() {
                         <div className="flex flex-col sm:flex-row items-start sm:items-center"> {/* Main container for responsive layout */}
 
                             {/* Row for checkbox and image */}
-                            <div className="flex items-center mb-4 sm:mb-0 sm:mr-11 border-2 border-yellow-500"> {/* Adds responsive spacing between rows */}
+                            <div className="flex items-center mb-4 sm:mb-0 sm:mr-11"> {/* Adds responsive spacing between rows */}
                                 <input
                                     type="checkbox"
                                     className="w-8 h-8 text-grey-600 border-grey-300 rounded checked:ring-grey-500 mr-2 flex-none" // Added margin-right for spacing
@@ -97,9 +97,9 @@ function Announcement() {
                             </div>
 
                             {/* Text content row */}
-                            <div className="flex flex-col ml-0 sm:ml-4 w-full border-2 border-yellow-500"> {/* Added div for spacing and text wrap */}
+                            <div className="flex flex-col ml-0 sm:ml-4 w-full"> {/* Added div for spacing and text wrap */}
                                 <h3 className="md:text-xl font-bold font-['poppins'] -mb-1">All Announcements</h3>
-                                <span className="text-sm sm:text-xs text-gray-600 w-full sm:max-w-[60%] truncate overflow-hidden border-2 border-yellow-500">
+                                <span className="text-sm sm:text-xs text-gray-600 w-full sm:max-w-[60%] truncate overflow-hidden">
                                     Lorem ipsum dolor sit amet. Vel facilis ipsum ab repudiandae expedita ea galisum sequi At suscipit magnam ut unde quaerat ut saepe ullam.
                                     Lorem ipsum dolor sit amet. Vel facilis ipsum ab repudiandae expedita ea galisum sequi At suscipit magnam ut unde quaerat ut saepe ullam.
                                     Lorem ipsum dolor sit amet. Vel facilis ipsum ab repudiandae expedita ea galisum sequi At suscipit magnam ut unde quaerat ut saepe ullam.
