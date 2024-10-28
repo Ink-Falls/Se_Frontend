@@ -10,6 +10,7 @@ function Announcement() {
 
 
     return (
+        //using hidden, hides the right side css style, ie. "hidden sm:block"
         // super important - overflow-x-hidden - do not remove.
         <div className="mt-8 ml-5 mb-8 w-full overflow-x-hidden"> {/* Full width for outer container */}
             {/* Flex container for Course Name/Code and Profile */}
@@ -43,16 +44,22 @@ function Announcement() {
                     </div>
 
                     {/* Profile Information Container */}
-                    <div className={`flex items-center transition-all${expanded ? "sm:ml-0" : "sm:ml-0"} ${expanded ? "md:ml-10" : "md:ml-2"} rounded-2xl border shadow-md border-gray-200 p-2 md:-mr-3 border-2 border-yellow-500 overflow-hidden`} style={{ maxWidth: '500px', whiteSpace: 'nowrap' }}>
+                    <div
+                        className={`flex items-center transition-all ${expanded ? "sm:ml-0" : "sm:ml-0"} ${expanded ? "md:ml-10" : "md:ml-2"} rounded-2xl border shadow-md border-gray-200 p-2 md:-mr-3 border-2 border-yellow-500 overflow-hidden`}
+                        style={{ maxWidth: '500px' }} // Removed whiteSpace nowrap
+                    >
                         {!expanded && (
-                            <div className="flex flex-col sm:mr-0 md:mr-4 md:px-2 px-1 border-2 border-green-500">
-                                <h4 className="font-semibold sm:text-sm md:text-lg">Satella Vivienne Evernight</h4>
-                                <span className="text-sm text-gray-600">Student</span>
+                            <div
+                                className="flex flex-col sm:mr-0 md:mr-4 md:px-2 px-1 border-2 border-green-500 flex-grow"
+                                style={{ minWidth: '0' }} // Allows container to shrink flexibly on small screens
+                            >
+                                <h4 className="font-semibold sm:text-sm md:text-lg truncate">Satella Vivienne Evernight</h4>
+                                <span className="text-sm text-gray-600 truncate">Student</span>
                             </div>
                         )}
                         <img
                             src={profile}
-                            className="w-10 h-10 md:w-12 md:h-12 rounded-md"
+                            className="w-10 h-10 md:w-12 md:h-12 rounded-md flex-shrink-0" // Prevents shrinking of the image
                             alt="Profile"
                         />
                     </div>
@@ -71,22 +78,28 @@ function Announcement() {
                 {/* Container for announcements with max height and scrolling */}
                 <div className="overflow-y-auto max-h-scroll-height"> {/* Set max height for scrolling */}
 
+
                     {/* Additional content goes here */}
                     <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-grey-600 mb-5 has-[:checked]:bg-indigo-100`}>
-                        <div className="flex items-center"> {/* Added flex for alignment */}
-                            <input
-                                type="checkbox"
-                                className="w-8 h-8 text-grey-600 border-grey-300 rounded checked:ring-grey-500 mr-2 flex-none" // Added margin-right for spacing
-                            /> {/* Added checkbox with Tailwind classes */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center"> {/* Main container for responsive layout */}
 
-                            {/* Vertical line */}
-                            <div className="w-px bg-gray-300 mx-2 h-10 mr-8 flex-none" /> {/* Vertical line with height */}
+                            {/* Row for checkbox and image */}
+                            <div className="flex items-center mb-4 sm:mb-0 sm:mr-11 border-2 border-yellow-500"> {/* Adds responsive spacing between rows */}
+                                <input
+                                    type="checkbox"
+                                    className="w-8 h-8 text-grey-600 border-grey-300 rounded checked:ring-grey-500 mr-2 flex-none" // Added margin-right for spacing
+                                />
 
-                            <img src={profile} className="w-12 h-12 rounded-md" /> {/* Image without extra margin */}
+                                {/* Vertical line */}
+                                <div className="w-px bg-gray-300 mx-2 h-10 flex-none" /> {/* Only shows on larger screens */}
 
-                            <div className="ml-4"> {/* Added div for spacing */}
-                                <h3 className="text-xl font-bold font-['poppins'] -mb-1">All Announcements</h3>
-                                <span className="text-sm text-gray-600 max-w-[35%] block truncate overflow-hidden">
+                                <img src={profile} className="w-12 h-12 rounded-md flex-shrink-0 ml-5" /> {/* Keeps image from shrinking */}
+                            </div>
+
+                            {/* Text content row */}
+                            <div className="flex flex-col ml-0 sm:ml-4 w-full border-2 border-yellow-500"> {/* Added div for spacing and text wrap */}
+                                <h3 className="md:text-xl font-bold font-['poppins'] -mb-1">All Announcements</h3>
+                                <span className="text-sm sm:text-xs text-gray-600 w-full sm:max-w-[60%] truncate overflow-hidden border-2 border-yellow-500">
                                     Lorem ipsum dolor sit amet. Vel facilis ipsum ab repudiandae expedita ea galisum sequi At suscipit magnam ut unde quaerat ut saepe ullam.
                                     Lorem ipsum dolor sit amet. Vel facilis ipsum ab repudiandae expedita ea galisum sequi At suscipit magnam ut unde quaerat ut saepe ullam.
                                     Lorem ipsum dolor sit amet. Vel facilis ipsum ab repudiandae expedita ea galisum sequi At suscipit magnam ut unde quaerat ut saepe ullam.
@@ -94,7 +107,6 @@ function Announcement() {
                             </div>
                         </div>
                     </div>
-                    {/* </label> */}
 
 
 
@@ -109,3 +121,28 @@ function Announcement() {
 }
 
 export default Announcement;
+
+//You may use this as test for announcement contents!
+// {/* Additional content goes here */}
+// <div className={`bg-gray-100 rounded-2xl shadow-md p-5 transition-all overflow-hidden mr-4 border border-grey-600 mb-5 has-[:checked]:bg-indigo-100`}>
+// <div className="flex sm:flex-row flex-col items-center"> {/* Added flex for alignment */}
+//     <input
+//         type="checkbox"
+//         className="w-8 h-8 text-grey-600 border-grey-300 rounded checked:ring-grey-500 mr-2 flex-none" // Added margin-right for spacing
+//     /> {/* Added checkbox with Tailwind classes */}
+
+//     {/* Vertical line */}
+//     <div className="w-px bg-gray-300 mx-2 h-10 mr-8 flex-none" /> {/* Vertical line with height */}
+
+//     <img src={profile} className="w-12 h-12 rounded-md" /> {/* Image without extra margin */}
+
+//     <div className="flex flex-col ml-0 sm:ml-4 w-full border-2 border-yellow-500"> {/* Added div for spacing */}
+//         <h3 className="text-xl font-bold font-['poppins'] -mb-1">All Announcements</h3>
+//         <span className="text-sm text-gray-600 max-w-[35%]  truncate overflow-hidden">
+//             Lorem ipsum dolor sit amet. Vel facilis ipsum ab repudiandae expedita ea galisum sequi At suscipit magnam ut unde quaerat ut saepe ullam.
+//             Lorem ipsum dolor sit amet. Vel facilis ipsum ab repudiandae expedita ea galisum sequi At suscipit magnam ut unde quaerat ut saepe ullam.
+//             Lorem ipsum dolor sit amet. Vel facilis ipsum ab repudiandae expedita ea galisum sequi At suscipit magnam ut unde quaerat ut saepe ullam.
+//         </span>
+//     </div>
+// </div>
+// </div>
