@@ -14,7 +14,10 @@ module.exports = {
       },
       fontFamily: {
         'poppins': ['Poppins'],
-     }
+     },
+     screens: {
+      'mid': '1000px', // Custom breakpoint between md (768px) and lg (1024px)
+    },
     },
   },
   plugins: [],
