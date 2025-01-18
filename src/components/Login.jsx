@@ -43,13 +43,13 @@ function Login() {
         </header>
 
         {/* Main Content */}
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center min-h-screen" style={{ marginTop: '-3vw' }}>
           <div
             className="flex flex-col md:flex-row items-center p-[2vw] rounded-lg gap-[5vw]"
           >
 
             {/* Left Side: Title and Subtitle */}
-            <div className="text-left md:block hidden" style={{ marginTop: '-100px' }}>
+            <div className="text-left md:block hidden" style={{ marginTop: '-10vw' }}>
               <h1 className="text-[4vw] font-extrabold drop-shadow-[5px_5px_5px_rgba(0,0,0,0.8)]">
                 <span className="text-[#F6BA18]">Aral</span>
                 <span className="text-[#FFFFFF]">Kademy</span>
@@ -78,7 +78,7 @@ function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="mt-[0.5vw] w-full px-[2vw] py-[1vw] border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] text-[#64748B]"
+                    className="mt-[0.5vw] text-[1vw] w-full px-[2vw] py-[1vw] border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] text-[#64748B]"
                     placeholder="Enter your email"
                   />
                 </div>
@@ -91,7 +91,7 @@ function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="mt-[0.5vw] w-full px-[2vw] py-[1vw] border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] text-[#64748B]"
+                    className="mt-[0.5vw] text-[1vw] w-full px-[2vw] py-[1vw] border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] text-[#64748B]"
                     placeholder="Enter your password"
                   />
                 </div>
@@ -111,7 +111,7 @@ function Login() {
                 <div className="flex justify-center">
                   <button
                     type="submit"
-                    className="bg-[#212529] text-[#FFFFFF] py-[0.6vw] px-[4vw] font-semibold rounded-md"
+                    className="bg-[#212529] text-[#FFFFFF] py-[0.6vw] px-[4vw] text-[1vw] font-semibold rounded-md"
                   >
                     Login
                   </button>
