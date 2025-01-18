@@ -26,9 +26,6 @@ export default function Sidebar({ children }) {
                 </nav>
             </aside>
             {/* The SidebarExpand is like a package, that holds a value, in this case expanded that will be shipped out to whatever is inside the .provider */}
-            <SidebarExpand.Provider value={{ expanded }}>
-                <Announcement />
-            </SidebarExpand.Provider>
         </>
     )
 }
