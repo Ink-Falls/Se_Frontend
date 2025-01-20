@@ -3,33 +3,38 @@ import { useNavigate } from 'react-router-dom';
 import ReCAPTCHA from 'react-google-recaptcha';
 
 function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [captchaVerified, setCaptchaVerified] = useState(false); // Track CAPTCHA verification
-  const navigate = useNavigate();
+  const [email, setEmail] = useState(''); // State to store email input
+  const [password, setPassword] = useState(''); // State to store password input
+  const [captchaVerified, setCaptchaVerified] = useState(false); // State to track CAPTCHA verification
+  const navigate = useNavigate(); // Hook to navigate to other pages
 
+  // Handles form submission
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // Check if CAPTCHA is verified before proceeding
     if (!captchaVerified) {
       alert('Please verify the CAPTCHA to proceed.');
       return;
     }
 
-    console.log('Email:', email);
-    console.log('Password:', password);
-    navigate('/Home');
+    console.log('Email:', email); // Log email
+    console.log('Password:', password); // Log password
+    navigate('/Home'); // Navigate to the Home page after successful login
   };
 
+  // Handles CAPTCHA verification state change
   const handleCaptchaChange = (value) => {
-    console.log('Captcha value:', value);
+    console.log('Captcha value:', value); // Log CAPTCHA response
     setCaptchaVerified(!!value); // Set to true if CAPTCHA is solved
   };
 
+  // Placeholder function for "Forgot Password" button
   const handleForgotPassword = () => {
     alert('Forgot Password functionality is not implemented yet.');
   };
 
+  // Placeholder function for "Enroll" button
   const handleEnroll = () => {
     alert('Enroll functionality is not implemented yet.');
   };
@@ -41,15 +46,17 @@ function Login() {
         className="min-h-screen bg-cover bg-center"
         style={{ backgroundImage: 'url(https://upload.wikimedia.org/wikipedia/commons/7/7b/400_Year_old_Beauty.jpg)' }}
       >
-        <header className="bg-[#121212] text-[#F6BA18] py-[1.5vw] px-[2vw] flex justify-between items-center shadow-xl">
-          <div className="text-[1.5vw] font-bold">
+        {/* Header section with navigation and title */}
+        <header className="py-[3vw] px-[4vw] lg:py-[1.5vw] lg:px-[2vw] bg-[#121212] text-[#F6BA18] flex justify-between items-center shadow-xl">
+          <div className="text-[8vw] lg:text-[1.5vw] font-bold">
             <span className="text-[#F6BA18]">Aral</span>
             <span className="text-[#FFFFFF]">Kademy</span>
           </div>
 
+          {/* Enroll button */}
           <button
             onClick={handleEnroll}
-            className="bg-[#F6BA18] text-[#212529] font-bold py-[0.5vw] px-[2vw] rounded-md transition-colors text-[1vw]"
+            className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
           >
             Enroll
           </button>
@@ -57,9 +64,10 @@ function Login() {
 
         {/* Main Content */}
         <div className="flex items-center justify-center min-h-screen">
-          <div className="flex flex-col md:flex-row items-center p-[2vw] rounded-lg gap-[15vw]" style={{ marginTop: '-5vw' }}>
-            {/* Left Side: Title and Subtitle */}
-            <div className="text-left md:block hidden" style={{ marginTop: '-10vw' }}>
+          {/* Wrapper for left and right sections */}
+          <div className="mt-[-10vw] sm:mt-[0vw] lg:mt-[-5vw] flex flex-col lg:flex-row items-center p-[2vw] rounded-lg gap-[15vw] mt-0">
+            {/* Left side: Title and description */}
+            <div className="text-left lg:block hidden lg:mt-[-5vw]">
               <h1 className="text-[4vw] font-extrabold drop-shadow-[5px_5px_5px_rgba(0,0,0,0.8)]">
                 <span className="text-[#F6BA18]">Aral</span>
                 <span className="text-[#FFFFFF]">Kademy</span>
@@ -69,55 +77,62 @@ function Login() {
               </p>
             </div>
 
-            {/* Right Side: Login Form */}
-            <div className="bg-white p-[3vw] rounded-lg shadow-2xl w-[30vw] relative">
-              {/* Thick Yellow Top Border */}
-              <div className="absolute top-[0vw] left-[0vw] w-full h-[0.5vw] bg-[#F6BA18] rounded-t-lg"></div>
-              <h2 className="text-[2.5vw] font-bold text-left text-[#212529]">Log In</h2>
-              <p className="text-[0.8vw] text-[#64748B] text-left mb-[1.5vw]">
+            {/* Right side: Login form */}
+            <div className="p-[5vw] w-[80vw] lg:p-[3vw] lg:w-[30vw] bg-white rounded-lg shadow-2xl relative">
+              {/* Yellow top border */}
+              <div className="top-[0vw] left-[0vw] h-[1.5vw] lg:top-[0vw] lg:left-[0vw] lg:h-[0.5vw] absolute w-full bg-[#F6BA18] rounded-t-lg"></div>
+
+              {/* Login form header */}
+              <h2 className="text-[8vw] lg:text-[2.5vw] font-bold text-left text-[#212529]">Log In</h2>
+
+              {/* Form instruction text */}
+              <p className="text-[3vw] mb-[8vw] lg:mb-[1.5vw] lg:text-[0.8vw] text-[#64748B] text-left">
                 Please fill in your login information to proceed
               </p>
 
+              {/* Login form */}
               <form onSubmit={handleSubmit} className="space-y-[1vw]">
+                {/* Email input */}
                 <div>
-                  <label htmlFor="email" className="block text-[0.8vw] text-[#64748B]">Email</label>
+                  <label htmlFor="email" className="text-[3vw] block text-[#64748B] lg:text-[0.8vw]">Email</label>
                   <input
                     type="email"
                     id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="mt-[0.2vw] text-[0.8vw] w-full px-[2vw] py-[0.6vw] border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                    className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                     placeholder="Enter your email"
                   />
                 </div>
 
+                {/* Password input */}
                 <div>
-                  <label htmlFor="password" className="block text-[0.8vw] text-[#64748B]">Password</label>
+                  <label htmlFor="password" className="mt-[5vw] text-[3vw] lg:text-[0.8vw] lg:mt-[0vw] block text-[#64748B]">Password</label>
                   <input
                     type="password"
                     id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="mt-[0.2vw] text-[0.8vw] w-full px-[2vw] py-[0.6vw] border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                    className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                     placeholder="Enter your password"
                   />
                 </div>
 
-                {/* Forgot Password Button */}
-                <div className="text-right" style={{ marginTop: '0.5vw' }}>
+                {/* Forgot password button */}
+                <div className="text-right mt-[0.5vw]">
                   <button
                     type="button"
                     onClick={handleForgotPassword}
-                    className="text-[0.8vw] text-[#64748B] hover:underline focus:outline-none"
+                    className="text-[3vw] lg:text-[0.8vw] text-[#64748B] hover:underline focus:outline-none"
                   >
                     Forgot Password?
                   </button>
                 </div>
 
-                {/* CAPTCHA */}
-                <div className="mt-[1vw]" style={{ overflow: 'visible', height: 'auto' }}>
+                {/* CAPTCHA verification */}
+                <div className="mt-[1vw] overflow-visible h-auto">
                   <div
                     style={{
                       transformOrigin: 'left',
@@ -131,14 +146,14 @@ function Login() {
                   </div>
                 </div>
 
-                {/* Login Button */}
-                <div className="flex justify-center mt-[0.5vw]"> {/* Reduced margin to 0.5vw */}
+                {/* Submit button */}
+                <div className="flex justify-center mt-[0.5vw]">
                   <button
                     type="submit"
-                    className="bg-[#212529] text-[#FFFFFF] py-[0.6vw] px-[4vw] text-[1vw] font-semibold rounded-md"
-                    disabled={!captchaVerified} // Disable button until CAPTCHA is solved
+                    className="py-[2vw] px-[12vw] text-[4vw] mb-[2vw] mt-[2vw] lg:mb-[0vw] lg:mt-[0vw] lg:py-[0.6vw] lg:px-[4vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-bold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
+                    disabled={!captchaVerified}
                   >
-                    Login
+                    Log In
                   </button>
                 </div>
               </form>
