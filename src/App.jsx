@@ -4,6 +4,7 @@ import Announcement from "./components/Announcement.jsx";
 import Home from "./components/Home.jsx";
 import Login from "./components/Login.jsx";
 import Enrollment from './components/Enrollment.jsx';
+import NewEnrollment from './components/NewEnrollment.jsx';
 import "./icon.css";
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/Login" element={<Login />} />
           <Route path="/Enrollment" element={<Enrollment />} />
+          <Route path="/Enrollment/New" element={<NewEnrollment />} />
           <Route path="/Home" element={<Home />} />
           <Route path="/Announcements" element={<Announcement />} />
         </Routes>
