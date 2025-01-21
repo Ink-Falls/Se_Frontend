@@ -36,7 +36,7 @@ function Login() {
 
   // Placeholder function for "Enroll" button
   const handleEnroll = () => {
-    alert('Enroll functionality is not implemented yet.');
+    navigate('/Enrollment');
   };
 
   return (
@@ -65,7 +65,7 @@ function Login() {
         {/* Main Content */}
         <div className="flex items-center justify-center min-h-screen">
           {/* Wrapper for left and right sections */}
-          <div className="mt-[-10vw] sm:mt-[0vw] lg:mt-[-5vw] flex flex-col lg:flex-row items-center p-[2vw] rounded-lg gap-[15vw] mt-0">
+          <div className="mt-[-10vw] sm:mt-[0vw] lg:mt-[-5vw] flex flex-col lg:flex-row items-center p-[2vw] rounded-lg gap-[15vw]">
             {/* Left side: Title and description */}
             <div className="text-left lg:block hidden lg:mt-[-5vw]">
               <h1 className="text-[4vw] font-extrabold drop-shadow-[5px_5px_5px_rgba(0,0,0,0.8)]">
