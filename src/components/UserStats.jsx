@@ -11,7 +11,7 @@ const UserStats = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
       {/* Users */}
-      <div className="flex items-center bg-white p-4 rounded-lg borde">
+      <div className="flex items-center bg-white p-4 rounded-lg border">
         <div className="w-12 h-12 bg-green-200 rounded-full flex items-center justify-center mr-4">
           <i className="fas fa-user text-green-600"></i>
         </div>
@@ -22,7 +22,7 @@ const UserStats = ({
       </div>
 
       {/* Learners */}
-      <div className="flex items-center bg-white p-4 rounded-lg borde">
+      <div className="flex items-center bg-white p-4 rounded-lg border">
         <div className="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center mr-4">
           <i className="fas fa-user-graduate text-blue-600"></i>
         </div>
@@ -35,7 +35,7 @@ const UserStats = ({
       </div>
 
       {/* Teachers */}
-      <div className="flex items-center bg-white p-4 rounded-lg borde">
+      <div className="flex items-center bg-white p-4 rounded-lg border">
         <div className="w-12 h-12 bg-yellow-200 rounded-full flex items-center justify-center mr-4">
           <i className="fas fa-chalkboard-teacher text-yellow-600"></i>
         </div>
@@ -48,7 +48,7 @@ const UserStats = ({
       </div>
 
       {/* Admin */}
-      <div className="flex items-center bg-white p-4 rounded-lg borde">
+      <div className="flex items-center bg-white p-4 rounded-lg border">
         <div className="w-12 h-12 bg-red-200 rounded-full flex items-center justify-center mr-4">
           <i className="fas fa-user-shield text-red-600"></i>
         </div>
@@ -59,7 +59,7 @@ const UserStats = ({
       </div>
 
       {/* Groups */}
-      <div className="flex items-center bg-white p-4 rounded-lg borde">
+      <div className="flex items-center bg-white p-4 rounded-lg border">
         <div className="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center mr-4">
           <i className="fas fa-users text-purple-600"></i>
         </div>

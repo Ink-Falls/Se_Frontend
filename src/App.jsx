@@ -18,7 +18,7 @@ function App() {
           <Route path="/Enrollment" element={<Enrollment />} />
           <Route path="/Enrollment/New" element={<NewEnrollment />} />
           <Route path="/Home" element={<Home />} />
-          <Route path="/Announcements" element={<Announcement />} />
+          {/* <Route path="/Announcements" element={<Announcement />} /> not yet implemented*/}
           <Route path="/StudentDashboard" element={<StudentDashboard />} />
         </Routes>
 
