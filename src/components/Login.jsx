@@ -150,6 +150,7 @@ function Login() {
                 <div className="flex justify-center mt-[0.5vw]">
                   <button
                     type="submit"
+                    data-testid="login-button"
                     className="py-[2vw] px-[12vw] text-[4vw] mb-[2vw] mt-[2vw] lg:mb-[0vw] lg:mt-[0vw] lg:py-[0.6vw] lg:px-[4vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-bold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
                     disabled={!captchaVerified}
                   >

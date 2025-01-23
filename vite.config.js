@@ -7,4 +7,12 @@ export default defineConfig({
   server: {
     port: 3000,// Change this to your desired port
   },
+  test: {
+    coverage: {
+      reporter: ['text', 'json', 'html'],
+    },
+    globals: true, // Enables global functions like describe, it, test
+    environment: 'jsdom', // For testing React components
+    setupFiles: './tests/setup/setupTests.jsx', // Path to your setup file
+  },
 })
