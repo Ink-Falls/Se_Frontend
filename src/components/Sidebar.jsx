@@ -1,17 +1,19 @@
 import { ChevronFirst, ChevronLast, LogOut } from "lucide-react";
 import logo from "/src/assets/ARALKADEMYLOGO.png";
 import { createContext, useContext, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 const SidebarContext = createContext();
 export default function Sidebar({ children }) {
   const [expanded, setExpanded] = useState(true);
+  const location = useLocation();
+
   return (
     <aside className="h-screen flex justify-center items-center bg-gray-100">
       <nav className="h-full flex flex-col bg-[#212529] border-r">
         <div className="p-5 pt-7 pb-1 flex justify-between items-center">
           <img
-            src={logo} // Updated to use the imported logo variable
+            src={logo}
             className={`overflow-hidden transition-all duration-300 ease-out ${
               expanded ? "w-40" : "w-0"
             }`}
@@ -24,7 +26,9 @@ export default function Sidebar({ children }) {
             {expanded ? <ChevronFirst /> : <ChevronLast />}
           </button>
         </div>
-        <SidebarContext.Provider value={{ expanded }}>
+        <SidebarContext.Provider
+          value={{ expanded, currentPath: location.pathname }}
+        >
           <ul className="flex-1 px-3">{children}</ul>
         </SidebarContext.Provider>
         <div className="mt-auto px-3 py-3">
@@ -43,13 +47,16 @@ export default function Sidebar({ children }) {
 }
 
 export function SidebarItem({ icon, text, active, alert, route }) {
-  const { expanded } = useContext(SidebarContext);
+  const { expanded, currentPath } = useContext(SidebarContext);
+
+  // Determine if this item is active based on the current path
+  const isActive = currentPath === route;
 
   return (
     <li
       className={`relative flex items-center py-3 px-4 my-4 font-medium rounded-md cursor-pointer transition-all group ${
-        active
-          ? "text-black"
+        isActive || active
+          ? "bg-[#F6BA18] text-black"
           : "hover:bg-[#F6BA18] text-gray-50 hover:text-black"
       }`}
     >

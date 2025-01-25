@@ -8,8 +8,8 @@ import UserTable from "./UserTable";
 
 const StudentDashboard = () => {
   const navItems = [
-    { text: "Users", icon: <Home size={20} />, route: "/dashboard" },
-    { text: "Courses", icon: <Book size={20} />, route: "/courses" },
+    { text: "Users", icon: <Home size={20} />, route: "/StudentDashboard" },
+    { text: "Courses", icon: <Book size={20} />, route: "/Courses" },
     {
       text: "Notifications",
       icon: <Bell size={20} />,
@@ -31,14 +31,10 @@ const StudentDashboard = () => {
   });
 
   useEffect(() => {
-    // Simulate fetching data from a backend
     const fetchUserStats = async () => {
       try {
-        // Replace the following line with a real API call
         const response = await fetch("/api/userStats");
         const data = await response.json();
-
-        // Assuming the response has the following structure
         setUserStats({
           totalUsers: data.totalUsers || 0,
           totalLearners: data.totalLearners || 0,
@@ -71,7 +67,8 @@ const StudentDashboard = () => {
 
       {/* Main Content */}
       <div className="flex-1 p-6">
-        <Header /> {/* Add the Header component here */}
+        {/* Pass the title prop to Header */}
+        <Header title="Users" />
         <UserStats
           totalUsers={userStats.totalUsers}
           totalLearners={userStats.totalLearners}
@@ -80,6 +77,7 @@ const StudentDashboard = () => {
           totalGroups={userStats.totalGroups}
         />
         <UserTable />
+        <Outlet /> {/* Include Outlet for nested routes */}
       </div>
     </div>
   );

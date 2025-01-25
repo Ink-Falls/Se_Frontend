@@ -1,6 +1,6 @@
 import React from "react";
 
-const Header = () => {
+const Header = ({ title }) => {
   const currentDate = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -10,7 +10,8 @@ const Header = () => {
   return (
     <div className="flex justify-between items-center p-5 bg-white rounded-lg mb-6">
       <div className="flex items-center space-x-7">
-        <h1 className="text-2xl font-semibold text-[#334155]">Users</h1>
+        <h1 className="text-2xl font-semibold text-[#334155]">{title}</h1>{" "}
+        {/* Use the title prop */}
         <p className="text-xs text-[#334155]">{currentDate}</p>
       </div>
 
