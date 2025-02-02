@@ -118,7 +118,7 @@ describe('Sidebar Component', () => {
     expect(coursesText).toHaveClass('w-52');
   });
 
-  /*it('should display a tooltip when hovering over a minimized sidebar item', () => {
+  it('should display a tooltip when hovering over a minimized sidebar item', () => {
     render(
       <Router>
         <Sidebar>
@@ -139,15 +139,17 @@ describe('Sidebar Component', () => {
     const sidebarItem = screen.getByRole('listitem');
     fireEvent.mouseOver(sidebarItem);
   
-    // Check tooltip visibility
+    // Check tooltip visibility and class
     const tooltip = screen.getByTestId('tooltip');
     expect(tooltip).toBeVisible();
-    expect(tooltip).toHaveClass('-translate-x-0');
+    expect(tooltip).toHaveClass('group-hover:translate-x-0');
   
     // Stop hovering and check tooltip invisibility
     fireEvent.mouseOut(sidebarItem);
-    expect(tooltip).toHaveClass('invisible');
-  });*/
+    expect(tooltip).toHaveClass('opacity-0');
+    expect(tooltip).not.toBeVisible();
+  });
+  
   
 
 

@@ -20,7 +20,7 @@ function Login() {
 
     console.log('Email:', email); // Log email
     console.log('Password:', password); // Log password
-    navigate('/Home'); // Navigate to the Home page after successful login
+    navigate('/dashboard'); // Navigate to the Home page after successful login
   };
 
   // Handles CAPTCHA verification state change
