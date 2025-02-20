@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Sidebar, { SidebarItem } from "./components/Sidebar.jsx";
+// import Sidebar, { SidebarItem } from "./components/Sidebar.jsx"; // Removed - Not used directly
 // import Announcements from "./components/Announcements.jsx";
 import Home from "./components/Home.jsx";
 import Login from "./components/Login.jsx";
@@ -13,7 +13,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Login />} /> {/* Default route, good choice */}
         <Route path="/Login" element={<Login />} />
         <Route path="/Enrollment" element={<Enrollment />} />
         <Route path="/Enrollment/New" element={<NewEnrollment />} />

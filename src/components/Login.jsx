@@ -1,50 +1,65 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
-import logo from "/src/assets/ARALKADEMYLOGO.png";
+import logo from "/src/assets/ARALKADEMYLOGO.png";  // Adjust paths if needed
 import icon from "/src/assets/ARALKADEMYICON.png";
 import nstpLogo from "/src/assets/NSTPLOGO.png";
 
 function Login() {
-  const [email, setEmail] = useState(""); // State to store email input
-  const [password, setPassword] = useState(""); // State to store password input
-  const [captchaVerified, setCaptchaVerified] = useState(false); // State to track CAPTCHA verification
-  const navigate = useNavigate(); // Hook to navigate to other pages
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [captchaResponse, setCaptchaResponse] = useState(null); // Store reCAPTCHA response
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
-  // Handles form submission
-  const handleSubmit = (e) => {
-    e.preventDefault();
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-    // Check if CAPTCHA is verified before proceeding
-    if (!captchaVerified) {
-      alert("Please verify the CAPTCHA to proceed.");
-      return;
-    }
+        if (!captchaResponse) { // Check if reCAPTCHA is solved
+            alert("Please verify the CAPTCHA to proceed.");
+            return;
+        }
 
-    console.log("Email:", email); // Log email
-    console.log("Password:", password); // Log password
-    navigate("/Home"); // Navigate to the Home page after successful login
-  };
+        setError(null);
 
-  // Handles CAPTCHA verification state change
-  const handleCaptchaChange = (value) => {
-    console.log("Captcha value:", value); // Log CAPTCHA response
-    setCaptchaVerified(!!value); // Set to true if CAPTCHA is solved
-  };
+        try {
+            const response = await fetch("http://localhost:4000/api/users/login", { // Correct URL
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email, password, captchaResponse }), // Include captchaResponse
+            });
 
-  // Placeholder function for "Forgot Password" button
-  const handleForgotPassword = () => {
-    alert("Forgot Password functionality is not implemented yet.");
-  };
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('token', data.token);
+                navigate("/Home");
+            } else {
+                const errorData = await response.json();
+                setError(errorData.message || "Login failed");
+            }
+        } catch (err) {
+            console.error("Login request failed:", err);
+            setError("An error occurred. Please try again.");
+        }
+    };
 
-  // Placeholder function for "Enroll" button
-  const handleEnroll = () => {
-    navigate("/Enrollment");
-  };
+    const handleCaptchaChange = (value) => {
+        setCaptchaResponse(value); // Store the reCAPTCHA response
+    };
 
-  return (
-    <>
-      {/* Background image with overlay */}
+    const handleForgotPassword = () => {
+        alert("Forgot Password functionality is not implemented yet.");
+    };
+
+    const handleEnroll = () => {
+        navigate("/Enrollment");
+    };
+
+    return (
+        <>
+           {/* Background image with overlay */}
       <div
         className="min-h-screen bg-cover bg-center relative"
         style={{
@@ -119,6 +134,8 @@ function Login() {
 
               {/* Login form */}
               <form onSubmit={handleSubmit} className="space-y-[1vw]">
+                 {/* Display error message */}
+                {error && <p className="text-red-500 text-center">{error}</p>}
                 {/* Email input */}
                 <div>
                   <label
@@ -177,7 +194,7 @@ function Login() {
                     }}
                   >
                     <ReCAPTCHA
-                      sitekey="your-site-key"
+                      sitekey="6Ldv39cqAAAAAML6O41KNyqN_sXx7sIOA245Hc1N"  // YOUR SITE KEY
                       onChange={handleCaptchaChange}
                     />
                   </div>
@@ -188,7 +205,7 @@ function Login() {
                   <button
                     type="submit"
                     className="py-[2vw] px-[12vw] text-[4vw] mb-[2vw] mt-[2vw] lg:mb-[0vw] lg:mt-[0vw] lg:py-[0.6vw] lg:px-[4vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
-                    disabled={!captchaVerified}
+                    disabled={!captchaResponse} // Disable until reCAPTCHA is solved
                   >
                     Log In
                   </button>
@@ -198,8 +215,8 @@ function Login() {
           </div>
         </div>
       </div>
-    </>
-  );
+        </>
+    );
 }
 
 export default Login;
