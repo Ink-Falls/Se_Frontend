@@ -3,13 +3,51 @@ import { useNavigate } from "react-router-dom";
 import logo from "/src/assets/ARALKADEMYLOGO.png";
 
 function Enrollment() {
-  const [email, setEmail] = useState(""); // State to store the email input value
-  const navigate = useNavigate(); // Hook for navigation between pages
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("Unknown");
+  const [statusColor, setStatusColor] = useState("#F6BA18"); // Default color
+  const navigate = useNavigate();
 
-  // Function to handle form submission
-  const handleSubmit = (e) => {
-    e.preventDefault(); // Prevent default form submission behavior
-    console.log("Email:", email); // Log the email entered by the user
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("Email:", email);
+
+    try {
+      const response = await fetch("http://localhost:4000/api/enrollment/check-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message}`);
+      }
+
+      const data = await response.json();
+      setStatus(data.status);
+
+      switch (data.status) {
+        case 'approved':
+          setStatusColor('green');
+          break;
+        case 'pending':
+          setStatusColor('#F6BA18'); // Yellow
+          break;
+        case 'rejected':
+          setStatusColor('red');
+          break;
+        default:
+          setStatusColor('#F6BA18'); // Default color
+      }
+
+    } catch (error) {
+      console.error("Error fetching enrollment status:", error);
+      setStatus("Error");
+      setStatusColor('gray'); // Error color
+    }
   };
 
   return (
@@ -34,8 +72,8 @@ function Enrollment() {
 
           {/* Log In button */}
           <button
-            onClick={() => navigate("/Login")} // Navigate to the Login page on click
-            className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
+            onClick={() => navigate("/Login")}
+            className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
           >
             Log In
           </button>
@@ -46,17 +84,17 @@ function Enrollment() {
           {/* Wrapper for the enrollment options */}
           <div className="mt-[-15vw] sm:mt-[5vw] lg:mt-[-10vw] flex flex-col lg:flex-row items-center rounded-lg gap-[5vw]">
             {/* New Enrollee section */}
-            <div className="p-[5vw] w-[80vw] lg:h-[13.5vw] lg:mt-[-1vw] lg:p-[2vw] lg:w-[30vw] bg-white rounded-lg shadow-2xl relative">
+            <div className="p-[5vw] max-lg:p-[7vw] w-[80vw] lg:h-[13.5vw] lg:mt-[-1vw] lg:p-[2.5vw] lg:w-[30vw] bg-white rounded-lg shadow-2xl relative">
               {/* Highlighted top border */}
               <div className="top-[0vw] left-[0vw] h-[1.5vw] lg:top-[0vw] lg:left-[0vw] lg:h-[0.5vw] absolute w-full bg-[#F6BA18] rounded-t-lg"></div>
 
               {/* Section header */}
-              <h2 className="text-[8vw] lg:text-[2vw] font-bold text-left text-[#212529]">
+              <h2 className="text-[8vw] lg:text-[2vw] max-lg:text-[6vw] font-bold text-left text-[#212529]">
                 New Enrollee?
               </h2>
 
               {/* Description text */}
-              <p className="text-[3vw] mb-[5vw] lg:mb-[2.5vw] lg:text-[0.8vw] text-[#64748B] text-left">
+              <p className="text-[3vw] mb-[5vw] lg:mb-[2.5vw] lg:text-[0.8vw] max-lg:text-[2.5vw] text-[#64748B] text-left">
                 Click enroll below to begin your enrollment process
               </p>
 
@@ -67,7 +105,7 @@ function Enrollment() {
                   <button
                     type="submit"
                     onClick={() => navigate("/Enrollment/New")}
-                    className="py-[1.5vw] px-[10vw] text-[3.5vw] mb-[2vw] mt-[2vw] lg:mb-[0vw] lg:mt-[0vw] lg:py-[0.4vw] lg:px-[2.5vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-bold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
+                    className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] mb-[2vw] mt-[2vw] lg:mb-[0vw] lg:mt-[0vw] lg:py-[0.4vw] lg:px-[2.5vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-bold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
                   >
                     Enroll
                   </button>
@@ -76,17 +114,17 @@ function Enrollment() {
             </div>
 
             {/* Enrollment Status Tracker section */}
-            <div className="p-[5vw] w-[80vw] lg:p-[2vw] lg:w-[30vw] bg-white rounded-lg shadow-2xl relative">
+            <div className="p-[2.5vw] max-lg:p-[7vw] w-[80vw] lg:w-[30vw] bg-white rounded-lg shadow-2xl relative">
               {/* Highlighted top border */}
               <div className="top-[0vw] left-[0vw] h-[1.5vw] lg:top-[0vw] lg:left-[0vw] lg:h-[0.5vw] absolute w-full bg-[#F6BA18] rounded-t-lg"></div>
 
               {/* Section header */}
-              <h2 className="text-[8vw] lg:text-[2vw] font-bold text-left text-[#212529]">
+              <h2 className="text-[8vw] lg:text-[2vw] max-lg:text-[6vw] font-bold text-left text-[#212529]">
                 Enrollment Status Tracker
               </h2>
 
               {/* Description text */}
-              <p className="text-[3vw] mb-[5vw] lg:mb-[2vw] lg:text-[0.8vw] text-[#64748B] text-left">
+              <p className="text-[3vw] mb-[5vw] lg:mb-[2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] text-[#64748B] text-left">
                 Please enter your email address to check your enrollment status
               </p>
 
@@ -96,7 +134,7 @@ function Enrollment() {
                   {/* Email input field */}
                   <label
                     htmlFor="email"
-                    className="text-[3vw] block text-[#64748B] lg:text-[0.8vw]"
+                    className="text-[3vw] block text-[#64748B] lg:text-[0.8vw] max-lg:text-[2.5vw]"
                   >
                     Email
                   </label>
@@ -106,7 +144,7 @@ function Enrollment() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                    className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                     placeholder="Enter your email"
                   />
                 </div>
@@ -115,19 +153,22 @@ function Enrollment() {
                   {/* Check status button */}
                   <button
                     type="submit"
-                    className="py-[1.5vw] px-[10vw] text-[3.5vw] mb-[2vw] mt-[2vw] lg:mb-[0.2vw] lg:mt-[0.2vw] lg:py-[0.4vw] lg:px-[2.5vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-bold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
+                    className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] mb-[2vw] mt-[2vw] lg:mb-[0.2vw] lg:mt-[0.2vw] lg:py-[0.4vw] lg:px-[2.5vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
                   >
                     Check
                   </button>
 
                   <div className="flex flex-row items-start ml-[2vw]">
                     {/* Status label */}
-                    <h2 className="text-[3.5vw] mr-[2vw] mt-[2.5vw] mb-[1vw] lg:text-[1vw] lg:mr-[0.5vw] lg:mt-[1vw] font-bold text-left text-[#212529]">
+                    <h2 className="text-[2.5vw] mr-[2vw] mt-[2.5vw] mb-[1vw] lg:text-[1vw] lg:mr-[0.5vw] lg:mt-[1vw] font-semibold text-left text-[#212529]">
                       Status:
                     </h2>
-                    {/* Default status message */}
-                    <p className="py-[1vw] px-[4vw] text-[3vw] mb-[2vw] mt-[2vw] lg:mb-[0vw] lg:mt-[0.8vw] lg:py-[0.4vw] lg:px-[1.5vw] lg:text-[0.8vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md">
-                      Unknown
+                    {/* Status message - DYNAMICALLY UPDATED */}
+                    <p
+                      className="py-[1vw] px-[4vw] text-[3.5vw] max-lg:text-[2.5vw] mb-[2vw] mt-[2vw] lg:mb-[0vw] lg:mt-[0.8vw] lg:py-[0.4vw] lg:px-[1.5vw] lg:text-[0.8vw] font-semibold rounded-md"
+                      style={{ backgroundColor: statusColor, color: 'white' }} // Dynamic background and text color
+                    >
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
                     </p>
                   </div>
                 </div>
