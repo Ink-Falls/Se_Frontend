@@ -6,7 +6,7 @@ function Home() {
 
   const handleLogout = () => {
     // Perform logout logic here (clear auth tokens, etc.)
-    navigate('/login'); // Redirect to login page
+    navigate('/logout'); // Redirect to login page
   };
 
   return (
