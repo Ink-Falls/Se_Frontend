@@ -1,34 +1,44 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
-import logo from "/src/assets/ARALKADEMYLOGO.png";  // Adjust paths if needed
+import logo from "/src/assets/ARALKADEMYLOGO.png";
 import icon from "/src/assets/ARALKADEMYICON.png";
 import nstpLogo from "/src/assets/NSTPLOGO.png";
 
 function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [captchaResponse, setCaptchaResponse] = useState(null); // Store reCAPTCHA response
+    const [captchaResponse, setCaptchaResponse] = useState(null);
     const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false); // Add loading state
     const navigate = useNavigate();
+    const recaptchaRef = useRef(null);
+
+    const resetRecaptcha = () => {
+        if (recaptchaRef.current) {
+            recaptchaRef.current.reset();
+        }
+        setCaptchaResponse(null);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!captchaResponse) { // Check if reCAPTCHA is solved
+        if (!captchaResponse) {
             alert("Please verify the CAPTCHA to proceed.");
             return;
         }
 
         setError(null);
+        setLoading(true); // Start loading
 
         try {
-            const response = await fetch("http://localhost:4000/api/users/login", { // Correct URL
+            const response = await fetch("http://localhost:4000/api/users/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ email, password, captchaResponse }), // Include captchaResponse
+                body: JSON.stringify({ email, password, captchaResponse }),
             });
 
             if (response.ok) {
@@ -38,15 +48,19 @@ function Login() {
             } else {
                 const errorData = await response.json();
                 setError(errorData.message || "Login failed");
+                resetRecaptcha();
             }
         } catch (err) {
             console.error("Login request failed:", err);
             setError("An error occurred. Please try again.");
+            resetRecaptcha();
+        } finally {
+            setLoading(false); // Stop loading, regardless of success/failure
         }
     };
 
     const handleCaptchaChange = (value) => {
-        setCaptchaResponse(value); // Store the reCAPTCHA response
+        setCaptchaResponse(value);
     };
 
     const handleForgotPassword = () => {
@@ -56,6 +70,7 @@ function Login() {
     const handleEnroll = () => {
         navigate("/Enrollment");
     };
+
 
     return (
         <>
@@ -148,7 +163,7 @@ function Login() {
                     type="email"
                     id="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => setEmail(e.target.value)} // SIMPLIFIED
                     required
                     className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                     placeholder="Enter your email"
@@ -167,7 +182,7 @@ function Login() {
                     type="password"
                     id="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => setPassword(e.target.value)} // SIMPLIFIED
                     required
                     className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                     placeholder="Enter your password"
@@ -194,6 +209,7 @@ function Login() {
                     }}
                   >
                     <ReCAPTCHA
+                      ref={recaptchaRef} // Assign the ref
                       sitekey="6Ldv39cqAAAAAML6O41KNyqN_sXx7sIOA245Hc1N"  // YOUR SITE KEY
                       onChange={handleCaptchaChange}
                     />
@@ -202,13 +218,39 @@ function Login() {
 
                 {/* Submit button */}
                 <div className="flex justify-center mt-[0.5vw]">
-                  <button
+                 <button
                     type="submit"
                     className="py-[2vw] px-[12vw] text-[4vw] mb-[2vw] mt-[2vw] lg:mb-[0vw] lg:mt-[0vw] lg:py-[0.6vw] lg:px-[4vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
-                    disabled={!captchaResponse} // Disable until reCAPTCHA is solved
-                  >
-                    Log In
-                  </button>
+                    disabled={loading} // Disable during loading
+                >
+                    {loading ? (
+                        <>
+                            <svg // Spinner SVG
+                                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                ></circle>
+                                <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                            </svg>
+                            Logging In...
+                        </>
+                    ) : (
+                        "Log In"
+                    )}
+                </button>
                 </div>
               </form>
             </div>
