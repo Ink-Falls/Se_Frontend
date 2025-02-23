@@ -6,75 +6,88 @@ import icon from "/src/assets/ARALKADEMYICON.png";
 import nstpLogo from "/src/assets/NSTPLOGO.png";
 
 function Login() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [captchaResponse, setCaptchaResponse] = useState(null);
-    const [error, setError] = useState(null);
-    const [loading, setLoading] = useState(false); // Add loading state
-    const navigate = useNavigate();
-    const recaptchaRef = useRef(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [captchaResponse, setCaptchaResponse] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false); // Add loading state
+  const navigate = useNavigate();
+  const recaptchaRef = useRef(null);
 
-    const resetRecaptcha = () => {
-        if (recaptchaRef.current) {
-            recaptchaRef.current.reset();
+  const resetRecaptcha = () => {
+    if (recaptchaRef.current) {
+      recaptchaRef.current.reset();
+    }
+    setCaptchaResponse(null);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!captchaResponse) {
+      alert("Please verify the CAPTCHA to proceed.");
+      return;
+    }
+
+    setError(null);
+    setLoading(true); // Start loading
+
+    try {
+      const response = await fetch("http://localhost:4000/api/users/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password, captchaResponse }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("token", data.token);
+        navigate("/Home");
+      } else {
+        const errorData = await response.json();
+
+        // Custom error messages based on HTTP status codes
+        if (response.status === 400) {
+          setError("Invalid email or password. Please try again.");
+        } else if (response.status === 401) {
+          setError("Unauthorized access. Please check your credentials.");
+        } else if (response.status === 500) {
+          setError("Server error. Please try again later.");
+        } else {
+          setError(errorData.message || "An unexpected error occurred.");
         }
-        setCaptchaResponse(null);
-    };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+        resetRecaptcha();
 
-        if (!captchaResponse) {
-            alert("Please verify the CAPTCHA to proceed.");
-            return;
-        }
+        // Clear error message after 5 seconds
+        setTimeout(() => setError(null), 5000);
+      }
+    } catch (err) {
+      console.error("Login request failed:", err);
+      setError("An error occurred. Please try again.");
+      resetRecaptcha();
+    } finally {
+      setLoading(false); // Stop loading, regardless of success/failure
+    }
+  };
 
-        setError(null);
-        setLoading(true); // Start loading
+  const handleCaptchaChange = (value) => {
+    setCaptchaResponse(value);
+  };
 
-        try {
-            const response = await fetch("http://localhost:4000/api/users/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ email, password, captchaResponse }),
-            });
+  const handleForgotPassword = () => {
+    alert("Forgot Password functionality is not implemented yet.");
+  };
 
-            if (response.ok) {
-                const data = await response.json();
-                localStorage.setItem('token', data.token);
-                navigate("/Home");
-            } else {
-                const errorData = await response.json();
-                setError(errorData.message || "Login failed");
-                resetRecaptcha();
-            }
-        } catch (err) {
-            console.error("Login request failed:", err);
-            setError("An error occurred. Please try again.");
-            resetRecaptcha();
-        } finally {
-            setLoading(false); // Stop loading, regardless of success/failure
-        }
-    };
+  const handleEnroll = () => {
+    navigate("/Enrollment");
+  };
 
-    const handleCaptchaChange = (value) => {
-        setCaptchaResponse(value);
-    };
-
-    const handleForgotPassword = () => {
-        alert("Forgot Password functionality is not implemented yet.");
-    };
-
-    const handleEnroll = () => {
-        navigate("/Enrollment");
-    };
-
-
-    return (
-        <>
-           {/* Background image with overlay */}
+  return (
+    <>
+      {/* Background image with overlay */}
       <div
         className="min-h-screen bg-cover bg-center relative"
         style={{
@@ -98,7 +111,7 @@ function Login() {
           {/* Enroll button */}
           <button
             onClick={handleEnroll}
-            className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
+            className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] lg:py-[0.5vw] lg:px-[2vw] max-lg:text-[2.5vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
           >
             Enroll
           </button>
@@ -133,29 +146,33 @@ function Login() {
             </div>
 
             {/* Right side: Login form */}
-            <div className="p-[5vw] w-[80vw] lg:p-[3vw] lg:w-[30vw] bg-white rounded-lg shadow-2xl relative">
+            <div className="p-[5vw] max-lg:p-[7vw] w-[80vw] lg:p-[3vw] lg:w-[30vw] bg-white rounded-lg shadow-2xl relative">
               {/* Yellow top border */}
               <div className="top-[0vw] left-[0vw] h-[1.5vw] lg:top-[0vw] lg:left-[0vw] lg:h-[0.5vw] absolute w-full bg-[#F6BA18] rounded-t-lg"></div>
 
               {/* Login form header */}
-              <h2 className="text-[8vw] lg:text-[2.5vw] font-bold text-left text-[#212529]">
+              <h2 className="text-[2vw] lg:text-[2vw] max-lg:text-[6vw] font-bold text-left text-[#212529]">
                 Log In
               </h2>
 
               {/* Form instruction text */}
-              <p className="text-[3vw] mb-[8vw] lg:mb-[1.5vw] lg:text-[0.8vw] text-[#64748B] text-left">
+              <p className="text-[3vw] mb-[8vw] lg:mb-[1.5vw] lg:text-[0.8vw] max-lg:text-[2.5vw] text-[#64748B] text-left">
                 Please fill in your login information to proceed
               </p>
 
               {/* Login form */}
               <form onSubmit={handleSubmit} className="space-y-[1vw]">
-                 {/* Display error message */}
-                {error && <p className="text-red-500 text-center">{error}</p>}
+                {/* Display error message */}
+                {error && (
+                  <p className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw]">
+                    {error}
+                  </p>
+                )}
                 {/* Email input */}
                 <div>
                   <label
                     htmlFor="email"
-                    className="text-[3vw] block text-[#64748B] lg:text-[0.8vw]"
+                    className="text-[3vw] block text-[#64748B] lg:text-[0.8vw] max-lg:text-[2.5vw]"
                   >
                     Email
                   </label>
@@ -163,9 +180,9 @@ function Login() {
                     type="email"
                     id="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)} // SIMPLIFIED
+                    onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                    className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                     placeholder="Enter your email"
                   />
                 </div>
@@ -174,7 +191,7 @@ function Login() {
                 <div>
                   <label
                     htmlFor="password"
-                    className="mt-[5vw] text-[3vw] lg:text-[0.8vw] lg:mt-[0vw] block text-[#64748B]"
+                    className="mt-[5vw] text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:mt-[0vw] block text-[#64748B]"
                   >
                     Password
                   </label>
@@ -182,9 +199,9 @@ function Login() {
                     type="password"
                     id="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)} // SIMPLIFIED
+                    onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                    className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                     placeholder="Enter your password"
                   />
                 </div>
@@ -194,7 +211,7 @@ function Login() {
                   <button
                     type="button"
                     onClick={handleForgotPassword}
-                    className="text-[3vw] lg:text-[0.8vw] text-[#64748B] hover:underline focus:outline-none"
+                    className="text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] text-[#64748B] hover:underline focus:outline-none"
                   >
                     Forgot Password?
                   </button>
@@ -210,7 +227,7 @@ function Login() {
                   >
                     <ReCAPTCHA
                       ref={recaptchaRef} // Assign the ref
-                      sitekey="6Ldv39cqAAAAAML6O41KNyqN_sXx7sIOA245Hc1N"  // YOUR SITE KEY
+                      sitekey="6Ldv39cqAAAAAML6O41KNyqN_sXx7sIOA245Hc1N" // YOUR SITE KEY
                       onChange={handleCaptchaChange}
                     />
                   </div>
@@ -218,47 +235,54 @@ function Login() {
 
                 {/* Submit button */}
                 <div className="flex justify-center mt-[0.5vw]">
-                 <button
+                  <button
                     type="submit"
-                    className="py-[2vw] px-[12vw] text-[4vw] mb-[2vw] mt-[2vw] lg:mb-[0vw] lg:mt-[0vw] lg:py-[0.6vw] lg:px-[4vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
-                    disabled={loading} // Disable during loading
-                >
+                    className={`flex items-center justify-center min-w-[10rem] max-w-[10rem] px-6 py-3 
+  font-semibold rounded-md transition-colors duration-300 ease-in-out flex-shrink-0
+  text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529] dark:bg-gray-900 dark:hover:bg-yellow-400
+  disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300`}
+                    disabled={loading}
+                  >
                     {loading ? (
-                        <>
-                            <svg // Spinner SVG
-                                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                            >
-                                <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                ></circle>
-                                <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                ></path>
-                            </svg>
-                            Logging In...
-                        </>
+                      <div className="flex items-center space-x-2">
+                        <svg
+                          className="animate-spin h-5 w-5 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        <span className="animate-pulse text-sm md:text-base">
+                          Loading...
+                        </span>
+                      </div>
                     ) : (
-                        "Log In"
+                      <span className="text-xs sm:text-sm md:text-base lg:text-base">
+                        Log In
+                      </span>
                     )}
-                </button>
+                  </button>
                 </div>
               </form>
             </div>
           </div>
         </div>
       </div>
-        </>
-    );
+    </>
+  );
 }
 
 export default Login;
