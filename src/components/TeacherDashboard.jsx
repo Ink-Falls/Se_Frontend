@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import Sidebar from "./Sidebar";
 import { Book, Bell } from "lucide-react";
 import Header from "./Header";
 
 const TeacherDashboard = () => {
+  const navigate = useNavigate(); // Initialize navigation function
+
   // Sidebar Navigation Items
   const navItems = [
     { text: "Courses", icon: <Book size={20} />, route: "/TeacherDashboard" },
@@ -88,9 +91,16 @@ const TeacherDashboard = () => {
     fetchCourses();
   }, []);
 
+  // Handle course click
+  const handleCourseClick = (course) => {
+    navigate("/TeacherCoursePage", {
+      state: { courseTitle: course.name, courseCode: course.code },
+    });
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar now accepts navItems as a prop */}
+      {/* Sidebar */}
       <Sidebar navItems={navItems} />
 
       {/* Main Content */}
@@ -106,7 +116,8 @@ const TeacherDashboard = () => {
             {courses.map((course) => (
               <div
                 key={course.code}
-                className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col transition-transform transform hover:scale-105 hover:shadow-lg"
+                className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col transition-transform transform hover:scale-105 hover:shadow-lg cursor-pointer"
+                onClick={() => handleCourseClick(course)}
               >
                 <div className="h-32">
                   <img
