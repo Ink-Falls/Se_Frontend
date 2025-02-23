@@ -1,137 +1,138 @@
-import React, { useState } from "react";
+// NewEnrollment.jsx
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "/src/assets/ARALKADEMYLOGO.png";
 
 function NewEnrollment() {
-    // State to store form data
     const [formData, setFormData] = useState({
-        firstName: "",
-        lastName: "",
-        middleName: "",  // Keep this, even if optional
-        contactNo: "",
-        birthdate: "",
-        schoolId: "",  // Changed to schoolId (match backend)
-        yearLevel: "",
+        first_name: "",
+        last_name: "",
+        middle_initial: "",
+        contact_no: "",
+        birth_date: "",
+        school_id: "",
+        year_level: "",
         email: "",
         password: "",
-        confirmPassword: "",
+        confirm_password: "",
     });
 
-    const [error, setError] = useState("");  // For displaying error messages
-    const [successMessage, setSuccessMessage] = useState(""); //for success message
-    const [schools, setSchools] = useState([]); // To store the list of schools
+    const [error, setError] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
     const navigate = useNavigate();
 
-    // Handle form input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
 
-        // Validate and format the contact number field
-        if (name === "contactNo") {
-          const formattedValue = value.replace(/\D/g, "").slice(0, 11); // Limit to 11 digits
-          let formattedContactNo = formattedValue;
-          if (formattedValue.length > 0) {
-            formattedContactNo = formattedValue.replace(/^(\d{4})/, '$1-'); // Add - after first 4 digit
-          }
-          if (formattedValue.length > 4) {
-            formattedContactNo = formattedContactNo.replace(/-(\d{3})/, '-$1-'); //Add - after the next 3 digits
-          }
-          // No need for a final replace, slice handled it
+        if (name === "contact_no") {
+            const formattedValue = value.replace(/\D/g, "").slice(0, 11);
+            let formattedContactNo = formattedValue;
+            if (formattedValue.length > 0) {
+                formattedContactNo = formattedValue.replace(/^(\d{4})/, "$1-");
+            }
+            if (formattedValue.length > 4) {
+                formattedContactNo = formattedContactNo.replace(/-(\d{3})/, "-$1-");
+            }
             setFormData((prevData) => ({
                 ...prevData,
                 [name]: formattedContactNo,
             }));
         } else {
-            // Update other fields
             setFormData((prevData) => ({
                 ...prevData,
                 [name]: value,
             }));
         }
-    };
-  // Fetch schools on component mount (useEffect)
-    React.useEffect(() => {
-    const fetchSchools = async () => {
-      try {
-        const response = await fetch("http://localhost:3000/schools"); // Assuming you have a /schools endpoint
-        if (response.ok) {
-          const data = await response.json();
-          setSchools(data); // Assuming the response is an array of school objects
-        } else {
-          console.error("Failed to fetch schools:", response.status);
-          setError("Failed to load school list. Please try again later.");
-        }
-      } catch (error) {
-        console.error("Network error fetching schools:", error);
-        setError("Network error. Please check your connection and try again.");
-      }
-    };
-     fetchSchools();
-  }, []); // Empty dependency array: run only once on mount
+        // Clear any existing error for the current field
+        setError("");
 
+    };
 
-    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError("");  // Clear previous errors
+        setError("");
         setSuccessMessage("");
+        setIsLoading(true);
 
-        // Password confirmation check
-        if (formData.password !== formData.confirmPassword) {
-            setError("Passwords do not match.");
+        // Client-side validation (BEFORE sending to the server)
+        if (formData.password !== formData.confirm_password) {
+            setError("Passwords do not match."); // Frontend error
+            setIsLoading(false);
+            return;  // Stop here if passwords don't match (client-side)
+        }
+
+        if (!/^(?:\+63|0)?9\d{9}$/.test(formData.contact_no.replace(/-/g, ""))) {
+            setError("Invalid contact number. Must start with 09 or +63, and have 11 digits.");
+            setIsLoading(false);
             return;
         }
-       // Add basic client-side validation for contact number format (before sending to the server).
-        if (!(/^09\d{9}$/).test(formData.contactNo.replace(/-/g, ""))) { // Remove hyphens for validation
-            setError("Invalid contact number format.  Must start with 09 and be 11 digits.");
+
+        if (formData.middle_initial.length > 3) {
+            setError("Middle initial must be at most 3 characters.");
+            setIsLoading(false);
             return;
         }
 
-        // Prepare data for sending to the backend (remove confirmPassword)
-        const { confirmPassword, ...dataToSend } = formData;
-        //Convert school name to id
-        const selectedSchool = schools.find(school => school.name === formData.schoolId);
-        if (!selectedSchool) {
-          setError("Invalid school selected."); // Should not happen if dropdown is correct
-          return;
-        }
+        // --- IMPORTANT FIX: Send ALL data, including confirm_password ---
+        // DO NOT remove confirm_password here.  Send it to the backend for validation.
+        // The backend service will remove it before saving.
+        const dataToSend = {
+            ...formData, // Include all form data
+             contact_no: formData.contact_no.replace(/-/g, ""), // Remove hyphens
+        };// Send the entire formData object.
 
-       const data = {
-        email: formData.email,
-        password: formData.password,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        birthDate: formData.birthdate,  // Use the correct name
-        contactNo: formData.contactNo.replace(/-/g, ""), //remove hypens
-        schoolId: selectedSchool.id,  // Send school ID, not the name.
-        yearLevel: formData.yearLevel,
-        handledById: null, //  You'll probably handle this on the backend
-        status: 'pending'    //  Default status
-      };
         try {
-            const response = await fetch("http://localhost:3000/enrollments", {
+            const response = await fetch("http://localhost:4000/api/enrollment", { //Corrected
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(data), // Send the data
+                body: JSON.stringify(dataToSend), // Send ALL data (including confirm_password)
             });
 
             if (response.ok) {
-                const responseData = await response.json(); //parse data
+                const responseData = await response.json();
                 console.log("Enrollment successful:", responseData);
-                setSuccessMessage("You are now successfully enrolled!");
-                // navigate("/success"); // Redirect to a success page, for example
+                setSuccessMessage("Enrollment submitted successfully!");
+                setFormData({  // Reset form
+                    first_name: "",
+                    last_name: "",
+                    middle_initial: "",
+                    contact_no: "",
+                    birth_date: "",
+                    school_id: "",
+                    year_level: "",
+                    email: "",
+                    password: "",
+                    confirm_password: "",
+                });
+                // navigate("/success");
             } else {
-                const errorData = await response.json(); // Get error message
-                setError(errorData.message || "Enrollment failed."); // Use the error message from server
+                const errorData = await response.json();
+                if (response.status === 409) {
+                    setError("Email already exists. Please use a different email.");
+                } else if (response.status === 400 && errorData.errors) {
+                    // Display all validation errors from the server
+                    let errorMessage = "";
+                    for (const field in errorData.errors) {
+                        errorMessage += `${errorData.errors[field]} `;
+                    }
+                    setError(errorMessage.trim());
+                }
+                else {
+                    setError(errorData.message || "Enrollment failed.");
+                }
             }
         } catch (error) {
             console.error("Network error:", error);
             setError("Network error. Please try again.");
+        } finally {
+            setIsLoading(false);
         }
     };
+
 
     return (
         <>
@@ -168,38 +169,38 @@ function NewEnrollment() {
                             <p className="text-[3vw] mb-[5vw] lg:mb-[2vw] lg:text-[0.8vw] text-[#64748B] text-left">
                                 Please enter all the necessary information to enroll
                             </p>
-                             {error && <p style={{ color: 'red' }}>{error}</p>} {/* Display errors */}
-                             {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
+                            {error && <p className="text-red-500">{error}</p>}
+                            {successMessage && <p className="text-green-500">{successMessage}</p>}
                             <form onSubmit={handleSubmit} className="space-y-[2vw]">
                                 <div className="flex flex-wrap gap-[2vw]">
                                     {[
                                         {
                                             label: "First Name",
-                                            name: "firstName",
+                                            name: "first_name",
                                             type: "text",
                                             required: true,
                                         },
                                         {
                                             label: "Last Name",
-                                            name: "lastName",
+                                            name: "last_name",
                                             type: "text",
                                             required: true,
                                         },
                                         {
-                                            label: "Middle Name",
-                                            name: "middleName",
+                                            label: "Middle Initial",
+                                            name: "middle_initial",
                                             type: "text",
-                                            required: false, // Middle name is optional
+                                            required: false,
                                         },
                                         {
                                             label: "Contact No.",
-                                            name: "contactNo",
-                                            type: "tel", // Use type="tel" for phone numbers
+                                            name: "contact_no",
+                                            type: "tel",
                                             required: true,
                                         },
                                         {
                                             label: "Birthdate",
-                                            name: "birthdate",
+                                            name: "birth_date",
                                             type: "date",
                                             required: true,
                                         },
@@ -217,7 +218,7 @@ function NewEnrollment() {
                                         },
                                         {
                                             label: "Confirm Password",
-                                            name: "confirmPassword",
+                                            name: "confirm_password",
                                             type: "password",
                                             required: true,
                                         },
@@ -246,44 +247,41 @@ function NewEnrollment() {
                                     ))}
                                 </div>
                                 <div className="flex flex-wrap gap-[2vw]">
-                                   <div className="w-[calc(50%-1vw)]">
-                                    <label
-                                      htmlFor="schoolId" // Changed to schoolId
-                                      className="text-[3vw] block text-[#64748B] lg:text-[0.8vw]"
-                                    >
-                                      School
-                                    </label>
-                                    <select
-                                       id="schoolId"
-                                       name="schoolId"
-                                       value={formData.schoolId}
-                                       onChange={handleInputChange}
-                                       required
-                                       className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
-                                     >
-                                       <option value="" disabled>
-                                        Select your school
-                                      </option>
-                                      {/* Populate options dynamically from fetched data */}
-                                      {schools.map((school) => (
-                                        <option key={school.id} value={school.name}>
-                                          {school.name}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </div>
-
-                                    <div className="w-[calc(50%-1vw)]">
+                                    <div className="w-full lg:w-[calc(50%-1vw)]">
                                         <label
-                                            htmlFor="yearLevel"
+                                            htmlFor="school_id"
+                                            className="text-[3vw] block text-[#64748B] lg:text-[0.8vw]"
+                                        >
+                                            School
+                                        </label>
+                                        <select
+                                            id="school_id"
+                                            name="school_id"
+                                            value={formData.school_id}
+                                            onChange={handleInputChange}
+                                            required
+                                            className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                                        >
+                                            <option value="" disabled>
+                                                Select your school
+                                            </option>
+                                            <option value="1001">Asuncion Consunji Elementary School (ACES)</option>
+                                            <option value="1002">University of Santo Tomas (UST)</option>
+                                            <option value="1003">De la Salle University (DLSU)</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="w-full lg:w-[calc(50%-1vw)]">
+                                        <label
+                                            htmlFor="year_level"
                                             className="text-[3vw] block text-[#64748B] lg:text-[0.8vw]"
                                         >
                                             Year Level
                                         </label>
                                         <select
-                                            id="yearLevel"
-                                            name="yearLevel"
-                                            value={formData.yearLevel}
+                                            id="year_level"
+                                            name="year_level"
+                                            value={formData.year_level}
                                             onChange={handleInputChange}
                                             required
                                             className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
@@ -291,10 +289,12 @@ function NewEnrollment() {
                                             <option value="" disabled>
                                                 Select your year level
                                             </option>
-                                            <option value="Freshman">Freshman</option>
-                                            <option value="Sophomore">Sophomore</option>
-                                            <option value="Junior">Junior</option>
-                                            <option value="Senior">Senior</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                            <option value="6">6</option>
                                         </select>
                                     </div>
                                 </div>
@@ -302,8 +302,9 @@ function NewEnrollment() {
                                     <button
                                         type="submit"
                                         className="py-[1.5vw] px-[10vw] text-[3.5vw] mb-[2vw] mt-[2vw] lg:mb-[0.2vw] lg:mt-[0.2vw] lg:py-[0.4vw] lg:px-[2.5vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-bold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
+                                        disabled={isLoading}
                                     >
-                                        Submit
+                                        {isLoading ? "Submitting..." : "Submit"}
                                     </button>
                                 </div>
                             </form>
