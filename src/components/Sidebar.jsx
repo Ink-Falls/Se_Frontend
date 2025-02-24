@@ -4,7 +4,8 @@ import { createContext, useContext, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const SidebarContext = createContext();
-export default function Sidebar({ children }) {
+
+export default function Sidebar({ navItems }) {
   const [expanded, setExpanded] = useState(true);
   const location = useLocation();
 
@@ -26,11 +27,24 @@ export default function Sidebar({ children }) {
             {expanded ? <ChevronFirst /> : <ChevronLast />}
           </button>
         </div>
+
+        {/* Sidebar Items */}
         <SidebarContext.Provider
           value={{ expanded, currentPath: location.pathname }}
         >
-          <ul className="flex-1 px-3">{children}</ul>
+          <ul className="flex-1 px-3">
+            {navItems.map((item) => (
+              <SidebarItem
+                key={item.text}
+                icon={item.icon}
+                text={item.text}
+                route={item.route}
+              />
+            ))}
+          </ul>
         </SidebarContext.Provider>
+
+        {/* Logout Button */}
         <div className="mt-auto px-3 py-3">
           <Link
             to="/"
@@ -38,7 +52,6 @@ export default function Sidebar({ children }) {
           >
             <LogOut className="mr-1" size={20} />
             {expanded && <span>Logout</span>}
-            <div className="absolute right-2 top-2 w-2 h-2 rounded-full bg-indigo-400 invisible opacity-20 group-hover:visible group-hover:opacity-100"></div>
           </Link>
         </div>
       </nav>
@@ -46,16 +59,14 @@ export default function Sidebar({ children }) {
   );
 }
 
-export function SidebarItem({ icon, text, active, alert, route }) {
+export function SidebarItem({ icon, text, route }) {
   const { expanded, currentPath } = useContext(SidebarContext);
-
-  // Determine if this item is active based on the current path
   const isActive = currentPath === route;
 
   return (
     <li
       className={`relative flex items-center py-3 px-4 my-4 font-medium rounded-md cursor-pointer transition-all group ${
-        isActive || active
+        isActive
           ? "bg-[#F6BA18] text-black"
           : "hover:bg-[#F6BA18] text-gray-50 hover:text-black"
       }`}
@@ -69,21 +80,7 @@ export function SidebarItem({ icon, text, active, alert, route }) {
         >
           {text}
         </span>
-        {alert && (
-          <div
-            className={`absolute right-2 w-2 h-2 rounded bg-indigo-400 ${
-              expanded ? "" : "top-2"
-            }`}
-          ></div>
-        )}
       </Link>
-      {!expanded && (
-        <div
-          className={`absolute left-full rounded-md px-2 py-1 ml-6 bg-indigo-100 text-indigo-800 text-sm invisible opacity-20 -translate-x-3 transition-all group-hover:visible group-hover:opacity-100 group-hover:translate-x-0`}
-        >
-          {text}
-        </div>
-      )}
     </li>
   );
 }
