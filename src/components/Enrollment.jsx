@@ -3,15 +3,71 @@ import { useNavigate } from "react-router-dom";
 import logo from "/src/assets/ARALKADEMYLOGO.png";
 
 function Enrollment() {
-  const [email, setEmail] = useState(""); // State to store the email input value
-  const navigate = useNavigate(); // Hook for navigation between pages
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("Unknown");
+  const [statusColor, setStatusColor] = useState("#F6BA18");
+  const [errorMessage, setErrorMessage] = useState(""); // Add error message state
+  const navigate = useNavigate();
 
-  // Function to handle form submission
-  const handleSubmit = (e) => {
-    e.preventDefault(); // Prevent default form submission behavior
-    console.log("Email:", email); // Log the email entered by the user
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("Email:", email);
+    setErrorMessage(""); // Clear any previous error message
+
+    try {
+      const response = await fetch(
+        "http://localhost:4000/api/enrollment/check-status",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        // Check for specific "not found" message from backend
+        if (
+          response.status === 404 &&
+          errorData.message === "Enrollment not found for this email"
+        ) {
+          setErrorMessage("Email not found"); // Set the specific error message
+          setStatus("Unknown"); // Reset status
+          setStatusColor("#F6BA18"); // Reset color
+          return; // Exit early, don't try to process further
+        } else {
+          // Handle other errors
+          throw new Error(
+            `HTTP error! status: ${response.status}, message: ${errorData.message}`
+          );
+        }
+      }
+
+      const data = await response.json();
+      setStatus(data.status);
+
+      switch (data.status) {
+        case "approved":
+          setStatusColor("green");
+          break;
+        case "pending":
+          setStatusColor("#F6BA18");
+          break;
+        case "rejected":
+          setStatusColor("red");
+          break;
+        default:
+          setStatusColor("#F6BA18");
+      }
+    } catch (error) {
+      console.error("Error fetching enrollment status:", error);
+      setStatus("Error");
+      setStatusColor("gray");
+      setErrorMessage("An unexpected error occurred."); // Generic error message
+    }
   };
-
   return (
     <>
       {/* Page container with a background image */}
@@ -34,7 +90,7 @@ function Enrollment() {
 
           {/* Log In button */}
           <button
-            onClick={() => navigate("/Login")} // Navigate to the Login page on click
+            onClick={() => navigate("/Login")}
             className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
           >
             Log In
@@ -109,6 +165,12 @@ function Enrollment() {
                     className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                     placeholder="Enter your email"
                   />
+                  {/* Display error message */}
+                  {errorMessage && (
+                    <p className="text-red-500 mt-2 text-[2.5vw] lg:text-[0.8vw]">
+                      {errorMessage}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex justify-between items-center w-full">
@@ -125,9 +187,12 @@ function Enrollment() {
                     <h2 className="text-[2.5vw] mr-[2vw] mt-[2.5vw] mb-[1vw] lg:text-[1vw] lg:mr-[0.5vw] lg:mt-[1vw] font-semibold text-left text-[#212529]">
                       Status:
                     </h2>
-                    {/* Default status message */}
-                    <p className="py-[1vw] px-[4vw] text-[3.5vw] max-lg:text-[2.5vw] mb-[2vw] mt-[2vw] lg:mb-[0vw] lg:mt-[0.8vw] lg:py-[0.4vw] lg:px-[1.5vw] lg:text-[0.8vw] bg-[#F6BA18] text-[#212529] font-semibold rounded-md">
-                      Unknown
+                    {/* Status message - DYNAMICALLY UPDATED */}
+                    <p
+                      className="py-[1vw] px-[4vw] text-[3.5vw] max-lg:text-[2.5vw] mb-[2vw] mt-[2vw] lg:mb-[0vw] lg:mt-[0.8vw] lg:py-[0.4vw] lg:px-[1.5vw] lg:text-[0.8vw] font-semibold rounded-md"
+                      style={{ backgroundColor: statusColor, color: "white" }} // Dynamic background and text color
+                    >
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
                     </p>
                   </div>
                 </div>
