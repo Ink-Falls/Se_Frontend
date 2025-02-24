@@ -1,4 +1,3 @@
-// NewEnrollment.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "/src/assets/ARALKADEMYLOGO.png";
@@ -23,46 +22,45 @@ function NewEnrollment() {
 
   const navigate = useNavigate();
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
 
-        if (name === "contact_no") {
-            let cleanedValue = value.replace(/\D/g, ""); // Remove non-digits
+    if (name === "contact_no") {
+      let cleanedValue = value.replace(/\D/g, ""); // Remove non-digits
 
-            // Convert +63 to 0
-            if (cleanedValue.startsWith("63")) {
-                cleanedValue = "0" + cleanedValue.slice(2);
-            }
-            // Ensure it starts with 0 if not +63
-            else if (!cleanedValue.startsWith("0") && !value.startsWith("+63")) {
-              cleanedValue = "0" + cleanedValue;
-            }
+      // Convert +63 to 0
+      if (cleanedValue.startsWith("63")) {
+        cleanedValue = "0" + cleanedValue.slice(2);
+      }
+      // Ensure it starts with 0 if not +63
+      else if (!cleanedValue.startsWith("0") && !value.startsWith("+63")) {
+        cleanedValue = "0" + cleanedValue;
+      }
 
+      // Limit to 11 digits
+      cleanedValue = cleanedValue.slice(0, 11);
 
-            // Limit to 11 digits
-            cleanedValue = cleanedValue.slice(0, 11);
+      // Format with hyphens
+      let formattedContactNo = cleanedValue;
+      if (formattedContactNo.length > 4) {
+        formattedContactNo = formattedContactNo.replace(/^(\d{4})/, "$1-");
+      }
+      if (formattedContactNo.length > 8) {
+        formattedContactNo = formattedContactNo.replace(/-(\d{3})/, "-$1-");
+      }
 
-            // Format with hyphens
-            let formattedContactNo = cleanedValue;
-            if (formattedContactNo.length > 4) {
-                formattedContactNo = formattedContactNo.replace(/^(\d{4})/, "$1-");
-            }
-            if (formattedContactNo.length > 8) {
-                formattedContactNo = formattedContactNo.replace(/-(\d{3})/, "-$1-");
-            }
-
-            setFormData((prevData) => ({
-                ...prevData,
-                [name]: formattedContactNo,
-            }));
-        } else {
-            setFormData((prevData) => ({
-                ...prevData,
-                [name]: value,
-            }));
-        }
-        setErrors(prevErrors => ({ ...prevErrors, [name]: null }));
-    };
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: formattedContactNo,
+      }));
+    } else {
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: value,
+      }));
+    }
+    setErrors((prevErrors) => ({ ...prevErrors, [name]: null }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -84,7 +82,8 @@ function NewEnrollment() {
     }
 
     if (formData.middle_initial.length > 3) {
-      clientErrors.middle_initial = "Middle initial must be at most 3 characters.";
+      clientErrors.middle_initial =
+        "Middle initial must be at most 3 characters.";
     }
 
     if (Object.keys(clientErrors).length > 0) {
@@ -167,19 +166,19 @@ function NewEnrollment() {
 
           <button
             onClick={() => navigate("/Login")}
-            className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
+            className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
           >
             Log In
           </button>
         </header>
         <div className="flex items-center justify-center min-h-screen">
           <div className="mt-[5vw] lg:mt-[0vw] flex flex-col lg:flex-row items-center rounded-lg">
-            <div className="p-[5vw] w-[80vw] lg:p-[2vw] lg:w-[50vw] bg-white rounded-lg shadow-2xl relative">
+            <div className="p-[10vw] max-lg:p-[9vw] max-w-[90vw] w-[90vw] lg:p-[2vw] lg:max-w-[60vw] my-[2vw] lg:w-[80vw] bg-white rounded-lg shadow-2xl relative">
               <div className="top-[0vw] left-[0vw] h-[1.5vw] lg:top-[0vw] lg:left-[0vw] lg:h-[0.5vw] absolute w-full bg-[#F6BA18] rounded-t-lg"></div>
-              <h2 className="text-[8vw] lg:text-[2vw] font-bold text-left text-[#212529]">
+              <h2 className="text-[8vw] lg:text-[2vw] max-lg:text-[6vw] font-bold text-left text-[#212529]">
                 Enrollment
               </h2>
-              <p className="text-[3vw] mb-[5vw] lg:mb-[2vw] lg:text-[0.8vw] text-[#64748B] text-left">
+              <p className="text-[3vw] mb-[5vw] lg:mb-[2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] text-[#64748B] text-left">
                 Please enter all the necessary information to enroll
               </p>
               {errors.general && (
@@ -188,7 +187,7 @@ function NewEnrollment() {
               {successMessage && (
                 <p className="text-green-500 text-sm mt-1">{successMessage}</p>
               )}
-              <form onSubmit={handleSubmit} className="space-y-[2vw]">
+              <form onSubmit={handleSubmit} className="space-y-[1.5vw]">
                 <div className="flex flex-wrap gap-[2vw]">
                   {[
                     {
@@ -240,10 +239,13 @@ function NewEnrollment() {
                       required: true,
                     },
                   ].map((field) => (
-                    <div key={field.name} className="w-full lg:w-[calc(50%-1vw)]">
+                    <div
+                      key={field.name}
+                      className="w-full lg:w-[calc(50%-1vw)]"
+                    >
                       <label
                         htmlFor={field.name}
-                        className="text-[3vw] block text-[#64748B] lg:text-[0.8vw]"
+                        className="text-[3vw] block text-[#64748B] lg:text-[0.8vw] max-lg:text-[2.5vw]"
                       >
                         {field.label}
                       </label>
@@ -254,14 +256,16 @@ function NewEnrollment() {
                         value={formData[field.name]}
                         onChange={handleInputChange}
                         required={field.required}
-                        className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                        className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] max-lg:text-[2.5vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                         placeholder={`Enter your ${field.label.toLowerCase()}`}
                       />
-                      {errors[field.name] && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors[field.name]}
-                        </p>
-                      )}
+                      <div className="min-h-[0vw]">
+                        {errors[field.name] && (
+                          <p className="text-red-500 mt-1 text-xs">
+                            {errors[field.name]}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -269,7 +273,7 @@ function NewEnrollment() {
                   <div className="w-full lg:w-[calc(50%-1vw)]">
                     <label
                       htmlFor="school_id"
-                      className="text-[3vw] block text-[#64748B] lg:text-[0.8vw]"
+                      className="text-[3vw] mt-[0.5vw] max-lg:text-[2.5vw] block text-[#64748B] lg:text-[0.8vw]"
                     >
                       School
                     </label>
@@ -279,7 +283,7 @@ function NewEnrollment() {
                       value={formData.school_id}
                       onChange={handleInputChange}
                       required
-                      className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                      className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[0.5vw] max-lg:text-[2.5vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                     >
                       <option value="" disabled>
                         Select your school
@@ -299,7 +303,7 @@ function NewEnrollment() {
                   <div className="w-full lg:w-[calc(50%-1vw)]">
                     <label
                       htmlFor="year_level"
-                      className="text-[3vw] block text-[#64748B] lg:text-[0.8vw]"
+                      className="text-[3vw] mt-[0.5vw] max-lg:text-[2.5vw] block text-[#64748B] lg:text-[0.8vw]"
                     >
                       Year Level
                     </label>
@@ -309,7 +313,7 @@ function NewEnrollment() {
                       value={formData.year_level}
                       onChange={handleInputChange}
                       required
-                      className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                      className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] max-lg:text-[2.5vw]z lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                     >
                       <option value="" disabled>
                         Select your year level
@@ -326,7 +330,7 @@ function NewEnrollment() {
                 <div className="flex justify-end items-center w-full">
                   <button
                     type="submit"
-                    className="py-[1.5vw] px-[10vw] text-[3.5vw] mb-[2vw] mt-[2vw] lg:mb-[0.2vw] lg:mt-[0.2vw] lg:py-[0.4vw] lg:px-[2.5vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-bold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
+                    className="py-[1.5vw] px-[10vw] text-[3.5vw] mb-[2vw] max-lg:text-[2.5vw] mt-[3vw] lg:mb-[0.2vw] lg:mt-[0.vw] lg:py-[0.4vw] lg:px-[2.5vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-bold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
                     disabled={isLoading}
                   >
                     {isLoading ? "Submitting..." : "Submit"}
