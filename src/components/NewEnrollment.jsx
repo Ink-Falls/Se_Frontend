@@ -125,6 +125,16 @@ function NewEnrollment() {
           setError(errorMessage.trim());
         } else {
           setError(errorData.message || "Enrollment failed.");
+                     setErrors({ general: errorData.message || "Enrollment failed." }); // Set general error
+
+                }
+            }
+        } catch (error) {
+            console.error("Network error:", error);
+            setErrors({ general: "Network error. Please try again." }); // Set general error for network issues
+        } finally {
+            setIsLoading(false);
+
         }
       }
     } catch (error) {
@@ -246,6 +256,63 @@ function NewEnrollment() {
                         className="mt-[1vw] max-lg:mt-[2vw] text-[3vw] max-lg:text-[2.5vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                         placeholder={`Enter your ${field.label.toLowerCase()}`}
                       />
+                                             {/* Display field-specific error message */}
+                                            {errors[field.name] && <p className="text-red-500">{errors[field.name]}</p>}
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex flex-wrap gap-[2vw]">
+                                    <div className="w-full lg:w-[calc(50%-1vw)]">
+                                        <label htmlFor="school_id" className="text-[3vw] block text-[#64748B] lg:text-[0.8vw]">
+                                            School
+                                        </label>
+                                        <select
+                                            id="school_id"
+                                            name="school_id"
+                                            value={formData.school_id}
+                                            onChange={handleInputChange}
+                                            required
+                                            className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                                        >
+                                             <option value="" disabled>Select your school</option>
+                                            <option value="1001">Asuncion Consunji Elementary School (ACES)</option>
+                                            <option value="1002">University of Santo Tomas (UST)</option>
+                                            <option value="1003">De la Salle University (DLSU)</option>
+                                        </select>
+                                    </div>
+                                    <div className="w-full lg:w-[calc(50%-1vw)]">
+                                        <label htmlFor="year_level" className="text-[3vw] block text-[#64748B] lg:text-[0.8vw]">
+                                            Year Level
+                                        </label>
+                                        <select
+                                            id="year_level"
+                                            name="year_level"
+                                            value={formData.year_level}
+                                            onChange={handleInputChange}
+                                            required
+                                            className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                                        >
+                                            <option value="" disabled>Select your year level</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                            <option value="6">6</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="flex justify-end items-center w-full">
+                                    <button
+                                        type="submit"
+                                        className="py-[1.5vw] px-[10vw] text-[3.5vw] mb-[2vw] mt-[2vw] lg:mb-[0.2vw] lg:mt-[0.2vw] lg:py-[0.4vw] lg:px-[2.5vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-bold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
+                                        disabled={isLoading}
+                                    >
+                                        {isLoading ? "Submitting..." : "Submit"}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                   ))}
                 </div>

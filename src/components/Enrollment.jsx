@@ -29,10 +29,8 @@ function Enrollment() {
       if (!response.ok) {
         const errorData = await response.json();
         // Check for specific "not found" message from backend
-        if (
-          response.status === 404 &&
-          errorData.message === "Enrollment not found for this email"
-        ) {
+
+        if (response.status === 404 && errorData.message === 'Enrollment not found for this email') {
           setErrorMessage("Email not found"); // Set the specific error message
           setStatus("Unknown"); // Reset status
           setStatusColor("#F6BA18"); // Reset color
@@ -195,14 +193,14 @@ function Enrollment() {
                       {status.charAt(0).toUpperCase() + status.slice(1)}
                     </p>
                   </div>
+                                </div>  
+                            </form>
+                        </div>
+                    </div>
                 </div>
-              </form>
             </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
+        </>
+    );
 }
 
 export default Enrollment;
