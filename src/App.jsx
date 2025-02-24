@@ -19,6 +19,8 @@ import Notifications from "./components/Notifications.jsx";
 import NotificationPage from "./components/NotificationPage.jsx";
 import TeacherCoursePage from "./components/TeacherCoursePage.jsx";
 import AnnouncementPage from "./components/AnnouncementPage.jsx";
+import TeacherModules from "./components/TeacherModules.jsx";
+import EnrollConfirm from "./components/EnrollConfirm.jsx";
 
 function App() {
   const isAuthenticated = () => {
@@ -51,6 +53,9 @@ function App() {
         <Route path="/NotificationPage/:id" element={<NotificationPage />} />
         <Route path="/TeacherCoursePage" element={<TeacherCoursePage />} />
         <Route path="/AnnouncementPage/:id" element={<AnnouncementPage />} />
+        <Route path="/TeacherModules" element={<TeacherModules />} />
+        <Route path="/EnrollConfirm" element={<EnrollConfirm />} />
+
       </Routes>
     </Router>
   );
