@@ -55,6 +55,7 @@ function App() {
         <Route path="/AnnouncementPage/:id" element={<AnnouncementPage />} />
         <Route path="/TeacherModules" element={<TeacherModules />} />
         <Route path="/EnrollConfirm" element={<EnrollConfirm />} />
+
       </Routes>
     </Router>
   );
