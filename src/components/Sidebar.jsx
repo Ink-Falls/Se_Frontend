@@ -5,12 +5,16 @@ import { Link, useLocation } from "react-router-dom";
 
 const SidebarContext = createContext();
 
-export default function Sidebar({ navItems }) {
+export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
   const [expanded, setExpanded] = useState(true);
   const location = useLocation();
 
   return (
-    <aside className="h-screen flex justify-center items-center bg-gray-100">
+    <aside
+      className={`fixed lg:relative h-screen flex justify-center items-center bg-gray-100 z-50 transform transition-transform duration-300 ease-in-out ${
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      } lg:translate-x-0`}
+    >
       <nav className="h-full flex flex-col bg-[#212529] border-r">
         <div className="p-5 pt-7 pb-1 flex justify-between items-center">
           <img
@@ -28,7 +32,6 @@ export default function Sidebar({ navItems }) {
           </button>
         </div>
 
-        {/* Sidebar Items */}
         <SidebarContext.Provider
           value={{ expanded, currentPath: location.pathname }}
         >
@@ -44,7 +47,6 @@ export default function Sidebar({ navItems }) {
           </ul>
         </SidebarContext.Provider>
 
-        {/* Logout Button */}
         <div className="mt-auto px-3 py-3">
           <Link
             to="/"
