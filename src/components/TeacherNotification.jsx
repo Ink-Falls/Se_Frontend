@@ -1,11 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import { Book, Bell } from "lucide-react";
 import Header from "./Header";
-import Notifications from "./Notifications"; // Import the Notifications component
+import Notifications from "./Notifications";
+import MobileNavBar from "./MobileNavbar"; // Import the bottom nav bar
 
 const TeacherNotifications = () => {
-  // Sidebar Navigation Items
+  // Sidebar Navigation Items (Only for large screens)
   const navItems = [
     { text: "Courses", icon: <Book size={20} />, route: "/TeacherDashboard" },
     {
@@ -38,14 +39,19 @@ const TeacherNotifications = () => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <Sidebar navItems={navItems} />
+      {/* Sidebar (Large Screens Only) */}
+      <div className="hidden lg:flex">
+        <Sidebar navItems={navItems} />
+      </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-4 md:p-6 overflow-y-auto">
         <Header title="Notifications" />
         <Notifications notifications={notificationsData} />
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNavBar />
     </div>
   );
 };
