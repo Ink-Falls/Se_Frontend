@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { Book, Bell } from "lucide-react";
 import Header from "./Header";
+import MobileNavBar from "./MobileNavbar"; // Import the bottom nav bar
 
 const TeacherDashboard = () => {
-  const navigate = useNavigate(); // Initialize navigation function
+  const navigate = useNavigate();
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Sidebar Navigation Items
   const navItems = [
     { text: "Courses", icon: <Book size={20} />, route: "/TeacherDashboard" },
     {
@@ -17,10 +20,6 @@ const TeacherDashboard = () => {
     },
   ];
 
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
   const placeholderImageUrl =
     "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg";
 
@@ -28,7 +27,6 @@ const TeacherDashboard = () => {
     const fetchCourses = async () => {
       setLoading(true);
       try {
-        // Simulated API call with setTimeout
         const response = await new Promise((resolve) => {
           setTimeout(() => {
             resolve({
@@ -91,7 +89,6 @@ const TeacherDashboard = () => {
     fetchCourses();
   }, []);
 
-  // Handle course click
   const handleCourseClick = (course) => {
     navigate("/TeacherCoursePage", {
       state: { courseTitle: course.name, courseCode: course.code },
@@ -100,19 +97,18 @@ const TeacherDashboard = () => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <Sidebar navItems={navItems} />
+      {/* Sidebar (Large Screens Only) */}
+      <div className="hidden lg:flex">
+        <Sidebar navItems={navItems} />
+      </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 max-md:p-5 overflow-y-auto">
         <Header title="My Courses" />
-
         {loading && <p>Loading courses...</p>}
         {error && <p className="text-red-500">Error: {error}</p>}
-
-        {/* Course Grid */}
         {!loading && !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {courses.map((course) => (
               <div
                 key={course.code}
@@ -140,6 +136,9 @@ const TeacherDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNavBar />
     </div>
   );
 };
