@@ -21,6 +21,7 @@ import TeacherCoursePage from "./components/TeacherCoursePage.jsx";
 import AnnouncementPage from "./components/AnnouncementPage.jsx";
 import TeacherModules from "./components/TeacherModules.jsx";
 import EnrollConfirm from "./components/EnrollConfirm.jsx";
+import AdminModules from "./components/AdminModules.jsx";
 
 function App() {
   const isAuthenticated = () => {
@@ -55,6 +56,7 @@ function App() {
         <Route path="/AnnouncementPage/:id" element={<AnnouncementPage />} />
         <Route path="/TeacherModules" element={<TeacherModules />} />
         <Route path="/EnrollConfirm" element={<EnrollConfirm />} />
+        <Route path="/AdminModules" element={<AdminModules />} />
 
       </Routes>
     </Router>
