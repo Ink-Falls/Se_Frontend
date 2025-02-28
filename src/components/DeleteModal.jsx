@@ -4,9 +4,11 @@ const DeleteModal = ({ onClose, onConfirm }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-80">
-        <h3 className="text-lg font-semibold text-gray-800">Delete Module?</h3>
+        <h3 className="text-lg font-semibold text-gray-800">
+          Confirm Deletion
+        </h3>
         <p className="text-sm text-gray-600 mt-2">
-          Are you sure you want to delete this module? This action cannot be
+          Do you want to proceed with deleting this item? This action cannot be
           undone.
         </p>
         <div className="mt-4 flex justify-end space-x-2">
