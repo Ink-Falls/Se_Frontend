@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import BlackHeader from "./BlackHeader";
-import Announcements from "./Announcements";
+import AnnouncementsComponent from "./AnnouncementsComponent";
 import Modal from "./Modal";
 import {
   Home,
@@ -16,7 +16,7 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 
-const TeacherCoursePage = () => {
+const CourseAnnouncements = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const courseTitle = location.state?.courseTitle || "Course Name";
@@ -51,6 +51,8 @@ const TeacherCoursePage = () => {
   ]);
 
   const [isSorted, setIsSorted] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState(null); // State for editing announcement
+  const [announcementToDelete, setAnnouncementToDelete] = useState(null); // State for deleting announcement
 
   const handleSort = () => {
     const sortedAnnouncements = [...announcements].sort((a, b) => {
@@ -60,6 +62,26 @@ const TeacherCoursePage = () => {
     setIsSorted(!isSorted);
   };
 
+  const handleEditAnnouncement = (announcement) => {
+    setEditingAnnouncement(announcement);
+  };
+
+  const handleSaveAnnouncement = (updatedAnnouncement) => {
+    setAnnouncements((prev) =>
+      prev.map((a) =>
+        a.id === updatedAnnouncement.id ? updatedAnnouncement : a
+      )
+    );
+    setEditingAnnouncement(null);
+  };
+
+  const handleDeleteAnnouncement = () => {
+    setAnnouncements((prev) =>
+      prev.filter((a) => a.id !== announcementToDelete.id)
+    );
+    setAnnouncementToDelete(null);
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar
@@ -67,17 +89,17 @@ const TeacherCoursePage = () => {
           {
             text: "Home",
             icon: <Home size={20} />,
-            route: "/TeacherDashboard",
+            route: "/Dashboard",
           },
           {
             text: "Announcements",
             icon: <Megaphone size={20} />,
-            route: "/TeacherCoursePage",
+            route: "/CourseAnnouncements",
           },
           {
             text: "Modules",
             icon: <BookOpen size={20} />,
-            route: "/TeacherModules",
+            route: "/CourseModules",
           },
           {
             text: "Assessments",
@@ -117,39 +139,57 @@ const TeacherCoursePage = () => {
             </button>
           </BlackHeader>
 
-          <Announcements
+          <AnnouncementsComponent
             announcements={announcements}
-            onAnnouncementClick={(id) => navigate(`/AnnouncementPage/${id}`)}
+            onAnnouncementClick={(id) => navigate(`/AnnouncementDetails/${id}`)}
+            onEdit={handleEditAnnouncement} // Pass edit handler
+            onDelete={setAnnouncementToDelete} // Pass delete handler
           />
         </div>
       </div>
 
-      {/* Modal for Adding Announcement */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <form className="flex flex-col">
-          <label className="font-semibold mb-2">Announcement Title</label>
-          <input
-            type="text"
-            placeholder="Enter title"
-            className="border p-2 rounded mb-4"
-          />
+      {/* Modals */}
+      {isModalOpen && (
+        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+          <h2 className="text-xl font-semibold mb-4">Add New Announcement</h2>
+          <form className="flex flex-col">
+            <label className="font-medium mb-2 text-gray-700">
+              Announcement Title
+            </label>
+            <input
+              type="text"
+              placeholder="Enter title"
+              className="border p-2 rounded mb-4"
+            />
 
-          <label className="font-semibold mb-2">Description</label>
-          <textarea
-            placeholder="Enter description"
-            className="border p-2 rounded mb-4 h-32"
-          ></textarea>
+            <label className="font-medium mb-2 text-gray-700">
+              Description
+            </label>
+            <textarea
+              placeholder="Enter description"
+              className="border p-2 rounded mb-4 h-32"
+            ></textarea>
 
-          <button
-            type="submit"
-            className="bg-black text-white px-4 py-2 rounded self-end"
-          >
-            Add
-          </button>
-        </form>
-      </Modal>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="mr-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600"
+              >
+                Add Announcement
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 };
 
-export default TeacherCoursePage;
+export default CourseAnnouncements;
