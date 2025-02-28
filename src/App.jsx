@@ -11,7 +11,7 @@ import Login from "./components/Login.jsx";
 import Enrollment from "./components/Enrollment.jsx";
 import NewEnrollment from "./components/NewEnrollment.jsx";
 import "./icon.css";
-import StudentDashboard from "./components/StudentDashboard.jsx";
+import StudentDashboard from "./components/StudentDashboard.jsx";//
 import Courses from "./components/Courses.jsx";
 import TeacherDashboard from "./components/TeacherDashboard.jsx";
 import TeacherNotification from "./components/TeacherNotification.jsx";
@@ -21,6 +21,7 @@ import TeacherCoursePage from "./components/TeacherCoursePage.jsx";
 import AnnouncementPage from "./components/AnnouncementPage.jsx";
 import TeacherModules from "./components/TeacherModules.jsx";
 import EnrollConfirm from "./components/EnrollConfirm.jsx";
+import AdminUser from "./components/AdminUser.jsx";
 import AdminModules from "./components/AdminModules.jsx";
 
 function App() {
@@ -57,7 +58,7 @@ function App() {
         <Route path="/TeacherModules" element={<TeacherModules />} />
         <Route path="/EnrollConfirm" element={<EnrollConfirm />} />
         <Route path="/AdminModules" element={<AdminModules />} />
-
+        <Route path="/AdminUser" element={<AdminUser />} />
       </Routes>
     </Router>
   );
