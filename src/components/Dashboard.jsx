@@ -5,18 +5,18 @@ import { Book, Bell } from "lucide-react";
 import Header from "./Header";
 import MobileNavBar from "./MobileNavbar"; // Import the bottom nav bar
 
-const TeacherDashboard = () => {
+const Dashboard = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const navItems = [
-    { text: "Courses", icon: <Book size={20} />, route: "/TeacherDashboard" },
+    { text: "Courses", icon: <Book size={20} />, route: "/Dashboard" },
     {
       text: "Notifications",
       icon: <Bell size={20} />,
-      route: "/TeacherNotification",
+      route: "/Notifications",
     },
   ];
 
@@ -90,7 +90,7 @@ const TeacherDashboard = () => {
   }, []);
 
   const handleCourseClick = (course) => {
-    navigate("/TeacherCoursePage", {
+    navigate("/CourseAnnouncements", {
       state: { courseTitle: course.name, courseCode: course.code },
     });
   };
@@ -143,4 +143,4 @@ const TeacherDashboard = () => {
   );
 };
 
-export default TeacherDashboard;
+export default Dashboard;

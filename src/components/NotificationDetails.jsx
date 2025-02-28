@@ -54,7 +54,7 @@ const NotificationPage = () => {
           {/* Back Button */}
           <button
             className="text-gray-500 text-sm mb-6 flex items-center"
-            onClick={() => navigate("/TeacherNotification")}
+            onClick={() => navigate("/Notifications")}
           >
             <ArrowLeft size={18} className="mr-2" /> Back
           </button>

@@ -14,19 +14,17 @@ const MobileNavBar = () => {
   return (
     <div className="fixed bottom-0 left-0 w-full bg-[#212529] shadow-lg border-t flex justify-around py-3 lg:hidden">
       <Link
-        to="/TeacherDashboard"
-        className={`flex flex-col items-center ${getActiveStyle(
-          "/TeacherDashboard"
-        )}`}
+        to="/Dashboard"
+        className={`flex flex-col items-center ${getActiveStyle("/Dashboard")}`}
       >
         <Book size={24} />
         <span className="text-xs">Courses</span>
       </Link>
 
       <Link
-        to="/TeacherNotification"
+        to="/Notifications"
         className={`flex flex-col items-center ${getActiveStyle(
-          "/TeacherNotification"
+          "/Notifications"
         )}`}
       >
         <Bell size={24} />
@@ -34,10 +32,8 @@ const MobileNavBar = () => {
       </Link>
 
       <Link
-        to="/TeacherProfile"
-        className={`flex flex-col items-center ${getActiveStyle(
-          "/TeacherProfile"
-        )}`}
+        to="/Profile"
+        className={`flex flex-col items-center ${getActiveStyle("/Profile")}`}
       >
         <User size={24} />
         <span className="text-xs">Account</span>
