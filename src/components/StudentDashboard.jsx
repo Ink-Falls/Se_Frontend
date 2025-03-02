@@ -8,7 +8,7 @@ import UserTable from "./UserTable";
 
 const StudentDashboard = () => {
   const navItems = [
-    { text: "Users", icon: <Home size={20} />, route: "/StudentDashboard" },
+    { text: "Users", icon: <Home size={20} />, route: "/Student/Dashboard" },
     { text: "Courses", icon: <Book size={20} />, route: "/Courses" },
     {
       text: "Notifications",

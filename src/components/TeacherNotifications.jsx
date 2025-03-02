@@ -8,11 +8,11 @@ import MobileNavBar from "./MobileNavbar"; // Import the bottom nav bar
 const TeacherNotifications = () => {
   // Sidebar Navigation Items (Only for large screens)
   const navItems = [
-    { text: "Courses", icon: <Book size={20} />, route: "/TeacherDashboard" },
+    { text: "Courses", icon: <Book size={20} />, route: "/Teacher/Dashboard" },
     {
       text: "Notifications",
       icon: <Bell size={20} />,
-      route: "/TeacherNotification",
+      route: "/Teacher/Notifications",
     },
   ];
 

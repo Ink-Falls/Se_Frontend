@@ -13,7 +13,7 @@ const Header = ({ title }) => {
       {/* Mobile View (Small Screens) */}
       <div className="flex justify-between items-center sm:hidden">
         <div>
-          <h1 className="text-xl font-semibold text-[#334155]">{title}</h1>
+          <h1 className="text-xl font-semibold text-[#475569]">{title}</h1>
           <p className="text-xs text-[#334155]">{currentDate}</p>
         </div>
         <img src={profileImg} alt="Profile" className="w-8 h-8 rounded-full" />
@@ -22,13 +22,13 @@ const Header = ({ title }) => {
       {/* Desktop & Tablet View (Medium to Large Screens) */}
       <div className="hidden sm:flex flex-col md:flex-row justify-between items-center">
         <div className="flex items-center space-x-4">
-          <h1 className="text-xl md:text-2xl font-semibold text-[#334155]">
+          <h1 className="text-xl md:text-2xl font-semibold text-[#475569]">
             {title}
           </h1>
-          <p className="text-xs text-[#334155]">{currentDate}</p>
+          <p className="text-xs text-[#64748b]">{currentDate}</p>
         </div>
         <div className="flex items-center">
-          <span className="ml-2 text-sm mr-5 font-semibold text-[#334155]">
+          <span className="ml-2 text-sm mr-5 font-semibold text-[#475569]">
             Account
           </span>
           <img

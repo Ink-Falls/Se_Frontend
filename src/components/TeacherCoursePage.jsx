@@ -67,32 +67,32 @@ const TeacherCoursePage = () => {
           {
             text: "Home",
             icon: <Home size={20} />,
-            route: "/TeacherDashboard",
+            route: "/Teacher/Dashboard",
           },
           {
             text: "Announcements",
             icon: <Megaphone size={20} />,
-            route: "/TeacherCoursePage",
+            route: "/Teacher/Courses",
           },
           {
             text: "Modules",
             icon: <BookOpen size={20} />,
-            route: "/TeacherModules",
+            route: "/Teacher/Modules",
           },
           {
             text: "Assessments",
             icon: <ClipboardList size={20} />,
-            route: "/TeacherAssessments",
+            route: "/Teacher/Assessments",
           },
           {
             text: "Attendance",
             icon: <User size={20} />,
-            route: "/TeacherAttendance",
+            route: "/Teacher/Attendance",
           },
           {
             text: "Progress Tracker",
             icon: <LineChart size={20} />,
-            route: "/TeacherProgress",
+            route: "/Teacher/Tracker",
           },
         ]}
       />
@@ -119,7 +119,7 @@ const TeacherCoursePage = () => {
 
           <Announcements
             announcements={announcements}
-            onAnnouncementClick={(id) => navigate(`/AnnouncementPage/${id}`)}
+            onAnnouncementClick={(id) => navigate(`/Teacher/Announcements/${id}`)}
           />
         </div>
       </div>

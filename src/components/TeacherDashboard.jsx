@@ -12,11 +12,11 @@ const TeacherDashboard = () => {
   const [error, setError] = useState(null);
 
   const navItems = [
-    { text: "Courses", icon: <Book size={20} />, route: "/TeacherDashboard" },
+    { text: "Courses", icon: <Book size={20} />, route: "/Teacher/Dashboard" },
     {
       text: "Notifications",
       icon: <Bell size={20} />,
-      route: "/TeacherNotification",
+      route: "/Teacher/Notifications",
     },
   ];
 
@@ -90,7 +90,7 @@ const TeacherDashboard = () => {
   }, []);
 
   const handleCourseClick = (course) => {
-    navigate("/TeacherCoursePage", {
+    navigate("/Teacher/Courses", {
       state: { courseTitle: course.name, courseCode: course.code },
     });
   };

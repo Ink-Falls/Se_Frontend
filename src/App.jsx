@@ -14,14 +14,16 @@ import "./icon.css";
 import StudentDashboard from "./components/StudentDashboard.jsx";
 import Courses from "./components/Courses.jsx";
 import TeacherDashboard from "./components/TeacherDashboard.jsx";
-import TeacherNotification from "./components/TeacherNotification.jsx";
+import TeacherNotifications from "./components/TeacherNotifications.jsx";
 import Notifications from "./components/Notifications.jsx";
 import NotificationPage from "./components/NotificationPage.jsx";
 import TeacherCoursePage from "./components/TeacherCoursePage.jsx";
 import AnnouncementPage from "./components/AnnouncementPage.jsx";
 import TeacherModules from "./components/TeacherModules.jsx";
 import EnrollConfirm from "./components/EnrollConfirm.jsx";
-import AdminModules from "./components/AdminModules.jsx";
+import AdminCourses from "./components/AdminCourses.jsx";
+import AdminDashboard from "./components/AdminDashboard.jsx";
+import AdminAnnouncements from "./components/AdminAnnouncements.jsx";
 
 function App() {
   const isAuthenticated = () => {
@@ -45,19 +47,21 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/Login" element={<Login />} />
         <Route path="/Enrollment" element={<Enrollment />} />
         <Route path="/Enrollment/New" element={<NewEnrollment />} />
-        <Route path="/logout" element={<Logout />} />
-        <Route path="/TeacherDashboard" element={<TeacherDashboard />} />
-        <Route path="/TeacherNotification" element={<TeacherNotification />} />
-        <Route path="/NotificationPage/:id" element={<NotificationPage />} />
-        <Route path="/TeacherCoursePage" element={<TeacherCoursePage />} />
-        <Route path="/AnnouncementPage/:id" element={<AnnouncementPage />} />
-        <Route path="/TeacherModules" element={<TeacherModules />} />
+        <Route path="/Logout" element={<Logout />} />
+        <Route path="/Student/Dashboard" element={<StudentDashboard />} />
+        <Route path="/Teacher/Dashboard" element={<TeacherDashboard />} />
+        <Route path="/Teacher/Notifications" element={<TeacherNotifications />} />
+        <Route path="/Teacher/Courses" element={<TeacherCoursePage />} />
+        <Route path="/Teacher/Modules" element={<TeacherModules />} />
+        <Route path="/Notifications/:id" element={<NotificationPage />} />
+        <Route path="/Teacher/Announcements/:id" element={<AnnouncementPage />} />
         <Route path="/EnrollConfirm" element={<EnrollConfirm />} />
-        <Route path="/AdminModules" element={<AdminModules />} />
-
+        <Route path="/Admin/Courses" element={<AdminCourses />} />
+        <Route path="/Admin/Dashboard" element={<AdminDashboard />} />
+        <Route path="/Admin/Announcements" element={<AdminAnnouncements />} />
       </Routes>
     </Router>
   );
