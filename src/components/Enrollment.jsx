@@ -16,7 +16,7 @@ function Enrollment() {
 
     try {
       const response = await fetch(
-        "http://localhost:4000/api/enrollment/check-status",
+        "http://localhost:4000/api/enrollments/check-status",
         {
           method: "POST",
           headers: {

@@ -98,7 +98,7 @@ function NewEnrollment() {
     };
 
     try {
-      const response = await fetch("http://localhost:4000/api/enrollment", {
+      const response = await fetch("http://localhost:4000/api/enrollments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -293,9 +293,6 @@ function NewEnrollment() {
                       </option>
                       <option value="1002">
                         University of Santo Tomas (UST)
-                      </option>
-                      <option value="1003">
-                        De la Salle University (DLSU)
                       </option>
                     </select>
                   </div>
