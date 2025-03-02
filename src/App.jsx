@@ -22,6 +22,10 @@ import CourseModules from "./components/CourseModules.jsx";
 import EnrollConfirm from "./components/EnrollConfirm.jsx";
 import AdminUser from "./components/AdminUser.jsx";
 import AdminModules from "./components/AdminModules.jsx";
+import ForgotPassword from "./components/ForgotPassword.jsx";
+import ChangePassword from "./components/ChangePassword.jsx";
+import PasswordConfirm from "./components/PasswordConfirm.jsx";
+import AdminEnrollment from "./components/AdminEnrollment.jsx";
 
 function App() {
   const isAuthenticated = () => {
@@ -64,6 +68,10 @@ function App() {
         <Route path="/EnrollConfirm" element={<EnrollConfirm />} />
         <Route path="/AdminUser" element={<AdminUser />} />
         <Route path="/AdminModules" element={<AdminModules />} />
+        <Route path="/ForgotPassword" element={<ForgotPassword />} />
+        <Route path="/ChangePassword" element={<ChangePassword />} />
+        <Route path="/PasswordConfirm" element={<PasswordConfirm />} />
+        <Route path="/AdminEnrollment" element={<AdminEnrollment />} />
       </Routes>
     </Router>
   );
