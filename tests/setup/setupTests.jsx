@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom';  // If using extended matchers
+import '@testing-library/jest-dom'; // If using extended matchers
 import { afterEach } from 'vitest';
 
 afterEach(() => {
