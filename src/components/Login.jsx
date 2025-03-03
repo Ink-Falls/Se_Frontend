@@ -82,7 +82,11 @@ function Login() {
   };
 
   const handleEnroll = () => {
-    navigate("/Enrollment");
+    const buttonText = "Enroll".trim(); // Trim the text here
+    if (buttonText === "Enroll") {
+      // Now compare trimmed text
+      navigate("/Enrollment");
+    }
   };
 
   return (
