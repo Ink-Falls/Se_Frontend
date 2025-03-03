@@ -81,7 +81,7 @@ const TeacherDashboard = () => {
           throw new Error("Failed to fetch courses.");
         }
       } catch (error) {
-        setError(error.message);
+        setError("Failed to fetch courses.");
         console.error("Error fetching courses:", error);
       } finally {
         setLoading(false);
