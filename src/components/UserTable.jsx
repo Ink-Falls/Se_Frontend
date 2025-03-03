@@ -1,133 +1,59 @@
-// UserTable.js
-import React, { useEffect, useState } from "react";
+// UserTable.jsx
+import React from "react";
+import { Edit } from "lucide-react";
 
-const UserTable = () => {
-  const [usersData, setUsersData] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchUsersData = async () => {
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        const data = [
-          {
-            id: 1,
-            name: "Ivan Dela Cruz",
-            role: "Student",
-            email: "a.kelley@gmail.com",
-          },
-          {
-            id: 2,
-            name: "Lara Santos",
-            role: "Teacher",
-            email: "larasantos@gmail.com",
-          },
-          {
-            id: 3,
-            name: "Miguel Rivera",
-            role: "Student",
-            email: "miguelrivera@gmail.com",
-          },
-          {
-            id: 4,
-            name: "Jasmine Cruz",
-            role: "Student",
-            email: "jasminecruz@gmail.com",
-          },
-          {
-            id: 5,
-            name: "Andrei Bautista",
-            role: "Student",
-            email: "andreibautista@gmail.com",
-          },
-          {
-            id: 6,
-            name: "Carmen Villanueva",
-            role: "Student",
-            email: "carmenvillanueva@gmail.com",
-          },
-          {
-            id: 7,
-            name: "Dylan Reyes",
-            role: "Student",
-            email: "dylanreyes@gmail.com",
-          },
-        ];
-
-        setUsersData(data);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsersData();
-  }, []);
+function UserTable({ users, onEdit }) {
+  // Receive onEdit prop
+  if (!users || users.length === 0) {
+    return <p>No users found.</p>;
+  }
 
   return (
-    <div className="overflow-x-auto">
-      {loading ? (
-        <div className="flex items-center justify-center h-48">
-          <p className="text-lg text-gray-500">Loading users...</p>
-        </div>
-      ) : (
-        <table className="min-w-full divide-y divide-gray-200 rounded-3xl">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {" "}
-                #{" "}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {" "}
-                Full Name{" "}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {" "}
-                Role{" "}
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {" "}
-                E-Mail{" "}
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {usersData.length > 0 ? (
-              usersData.map((user) => (
-                <tr key={user.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.role}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {user.email}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  className="px-6 py-4 text-sm text-gray-500"
-                  colSpan="4"
-                  align="center"
-                >
-                  No users found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      )}
-    </div>
+    <table className="min-w-full divide-y divide-gray-200">
+      <thead className="bg-gray-50">
+        <tr>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            ID
+          </th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            First Name
+          </th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Last Name
+          </th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Email
+          </th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Role
+          </th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Actions
+          </th>{" "}
+          {/* New Column */}
+        </tr>
+      </thead>
+      <tbody className="bg-white divide-y divide-gray-200">
+        {users.map((user) => (
+          <tr key={user.id}>
+            <td className="px-6 py-4 whitespace-nowrap">{user.id}</td>
+            <td className="px-6 py-4 whitespace-nowrap">{user.first_name}</td>
+            <td className="px-6 py-4 whitespace-nowrap">{user.last_name}</td>
+            <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
+            <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <button
+                onClick={() => onEdit(user)} // Call onEdit with the user
+                className="text-bg-[#F6BA18] hover:text-indigo-900"
+              >
+                <Edit size={16} />
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
-};
+}
 
 export default UserTable;
