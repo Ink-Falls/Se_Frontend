@@ -2,14 +2,16 @@ import React from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
-import { Book, Bell } from "lucide-react";
+import { ArrowLeft, Book, Bell } from "lucide-react";
+import MobileNavBar from "./MobileNavbar"; // Import the bottom nav bar
 
 const NotificationPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
-  const notification = location.state?.notification; // Get notification data
+  const notification = location.state?.notification;
 
+  // Sidebar Navigation (Same as TeacherNotification.jsx)
   const navItems = [
     { text: "Courses", icon: <Book size={20} />, route: "/TeacherDashboard" },
     {
@@ -19,7 +21,6 @@ const NotificationPage = () => {
     },
   ];
 
-  // If no notification data is found, show error
   if (!notification) {
     return (
       <div className="flex h-screen bg-gray-100">
@@ -40,52 +41,47 @@ const NotificationPage = () => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
+      {/* Sidebar (Same as TeacherNotification) */}
       <Sidebar navItems={navItems} />
 
       {/* Main Content */}
-      <div className="flex-1 p-6">
-        <Header title="Notification" />
+      <div className="flex-1 p-4 md:p-6">
+        {/* Page Header */}
+        <Header title="Notification Details" />
 
-        {/* Notification Card */}
-        <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-10">
+        {/* Notification Content (Styled like Announcements) */}
+        <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-7 mt-[1vw]">
           {/* Back Button */}
           <button
-            className="flex items-center text-gray-500 text-sm mb-6"
-            onClick={() => navigate("/TeacherNotification")}
+            className="text-gray-500 text-sm mb-6 flex items-center"
+            onClick={() => navigate("/Notifications")}
           >
-            ↩ Back
+            <ArrowLeft size={18} className="mr-2" /> Back
           </button>
 
-          {/* User Info */}
-          <div className="flex items-center">
+          {/* Sender Info */}
+          <div className="flex items-center space-x-4">
             <img
               src={notification.userImage}
-              alt="User Avatar"
-              className="w-14 h-14 rounded-full mr-4"
+              alt="Sender"
+              className="w-12 h-12 rounded-full"
             />
             <div>
-              <h3 className="text-lg font-semibold text-gray-700">
+              <h2 className="text-xl font-semibold text-gray-800">
                 {notification.type}
-              </h3>
-              <p className="text-sm text-gray-600">Learner’s Name</p>
-              <p className="text-xs text-gray-500">{notification.time}</p>
+              </h2>
+              <p className="text-gray-500 text-sm">Sender's Name</p>
+              <p className="text-gray-500 text-sm">{notification.time}</p>
             </div>
           </div>
 
-          {/* Notification Text */}
-          <p className="text-gray-700 mt-5 text-md">
-            {notification.description}
-          </p>
-
-          {/* Action Button */}
-          <div className="flex justify-end mt-10">
-            <button className="bg-gray-900 text-white px-4 py-3 rounded-md hover:bg-gray-800">
-              Go to submission
-            </button>
-          </div>
+          {/* Full Notification Message */}
+          <p className="mt-4 text-gray-700">{notification.description}</p>
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNavBar />
     </div>
   );
 };

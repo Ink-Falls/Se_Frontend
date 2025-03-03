@@ -20,7 +20,7 @@ import {
 import EditModuleModal from "./EditModuleModal";
 import DeleteModal from "./DeleteModal";
 
-const TeacherModules = () => {
+const CourseModules = () => {
   const [modules, setModules] = useState([
     {
       id: 1,
@@ -105,17 +105,17 @@ const TeacherModules = () => {
           {
             text: "Home",
             icon: <Home size={20} />,
-            route: "/TeacherDashboard",
+            route: "/Dashboard",
           },
           {
             text: "Announcements",
             icon: <Megaphone size={20} />,
-            route: "/TeacherCoursePage",
+            route: "/CourseAnnouncements",
           },
           {
             text: "Modules",
             icon: <BookOpen size={20} />,
-            route: "/TeacherModules",
+            route: "/CourseModules",
           },
           {
             text: "Assessments",
@@ -246,7 +246,6 @@ const TeacherModules = () => {
             onConfirm={confirmDelete}
             onCancel={() => setModuleToDelete(null)}
             onClose={() => {
-              console.log("Cancel button clicked"); // Debugging step
               setModuleToDelete(null);
             }}
           />
@@ -265,11 +264,10 @@ const TeacherModules = () => {
               }}
             >
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">
-                  Title
-                </label>
+                <label className="block font-medium text-gray-700">Title</label>
                 <input
                   type="text"
+                  placeholder="Enter title"
                   value={newModule.title}
                   onChange={(e) =>
                     setNewModule({ ...newModule, title: e.target.value })
@@ -279,11 +277,12 @@ const TeacherModules = () => {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block font-medium text-gray-700">
                   Description
                 </label>
                 <textarea
                   value={newModule.description}
+                  placeholder="Enter desciption"
                   onChange={(e) =>
                     setNewModule({ ...newModule, description: e.target.value })
                   }
@@ -314,4 +313,4 @@ const TeacherModules = () => {
   );
 };
 
-export default TeacherModules;
+export default CourseModules;

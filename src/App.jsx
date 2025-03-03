@@ -13,14 +13,19 @@ import NewEnrollment from "./components/NewEnrollment.jsx";
 import "./icon.css";
 import StudentDashboard from "./components/StudentDashboard.jsx";
 import Courses from "./components/Courses.jsx";
-import TeacherDashboard from "./components/TeacherDashboard.jsx";
-import TeacherNotification from "./components/TeacherNotification.jsx";
+import Dashboard from "./components/Dashboard.jsx";
 import Notifications from "./components/Notifications.jsx";
-import NotificationPage from "./components/NotificationPage.jsx";
-import TeacherCoursePage from "./components/TeacherCoursePage.jsx";
-import AnnouncementPage from "./components/AnnouncementPage.jsx";
-import TeacherModules from "./components/TeacherModules.jsx";
+import NotificationDetails from "./components/NotificationDetails.jsx";
+import CourseAnnouncements from "./components/CourseAnnouncements.jsx";
+import AnnouncementDetails from "./components/AnnouncementDetails.jsx";
+import CourseModules from "./components/CourseModules.jsx";
 import EnrollConfirm from "./components/EnrollConfirm.jsx";
+import AdminUser from "./components/AdminUser.jsx";
+import AdminModules from "./components/AdminModules.jsx";
+import ForgotPassword from "./components/ForgotPassword.jsx";
+import ChangePassword from "./components/ChangePassword.jsx";
+import PasswordConfirm from "./components/PasswordConfirm.jsx";
+import AdminEnrollment from "./components/AdminEnrollment.jsx";
 
 function App() {
   const isAuthenticated = () => {
@@ -48,14 +53,25 @@ function App() {
         <Route path="/Enrollment" element={<Enrollment />} />
         <Route path="/Enrollment/New" element={<NewEnrollment />} />
         <Route path="/logout" element={<Logout />} />
-        <Route path="/TeacherDashboard" element={<TeacherDashboard />} />
-        <Route path="/TeacherNotification" element={<TeacherNotification />} />
-        <Route path="/NotificationPage/:id" element={<NotificationPage />} />
-        <Route path="/TeacherCoursePage" element={<TeacherCoursePage />} />
-        <Route path="/AnnouncementPage/:id" element={<AnnouncementPage />} />
-        <Route path="/TeacherModules" element={<TeacherModules />} />
+        <Route path="/Dashboard" element={<Dashboard />} />
+        <Route path="/Notifications" element={<Notifications />} />
+        <Route
+          path="/NotificationDetails/:id"
+          element={<NotificationDetails />}
+        />
+        <Route path="/CourseAnnouncements" element={<CourseAnnouncements />} />
+        <Route
+          path="/AnnouncementDetails/:id"
+          element={<AnnouncementDetails />}
+        />
+        <Route path="/CourseModules" element={<CourseModules />} />
         <Route path="/EnrollConfirm" element={<EnrollConfirm />} />
-
+        <Route path="/AdminUser" element={<AdminUser />} />
+        <Route path="/AdminModules" element={<AdminModules />} />
+        <Route path="/ForgotPassword" element={<ForgotPassword />} />
+        <Route path="/ChangePassword" element={<ChangePassword />} />
+        <Route path="/PasswordConfirm" element={<PasswordConfirm />} />
+        <Route path="/AdminEnrollment" element={<AdminEnrollment />} />
       </Routes>
     </Router>
   );
