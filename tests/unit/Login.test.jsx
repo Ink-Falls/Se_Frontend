@@ -1,7 +1,7 @@
 // Login.test.jsx
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import Login from "../src/components/Login.jsx"; // Adjust path if necessary
+import Login from "Se_Frontend/src/components/Login.jsx"; // Adjust path if necessary
 import { BrowserRouter, useNavigate } from "react-router-dom"; // Make sure BrowserRouter is imported here
 
 // Mock useNavigate and keep BrowserRouter from react-router-dom

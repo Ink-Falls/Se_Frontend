@@ -1,7 +1,7 @@
 // UserTable.test.jsx
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
-import UserTable from "../src/components/UserTable.jsx"; // Adjust path if necessary
+import UserTable from "Se_Frontend/src/components/UserTable.jsx"; // Adjust path if necessary
 
 describe("UserTable Component", () => {
   it('should display "Loading users..." initially', () => {

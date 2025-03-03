@@ -1,30 +1,29 @@
-// vite.config.js or vitest.config.js
-export default {
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { resolve } from "path"; // Import the 'resolve' function from 'path'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 3000, // Change this to your desired port
+  },
   test: {
-    environment: "jsdom",
-    globals: true,
-    setupFiles: ["./test/vitest-setup.js"],
-    coverage: {
-      reporter: ["html", "text", "json"],
-      include: ["src/components/**/*.jsx"], // <-- Include only component files
-      exclude: [
-        // <-- Exclude patterns
-        "**/node_modules/**",
-        "**/test/**",
-        "**/tests/**",
-        "**/coverage/**",
-        "**/dist/**",
-        "**/build/**",
-        "**/vite.config.*",
-        "**/vitest.config.*",
-        "**/tailwind.config.*",
-        "**/postcss.config.*",
-        "**/setupTests.*",
-        "**/setupFiles.*",
-        "**/.storybook/**",
-        "**/.git/**",
-        // Add any other files or directories you want to exclude
-      ],
+    environment: "jsdom", // Use jsdom environment
+    globals: true, //This is not necessary
+    include: ["**/*.test.(js|jsx|ts|tsx)"], // Specifies which files are test files
+    setupFiles: "./tests/setup/setupTests.jsx",
+    // You might need to adjust this path depending on where the setupTests.js file is
+    resolve: {
+      alias: {
+        "@": resolve(__dirname, "src"), // Assuming your 'src' folder is at the root
+        // Add other aliases as needed
+      },
     },
   },
-};
+  resolve: {
+    alias: {
+      "@": resolve(__dirname, "src"), // Assuming your 'src' folder is at the root
+      // Add other aliases as needed
+    },
+  },
+});

@@ -1,7 +1,7 @@
 // EnrollmentConfirm.test.jsx
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import EnrollConfirm from "../src/components/EnrollConfirm.jsx"; // Adjust path if necessary
+import EnrollConfirm from "Se_Frontend/src/components/EnrollConfirm.jsx"; // Adjust path if necessary
 import { BrowserRouter, useNavigate } from "react-router-dom";
 
 // **Modified mock to partially mock react-router-dom**
