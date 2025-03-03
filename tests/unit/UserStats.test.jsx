@@ -1,7 +1,7 @@
 import React from "react"; // Add this line
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import UserStats from "../src/components/UserStats.jsx";
+import UserStats from "Se_Frontend/src/components/UserStats.jsx";
 
 describe("UserStats Component", () => {
   it("renders without crashing", () => {

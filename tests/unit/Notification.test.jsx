@@ -1,7 +1,7 @@
 // Notification.test.jsx
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import Notifications from "../src/components/Notifications.jsx"; // Adjust path if necessary
+import Notifications from "Se_Frontend/src/components/Notifications.jsx"; // Adjust path if necessary
 import { BrowserRouter } from "react-router-dom"; // Need BrowserRouter for Link
 
 // Mock the Link component from react-router-dom

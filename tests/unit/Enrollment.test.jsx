@@ -2,7 +2,7 @@
 import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import Enrollment from "../src/components/Enrollment.jsx"; // Adjust path if necessary
+import Enrollment from "Se_Frontend/src/components/Enrollment.jsx"; // Adjust path if necessary
 import { vi } from "vitest"; // Import vitest's mocking utilities
 
 // Mock the useNavigate hook

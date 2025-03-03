@@ -1,7 +1,7 @@
 // DeleteModal.test.jsx
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import DeleteModal from "../src/components/DeleteModal.jsx"; // Adjust path if necessary
+import DeleteModal from "Se_Frontend/src/components/DeleteModal.jsx"; // Adjust path if necessary
 
 describe("DeleteModal Component", () => {
   it("should render the modal with correct text content", () => {

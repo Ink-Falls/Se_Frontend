@@ -1,11 +1,11 @@
 // StudentDashboard.test.jsx
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
-import StudentDashboard from "../src/components/StudentDashboard"; // Adjust path if necessary
+import StudentDashboard from "Se_Frontend/src/components/StudentDashboard"; // Adjust path if necessary
 import { vi } from "vitest";
 
 // Mock the components to isolate StudentDashboard testing
-vi.mock("../src/components/Sidebar", () => {
+vi.mock("Se_Frontend/src/components/Sidebar", () => {
   const MockSidebar = ({ children }) => (
     <div data-testid="mock-sidebar">{children}</div>
   );
@@ -18,13 +18,13 @@ vi.mock("../src/components/Sidebar", () => {
     SidebarItem: MockSidebar.SidebarItem, // If Sidebar also exports SidebarItem as a named export
   };
 });
-vi.mock("../src/components/Header", () => ({
+vi.mock("Se_Frontend/src/components/Header", () => ({
   default: ({ title }) => <div data-testid="mock-header">{title}</div>,
 }));
-vi.mock("../src/components/UserStats", () => ({
+vi.mock("Se_Frontend/src/components/UserStats", () => ({
   default: () => <div data-testid="mock-user-stats">UserStats Mock</div>,
 }));
-vi.mock("../src/components/UserTable", () => ({
+vi.mock("Se_Frontend/src/components/UserTable", () => ({
   default: () => <div data-testid="mock-user-table">UserTable Mock</div>,
 }));
 vi.mock("react-router-dom", () => ({
