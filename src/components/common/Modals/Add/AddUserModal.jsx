@@ -1,6 +1,6 @@
 // AddUserModal.jsx
 import React, { useState } from 'react';
-import Modal from './Modal'; // Import your Modal component
+import Modal from '../../Button/Modal'; // Import your Modal component
 import { Save, XCircle } from "lucide-react";
 
 function AddUserModal({ isOpen, onClose, onUserAdded }) {

@@ -1,9 +1,9 @@
 // AdminModules.jsx
 import React, { useState, useEffect } from "react";
-import Sidebar, { SidebarItem } from "./Sidebar";
-import Header from "./Header";
-import Modal from "./Modal";
-import DeleteModal from "./DeleteModal";
+import Sidebar, { SidebarItem } from "../../components/common/layout/Sidebar";
+import Header from "../../components/common/layout/Header";
+import Modal from "../../components/common/Button/Modal";
+import DeleteModal from "../../components/common/Modals/Delete/DeleteModal";
 import {
   MoreVertical,
   ChevronDown,

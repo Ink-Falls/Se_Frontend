@@ -1,9 +1,9 @@
 import React from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import Sidebar from "./Sidebar";
-import Header from "./Header";
+import Sidebar from "./common/layout/Sidebar";
+import Header from "./common/layout/Header";
 import { ArrowLeft, Book, Bell } from "lucide-react";
-import MobileNavBar from "./MobileNavbar"; // Import the bottom nav bar
+import MobileNavBar from "./common/layout/MobileNavbar"; // Import the bottom nav bar
 
 const NotificationPage = () => {
   const navigate = useNavigate();

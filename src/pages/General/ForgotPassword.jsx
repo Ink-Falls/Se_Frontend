@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "/src/assets/ARALKADEMYLOGO.png";
+import logo from "/src/assets/images/ARALKADEMYLOGO.png";
 
 function ForgotPassword() {
   const navigate = useNavigate();

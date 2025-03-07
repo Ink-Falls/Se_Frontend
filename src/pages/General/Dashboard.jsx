@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "./Sidebar";
+import Sidebar from "../../components/common/layout/Sidebar";
 import { Book, Bell } from "lucide-react";
-import Header from "./Header";
-import MobileNavBar from "./MobileNavbar"; // Import the bottom nav bar
+import Header from "../../components/common/layout/Header";
+import MobileNavBar from "../../components/common/layout/MobileNavbar"; // Import the bottom nav bar
 
 const Dashboard = () => {
   const navigate = useNavigate();

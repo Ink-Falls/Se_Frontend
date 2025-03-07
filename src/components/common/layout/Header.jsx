@@ -1,5 +1,5 @@
 import React from "react";
-import profileImg from "/src/assets/profile2.jpeg"; // Adjust the path if necessary
+import profileImg from "/src/assets/images/profile2.jpeg"; // Adjust the path if necessary
 
 const Header = ({ title }) => {
   const currentDate = new Date().toLocaleDateString("en-US", {

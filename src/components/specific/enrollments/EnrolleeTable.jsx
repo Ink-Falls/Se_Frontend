@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Edit, Trash2, Filter, Search, FileText } from "lucide-react";
-import EnrolleeDetailsModal from "./EnrolleeDetailsModal"; // Import the details modal
-import RejectEnrolleeModal from "./RejectEnrolleeModal"; // Import the reject modal
+import EnrolleeDetailsModal from "../../EnrolleeDetailsModal"; // Import the details modal
+import RejectEnrolleeModal from "../../RejectEnrolleeModal"; // Import the reject modal
 
 function EnrolleeTable({ enrollees, onDeleteSelected }) {
   const [selectedIds, setSelectedIds] = useState([]);

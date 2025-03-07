@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import Sidebar from "./Sidebar";
-import Header from "./Header";
-import Modal from "./Modal";
+import Sidebar from "./common/layout/Sidebar";
+import Header from "./common/layout/Header";
+import Modal from "./common/Button/Modal";
 import {
   MoreVertical,
   Plus,
@@ -17,8 +17,8 @@ import {
   FileText,
   ExternalLink,
 } from "lucide-react";
-import EditModuleModal from "./EditModuleModal";
-import DeleteModal from "./DeleteModal";
+import EditModuleModal from "./common/Modals/Edit/EditModuleModal";
+import DeleteModal from "./common/Modals/Delete/DeleteModal";
 
 const CourseModules = () => {
   const [modules, setModules] = useState([

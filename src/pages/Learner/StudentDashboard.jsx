@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import Sidebar, { SidebarItem } from "./Sidebar";
+import Sidebar, { SidebarItem } from "../../components/common/layout/Sidebar";
 import { Outlet } from "react-router-dom";
 import { Home, Bell, Book, FileText } from "lucide-react";
-import Header from "./Header";
-import UserStats from "./UserStats";
-import UserTable from "./UserTable";
+import Header from "../../components/common/layout/Header";
+import UserStats from "../../components/specific/users/UserStats";
+import UserTable from "../../components/specific/users/UserTable";
 
 const StudentDashboard = () => {
   const navItems = [
