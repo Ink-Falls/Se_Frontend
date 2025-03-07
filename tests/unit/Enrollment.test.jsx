@@ -11,7 +11,7 @@ vi.mock("react-router-dom", () => ({
 }));
 
 // Mock the logo import (if it causes issues in testing)
-vi.mock("/src/assets/ARALKADEMYLOGO.png", () => ({
+vi.mock("/src/assets/images/ARALKADEMYLOGO.png", () => ({
   default: "mocked-logo.png",
 }));
 

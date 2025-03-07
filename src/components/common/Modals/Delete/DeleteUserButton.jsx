@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Trash2, XCircle, CheckCircle } from 'lucide-react';
-import Modal from './Modal'; // Import your Modal component
+import Modal from '../../Button/Modal'; // Import your Modal component
 
 function DeleteUserButton({ userId, onDelete }) {
     const [isConfirming, setIsConfirming] = useState(false);

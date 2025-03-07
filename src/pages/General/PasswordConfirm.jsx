@@ -1,8 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "/src/assets/ARALKADEMYLOGO.png";
+import logo from "/src/assets/images/ARALKADEMYLOGO.png";
 
-function EnrollConfirm() {
+function PasswordConfirm() {
   const navigate = useNavigate();
 
   return (
@@ -43,13 +43,12 @@ function EnrollConfirm() {
 
             {/* Success headline */}
             <h2 className="text-[8vw] lg:text-[2.5vw] max-lg:text-[5vw] font-bold text-left text-[#212529]">
-              Successful Enrollment!
+              Password Changed Successfully!
             </h2>
 
             {/* Description text */}
             <p className="text-[3vw] mb-[5vw] lg:mb-[2vw] max-lg:text-[2.5vw] lg:text-[1vw] text-[#64748B] text-left">
-              Please wait for the verification email, or periodically check your
-              enrollment status directly on the enrollment page.
+              You may now continue logging in.
             </p>
 
             {/* Back to Login button */}
@@ -68,4 +67,4 @@ function EnrollConfirm() {
   );
 }
 
-export default EnrollConfirm;
+export default PasswordConfirm;

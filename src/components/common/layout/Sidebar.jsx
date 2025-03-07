@@ -1,49 +1,47 @@
+// src/components/common/Sidebar/Sidebar.jsx  (Assuming it's a common component)
 import { ChevronFirst, ChevronLast, LogOut } from "lucide-react";
-import logo from "/src/assets/ARALKADEMYLOGO.png";
-import { createContext, useContext, useState } from "react";
+import logo from "/src/assets/images/ARALKADEMYLOGO.png"; // Correct relative path
+import React, { createContext, useContext, useState } from "react";  // Import React
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { logoutUser } from "/src/services/authService.js"; // Import logout function
 
 const SidebarContext = createContext();
 
+/**
+ * Sidebar component for navigation.
+ *
+ * @component
+ * @param {object} props - The component's props.
+ * @param {Array<object>} props.navItems - An array of navigation items.  Each item should have `icon`, `text`, and `route` properties.
+ * @param {boolean} props.isSidebarOpen - Controls whether the sidebar is open (for mobile responsiveness).
+ * @param {function} props.setIsSidebarOpen - Function to toggle the sidebar's open/closed state.
+ * @returns {JSX.Element} The Sidebar component.
+ */
 export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
-  const [expanded, setExpanded] = useState(true);
-  const location = useLocation();
-  const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(true); // Controls the expanded/collapsed state of the sidebar (desktop)
+  const location = useLocation();  // Get the current route path
+  const navigate = useNavigate();   // For programmatic navigation
 
-  // Logout Function
+  /**
+   * Handles user logout.
+   * @async
+   * @function handleLogout
+   */
   const handleLogout = async () => {
     try {
-      const token = localStorage.getItem("token");
+      await logoutUser(); // Call the logout service function
+      localStorage.removeItem("token"); // Clear the token
+      // localStorage.removeItem("user"); // Clear other user data, if you store it
 
-      if (token) {
-        const response = await fetch("http://localhost:4000/api/users/logout", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (response.ok) {
-          // Clear auth data from localStorage
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-
-          // Redirect to login page
-          navigate("/");
-        } else {
-          console.error("Logout failed");
-        }
-      } else {
-        // No token found, just redirect
-        navigate("/");
-      }
+      navigate("/login");  // Redirect to the login page
     } catch (error) {
-      console.error("Error during logout:", error);
-      // Still redirect even if there's an error
-      navigate("/");
+      console.error("Logout failed:", error);
+      // Display a user-friendly error message (e.g., using a toast or notification)
+      alert(`Logout failed: ${error.message}`); //  A basic alert; use a better UI element in a real app.
+        navigate("/login"); //even if logout fail, navigate to login
     }
   };
+
 
   return (
     <aside
@@ -74,7 +72,7 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
           <ul className="flex-1 px-3">
             {navItems.map((item) => (
               <SidebarItem
-                key={item.text}
+                key={item.text}  // Use a unique key
                 icon={item.icon}
                 text={item.text}
                 route={item.route}
@@ -97,9 +95,19 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
   );
 }
 
+/**
+ * SidebarItem component for individual navigation items.
+ *
+ * @component
+ * @param {object} props - The component's props.
+ * @param {JSX.Element} props.icon - The icon for the navigation item.
+ * @param {string} props.text - The text label for the navigation item.
+ * @param {string} props.route - The route path for the navigation item.
+ * @returns {JSX.Element} A single sidebar item.
+ */
 export function SidebarItem({ icon, text, route }) {
   const { expanded, currentPath } = useContext(SidebarContext);
-  const isActive = currentPath === route;
+  const isActive = currentPath === route; // Check if the current route matches the item's route
 
   return (
     <li

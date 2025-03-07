@@ -1,10 +1,10 @@
 // AdminUser.jsx
 import React, { useState, useEffect } from "react";
-import Sidebar, { SidebarItem } from "./Sidebar";
-import Header from "./Header";
-import AddUserModal from "./AddUserModal";
-import EditUserModal from "./EditUserModal";
-import DeleteUserButton from "./DeleteUserButton"; // Import
+import Sidebar, { SidebarItem } from "../../components/common/layout/Sidebar";
+import Header from "../../components/common/layout/Header";
+import AddUserModal from "../../components/common/Modals/Add/AddUserModal";
+import EditUserModal from "../../components/common/Modals/Edit/EditUserModal";
+import DeleteUserButton from "../../components/common/Modals/Delete/DeleteUserButton"; // Import
 import {
   MoreVertical,
   ChevronDown,

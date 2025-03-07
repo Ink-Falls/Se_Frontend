@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import Modal from './Modal'; // Your Modal component
+import Modal from '../../Button/Modal'; // Your Modal component
 
 function EditUserModal({ user, onClose, onSave }) {
     const [editedUser, setEditedUser] = useState(user);

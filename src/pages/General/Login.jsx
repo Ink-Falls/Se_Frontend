@@ -1,19 +1,32 @@
+// src/pages/Login/Login.jsx
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
-import logo from "/src/assets/ARALKADEMYLOGO.png";
-import icon from "/src/assets/ARALKADEMYICON.png";
-import nstpLogo from "/src/assets/NSTPLOGO.png";
+import { loginUser } from "../../services/authService"; 
+import { RECAPTCHA_SITE_KEY } from "../../utils/constants";  
+import logo from "../../assets/images/ARALKADEMYLOGO.png";   
+import icon from "../../assets/images/ARALKADEMYICON.png";   
+import nstpLogo from "../../assets/images/NSTPLOGO.png";    
 
+/**
+ * Login component for user authentication.
+ *
+ * @component
+ * @returns {JSX.Element} The Login page JSX.
+ */
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [captchaResponse, setCaptchaResponse] = useState(null);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false); // Add loading state
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const recaptchaRef = useRef(null);
 
+  /**
+   * Resets the reCAPTCHA component.
+   * @function
+   */
   const resetRecaptcha = () => {
     if (recaptchaRef.current) {
       recaptchaRef.current.reset();
@@ -21,72 +34,81 @@ function Login() {
     setCaptchaResponse(null);
   };
 
+    /**
+     * Handles form submission for user login.
+     *
+     * @async
+     * @function handleSubmit
+     * @param {Event} e - The form submission event.
+     * @returns {Promise<void>}
+     */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!captchaResponse) {
-      alert("Please verify the CAPTCHA to proceed.");
+      setError("Please verify the CAPTCHA to proceed."); //Use setError, consistent
       return;
     }
 
-    setError(null);
-    setLoading(true); // Start loading
+    setError(null); //Clear previous error
+    setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:4000/api/users/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password, captchaResponse }),
-      });
+      const data = await loginUser(email, password, captchaResponse); // Use the service function
 
-      if (response.ok) {
-        const data = await response.json();
+      if (data && data.token) {
         localStorage.setItem("token", data.token);
-        navigate("/AdminUser");
-      } else {
-        const errorData = await response.json();
+        navigate("/Admin/Dashboard"); // Redirect to the dashboard
+      }
 
-        // Custom error messages based on HTTP status codes
-        if (response.status === 400) {
-          setError("Invalid email or password. Please try again.");
-        } else if (response.status === 401) {
-          setError("Unauthorized access. Please check your credentials.");
-        } else if (response.status === 500) {
-          setError("Server error. Please try again later.");
-        } else {
-          setError(errorData.message || "An unexpected error occurred.");
+    } catch (err) {
+        // Improved error handling: Log the full error, use more specific messages
+        console.error("Login failed:", err);
+
+        if (err.message === "Invalid credentials") { //Specific error from authService
+            setError("Invalid email or password. Please try again.");
+        } else if (err.message === "Unauthorized") {
+            setError("Unauthorized access. Please check your credentials.");
+        } else if (err.message === 'Captcha verification failed') {
+            setError("Captcha verification failed")
+        }
+        else {
+            setError("An unexpected error occurred. Please try again later.");
         }
 
         resetRecaptcha();
 
-        // Clear error message after 5 seconds
-        setTimeout(() => setError(null), 5000);
-      }
-    } catch (err) {
-      console.error("Login request failed:", err);
-      setError("An error occurred. Please try again.");
-      resetRecaptcha();
     } finally {
-      setLoading(false); // Stop loading, regardless of success/failure
+      setLoading(false);
     }
   };
 
+  /**
+   * Handles changes to the reCAPTCHA response.
+   *
+   * @function handleCaptchaChange
+   * @param {string} value - The reCAPTCHA response value.
+   */
   const handleCaptchaChange = (value) => {
     setCaptchaResponse(value);
   };
 
-  const handleForgotPassword = () => {
-    alert("Forgot Password functionality is not implemented yet.");
-  };
+  /**
+   * Handles the "Forgot Password" button click.
+   *  Placeholder function, now navigates to /forgot-password route.
+   * @function handleForgotPassword
+   */
+    const handleForgotPassword = () => {
+      navigate("/ForgotPassword"); // Navigate to the forgot password page.
+    };
 
+  /**
+   * Handles the "Enroll" button click.
+   *
+   * @function handleEnroll
+   */
   const handleEnroll = () => {
-    const buttonText = "Enroll".trim(); // Trim the text here
-    if (buttonText === "Enroll") {
-      // Now compare trimmed text
-      navigate("/Enrollment");
-    }
+    navigate("/Enrollment");
   };
 
   return (
@@ -230,8 +252,8 @@ function Login() {
                     }}
                   >
                     <ReCAPTCHA
-                      ref={recaptchaRef} // Assign the ref
-                      sitekey="6Ldv39cqAAAAAML6O41KNyqN_sXx7sIOA245Hc1N" // YOUR SITE KEY
+                      ref={recaptchaRef}
+                      sitekey={RECAPTCHA_SITE_KEY}
                       onChange={handleCaptchaChange}
                     />
                   </div>
@@ -242,9 +264,9 @@ function Login() {
                   <button
                     type="submit"
                     className={`flex items-center justify-center min-w-[10rem] max-w-[10rem] px-6 py-3 
-  font-semibold rounded-md transition-colors duration-300 ease-in-out flex-shrink-0
-  text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529] dark:bg-gray-900 dark:hover:bg-yellow-400
-  disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300`}
+          font-semibold rounded-md transition-colors duration-300 ease-in-out flex-shrink-0
+          text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529] dark:bg-gray-900 dark:hover:bg-yellow-400
+          disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300`}
                     disabled={loading}
                   >
                     {loading ? (
