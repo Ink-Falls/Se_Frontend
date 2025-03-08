@@ -1,8 +1,8 @@
 // src/components/Courses.jsx
 import React, { useEffect, useState } from "react";
-import Sidebar, { SidebarItem } from "./Sidebar";
+import Sidebar, { SidebarItem } from "./common/layout/Sidebar";
 import { Home, Book, Bell, FileText, MoreVertical } from "lucide-react";
-import Header from "./Header"; // Import the Header component
+import Header from "./common/layout/Header"; // Import the Header component
 
 const Courses = () => {
   const navItems = [
