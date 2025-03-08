@@ -12,6 +12,7 @@ import {
   getAllEnrollments,
   approveEnrollment,
   rejectEnrollment,
+  deleteEnrollment,
 } from "/src/services/enrollmentService.js";
 
 function AdminEnrollment() {
@@ -181,6 +182,56 @@ function AdminEnrollment() {
     console.log("Editing enrollee:", enrollee);
   };
 
+  const handleDeleteSelected = async (selectedIds) => {
+    try {
+      // Delete each selected enrollment
+      for (const id of selectedIds) {
+        await deleteEnrollment(id);
+      }
+
+      // Refresh the enrollments data after deletion
+      const updatedData = await getAllEnrollments(currentPage);
+      const enrollmentsData = updatedData?.data || updatedData || [];
+      const enrollmentsList = enrollmentsData.enrollments || [];
+
+      // Transform and update state
+      const transformedEnrollees = enrollmentsList.map((enrollment) => ({
+        id: enrollment.enrollment_id,
+        fullName: `${enrollment.first_name} ${
+          enrollment.middle_initial || ""
+        } ${enrollment.last_name}`,
+        status:
+          enrollment.status.charAt(0).toUpperCase() +
+          enrollment.status.slice(1),
+        enrollmentDate: new Date(enrollment.createdAt).toLocaleDateString(),
+        email: enrollment.email,
+        contactNo: enrollment.contact_no,
+        birthDate: enrollment.birth_date,
+        schoolId: enrollment.school_id,
+        yearLevel: enrollment.year_level,
+      }));
+
+      setEnrollees(transformedEnrollees);
+
+      // Update pagination and stats
+      setTotalItems(updatedData?.totalItems || enrollmentsList.length);
+      setTotalPages(
+        updatedData?.totalPages || Math.ceil(enrollmentsList.length / 10) || 1
+      );
+
+      const approved = enrollmentsList.filter(
+        (e) => e.status === "approved"
+      ).length;
+      const pending = enrollmentsList.filter(
+        (e) => e.status === "pending"
+      ).length;
+      setApprovedCount(approved);
+      setPendingCount(pending);
+    } catch (error) {
+      console.error("Error deleting enrollment:", error);
+    }
+  };
+
   return (
     <>
       <div className="flex h-screen bg-gray-100">
@@ -205,6 +256,7 @@ function AdminEnrollment() {
                   onEdit={handleEdit}
                   onApprove={handleApprove}
                   onReject={handleReject}
+                  onDeleteSelected={handleDeleteSelected}
                 />
                 <div className="flex justify-between items-center mt-4">
                   <div>

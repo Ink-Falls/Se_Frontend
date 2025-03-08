@@ -1,8 +1,21 @@
 import React, { useState } from "react";
-import { Edit, Trash2, Filter, Search, FileText, SquarePen } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  Filter,
+  Search,
+  FileText,
+  SquarePen,
+} from "lucide-react";
 import EnrolleeStatusModal from "/src/components/common/Modals/Edit/EnrolleeStatusModal.jsx";
 
-function EnrolleeTable({ enrollees, onDeleteSelected, onApprove, onReject, onDetailsClick }) {
+function EnrolleeTable({
+  enrollees,
+  onDeleteSelected,
+  onApprove,
+  onReject,
+  onDetailsClick,
+}) {
   const [selectedIds, setSelectedIds] = useState([]);
   const [filterStatus, setFilterStatus] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -75,14 +88,14 @@ function EnrolleeTable({ enrollees, onDeleteSelected, onApprove, onReject, onDet
 
   const getStatusStyle = (status) => {
     switch (status.toLowerCase()) {
-      case 'approved':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+      case "approved":
+        return "bg-green-100 text-green-800";
+      case "rejected":
+        return "bg-red-100 text-red-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -202,7 +215,9 @@ function EnrolleeTable({ enrollees, onDeleteSelected, onApprove, onReject, onDet
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span
-                  className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(enrollee.status)}`}
+                  className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(
+                    enrollee.status
+                  )}`}
                 >
                   {enrollee.status}
                 </span>
@@ -216,7 +231,7 @@ function EnrolleeTable({ enrollees, onDeleteSelected, onApprove, onReject, onDet
                   className="text-blue-600 hover:text-blue-900"
                   title="View Details"
                 >
-                  <SquarePen size={20} color="black"/>
+                  <SquarePen size={20} color="black" />
                 </button>
               </td>
             </tr>
