@@ -2,9 +2,12 @@
 import { API_BASE_URL } from '../utils/constants';
 
 /**
- * Fetches all enrollments (admin only).
+ * Fetches all enrollments from the API.
+ *
+ * @async
+ * @function getAllEnrollments
  * @returns {Promise<Array<object>>} An array of enrollment objects.
- * @throws {Error} If the request fails.
+ * @throws {Error} If the API request fails.
  */
 const getAllEnrollments = async () => {
   try {
@@ -16,7 +19,7 @@ const getAllEnrollments = async () => {
     const response = await fetch(`${API_BASE_URL}/enrollments`, {
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json', // Good practice to include
       },
     });
 
@@ -27,30 +30,29 @@ const getAllEnrollments = async () => {
 
     return await response.json();
   } catch (error) {
-     if (error.message) {
-        throw error; //re-throw error caught from response
-     }
-     else{
-        throw new Error("Network error.  Please check your connection."); // Network or other error
-     }
+    console.error("Error fetching enrollments:", error);
+    throw error; // Re-throw the error so the component can handle it
   }
 };
 
-
 /**
- * Approves an enrollment (admin only).
+ * Approves an enrollment by ID.
+ *
+ * @async
+ * @function approveEnrollment
  * @param {number} enrollmentId - The ID of the enrollment to approve.
  * @returns {Promise<object>} The updated enrollment object.
- * @throws {Error} If the request fails.
+ * @throws {Error} If the API request fails.
  */
 const approveEnrollment = async (enrollmentId) => {
   try {
     const token = localStorage.getItem('token');
-      if (!token) {
-      throw new Error("Not authenticated"); // Or redirect to login
+    if (!token) {
+        throw new Error('Not authenticated');
     }
+
     const response = await fetch(`${API_BASE_URL}/enrollments/${enrollmentId}/approve`, {
-      method: 'PATCH',
+      method: 'PATCH', // Use PATCH for partial updates
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -62,29 +64,29 @@ const approveEnrollment = async (enrollmentId) => {
       throw new Error(errorData.message || "Failed to approve enrollment");
     }
 
-    return await response.json(); // Or just return a success message, if that's what the API returns
+    return await response.json();
   } catch (error) {
-    if (error.message) {
-        throw error; //re-throw error caught from response
-     }
-     else{
-        throw new Error("Network error.  Please check your connection."); // Network or other error
-     }
+    console.error("Error approving enrollment:", error);
+    throw error;
   }
 };
 
 /**
- * Rejects an enrollment (admin only).
+ * Rejects an enrollment by ID.
+ *
+ * @async
+ * @function rejectEnrollment
  * @param {number} enrollmentId - The ID of the enrollment to reject.
  * @returns {Promise<object>} The updated enrollment object.
- * @throws {Error} If the request fails.
+ * @throws {Error} If the API request fails.
  */
 const rejectEnrollment = async (enrollmentId) => {
   try {
-    const token = localStorage.getItem('token');
-      if (!token) {
-      throw new Error("Not authenticated"); // Or redirect to login
-    }
+      const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('Not authenticated');
+        }
+
     const response = await fetch(`${API_BASE_URL}/enrollments/${enrollmentId}/reject`, {
       method: 'PATCH',
       headers: {
@@ -100,14 +102,9 @@ const rejectEnrollment = async (enrollmentId) => {
 
     return await response.json();
   } catch (error) {
-     if (error.message) {
-        throw error; //re-throw error caught from response
-     }
-     else{
-        throw new Error("Network error.  Please check your connection."); // Network or other error
-     }
+    console.error("Error rejecting enrollment:", error);
+    throw error;
   }
 };
-
 
 export { getAllEnrollments, approveEnrollment, rejectEnrollment };

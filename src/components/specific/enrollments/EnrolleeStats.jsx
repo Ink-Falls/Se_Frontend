@@ -1,5 +1,18 @@
+// src/components/Enrollment/EnrolleeStats.jsx
 import React from "react";
+import PropTypes from 'prop-types';
 
+
+/**
+ * EnrolleeStats component to display enrollment statistics.
+ *
+ * @component
+ * @param {object} props - The component's props.
+ * @param {number} props.totalEnrollees - The total number of enrollees.
+ * @param {number} props.approvedEnrollees - The number of approved enrollees.
+ * @param {number} props.pendingEnrollees - The number of pending enrollees.
+ * @returns {JSX.Element} The EnrolleeStats component.
+ */
 const EnrolleeStats = ({
   totalEnrollees = 0,
   approvedEnrollees = 0,
