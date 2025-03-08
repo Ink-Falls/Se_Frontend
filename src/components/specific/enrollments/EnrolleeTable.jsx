@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import { Edit, Trash2, Filter, Search, FileText } from "lucide-react";
-import EnrolleeDetailsModal from "../../EnrolleeDetailsModal"; // Import the details modal
-import RejectEnrolleeModal from "../../RejectEnrolleeModal"; // Import the reject modal
+import { Edit, Trash2, Filter, Search, FileText, SquarePen } from "lucide-react";
+import EnrolleeStatusModal from "/src/components/common/Modals/Edit/EnrolleeStatusModal.jsx";
 
-function EnrolleeTable({ enrollees, onDeleteSelected }) {
+function EnrolleeTable({ enrollees, onDeleteSelected, onApprove, onReject, onDetailsClick }) {
   const [selectedIds, setSelectedIds] = useState([]);
   const [filterStatus, setFilterStatus] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -12,6 +11,7 @@ function EnrolleeTable({ enrollees, onDeleteSelected }) {
   const [selectedEnrollee, setSelectedEnrollee] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Handle checkbox selection
   const handleCheckboxChange = (id) => {
@@ -51,6 +51,18 @@ function EnrolleeTable({ enrollees, onDeleteSelected }) {
     setShowDetailsModal(true); // Reopen details modal
   };
 
+  // Handle edit button click
+  const handleEditClick = (enrollee, e) => {
+    e.stopPropagation();
+    setSelectedEnrollee(enrollee);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedEnrollee(null);
+  };
+
   // Filter enrollees by status and search query
   const filteredEnrollees = enrollees
     .filter((enrollee) => {
@@ -60,6 +72,19 @@ function EnrolleeTable({ enrollees, onDeleteSelected }) {
     .filter((enrollee) =>
       enrollee.fullName.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+  const getStatusStyle = (status) => {
+    switch (status.toLowerCase()) {
+      case 'approved':
+        return 'bg-green-100 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
     <div className="bg-white shadow rounded-lg overflow-hidden">
@@ -177,11 +202,7 @@ function EnrolleeTable({ enrollees, onDeleteSelected }) {
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span
-                  className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                    enrollee.status === "Approved"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-yellow-100 text-yellow-800"
-                  }`}
+                  className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(enrollee.status)}`}
                 >
                   {enrollee.status}
                 </span>
@@ -191,13 +212,11 @@ function EnrolleeTable({ enrollees, onDeleteSelected }) {
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent row click from triggering
-                    handleRowClick(enrollee);
-                  }}
-                  className="text-gray-800 hover:text-gray-900"
+                  onClick={(e) => handleEditClick(enrollee, e)}
+                  className="text-blue-600 hover:text-blue-900"
+                  title="View Details"
                 >
-                  <Edit size={16} />
+                  <SquarePen size={20} color="black"/>
                 </button>
               </td>
             </tr>
@@ -222,6 +241,22 @@ function EnrolleeTable({ enrollees, onDeleteSelected }) {
         <RejectEnrolleeModal
           onClose={handleCancelReject}
           onConfirm={handleConfirmReject}
+        />
+      )}
+
+      {/* Enrollee Status Modal */}
+      {isModalOpen && selectedEnrollee && (
+        <EnrolleeStatusModal
+          enrollee={selectedEnrollee}
+          onClose={handleCloseModal}
+          onApprove={() => {
+            onApprove(selectedEnrollee.id);
+            handleCloseModal();
+          }}
+          onReject={() => {
+            onReject(selectedEnrollee.id);
+            handleCloseModal();
+          }}
         />
       )}
     </div>
