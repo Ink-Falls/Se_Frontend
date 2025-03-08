@@ -98,7 +98,7 @@ function NewEnrollment() {
     };
 
     try {
-      const response = await fetch("http://localhost:4000/api/enrollment", {
+      const response = await fetch("http://localhost:4000/api/enrollments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
