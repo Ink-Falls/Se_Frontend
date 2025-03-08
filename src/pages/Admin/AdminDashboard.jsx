@@ -3,6 +3,8 @@ import Sidebar, { SidebarItem } from "/src/components/common/layout/Sidebar.jsx"
 import Header from "/src/components/common/layout/Header.jsx";
 import Modal from "../../components/common/Button/Modal";
 import DeleteModal from "/src/components/common/Modals/Delete/DeleteModal.jsx";
+import AddUserModal from "/src/components/common/Modals/Add/AddUserModal.jsx";
+import CreateGroupModal from "/src/components/common/Modals/Create/CreateGroupModal.jsx";
 import {
     MoreVertical,
     ChevronDown,
@@ -18,6 +20,9 @@ import {
     Users,
     Search,
 } from "lucide-react";
+import UserStats from "/src/components/specific/users/UserStats.jsx";
+import UserTable from "/src/components/specific/users/UserTable.jsx";
+import { getAllUsers } from "/src/services/userService.js";
 
 function AdminDashboard() {
     const [courses, setCourses] = useState([]);
@@ -38,6 +43,19 @@ function AdminDashboard() {
     });
     const [moduleToDelete, setModuleToDelete] = useState(null);
     const [isLoading, setIsLoading] = useState(true); // Add loading state
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [users, setUsers] = useState([]);
+    const [stats, setStats] = useState({
+        totalUsers: 0,
+        totalLearners: 0,
+        totalTeachers: 0,
+        totalAdmins: 0
+    });
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedIds, setSelectedIds] = useState([]);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
 
     const toggleDropdown = (id, event) => {
         event.stopPropagation();
@@ -142,6 +160,62 @@ function AdminDashboard() {
         fetchData();
     }, []);
 
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const userData = await getAllUsers();
+                setUsers(userData);
+
+                // Calculate stats
+                setStats({
+                    totalUsers: userData.length,
+                    totalLearners: userData.filter(u => u.role === 'student').length,
+                    totalTeachers: userData.filter(u => u.role === 'teacher').length,
+                    totalAdmins: userData.filter(u => u.role === 'admin').length
+                });
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        };
+
+        fetchUsers();
+    }, []);
+
+    const handleAddClick = () => {
+        setIsAddModalOpen(true);
+    };
+
+    const handleDeleteSelected = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            };
+
+            // Delete each selected user
+            await Promise.all(selectedIds.map(id =>
+                fetch(`http://localhost:4000/api/users/${id}`, {
+                    method: 'DELETE',
+                    headers
+                })
+            ));
+
+            // Refresh users list after deletion
+            const userData = await getAllUsers();
+            setUsers(userData);
+            setSelectedIds([]);
+            setShowDeleteModal(false);
+        } catch (error) {
+            console.error('Error deleting users:', error);
+        }
+    };
+
+    const handleCreateGroup = (groupData) => {
+        console.log('Creating group:', groupData);
+        setIsCreateGroupModalOpen(false);
+    };
+
     if (isLoading) {
         return <div>Loading...</div>; // Render loading indicator
     }
@@ -152,152 +226,57 @@ function AdminDashboard() {
                 <Sidebar navItems={navItems} />
 
                 <div className="flex-1 p-6 overflow-auto">
-                    {/* Render the Header only once at the top */}
                     <Header title="Users" />
 
-                    {/* Main content */}
-                    <div className="mt-4">
-                        <div className="bg-white shadow rounded-lg">
-                            {/* Your content here */}
-                        </div>
-                    </div>
+                    <UserStats
+                        totalUsers={stats.totalUsers}
+                        totalLearners={stats.totalLearners}
+                        totalTeachers={stats.totalTeachers}
+                        totalAdmins={stats.totalAdmins}
+                    />
 
-                    <div className="flex flex-col md:flex-row gap-4 mt-4 mb-4">
-                        <div className="flex-1 bg-white shadow rounded-lg p-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-2 bg-green-100 rounded-full">
-                                    <Users className="w-7 h-7 text-green-500" />
-                                </div>
-                                <div>
-                                    <h2 className="text-md text-[#64748b]">Users</h2>
-                                    <h2 className="text-xl font-semibold text-[#475569]">0000</h2>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex-1 bg-white shadow rounded-lg p-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-2 bg-green-100 rounded-full">
-                                    <Users className="w-7 h-7 text-green-500" />
-                                </div>
-                                <div>
-                                    <h2 className="text-md text-[#64748b]">Learners</h2>
-                                    <h2 className="text-xl font-semibold text-[#475569]">0000</h2>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex-1 bg-white shadow rounded-lg p-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-2 bg-green-100 rounded-full">
-                                    <Users className="w-7 h-7 text-green-500" />
-                                </div>
-                                <div>
-                                    <h2 className="text-md text-[#64748b]">Teachers</h2>
-                                    <h2 className="text-xl font-semibold text-[#475569]">0000</h2>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex-1 bg-white shadow rounded-lg p-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-2 bg-green-100 rounded-full">
-                                    <Users className="w-7 h-7 text-green-500" />
-                                </div>
-                                <div>
-                                    <h2 className="text-md text-[#64748b]">Admins</h2>
-                                    <h2 className="text-xl font-semibold text-[#475569]">0000</h2>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex-1 bg-white shadow rounded-lg p-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-2 bg-green-100 rounded-full">
-                                    <Users className="w-7 h-7 text-green-500" />
-                                </div>
-                                <div>
-                                    <h2 className="text-md text-[#64748b]">Groups</h2>
-                                    <h2 className="text-xl font-semibold text-[#475569]">0000</h2>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex-1 bg-white shadow rounded-lg p-6">
-                        {/* Filter and Action Buttons */}
-                        <div className="flex items-center gap-4 mb-6">
-                            {/* Filter button (left side) */}
-                            <button
-                                onClick={() => console.log("Filter By: All")}
-                                className="flex text-sm items-center gap-2 py-2 text-[#64748b] rounded-lg"
-                            >
-                                <span>Filter By: All</span>
-                            </button>
-
-                            {/* Buttons on the right side */}
-                            <div className="flex items-center gap-4 ml-auto">
-                                <button
-                                    className="flex items-center gap-2 py-2 rounded-lg"
-                                >
-                                    <Plus className="text-[#475569]" size={22} />
-                                </button>
-                                <button
-                                    className="flex items-center gap-2 py-2 rounded-lg"
-                                >
-                                    <Search className="text-[#475569]" size={20} />
-                                </button>
-                                <button
-                                    onClick={() => console.log("Create Group")}
-                                    className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black"
-                                >
-                                    <Users size={16} />
-                                    <span>Create Group</span>
-                                </button>
-                                <button
-                                    onClick={() => console.log("Generate Report")}
-                                    className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black"
-                                >
-                                    <FileText size={16} />
-                                    <span>Generate Report</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Dynamic Table */}
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full bg-white">
-                                <thead>
-                                    <tr className="bg-gray-100">
-                                        <th className="py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                            {/* Checkbox for header */}
-                                            <input type="checkbox" className="ml-4 form-checkbox h-4 w-4 text-[#212529] rounded" />
-                                        </th>
-                                        <th className="pr-10 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Full Name</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">E-mail</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {/* Example row with checkbox */}
-                                    <tr className="border-b">
-                                        <td className="py-4 text-sm text-gray-900">
-                                            {/* Checkbox for row */}
-                                            <input type="checkbox" className="ml-4 form-checkbox h-4 w-4 text-[#212529] rounded" />
-                                        </td>
-                                        <td className="pr-10 py-4 text-sm text-gray-900">1</td>
-                                        <td className="px-6 py-4 text-sm text-gray-900">Bau bau</td>
-                                        <td className="px-6 py-4 text-sm text-gray-900">Admin</td>
-                                        <td className="px-6 py-4 text-sm text-gray-900">wawawa</td>
-                                    </tr>
-                                    {/* Add more rows as needed */}
-                                </tbody>
-                            </table>
-                        </div>
+                    <div className="bg-white shadow rounded-lg p-6">
+                        {/* User controls moved to UserTable component */}
+                        <UserTable 
+                            users={users}
+                            onEdit={(user) => {
+                                setSelectedUser(user);
+                                setIsEditModalOpen(true);
+                            }}
+                            onAddUser={() => setIsAddModalOpen(true)}
+                            onDelete={() => setShowDeleteModal(true)}
+                            selectedIds={selectedIds}
+                            setSelectedIds={setSelectedIds}
+                            onCreateGroup={() => setIsCreateGroupModalOpen(true)}
+                        />
                     </div>
                 </div>
             </div>
+
+            {isAddModalOpen && (
+                <AddUserModal
+                    onClose={() => setIsAddModalOpen(false)}
+                    onSubmit={(userData) => {
+                        console.log("Creating user:", userData);
+                        setIsAddModalOpen(false);
+                    }}
+                />
+            )}
+
+            {showDeleteModal && (
+                <DeleteModal
+                    onClose={() => setShowDeleteModal(false)}
+                    onConfirm={handleDeleteSelected}
+                    message={`Are you sure you want to delete ${selectedIds.length} selected user${selectedIds.length > 1 ? 's' : ''}?`}
+                />
+            )}
+
+            {isCreateGroupModalOpen && (
+                <CreateGroupModal
+                    onClose={() => setIsCreateGroupModalOpen(false)}
+                    onSave={handleCreateGroup}
+                />
+            )}
         </>
     );
 }
