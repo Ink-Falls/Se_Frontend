@@ -6,26 +6,30 @@ import {
   Navigate,
   useNavigate,
 } from "react-router-dom";
-import Home from "./components/Home.jsx";
-import Login from "./components/Login.jsx";
-import Enrollment from "./components/Enrollment.jsx";
-import NewEnrollment from "./components/NewEnrollment.jsx";
+import Home from "./pages/General/Home.jsx";
+import Login from "./pages/General/Login.jsx";
+import Enrollment from "./pages/Enrollment/Enrollment.jsx";
+import NewEnrollment from "./pages/Enrollment/NewEnrollment.jsx";
 import "./icon.css";
-import StudentDashboard from "./components/StudentDashboard.jsx";
+import StudentDashboard from "./pages/Learner/StudentDashboard.jsx";
 import Courses from "./components/Courses.jsx";
-import Dashboard from "./components/Dashboard.jsx";
+import Dashboard from "./pages/General/Dashboard.jsx";
 import Notifications from "./components/Notifications.jsx";
 import NotificationDetails from "./components/NotificationDetails.jsx";
 import CourseAnnouncements from "./components/CourseAnnouncements.jsx";
 import AnnouncementDetails from "./components/AnnouncementDetails.jsx";
 import CourseModules from "./components/CourseModules.jsx";
-import EnrollConfirm from "./components/EnrollConfirm.jsx";
-import AdminUser from "./components/AdminUser.jsx";
-import AdminModules from "./components/AdminModules.jsx";
-import ForgotPassword from "./components/ForgotPassword.jsx";
-import ChangePassword from "./components/ChangePassword.jsx";
-import PasswordConfirm from "./components/PasswordConfirm.jsx";
-import AdminEnrollment from "./components/AdminEnrollment.jsx";
+import EnrollConfirm from "./pages/Enrollment/EnrollConfirm.jsx";
+import AdminUser from "./pages/Admin/AdminUser.jsx";
+import AdminModules from "./pages/Admin/AdminModules.jsx";
+import ForgotPassword from "./pages/General/ForgotPassword.jsx";
+import ChangePassword from "./pages/General/ChangePassword.jsx";
+import PasswordConfirm from "./pages/General/PasswordConfirm.jsx";
+
+import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
+import AdminCourses from "./pages/Admin/AdminCourses.jsx";
+import AdminEnrollment from "./pages/Admin/AdminEnrollment.jsx";
+import AdminAnnouncements from "./pages/Admin/AdminAnnouncements.jsx";
 
 function App() {
   const isAuthenticated = () => {
@@ -50,10 +54,20 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
+
         <Route path="/Enrollment" element={<Enrollment />} />
         <Route path="/Enrollment/New" element={<NewEnrollment />} />
+
         <Route path="/logout" element={<Logout />} />
+
         <Route path="/Dashboard" element={<Dashboard />} />
+
+        <Route path="/Admin/Dashboard" element={<AdminDashboard />} />
+        <Route path="/Admin/Courses" element={<AdminCourses />} />
+        <Route path="/Admin/Enrollments" element={<AdminEnrollment />} />
+        <Route path="/Admin/Announcements" element={<AdminAnnouncements />} />
+
+
         <Route path="/Notifications" element={<Notifications />} />
         <Route
           path="/NotificationDetails/:id"
@@ -66,12 +80,12 @@ function App() {
         />
         <Route path="/CourseModules" element={<CourseModules />} />
         <Route path="/EnrollConfirm" element={<EnrollConfirm />} />
-        <Route path="/AdminUser" element={<AdminUser />} />
-        <Route path="/AdminModules" element={<AdminModules />} />
+        {/* <Route path="/AdminUser" element={<AdminUser />} />
+        <Route path="/AdminModules" element={<AdminModules />} /> */}
         <Route path="/ForgotPassword" element={<ForgotPassword />} />
         <Route path="/ChangePassword" element={<ChangePassword />} />
         <Route path="/PasswordConfirm" element={<PasswordConfirm />} />
-        <Route path="/AdminEnrollment" element={<AdminEnrollment />} />
+        {/* <Route path="/AdminEnrollment" element={<AdminEnrollment />} /> */}
       </Routes>
     </Router>
   );

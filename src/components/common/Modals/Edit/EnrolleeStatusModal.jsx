@@ -1,0 +1,128 @@
+import React from "react";
+import { X } from "lucide-react";
+
+const EnrolleeDetailsModal = ({ enrollee, onClose, onReject, onApprove }) => {
+  if (!enrollee) return null;
+
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'approved':
+        return 'text-green-600';
+      case 'rejected':
+        return 'text-red-600';
+      case 'pending':
+        return 'text-yellow-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg p-6 w-full max-w-4xl shadow-lg max-h-[90vh] overflow-y-auto">
+        {/* Modal Header */}
+        <div className="flex justify-between items-center mb-6 border-b pb-4">
+          <h2 className="text-2xl font-semibold text-gray-800">Enrollee Details</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Enrollee Details */}
+        <div className="border rounded-lg p-8 bg-gray-50">
+          <div className="grid grid-cols-3 gap-6">
+            {/* Personal Information Section */}
+            <div className="col-span-3">
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">Personal Information</h3>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">First Name</p>
+                  <p className="text-lg text-gray-900">{enrollee.first_name}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Last Name</p>
+                  <p className="text-lg text-gray-900">{enrollee.last_name}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Email</p>
+                  <p className="text-lg text-gray-900">{enrollee.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Contact No.</p>
+                  <p className="text-lg text-gray-900">{enrollee.contact_no}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Birthdate</p>
+                  <p className="text-lg text-gray-900">
+                    {new Date(enrollee.birth_date).toLocaleDateString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Year Level</p>
+                  <p className="text-lg text-gray-900">{enrollee.year_level}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* School Information Section */}
+            <div className="col-span-3">
+              <h3 className="text-lg font-semibold text-gray-700 mb-4 mt-6">School Information</h3>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">School Name</p>
+                  <p className="text-lg text-gray-900">{enrollee.school?.name || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">School Contact</p>
+                  <p className="text-lg text-gray-900">{enrollee.school?.contact_no || 'N/A'}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm font-medium text-gray-600">School Address</p>
+                  <p className="text-lg text-gray-900">{enrollee.school?.address || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Enrollment Status */}
+            <div className="col-span-3">
+              <h3 className="text-lg font-semibold text-gray-700 mb-4 mt-6">Enrollment Status</h3>
+              <div className="bg-white p-4 rounded-md border">
+                <p className="text-sm font-medium text-gray-600">Current Status</p>
+                <p className={`text-lg font-medium ${getStatusColor(enrollee.status)}`}>
+                  {enrollee.status.charAt(0).toUpperCase() + enrollee.status.slice(1)}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="mt-8 flex justify-end space-x-4 border-t pt-4">
+          <button
+            onClick={onClose}
+            className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            Close
+          </button>
+          <button
+            onClick={onReject}
+            className="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+          >
+            Reject
+          </button>
+          <button
+            onClick={onApprove}
+            className="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+          >
+            Approve
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EnrolleeDetailsModal;
