@@ -59,22 +59,31 @@ const approveEnrollment = async (enrollmentId) => {
       throw new Error("Not authenticated");
     }
 
-    // Get admin ID from the JWT token
     const tokenPayload = JSON.parse(atob(token.split('.')[1]));
     const adminId = tokenPayload.id;
 
     const url = `${API_BASE_URL}/enrollments/${enrollmentId}/approve`;
     console.log('Making PATCH request to:', url);
 
+    // First get the enrollment details
+    console.log('Fetching enrollment details for ID:', enrollmentId);
+    const enrollment = await getEnrollmentById(enrollmentId);
+    
+    if (!enrollment) {
+      throw new Error("Enrollment not found");
+    }
+
+    if (!enrollment.year_level) {
+      throw new Error("Year level is missing from enrollment data");
+    }
+
     const requestBody = {
-      enrollmentId,
-      adminId
+      enrollment_id: enrollmentId, // Using snake_case to match backend
+      admin_id: adminId,
+      year_level: enrollment.year_level,
+      status: 'approved'
     };
 
-    console.log('Request headers:', {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json"
-    });
     console.log('Request body:', JSON.stringify(requestBody, null, 2));
 
     const response = await fetch(url, {

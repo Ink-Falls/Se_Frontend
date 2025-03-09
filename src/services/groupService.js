@@ -17,39 +17,36 @@ import { API_BASE_URL } from '../utils/constants';
 export const getAvailableMembers = async (type, groups) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/users`, {
+    const endpoint = type === 'student_teacher' ? 
+      '/users/available-student-teachers' : 
+      '/users/available-learners';
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
 
-    if (!response.ok) throw new Error('Failed to fetch users');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to retrieve members');
+    }
+    
     const data = await response.json();
-    const users = data.users || [];
-
-    // Filter users and return more details
-    const filteredUsers = users.filter(user => {
-      const hasRole = type === 'student_teacher' ? 
-        user.role === 'student_teacher' : 
-        user.role === 'student';
-      
-      const isNotInGroup = !groups.some(group => 
-        group.members?.some(member => member.id === user.id)
-      );
-
-      return hasRole && isNotInGroup;
-    }).map(user => ({
-      id: user.id,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      email: user.email,
-      role: user.role,
-      school_id: user.school_id
-    }));
-
-    return filteredUsers;
+    return type === 'student_teacher' ? 
+      data.map(teacher => ({
+        ...teacher,
+        id: teacher.id,
+        name: teacher.name,
+        email: teacher.email,
+        role: 'student_teacher',
+        group: teacher.studentTeacher?.group_id || null
+      })) :
+      data || [];
   } catch (error) {
+    console.error('Error fetching available members:', error);
     throw error;
   }
 };
@@ -83,6 +80,65 @@ export const createGroup = async (groupData) => {
     if (!response.ok) throw new Error('Failed to create group');
     return await response.json();
   } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Creates a new group and assigns members in a single operation.
+ * @async
+ * @function createGroupWithMembers
+ * @param {Object} groupData - The group data
+ * @param {Array} memberIds - Array of user IDs to be added as members
+ * @returns {Promise<Object>} Created group object with members
+ * @throws {Error} If the API request fails
+ */
+export const createGroupWithMembers = async (groupData) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Authentication token is missing');
+    }
+
+    // Validate required fields
+    if (!groupData.name || !groupData.type) {
+      throw new Error('Group name and type are required');
+    }
+
+    let adminId;
+    try {
+      adminId = JSON.parse(atob(token.split('.')[1])).id;
+    } catch (err) {
+      console.error('Token parsing error:', err);
+      throw new Error('Invalid authentication token');
+    }
+
+    const requestBody = {
+      name: groupData.name,
+      groupType: groupData.type,
+      adminId: adminId,
+      memberIds: groupData.members?.map(member => member.id) || []
+    };
+
+    console.log('Request body:', requestBody); // Debug log
+
+    const response = await fetch(`${API_BASE_URL}/groups`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Server response:', error); // Debug log
+      throw new Error(error.message || 'Failed to create group with members');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating group:', error);
     throw error;
   }
 };
@@ -143,7 +199,9 @@ export const deleteGroup = async (groupId) => {
 export const assignMembers = async (groupId, memberIds, type) => {
   try {
     const token = localStorage.getItem('token');
-    const endpoint = type === 'student_teacher' ? '/groups/assign-student-teachers' : '/groups/assign-learners';
+    const endpoint = type === 'student_teacher' ? 
+      `/groups/${groupId}/student-teachers` : 
+      `/groups/${groupId}/learners`;
     
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
@@ -152,14 +210,17 @@ export const assignMembers = async (groupId, memberIds, type) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        group_id: groupId,
         member_ids: memberIds
       }),
     });
 
-    if (!response.ok) throw new Error('Failed to assign members');
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to assign members');
+    }
     return await response.json();
   } catch (error) {
+    console.error('Error assigning members:', error);
     throw error;
   }
 };
