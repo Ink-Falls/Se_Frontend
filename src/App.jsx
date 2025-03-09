@@ -1,4 +1,4 @@
-import React, { useEffect } from "react"; // Import useEffect
+import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
   Route,
@@ -12,20 +12,20 @@ import Enrollment from "./pages/Enrollment/Enrollment.jsx";
 import NewEnrollment from "./pages/Enrollment/NewEnrollment.jsx";
 import "./icon.css";
 import StudentDashboard from "./pages/Learner/StudentDashboard.jsx";
+// Updated path to match component's actual location
 import Courses from "./components/Courses.jsx";
 import Dashboard from "./pages/General/Dashboard.jsx";
-import Notifications from "./components/Notifications.jsx";
-import NotificationDetails from "./components/NotificationDetails.jsx";
-import CourseAnnouncements from "./components/CourseAnnouncements.jsx";
-import AnnouncementDetails from "./components/AnnouncementDetails.jsx";
-import CourseModules from "./components/CourseModules.jsx";
+import Notifications from "./pages/General/Notifications.jsx";
+import NotificationDetails from "./pages/General/NotificationDetails.jsx";
+import CourseAnnouncements from "./pages/Teacher/CourseAnnouncements.jsx";
+import AnnouncementDetails from "./pages/Teacher/AnnouncementDetails.jsx";
+import CourseModules from "./pages/Teacher/CourseModules.jsx";
 import EnrollConfirm from "./pages/Enrollment/EnrollConfirm.jsx";
 import AdminUser from "./pages/Admin/AdminUser.jsx";
 import AdminModules from "./pages/Admin/AdminModules.jsx";
 import ForgotPassword from "./pages/General/ForgotPassword.jsx";
 import ChangePassword from "./pages/General/ChangePassword.jsx";
 import PasswordConfirm from "./pages/General/PasswordConfirm.jsx";
-
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import AdminCourses from "./pages/Admin/AdminCourses.jsx";
 import AdminEnrollment from "./pages/Admin/AdminEnrollment.jsx";

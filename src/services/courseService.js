@@ -1,5 +1,17 @@
+/**
+ * @module courseService
+ * @description Service module for handling course-related API operations
+ */
+
 import { API_BASE_URL } from '../utils/constants';
 
+/**
+ * Fetches all courses from the API.
+ * @async
+ * @function getAllCourses
+ * @returns {Promise<Array>} Array of course objects
+ * @throws {Error} If the API request fails
+ */
 export const getAllCourses = async () => {
   try {
     const token = localStorage.getItem('token');
@@ -30,6 +42,14 @@ export const getAllCourses = async () => {
   }
 };
 
+/**
+ * Fetches a specific course by ID.
+ * @async
+ * @function getCourseById
+ * @param {number|string} courseId - The ID of the course to fetch
+ * @returns {Promise<Object|null>} Course object if found, null otherwise
+ * @throws {Error} If the API request fails
+ */
 export const getCourseById = async (courseId) => {
   try {
     const token = localStorage.getItem('token');
@@ -62,6 +82,15 @@ export const getCourseById = async (courseId) => {
   }
 };
 
+/**
+ * Assigns a teacher to a course.
+ * @async
+ * @function assignTeacher
+ * @param {number|string} courseId - The ID of the course
+ * @param {number|string} teacherId - The ID of the teacher to assign
+ * @returns {Promise<Object>} Updated course object
+ * @throws {Error} If the API request fails
+ */
 export const assignTeacher = async (courseId, teacherId) => {
   try {
     const token = localStorage.getItem('token');

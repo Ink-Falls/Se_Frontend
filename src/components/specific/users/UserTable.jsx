@@ -3,6 +3,19 @@ import { SquarePen, Plus, Search, Users, FileText, Filter, Trash2 } from 'lucide
 
 const UserTable = ({ users, onEdit, onDelete, onAddUser, selectedIds, setSelectedIds, onCreateGroup }) => {
   // Remove local selectedIds state since it's now passed as prop
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const ROWS_PER_PAGE = 10;
+
+  // Calculate pagination numbers
+  const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
+  const endIndex = startIndex + ROWS_PER_PAGE;
+  const paginatedUsers = users.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(users.length / ROWS_PER_PAGE);
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
 
   const handleCheckboxChange = (id) => {
     setSelectedIds(prev =>
@@ -91,8 +104,8 @@ const UserTable = ({ users, onEdit, onDelete, onAddUser, selectedIds, setSelecte
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {users.map((user, index) => (
-              <tr key={user.id} className="hover:bg-gray-50">
+            {paginatedUsers.map((user, index) => (
+              <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <input
                     type="checkbox"
@@ -124,6 +137,35 @@ const UserTable = ({ users, onEdit, onDelete, onAddUser, selectedIds, setSelecte
             ))}
           </tbody>
         </table>
+
+        {/* Add Pagination Controls */}
+        <div className="px-6 py-4 flex items-center justify-between border-t">
+          <div className="text-sm text-gray-700">
+            Showing {startIndex + 1} to {Math.min(endIndex, users.length)} of{" "}
+            {users.length} entries
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-1 rounded border bg-white text-gray-600 
+                       hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <span className="px-4 py-1 text-gray-600">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+              className="px-3 py-1 rounded border bg-white text-gray-600 
+                       hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
