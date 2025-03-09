@@ -1,18 +1,40 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import logo from "/src/assets/images/ARALKADEMYLOGO.png";
+import { resetPassword } from "../../services/authService"; // Import function
 
 function ChangePassword() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [message, setMessage] = useState("");
 
-  const handleConfirm = () => {
-    // Add validation logic here if needed
-    if (password === confirmPassword) {
-      navigate("/PasswordConfirm"); // Navigate to PasswordConfirm
-    } else {
-      alert("Passwords do not match. Please try again.");
+  const email = location.state?.email;
+
+  useEffect(() => {
+    if (!email) {
+      navigate("/ForgotPassword");
+    }
+  }, [email]);
+
+  const handleConfirm = async () => {
+    if (!email) {
+      setMessage("Error: No email found. Please restart the process.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setMessage("Passwords do not match. Please try again.");
+      return;
+    }
+
+    try {
+      await resetPassword(email, password);
+      setMessage("Password reset successfully! Redirecting...");
+      navigate("/PasswordConfirm", { state: { passwordReset: true }, replace: true });
+    } catch (error) {
+      setMessage(error.message || "Failed to reset password. Please try again.");
     }
   };
 
@@ -26,11 +48,7 @@ function ChangePassword() {
     >
       {/* Header */}
       <header className="py-[3vw] px-[4vw] lg:py-[1.5vw] lg:px-[2vw] bg-[#121212] text-[#F6BA18] flex justify-between items-center shadow-xl">
-        <img
-          src={logo}
-          alt="ARALKADEMY Logo"
-          className="h-[5vw] lg:h-[2.5vw]"
-        />
+        <img src={logo} alt="ARALKADEMY Logo" className="h-[5vw] lg:h-[2.5vw]" />
         <button
           onClick={() => navigate("/enroll")}
           className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-white transition duration-300"
@@ -74,6 +92,8 @@ function ChangePassword() {
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
           </div>
+
+          {message && <p className="text-red-500 mt-2">{message}</p>}
 
           {/* Confirm Button */}
           <div className="flex justify-end mt-[4vw] lg:mt-[2vw]">

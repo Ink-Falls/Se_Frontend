@@ -25,6 +25,7 @@ import AdminModules from "./pages/Admin/AdminModules.jsx";
 import ForgotPassword from "./pages/General/ForgotPassword.jsx";
 import ChangePassword from "./pages/General/ChangePassword.jsx";
 import PasswordConfirm from "./pages/General/PasswordConfirm.jsx";
+import VerifyCode from "./pages/General/VerifyCode.jsx";
 
 import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import AdminCourses from "./pages/Admin/AdminCourses.jsx";
@@ -85,6 +86,7 @@ function App() {
         <Route path="/ForgotPassword" element={<ForgotPassword />} />
         <Route path="/ChangePassword" element={<ChangePassword />} />
         <Route path="/PasswordConfirm" element={<PasswordConfirm />} />
+        <Route path="/VerifyCode" element={<VerifyCode />} />
         {/* <Route path="/AdminEnrollment" element={<AdminEnrollment />} /> */}
       </Routes>
     </Router>
