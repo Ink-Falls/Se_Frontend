@@ -45,6 +45,8 @@ function AdminDashboard() {
     const [isLoading, setIsLoading] = useState(true); // Add loading state
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [users, setUsers] = useState([]);
+    const [filteredUsers, setFilteredUsers] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
     const [stats, setStats] = useState({
         totalUsers: 0,
         totalLearners: 0,
@@ -56,6 +58,7 @@ function AdminDashboard() {
     const [selectedIds, setSelectedIds] = useState([]);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
+    const [roleFilter, setRoleFilter] = useState('all');
 
     const toggleDropdown = (id, event) => {
         event.stopPropagation();
@@ -181,6 +184,39 @@ function AdminDashboard() {
         fetchUsers();
     }, []);
 
+    useEffect(() => {
+        // Filter users based on both search query and role
+        let filteredResults = [...users];
+        
+        // Apply role filter first
+        if (roleFilter !== 'all') {
+            filteredResults = filteredResults.filter(user => 
+                user.role.toLowerCase() === roleFilter.toLowerCase()
+            );
+        }
+
+        // Then apply search filter
+        if (searchQuery) {
+            filteredResults = filteredResults.filter(user => {
+                const fullName = `${user.first_name} ${user.middle_initial || ''} ${user.last_name}`.toLowerCase();
+                const email = user.email?.toLowerCase() || '';
+                const searchTerm = searchQuery.toLowerCase();
+                
+                return fullName.includes(searchTerm) || email.includes(searchTerm);
+            });
+        }
+
+        setFilteredUsers(filteredResults);
+    }, [searchQuery, users, roleFilter]);
+
+    const handleSearch = (query) => {
+        setSearchQuery(query);
+    };
+
+    const handleFilterChange = (filter) => {
+        setRoleFilter(filter);
+    };
+
     const handleAddClick = () => {
         setIsAddModalOpen(true);
     };
@@ -254,7 +290,7 @@ function AdminDashboard() {
                     <div className="bg-white shadow rounded-lg p-6">
                         {/* User controls moved to UserTable component */}
                         <UserTable 
-                            users={users}
+                            users={filteredUsers} // Pass filtered users instead of all users
                             onEdit={(user) => {
                                 setSelectedUser(user);
                                 setIsEditModalOpen(true);
@@ -263,7 +299,10 @@ function AdminDashboard() {
                             onDelete={() => setShowDeleteModal(true)}
                             selectedIds={selectedIds}
                             setSelectedIds={setSelectedIds}
+                            onSearch={handleSearch} // Pass search handler
                             onCreateGroup={() => setIsCreateGroupModalOpen(true)}
+                            onFilterChange={handleFilterChange} // Add this prop
+                            currentFilter={roleFilter} // Add this prop
                         />
                     </div>
                 </div>

@@ -6,6 +6,7 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
   const [enrollee, setEnrollee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [approvalError, setApprovalError] = useState(null);
 
   useEffect(() => {
     const fetchEnrolleeData = async () => {
@@ -36,10 +37,19 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
 
   const handleApprove = async () => {
     try {
+      setApprovalError(null); // Clear any previous error
+      
+      if (!enrollee.year_level) {
+        setApprovalError("Cannot approve: Year level is missing");
+        return;
+      }
+
       await onApprove(enrolleeId);
       onClose();
     } catch (error) {
-      console.error("Error approving enrollment:", error);
+      console.error("Error in approval process:", error);
+      setApprovalError(error.message || "Failed to complete approval process");
+      // Keep modal open so user can see error
     }
   };
 
@@ -224,6 +234,13 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
             </div>
           </div>
         </div>
+
+        {/* Add error message display */}
+        {approvalError && (
+          <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
+            {approvalError}
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="mt-8 flex justify-end space-x-4 border-t pt-4">

@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
 import { SquarePen, Plus, Search, Users, FileText, Filter, Trash2 } from 'lucide-react';
 
-const UserTable = ({ users, onEdit, onDelete, onAddUser, selectedIds, setSelectedIds, onCreateGroup }) => {
+const UserTable = ({ 
+  users, 
+  onEdit, 
+  onDelete, 
+  onAddUser, 
+  selectedIds, 
+  setSelectedIds, 
+  onCreateGroup,
+  onSearch, // Add onSearch prop
+  onFilterChange, // Add this prop
+  currentFilter // Add this prop
+}) => {
   // Remove local selectedIds state since it's now passed as prop
   
   const [currentPage, setCurrentPage] = useState(1);
@@ -27,6 +38,11 @@ const UserTable = ({ users, onEdit, onDelete, onAddUser, selectedIds, setSelecte
     setSelectedIds(selectedIds.length === users.length ? [] : users.map(user => user.id));
   };
 
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    onSearch(query); // Call the search handler from parent
+  };
+
   return (
     <div>
       {/* Controls Section */}
@@ -41,14 +57,34 @@ const UserTable = ({ users, onEdit, onDelete, onAddUser, selectedIds, setSelecte
             <span>Delete Selected ({selectedIds.length})</span>
           </button>
         )}
-        {/* Filter button (left side) */}
-        <button
-          onClick={() => console.log("Filter By: All")}
-          className="flex text-sm items-center gap-2 py-2 text-[#64748b] rounded-lg"
-        >
-          <Filter size={16} />
-          <span>Filter By: All</span>
-        </button>
+        
+        {/* Replace Filter button with Filter dropdown */}
+        <div className="relative">
+          <select
+            value={currentFilter}
+            onChange={(e) => onFilterChange(e.target.value)}
+            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none"
+          >
+            <option value="all">Filter By: All</option>
+            <option value="learner">Filter By: Learner</option>
+            <option value="teacher">Filter By: Teacher</option>
+            <option value="admin">Filter By: Admin</option>
+          </select>
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Filter size={16} className="text-gray-400" />
+          </div>
+        </div>
+
+        {/* Search input */}
+        <div className="flex items-center relative">
+          <input
+            type="text"
+            placeholder="Search users..."
+            onChange={handleSearchChange}
+            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
+          />
+          <Search className="absolute left-3 text-[#475569]" size={20} />
+        </div>
 
         {/* Buttons on the right side */}
         <div className="flex items-center gap-4 ml-auto">
@@ -57,9 +93,6 @@ const UserTable = ({ users, onEdit, onDelete, onAddUser, selectedIds, setSelecte
             className="text-white p-2 rounded-full"
           >
             <Plus size={20} className="text-[#475569]" />
-          </button>
-          <button className="flex items-center gap-2 py-2 rounded-lg">
-            <Search className="text-[#475569]" size={20} />
           </button>
           <button
             onClick={onCreateGroup}
