@@ -1,5 +1,7 @@
 // src/services/authService.js
 import { API_BASE_URL } from '../utils/constants';
+import tokenService from './tokenService';
+import fetchWithInterceptor from './apiService';
 
 /**
  * Handles user login.
@@ -36,7 +38,9 @@ const loginUser = async (email, password, captchaResponse) => {
       }
     }
 
-    return await response.json();
+    const data = await response.json();
+    tokenService.saveTokens(data.accessToken, data.refreshToken); // Save both tokens
+    return data;
   } catch (error) {
       if (error.message) {
         throw error; //re-throw error caught from response
@@ -57,33 +61,13 @@ const loginUser = async (email, password, captchaResponse) => {
  */
 const logoutUser = async () => {
   try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      // No token?  They're already logged out (in a sense).  Don't throw an error.
-      return;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`, // Include the token for authentication
-      },
+    await fetchWithInterceptor(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST'
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Logout failed");
-    }
-    // Server should invalidate the token on its end.  We don't need to return anything.
-
+    tokenService.removeTokens();
   } catch (error) {
-      if (error.message) {
-        throw error; //re-throw error caught from response
-     }
-     else{
-        throw new Error("Network error.  Please check your connection."); // Network or other error
-     }
+    console.error('Logout error:', error);
+    tokenService.removeTokens(); // Remove tokens even if logout fails
   }
 };
 
@@ -184,4 +168,59 @@ const resetPassword = async (email, password) => {
   }
 };
 
-export { loginUser, logoutUser, forgotPassword, verifyResetCode, resetPassword };
+/**
+ * Validates the current token.
+ * 
+ * @async
+ * @function validateToken
+ * @returns {Promise<object>} - Validation response
+ * @throws {Error} - If validation fails
+ */
+const validateToken = async () => {
+  try {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/auth/validate`, {
+      method: 'GET'
+    });
+
+    if (!response.ok) {
+      throw new Error('Token validation failed');
+    }
+
+    return await response.json();
+  } catch (error) {
+    throw new Error(error.message || 'Token validation failed');
+  }
+};
+
+/**
+ * Refreshes the user's token.
+ * 
+ * @async
+ * @function refreshUserToken
+ * @param {string} refreshToken - The refresh token
+ * @returns {Promise<object>} - New tokens
+ * @throws {Error} - If refresh fails
+ */
+const refreshUserToken = async (refreshToken) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Token refresh failed');
+    }
+
+    const data = await response.json();
+    tokenService.saveTokens(data.accessToken, data.refreshToken);
+    return data;
+  } catch (error) {
+    throw new Error(error.message || 'Failed to refresh token');
+  }
+};
+
+export { loginUser, logoutUser, forgotPassword, verifyResetCode, resetPassword, validateToken, refreshUserToken };
