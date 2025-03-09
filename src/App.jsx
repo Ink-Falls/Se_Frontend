@@ -31,6 +31,7 @@ import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import AdminCourses from "./pages/Admin/AdminCourses.jsx";
 import AdminEnrollment from "./pages/Admin/AdminEnrollment.jsx";
 import AdminAnnouncements from "./pages/Admin/AdminAnnouncements.jsx";
+import Error404 from "./pages/General/Error404.jsx";
 
 function App() {
   const isAuthenticated = () => {
@@ -62,12 +63,12 @@ function App() {
         <Route path="/logout" element={<Logout />} />
 
         <Route path="/Dashboard" element={<Dashboard />} />
+        <Route path="/Error404" element={<Error404 />} />
 
         <Route path="/Admin/Dashboard" element={<AdminDashboard />} />
         <Route path="/Admin/Courses" element={<AdminCourses />} />
         <Route path="/Admin/Enrollments" element={<AdminEnrollment />} />
         <Route path="/Admin/Announcements" element={<AdminAnnouncements />} />
-
 
         <Route path="/Notifications" element={<Notifications />} />
         <Route
