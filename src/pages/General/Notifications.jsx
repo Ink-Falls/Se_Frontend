@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import Sidebar from "./common/layout/Sidebar";
+import Sidebar from "../../components/common/layout/Sidebar";
 import { Book, Bell } from "lucide-react";
-import Header from "./common/layout/Header";
+import Header from "../../components/common/layout/Header";
 import NotificationsComponent from "./NotificationsComponent";
-import MobileNavBar from "./common/layout/MobileNavbar"; // Import the bottom nav bar
+import MobileNavBar from "../../components/common/layout/MobileNavbar"; // Import the bottom nav bar
 
 const Notifications = () => {
   // Sidebar Navigation Items (Only for large screens)
