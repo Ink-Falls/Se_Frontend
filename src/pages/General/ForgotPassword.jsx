@@ -1,10 +1,28 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "/src/assets/images/ARALKADEMYLOGO.png";
+import { forgotPassword } from "../../services/authService"; // Adjust the path accordingly
 
 function ForgotPassword() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setMessage("Please enter your email.");
+      return;
+    }
+
+    try {
+      await forgotPassword(email);
+      setMessage("Password reset code sent! Check your email.");
+      navigate("/VerifyCode", { state: { email } });
+    } catch (error) {
+      setMessage(error.message || "Something went wrong. Please try again.");
+      console.error("Forgot password error:", error);
+    }
+  };
 
   return (
     <div
@@ -15,11 +33,7 @@ function ForgotPassword() {
       }}
     >
       <header className="py-[3vw] px-[4vw] lg:py-[1.5vw] lg:px-[2vw] bg-[#121212] text-[#F6BA18] flex justify-between items-center shadow-xl">
-        <img
-          src={logo}
-          alt="ARALKADEMY Logo"
-          className="h-[5vw] lg:h-[2.5vw]"
-        />
+        <img src={logo} alt="ARALKADEMY Logo" className="h-[5vw] lg:h-[2.5vw]" />
         <button
           onClick={() => navigate("/enroll")}
           className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-white transition duration-300"
@@ -44,12 +58,13 @@ function ForgotPassword() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+          {message && <p className="text-red-500 mt-2">{message}</p>}
           <div className="flex justify-end mt-[4vw] lg:mt-[2vw]">
             <button
-              onClick={() => navigate("/ChangePassword")}
+              onClick={handleForgotPassword}
               className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] lg:py-[0.4vw] lg:px-[3vw] lg:text-[1vw] bg-[#212529] text-white font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition duration-300"
             >
-              Send link
+              Send code
             </button>
           </div>
         </div>

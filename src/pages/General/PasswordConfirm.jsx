@@ -1,9 +1,16 @@
-import React from "react";
+import React, {useEffect} from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "/src/assets/images/ARALKADEMYLOGO.png";
 
 function PasswordConfirm() {
   const navigate = useNavigate();
+  const passwordReset = location.state?.passwordReset;
+
+  useEffect(() => {
+    if (!passwordReset) {
+      navigate("/Login");
+    }
+  }, []);
 
   return (
     <>
@@ -27,7 +34,7 @@ function PasswordConfirm() {
 
           {/* Log In button */}
           <button
-            onClick={() => navigate("/Login")}
+            onClick={() => navigate("/Login", { replace: true })}
             className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
           >
             Log In
