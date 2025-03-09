@@ -17,6 +17,28 @@ const EnrolleeDetailsModal = ({ enrollee, onClose, onReject, onApprove }) => {
     }
   };
 
+  const renderActionButtons = () => {
+    if (enrollee.status.toLowerCase() === 'pending') {
+      return (
+        <>
+          <button
+            onClick={onReject}
+            className="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+          >
+            Reject
+          </button>
+          <button
+            onClick={onApprove}
+            className="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+          >
+            Approve
+          </button>
+        </>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg p-6 w-full max-w-4xl shadow-lg max-h-[90vh] overflow-y-auto">
@@ -107,18 +129,7 @@ const EnrolleeDetailsModal = ({ enrollee, onClose, onReject, onApprove }) => {
           >
             Close
           </button>
-          <button
-            onClick={onReject}
-            className="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-          >
-            Reject
-          </button>
-          <button
-            onClick={onApprove}
-            className="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-          >
-            Approve
-          </button>
+          {renderActionButtons()}
         </div>
       </div>
     </div>
