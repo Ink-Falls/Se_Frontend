@@ -31,22 +31,35 @@ import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import AdminCourses from "./pages/Admin/AdminCourses.jsx";
 import AdminEnrollment from "./pages/Admin/AdminEnrollment.jsx";
 import AdminAnnouncements from "./pages/Admin/AdminAnnouncements.jsx";
-import Error404 from "./pages/General/Error404.jsx";
+import Error404 from "./pages/Errors/Error404.jsx"; // Updated import path
+import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
+import { clearAuthData } from './utils/auth';
 
 function App() {
   const isAuthenticated = () => {
     return !!localStorage.getItem("token");
   };
 
-  // Inline Logout component
+  // Updated Logout component
   const Logout = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-      // still not working
-      localStorage.removeItem("token");
-      navigate("/login", { replace: true });
-    }, [navigate]); // The dependency array was the issue!
+      const handleLogout = async () => {
+        try {
+          // Add API logout call here if needed
+          clearAuthData();
+          navigate("/login", { replace: true });
+        } catch (error) {
+          console.error("Logout failed:", error);
+          // Still clear local data and redirect even if API call fails
+          clearAuthData();
+          navigate("/login", { replace: true });
+        }
+      };
+
+      handleLogout();
+    }, [navigate]);
 
     return null;
   };
@@ -54,41 +67,32 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
+        {/* Public routes - accessible when not logged in */}
+        <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/Enrollment" element={<PublicRoute><Enrollment /></PublicRoute>} />
+        <Route path="/Enrollment/New" element={<PublicRoute><NewEnrollment /></PublicRoute>} />
+        <Route path="/ForgotPassword" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+        <Route path="/ChangePassword" element={<PublicRoute><ChangePassword /></PublicRoute>} />
+        <Route path="/PasswordConfirm" element={<PublicRoute><PasswordConfirm /></PublicRoute>} />
+        <Route path="/VerifyCode" element={<PublicRoute><VerifyCode /></PublicRoute>} />
+        <Route path="/EnrollConfirm" element={<PublicRoute><EnrollConfirm /></PublicRoute>} />
 
-        <Route path="/Enrollment" element={<Enrollment />} />
-        <Route path="/Enrollment/New" element={<NewEnrollment />} />
+        {/* Protected routes - only accessible when logged in */}
+        <Route path="/logout" element={<ProtectedRoute><Logout /></ProtectedRoute>} />
+        <Route path="/Dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/Admin/Dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/Admin/Courses" element={<ProtectedRoute><AdminCourses /></ProtectedRoute>} />
+        <Route path="/Admin/Enrollments" element={<ProtectedRoute><AdminEnrollment /></ProtectedRoute>} />
+        <Route path="/Admin/Announcements" element={<ProtectedRoute><AdminAnnouncements /></ProtectedRoute>} />
+        <Route path="/Notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+        <Route path="/NotificationDetails/:id" element={<ProtectedRoute><NotificationDetails /></ProtectedRoute>} />
+        <Route path="/CourseAnnouncements" element={<ProtectedRoute><CourseAnnouncements /></ProtectedRoute>} />
+        <Route path="/AnnouncementDetails/:id" element={<ProtectedRoute><AnnouncementDetails /></ProtectedRoute>} />
+        <Route path="/CourseModules" element={<ProtectedRoute><CourseModules /></ProtectedRoute>} />
 
-        <Route path="/logout" element={<Logout />} />
-
-        <Route path="/Dashboard" element={<Dashboard />} />
-        <Route path="/Error404" element={<Error404 />} />
-
-        <Route path="/Admin/Dashboard" element={<AdminDashboard />} />
-        <Route path="/Admin/Courses" element={<AdminCourses />} />
-        <Route path="/Admin/Enrollments" element={<AdminEnrollment />} />
-        <Route path="/Admin/Announcements" element={<AdminAnnouncements />} />
-
-        <Route path="/Notifications" element={<Notifications />} />
-        <Route
-          path="/NotificationDetails/:id"
-          element={<NotificationDetails />}
-        />
-        <Route path="/CourseAnnouncements" element={<CourseAnnouncements />} />
-        <Route
-          path="/AnnouncementDetails/:id"
-          element={<AnnouncementDetails />}
-        />
-        <Route path="/CourseModules" element={<CourseModules />} />
-        <Route path="/EnrollConfirm" element={<EnrollConfirm />} />
-        {/* <Route path="/AdminUser" element={<AdminUser />} />
-        <Route path="/AdminModules" element={<AdminModules />} /> */}
-        <Route path="/ForgotPassword" element={<ForgotPassword />} />
-        <Route path="/ChangePassword" element={<ChangePassword />} />
-        <Route path="/PasswordConfirm" element={<PasswordConfirm />} />
-        <Route path="/VerifyCode" element={<VerifyCode />} />
-        {/* <Route path="/AdminEnrollment" element={<AdminEnrollment />} /> */}
+        {/* Error routes */}
+        <Route path="*" element={<Error404 />} />
       </Routes>
     </Router>
   );
