@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Sidebar from "./common/layout/Sidebar";
-import Header from "./common/layout/Header";
-import BlackHeader from "./common/layout/BlackHeader";
+import Sidebar from "../../components/common/layout/Sidebar";
+import Header from "../../components/common/layout/Header";
+import BlackHeader from "../../components/common/layout/BlackHeader";
 import {
   ArrowLeft,
   Trash2,
@@ -14,8 +14,8 @@ import {
   User,
   LineChart,
 } from "lucide-react";
-import Modal from "./common/Button/Modal"; // Import the Modal component
-import DeleteModal from "./common/Modals/Delete/DeleteModal"; // Import the DeleteModal component
+import Modal from "../../components/common/Button/Modal"; // Import the Modal component
+import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // Import the DeleteModal component
 
 const announcements = [
   {

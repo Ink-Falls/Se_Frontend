@@ -1,7 +1,84 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { getEnrollmentById } from "/src/services/enrollmentService.js";
 
-const EnrolleeDetailsModal = ({ enrollee, onClose, onReject, onApprove }) => {
+const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
+  const [enrollee, setEnrollee] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchEnrolleeData = async () => {
+      try {
+        if (!enrolleeId) {
+          throw new Error("No enrollment ID provided");
+        }
+
+        setLoading(true);
+        setError(null);
+        
+        const data = await getEnrollmentById(enrolleeId);
+        if (!data) {
+          throw new Error("No enrollment data found");
+        }
+        
+        setEnrollee(data);
+      } catch (err) {
+        console.error("Error fetching enrollee data:", err);
+        setError(err.message || "Failed to load enrollee details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEnrolleeData();
+  }, [enrolleeId]);
+
+  const handleApprove = async () => {
+    try {
+      await onApprove(enrolleeId);
+      onClose();
+    } catch (error) {
+      console.error("Error approving enrollment:", error);
+    }
+  };
+
+  const handleReject = async () => {
+    try {
+      await onReject(enrolleeId);
+      onClose();
+    } catch (error) {
+      console.error("Error rejecting enrollment:", error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="bg-white p-6 rounded-lg">
+          <p className="text-gray-700">Loading enrollment details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="bg-white p-6 rounded-lg">
+          <h3 className="text-red-600 font-semibold mb-2">Error</h3>
+          <p className="text-gray-700">{error}</p>
+          <button
+            onClick={onClose}
+            className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!enrollee) return null;
 
   const getStatusColor = (status) => {
@@ -17,18 +94,41 @@ const EnrolleeDetailsModal = ({ enrollee, onClose, onReject, onApprove }) => {
     }
   };
 
+  const getSchoolInfo = (schoolId) => {
+    const schools = {
+      1001: {
+        name: "Asuncion Consunji Elementary School (ACES)",
+        contact: "not assigned yet",
+        address: "Brgy. Imelda, Samal, Bataan"
+      },
+      1002: {
+        name: "University of Santo Tomas (UST)",
+        contact: "(02) 3406 1611",
+        address: "España Blvd, Sampaloc, Manila"
+      },
+      1003: {
+        name: "De lasalle University (DLSU)",
+        contact: "(02) 8524 4611",
+        address: "Taft Ave, Malate, Manila"
+      }
+    };
+    return schools[schoolId] || { name: 'N/A', contact: 'N/A', address: 'N/A' };
+  };
+
+  const schoolInfo = getSchoolInfo(enrollee.school_id);
+
   const renderActionButtons = () => {
     if (enrollee.status.toLowerCase() === 'pending') {
       return (
         <>
           <button
-            onClick={onReject}
+            onClick={handleReject}
             className="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
           >
             Reject
           </button>
           <button
-            onClick={onApprove}
+            onClick={handleApprove}
             className="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
           >
             Approve
@@ -69,6 +169,10 @@ const EnrolleeDetailsModal = ({ enrollee, onClose, onReject, onApprove }) => {
                   <p className="text-lg text-gray-900">{enrollee.last_name}</p>
                 </div>
                 <div>
+                  <p className="text-sm font-medium text-gray-600">Middle Initial</p>
+                  <p className="text-lg text-gray-900">{enrollee.middle_initial || 'N/A'}</p>
+                </div>
+                <div>
                   <p className="text-sm font-medium text-gray-600">Email</p>
                   <p className="text-lg text-gray-900">{enrollee.email}</p>
                 </div>
@@ -95,15 +199,15 @@ const EnrolleeDetailsModal = ({ enrollee, onClose, onReject, onApprove }) => {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <p className="text-sm font-medium text-gray-600">School Name</p>
-                  <p className="text-lg text-gray-900">{enrollee.school?.name || 'N/A'}</p>
+                  <p className="text-lg text-gray-900">{schoolInfo.name}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">School Contact</p>
-                  <p className="text-lg text-gray-900">{enrollee.school?.contact_no || 'N/A'}</p>
+                  <p className="text-lg text-gray-900">{schoolInfo.contact}</p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-sm font-medium text-gray-600">School Address</p>
-                  <p className="text-lg text-gray-900">{enrollee.school?.address || 'N/A'}</p>
+                  <p className="text-lg text-gray-900">{schoolInfo.address}</p>
                 </div>
               </div>
             </div>

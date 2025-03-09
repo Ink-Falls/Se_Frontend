@@ -122,23 +122,19 @@ function AdminEnrollment() {
 
   const handleApprove = async (enrolleeId) => {
     try {
+      console.log("Attempting to approve enrollee:", enrolleeId);
+      
       await approveEnrollment(enrolleeId);
-      // Refresh the enrollments data after approval
-      const updatedData = await getAllEnrollments(currentPage);
 
-      // Handle the response using the same structure as in fetchEnrollments
-      const enrollmentsData = updatedData?.data || updatedData || [];
-      const enrollmentsList = enrollmentsData.enrollments || [];
+      // After successful approval, refresh the data
+      const updatedData = await getAllEnrollments();
+      const enrollmentsList = Array.isArray(updatedData) ? updatedData : [];
 
-      // Update state with transformed data
+      // Transform and update enrollees list
       const transformedEnrollees = enrollmentsList.map((enrollment) => ({
         id: enrollment.enrollment_id,
-        fullName: `${enrollment.first_name} ${
-          enrollment.middle_initial || ""
-        } ${enrollment.last_name}`,
-        status:
-          enrollment.status.charAt(0).toUpperCase() +
-          enrollment.status.slice(1),
+        fullName: `${enrollment.first_name} ${enrollment.middle_initial || ""} ${enrollment.last_name}`,
+        status: enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1),
         enrollmentDate: new Date(enrollment.createdAt).toLocaleDateString(),
         email: enrollment.email,
         contactNo: enrollment.contact_no,
@@ -148,8 +144,19 @@ function AdminEnrollment() {
       }));
 
       setEnrollees(transformedEnrollees);
+      
+      // Update counts
+      const approved = enrollmentsList.filter(e => e.status === "approved").length;
+      const pending = enrollmentsList.filter(e => e.status === "pending").length;
+      const rejected = enrollmentsList.filter(e => e.status === "rejected").length;
+      
+      setApprovedCount(approved);
+      setPendingCount(pending);
+      setRejectedCount(rejected);
+
     } catch (error) {
-      console.error("Error approving enrollment:", error);
+      console.error("Approval error:", error);
+      alert("Failed to approve enrollment. Please try again.");
     }
   };
 
@@ -262,36 +269,16 @@ function AdminEnrollment() {
             {loading ? (
               <div className="text-center py-4">Loading enrollments...</div>
             ) : (
-              <>
-                <EnrolleeTable
-                  enrollees={enrollees}
-                  onEdit={handleEdit}
-                  onApprove={handleApprove}
-                  onReject={handleReject}
-                  onDeleteSelected={handleDeleteSelected}
-                />
-                <div className="flex justify-between items-center mt-4">
-                  <div>
-                    Showing page {currentPage} of {totalPages}
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              </>
+              <EnrolleeTable
+                enrollees={enrollees}
+                onEdit={handleEdit}
+                onApprove={handleApprove}
+                onReject={handleReject}
+                onDeleteSelected={handleDeleteSelected}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
             )}
           </div>
         </div>
