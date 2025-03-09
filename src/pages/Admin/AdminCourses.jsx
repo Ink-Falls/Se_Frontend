@@ -18,7 +18,8 @@ import {
     Users,
     Search,
 } from "lucide-react";
-import { getAllCourses, getCourseById, assignTeacher } from "../../services/courseService";
+import { getAllCourses, getCourseById, assignTeacher, getCoursesWithGroups } from "../../services/courseService";
+import AddCourse from "../../components/common/Modals/Add/AddCourse";
 
 function AdminCourses() {
     const [courses, setCourses] = useState([]);
@@ -34,6 +35,8 @@ function AdminCourses() {
         teacher: '',
         learner_group: '',
         student_teacher_group: '',
+        learner_group_id: '',
+        student_teacher_group_id: ''
     });
     const [courseToDelete, setCourseToDelete] = useState(null);
     const [isLoading, setIsLoading] = useState(false); // Set to false since we're using hardcoded data
@@ -72,31 +75,11 @@ function AdminCourses() {
         try {
             setLoading(true);
             setError(null);
-            const coursesData = await getAllCourses();
-            
-            console.log('Courses data received:', coursesData); // Debug log
-
-            if (!Array.isArray(coursesData) || coursesData.length === 0) {
-                console.log('No courses found or invalid data format');
-                setCourses([]);
-                return;
-            }
-
-            // Map the courses with the correct field names
-            const formattedCourses = coursesData.map(course => ({
-                id: course.id,
-                name: course.name,
-                description: course.description,
-                teacher: "Not assigned",
-                learner_group: "Not assigned",
-                student_teacher_group: "Not assigned",
-                image: "https://miro.medium.com/v2/resize:fit:1200/1*rKl56ixsC55cMAsO2aQhGQ@2x.jpeg"
-            }));
-
-            console.log('Formatted courses:', formattedCourses); // Debug log
-            setCourses(formattedCourses);
+            // Data is already formatted in courseService, use it directly
+            const coursesData = await getCoursesWithGroups();
+            setCourses(coursesData);
         } catch (err) {
-            setError('Failed to fetch courses');
+            setError('Failed to fetch courses: ' + err.message);
             console.error('Error:', err);
             setCourses([]);
         } finally {
@@ -126,19 +109,8 @@ function AdminCourses() {
         setCourseToDelete(null);
     };
 
-    const handleAddCourse = () => {
-        if (newCourse.name.trim() && newCourse.description.trim()) {
-            const newId = courses.length + 1;
-            setCourses([...courses, { id: newId, ...newCourse }]);
-            setIsAddCourseOpen(false);
-            setNewCourse({
-                name: '',
-                description: '',
-                teacher: '',
-                learner_group: '',
-                student_teacher_group: '',
-            });
-        }
+    const handleCourseAdded = (newCourse) => {
+        setCourses(prev => [...prev, newCourse]);
     };
 
     return (
@@ -231,10 +203,12 @@ function AdminCourses() {
                                                 <strong>Teacher:</strong> {course.teacher || "Not assigned"}
                                             </p>
                                             <p className="text-gray-600">
-                                                <strong>Learner Group:</strong> {course.learner_group || "Not assigned"}
+                                                <strong>Learner Group:</strong> {course.learner_group}
+                                                {course.learner_group_id && <span className="text-xs text-gray-400"> (ID: {course.learner_group_id})</span>}
                                             </p>
                                             <p className="text-gray-600">
-                                                <strong>Student Teacher Group:</strong> {course.student_teacher_group || "Not assigned"}
+                                                <strong>Student Teacher Group:</strong> {course.student_teacher_group}
+                                                {course.student_teacher_group_id && <span className="text-xs text-gray-400"> (ID: {course.student_teacher_group_id})</span>}
                                             </p>
                                             {course.image && (
                                                 <div className="mt-4">
@@ -326,63 +300,11 @@ function AdminCourses() {
                     />
                 )}
 
-                {isAddCourseOpen && (
-                    <Modal
-                        isOpen={isAddCourseOpen}
-                        onClose={() => setIsAddCourseOpen(false)}
-                    >
-                        <h2 className="text-xl font-semibold mb-4">Add New Course</h2>
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                handleAddCourse();
-                            }}
-                        >
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={newCourse.name}
-                                    onChange={(e) =>
-                                        setNewCourse({ ...newCourse, name: e.target.value })
-                                    }
-                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500"
-                                    required
-                                />
-                            </div>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Description
-                                </label>
-                                <textarea
-                                    value={newCourse.description}
-                                    onChange={(e) =>
-                                        setNewCourse({ ...newCourse, description: e.target.value })
-                                    }
-                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500"
-                                    required
-                                />
-                            </div>
-                            <div className="flex justify-end">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsAddCourseOpen(false)}
-                                    className="mr-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600"
-                                >
-                                    Add Course
-                                </button>
-                            </div>
-                        </form>
-                    </Modal>
-                )}
+                <AddCourse 
+                    isOpen={isAddCourseOpen}
+                    onClose={() => setIsAddCourseOpen(false)}
+                    onCourseAdded={handleCourseAdded}
+                />
             </div>
         </div>
     );
