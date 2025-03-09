@@ -18,30 +18,12 @@ import {
     Users,
     Search,
 } from "lucide-react";
+import { getAllCourses, getCourseById, assignTeacher } from "../../services/courseService";
 
 function AdminCourses() {
-    // Hardcoded data for testing
-    const [courses, setCourses] = useState([
-        {
-            id: 1,
-            name: "Introduction to Environmental Science",
-            description: "Learn the basics of environmental science and sustainability.",
-            teacher: "Dr. Jane Smith",
-            learner_group: "Group A",
-            student_teacher_group: "Group B",
-            image: "https://i.imgur.com/RTMTvNB.png",
-        },
-        {
-            id: 2,
-            name: "Advanced Machine Learning",
-            description: "Explore advanced topics in machine learning and AI.",
-            teacher: "Dr. John Doe",
-            learner_group: "Group C",
-            student_teacher_group: "Group D",
-            image: "https://i.imgur.com/RTMTvNB.png",
-        },
-    ]);
-
+    const [courses, setCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [expandedCourseId, setExpandedCourseId] = useState(null);
     const [editingCourse, setEditingCourse] = useState(null);
     const [dropdownOpen, setDropdownOpen] = useState(null);
@@ -82,8 +64,53 @@ function AdminCourses() {
         { text: "Announcements", icon: <FileText size={20} />, route: "/Admin/Announcements" },
     ];
 
+    useEffect(() => {
+        fetchCourses();
+    }, []);
+
+    const fetchCourses = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const coursesData = await getAllCourses();
+            
+            console.log('Courses data received:', coursesData); // Debug log
+
+            if (!Array.isArray(coursesData) || coursesData.length === 0) {
+                console.log('No courses found or invalid data format');
+                setCourses([]);
+                return;
+            }
+
+            // Map the courses with the correct field names
+            const formattedCourses = coursesData.map(course => ({
+                id: course.id,
+                name: course.name,
+                description: course.description,
+                teacher: "Not assigned",
+                learner_group: "Not assigned",
+                student_teacher_group: "Not assigned",
+                image: "https://miro.medium.com/v2/resize:fit:1200/1*rKl56ixsC55cMAsO2aQhGQ@2x.jpeg"
+            }));
+
+            console.log('Formatted courses:', formattedCourses); // Debug log
+            setCourses(formattedCourses);
+        } catch (err) {
+            setError('Failed to fetch courses');
+            console.error('Error:', err);
+            setCourses([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleEdit = (course) => {
-        setEditingCourse(course);
+        setEditingCourse({
+            ...course,
+            teacher: "Not assigned",
+            learner_group: "Not assigned",
+            student_teacher_group: "Not assigned"
+        });
         setDropdownOpen(null);
     };
 
@@ -120,91 +147,112 @@ function AdminCourses() {
             <div className="flex-1 p-6 overflow-auto">
                 <Header title="Courses" />
 
-                {/* Course List */}
-                <div className="flex flex-col gap-4 mt-4">
-                    {courses.map((course) => (
-                        <div
-                            key={course.id}
-                            className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg"
+                {loading ? (
+                    <div className="flex justify-center items-center h-64">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+                    </div>
+                ) : error ? (
+                    <div className="text-red-500 text-center p-4">
+                        <p>{error}</p>
+                        <button 
+                            onClick={fetchCourses}
+                            className="mt-4 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
                         >
-                            {/* Course Header */}
-                            <div className="flex justify-between items-center cursor-pointer">
-                                <div className="w-full" onClick={() => setExpandedCourseId(expandedCourseId === course.id ? null : course.id)}>
-                                    <p className="text-xs text-gray-500">COURSE {course.id}</p>
-                                    <h3 className="font-bold text-lg text-gray-800">
-                                        {course.name}
-                                    </h3>
-                                </div>
+                            Retry
+                        </button>
+                    </div>
+                ) : courses.length === 0 ? (
+                    <div className="text-center p-8">
+                        <p className="text-gray-500 mb-4">No courses available</p>
+                        <button
+                            onClick={() => setIsAddCourseOpen(true)}
+                            className="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600"
+                        >
+                            Add Your First Course
+                        </button>
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-4 mt-4">
+                        {courses.map((course) => (
+                            <div
+                                key={course.id}
+                                className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg"
+                            >
+                                <div className="flex justify-between items-center cursor-pointer">
+                                    <div className="w-full" onClick={() => setExpandedCourseId(expandedCourseId === course.id ? null : course.id)}>
+                                        <p className="text-xs text-gray-500">COURSE {course.id}</p>
+                                        <h3 className="font-bold text-lg text-gray-800">
+                                            {course.name}
+                                        </h3>
+                                    </div>
 
-                                {/* Expand Arrow and Menu */}
-                                <div className="relative flex items-center space-x-2">
-                                    <ChevronDown
-                                        size={20}
-                                        className={`cursor-pointer transition-transform ${expandedCourseId === course.id ? "rotate-180" : ""
-                                            }`}
-                                        onClick={() => setExpandedCourseId(expandedCourseId === course.id ? null : course.id)}
-                                    />
-                                    <button
-                                        onClick={(e) => toggleDropdown(course.id, e)}
-                                        className="menu-btn relative z-20"
-                                    >
-                                        <MoreVertical size={20} className="cursor-pointer" />
-                                    </button>
-                                    {dropdownOpen === course.id && (
-                                        <div className="absolute right-0 top-8 bg-white border rounded-lg shadow-lg w-28 z-30 dropdown-menu">
-                                            <button
-                                                className="flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full"
-                                                onClick={() => handleEdit(course)}
-                                            >
-                                                <Edit size={16} className="mr-2" /> Edit
-                                            </button>
-                                            <button
-                                                className="flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full"
-                                                onClick={() => setCourseToDelete(course)}
-                                            >
-                                                <Trash2 size={16} className="mr-2" /> Delete
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Course Details */}
-                            {expandedCourseId === course.id && (
-                                <div className="mt-4 border-t pt-4">
-                                    <div className="space-y-3">
-                                        <p className="text-gray-600">
-                                            <strong>Description:</strong>
-                                        </p>
-                                        <p className="text-gray-600">
-                                            {course.description || "Not assigned"}
-                                        </p>
-                                        <p className="text-gray-600">
-                                            <strong>Teacher:</strong> {course.teacher || "Not assigned"}
-                                        </p>
-                                        <p className="text-gray-600">
-                                            <strong>Learner Group:</strong> {course.learner_group || "Not assigned"}
-                                        </p>
-                                        <p className="text-gray-600">
-                                            <strong>Student Teacher Group:</strong> {course.student_teacher_group || "Not assigned"}
-                                        </p>
-                                        {course.image && (
-                                            <div className="mt-4">
-                                                <img
-                                                    src={course.image}
-                                                    alt={course.name}
-                                                    className="w-[300px] h-[200px] object-cover rounded-lg shadow-sm"
-                                                />
+                                    <div className="relative flex items-center space-x-2">
+                                        <ChevronDown
+                                            size={20}
+                                            className={`cursor-pointer transition-transform ${expandedCourseId === course.id ? "rotate-180" : ""
+                                                }`}
+                                            onClick={() => setExpandedCourseId(expandedCourseId === course.id ? null : course.id)}
+                                        />
+                                        <button
+                                            onClick={(e) => toggleDropdown(course.id, e)}
+                                            className="menu-btn relative z-20"
+                                        >
+                                            <MoreVertical size={20} className="cursor-pointer" />
+                                        </button>
+                                        {dropdownOpen === course.id && (
+                                            <div className="absolute right-0 top-8 bg-white border rounded-lg shadow-lg w-28 z-30 dropdown-menu">
+                                                <button
+                                                    className="flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full"
+                                                    onClick={() => handleEdit(course)}
+                                                >
+                                                    <Edit size={16} className="mr-2" /> Edit
+                                                </button>
+                                                <button
+                                                    className="flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full"
+                                                    onClick={() => setCourseToDelete(course)}
+                                                >
+                                                    <Trash2 size={16} className="mr-2" /> Delete
+                                                </button>
                                             </div>
                                         )}
                                     </div>
                                 </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
 
-                {/* Add Course Button */}
+                                {expandedCourseId === course.id && (
+                                    <div className="mt-4 border-t pt-4">
+                                        <div className="space-y-3">
+                                            <p className="text-gray-600">
+                                                <strong>Description:</strong>
+                                            </p>
+                                            <p className="text-gray-600">
+                                                {course.description || "Not assigned"}
+                                            </p>
+                                            <p className="text-gray-600">
+                                                <strong>Teacher:</strong> {course.teacher || "Not assigned"}
+                                            </p>
+                                            <p className="text-gray-600">
+                                                <strong>Learner Group:</strong> {course.learner_group || "Not assigned"}
+                                            </p>
+                                            <p className="text-gray-600">
+                                                <strong>Student Teacher Group:</strong> {course.student_teacher_group || "Not assigned"}
+                                            </p>
+                                            {course.image && (
+                                                <div className="mt-4">
+                                                    <img
+                                                        src={course.image}
+                                                        alt={course.name}
+                                                        className="w-[300px] h-[200px] object-cover rounded-lg shadow-sm"
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 <button
                     onClick={() => setIsAddCourseOpen(true)}
                     className="fixed bottom-8 right-8 bg-yellow-500 text-white rounded-full p-4 shadow-lg hover:bg-yellow-600 transition-colors"
@@ -212,7 +260,6 @@ function AdminCourses() {
                     <Plus size={24} />
                 </button>
 
-                {/* Modals */}
                 {editingCourse && (
                     <Modal
                         isOpen={!!editingCourse}

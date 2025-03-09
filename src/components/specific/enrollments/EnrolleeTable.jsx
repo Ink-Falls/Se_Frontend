@@ -138,6 +138,7 @@ function EnrolleeTable({
               <option value="All">All</option>
               <option value="Approved">Approved</option>
               <option value="Pending">Pending</option>
+              <option value="Rejected">Rejected</option>
             </select>
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Filter size={16} className="text-gray-400" />

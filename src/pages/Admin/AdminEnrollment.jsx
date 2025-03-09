@@ -23,6 +23,7 @@ function AdminEnrollment() {
   const [totalItems, setTotalItems] = useState(0);
   const [approvedCount, setApprovedCount] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
+  const [rejectedCount, setRejectedCount] = useState(0);
 
   const navItems = [
     { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
@@ -90,15 +91,20 @@ function AdminEnrollment() {
         );
         setCurrentPage(response?.currentPage || currentPage);
 
-        // Count approved and pending enrollments
+        // Count approved, pending and rejected enrollments
         const approved = enrollmentsList.filter(
           (e) => e.status === "approved"
         ).length;
         const pending = enrollmentsList.filter(
           (e) => e.status === "pending"
         ).length;
+        const rejected = enrollmentsList.filter(
+          (e) => e.status === "rejected"
+        ).length;
+        
         setApprovedCount(approved);
         setPendingCount(pending);
+        setRejectedCount(rejected);
       } catch (error) {
         console.error("Error fetching enrollments:", error);
         setEnrollees([]);
@@ -225,8 +231,13 @@ function AdminEnrollment() {
       const pending = enrollmentsList.filter(
         (e) => e.status === "pending"
       ).length;
+      const rejected = enrollmentsList.filter(
+        (e) => e.status === "rejected"
+      ).length;
+      
       setApprovedCount(approved);
       setPendingCount(pending);
+      setRejectedCount(rejected);
     } catch (error) {
       console.error("Error deleting enrollment:", error);
     }
@@ -244,6 +255,7 @@ function AdminEnrollment() {
               totalEnrollees={totalItems}
               approvedEnrollees={approvedCount}
               pendingEnrollees={pendingCount}
+              rejectedEnrollees={rejectedCount}
             />
           </div>
           <div className="bg-white shadow rounded-lg overflow-x-auto mt-4 p-4">

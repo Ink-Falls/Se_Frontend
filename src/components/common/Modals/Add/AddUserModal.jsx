@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
+import { createUser } from "../../../../services/userService";
 
 const AddUserModal = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -13,10 +14,23 @@ const AddUserModal = ({ onClose, onSubmit }) => {
     school_id: "",
     role: ""
   });
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const createdUser = await createUser(formData);
+      onSubmit(createdUser);
+      onClose();
+    } catch (err) {
+      setError(err.message || "Failed to create user");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -38,6 +52,11 @@ const AddUserModal = ({ onClose, onSubmit }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="text-red-600 mb-4 text-sm">
+              {error}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">First Name</label>
@@ -85,7 +104,6 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 name="birth_date"
                 value={formData.birth_date}
                 onChange={handleChange}
-            
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                 required
               />
@@ -120,15 +138,18 @@ const AddUserModal = ({ onClose, onSubmit }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700">School ID</label>
-              <input
-                type="number"
+              <select
                 name="school_id"
                 value={formData.school_id}
                 onChange={handleChange}
-                placeholder="Enter school ID"
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                 required
-              />
+              >
+                <option value="">Select School ID</option>
+                <option value="1001">1001</option>
+                <option value="1002">1002</option>
+                <option value="1003">1003</option>
+              </select>
             </div>
 
             <div>
@@ -143,6 +164,7 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 <option value="">Select Role</option>
                 <option value="student">Learner</option>
                 <option value="teacher">Teacher</option>
+                <option value="student_teacher">Student Teacher</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
@@ -174,9 +196,10 @@ const AddUserModal = ({ onClose, onSubmit }) => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-black text-white rounded-md hover:bg-[#F6BA18]"
+              disabled={isLoading}
+              className="px-4 py-2 bg-black text-white rounded-md hover:bg-[#F6BA18] disabled:opacity-50"
             >
-              Add User
+              {isLoading ? "Creating..." : "Add User"}
             </button>
           </div>
         </form>
