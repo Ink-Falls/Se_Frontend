@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "/src/assets/images/ARALKADEMYLOGO.png";
+import logo from "../../assets/images/ARALKADEMYLOGO.png";
 
 function NewEnrollment() {
   const [formData, setFormData] = useState({
