@@ -1,8 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "../../assets/images/ARALKADEMYLOGO.png";
+import logo from "/src/assets/images/ARALKADEMYLOGO.png";
 
-function EnrollConfirm() {
+function Error404() {
   const navigate = useNavigate();
 
   return (
@@ -27,7 +27,7 @@ function EnrollConfirm() {
 
           {/* Log In button */}
           <button
-            onClick={() => navigate("/Login")}
+            onClick={() => navigate("/Login", { replace: true })}
             className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
           >
             Log In
@@ -42,14 +42,13 @@ function EnrollConfirm() {
             <div className="top-[0vw] left-[0vw] h-[1.5vw] lg:top-[0vw] lg:left-[0vw] lg:h-[0.5vw] absolute w-full bg-[#F6BA18] rounded-t-lg"></div>
 
             {/* Success headline */}
-            <h2 className="text-[8vw] lg:text-[2.5vw] max-lg:text-[5vw] font-bold text-left text-[#212529]">
-              Successful Enrollment!
-            </h2>
+            <h1 className="text-[8vw] lg:text-[2.5vw] font-bold text-left text-[#212529]">
+              Error 404
+            </h1>
 
             {/* Description text */}
             <p className="text-[3vw] mb-[5vw] lg:mb-[2vw] max-lg:text-[2.5vw] lg:text-[1vw] text-[#64748B] text-left">
-              Please wait for the verification email, or periodically check your
-              enrollment status directly on the enrollment page.
+              Page Not Found.
             </p>
 
             {/* Back to Login button */}
@@ -58,7 +57,7 @@ function EnrollConfirm() {
                 onClick={() => navigate("/Login")}
                 className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] lg:py-[0.4vw] lg:px-[3vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
               >
-                Back to Login
+                Back
               </button>
             </div>
           </div>
@@ -68,4 +67,4 @@ function EnrollConfirm() {
   );
 }
 
-export default EnrollConfirm;
+export default Error404;
