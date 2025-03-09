@@ -87,4 +87,101 @@ const logoutUser = async () => {
   }
 };
 
-export { loginUser, logoutUser };
+/**
+ * Handles forgot password request.
+ *
+ * @async
+ * @function forgotPassword
+ * @param {string} email - The user's email address.
+ * @returns {Promise<object>} - A response message or error.
+ * @throws {Error} - If the request fails.
+ */
+const forgotPassword = async (email) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = responseData?.error?.message || "Failed to send password reset email.";
+      throw new Error(errorMessage);
+    }
+
+    return responseData;
+  } catch (error) {
+    throw new Error(error.message || "Network error. Please check your connection.");
+  }
+};
+
+/**
+ * Verifies the reset code sent to the user's email.
+ *
+ * @async
+ * @function verifyResetCode
+ * @param {string} email - The user's email address.
+ * @param {string} code - The verification code sent to the user's email.
+ * @returns {Promise<object>} - A success message or error response.
+ * @throws {Error} - If the verification fails.
+ */
+const verifyResetCode = async (email, code) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/verify-reset-code`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, code }),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = responseData?.error?.message || "Invalid or expired reset code.";
+      throw new Error(errorMessage);
+    }
+
+    return responseData;
+  } catch (error) {
+    throw new Error(error.message || "Network error. Please check your connection.");
+  }
+};
+
+/**
+ * Resets the user's password.
+ *
+ * @async
+ * @function resetPassword
+ * @param {string} email - The user's email address.
+ * @param {string} password - The new password.
+ * @returns {Promise<object>} - A response message or error.
+ * @throws {Error} - If the password reset fails.
+ */
+const resetPassword = async (email, password) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(responseData.message || "Failed to reset password.");
+    }
+
+    return responseData;
+  } catch (error) {
+    throw new Error(error.message || "Network error. Please check your connection.");
+  }
+};
+
+export { loginUser, logoutUser, forgotPassword, verifyResetCode, resetPassword };
