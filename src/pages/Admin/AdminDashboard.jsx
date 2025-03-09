@@ -169,7 +169,7 @@ function AdminDashboard() {
                 // Calculate stats
                 setStats({
                     totalUsers: userData.length,
-                    totalLearners: userData.filter(u => u.role === 'student').length,
+                    totalLearners: userData.filter(u => u.role === 'learner').length,
                     totalTeachers: userData.filter(u => u.role === 'teacher').length,
                     totalAdmins: userData.filter(u => u.role === 'admin').length
                 });
@@ -216,6 +216,22 @@ function AdminDashboard() {
         setIsCreateGroupModalOpen(false);
     };
 
+    const handleUserCreated = async (newUser) => {
+        try {
+            setUsers(prevUsers => [...prevUsers, newUser]);
+            setStats(prevStats => ({
+                ...prevStats,
+                totalUsers: prevStats.totalUsers + 1,
+                totalLearners: newUser.role === 'student' ? prevStats.totalLearners + 1 : prevStats.totalLearners,
+                totalTeachers: newUser.role === 'teacher' ? prevStats.totalTeachers + 1 : prevStats.totalTeachers,
+                totalAdmins: newUser.role === 'admin' ? prevStats.totalAdmins + 1 : prevStats.totalAdmins,
+            }));
+            setIsAddModalOpen(false);
+        } catch (error) {
+            console.error('Error handling new user:', error);
+        }
+    };
+
     if (isLoading) {
         return <div>Loading...</div>; // Render loading indicator
     }
@@ -256,10 +272,7 @@ function AdminDashboard() {
             {isAddModalOpen && (
                 <AddUserModal
                     onClose={() => setIsAddModalOpen(false)}
-                    onSubmit={(userData) => {
-                        console.log("Creating user:", userData);
-                        setIsAddModalOpen(false);
-                    }}
+                    onSubmit={handleUserCreated}
                 />
             )}
 
