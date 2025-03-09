@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { X, Plus, Trash2, Users } from "lucide-react";
+import { X, Plus, Trash2, Users, Loader } from "lucide-react";
+import { getAvailableMembers, createGroupWithMembers, getAllGroups } from "../../../../services/groupService";
 
 const CreateGroupModal = ({ onClose, onSave }) => {
   const [activeTab, setActiveTab] = useState("details");
@@ -11,10 +12,42 @@ const CreateGroupModal = ({ onClose, onSave }) => {
   });
   const [animate, setAnimate] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState([]);
+  const [availableMembers, setAvailableMembers] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [groups, setGroups] = useState([]);
 
   useEffect(() => {
     setTimeout(() => setAnimate(true), 50);
   }, []);
+
+  useEffect(() => {
+    fetchAvailableMembers(groupData.type);
+  }, [groupData.type]);
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const groupsData = await getAllGroups();
+        setGroups(groupsData);
+      } catch (err) {
+        setError("Failed to fetch groups");
+      }
+    };
+    fetchGroups();
+  }, []);
+
+  const fetchAvailableMembers = async (type) => {
+    try {
+      setIsLoading(true);
+      const members = await getAvailableMembers(type, groups);
+      setAvailableMembers(members);
+    } catch (err) {
+      setError("Failed to fetch available members");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -38,9 +71,27 @@ const CreateGroupModal = ({ onClose, onSave }) => {
     }));
   };
 
-  const handleSubmit = () => {
-    onSave(groupData);
-    onClose();
+  const handleSubmit = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      // Create group with members in a single request
+      const createdGroup = await createGroupWithMembers({
+        name: groupData.name,
+        description: groupData.description,
+        type: groupData.type
+      }, 
+      groupData.members.map(m => m.id)
+      );
+
+      onSave(createdGroup);
+      onClose();
+    } catch (err) {
+      setError(err.message || "Failed to create group");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -79,6 +130,12 @@ const CreateGroupModal = ({ onClose, onSave }) => {
             Members
           </button>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
+            {error}
+          </div>
+        )}
 
         <div className="mt-6">
           {activeTab === "details" ? (
@@ -122,13 +179,54 @@ const CreateGroupModal = ({ onClose, onSave }) => {
             <div className="space-y-4">
               <div className="flex items-center gap-4 mb-4">
                 <Users size={20} />
-                <h3 className="text-lg font-semibold">Members ({groupData.members.length})</h3>
+                <h3 className="text-lg font-semibold">
+                  Available {groupData.type === 'student_teacher' ? 'Student Teachers' : 'Learners'} ({availableMembers.length})
+                </h3>
               </div>
               
-              <div className="space-y-2">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader className="animate-spin" size={24} />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {availableMembers.map((member) => (
+                    <div key={member.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{member.first_name} {member.last_name}</span>
+                        <div className="flex gap-4 text-sm text-gray-600">
+                          <span>{member.email}</span>
+                          <span>|</span>
+                          <span>ID: {member.school_id}</span>
+                          <span>|</span>
+                          <span className="capitalize">{member.role.replace('_', ' ')}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => addMember(member)}
+                        className="text-blue-500 hover:text-blue-700"
+                      >
+                        <Plus size={18} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-4 border-t pt-4">
+                <h4 className="font-medium mb-2">Selected Members ({groupData.members.length})</h4>
                 {groupData.members.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                    <span>{member.name}</span>
+                  <div key={member.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg mb-2">
+                    <div className="flex flex-col">
+                      <span className="font-medium">{member.first_name} {member.last_name}</span>
+                      <div className="flex gap-4 text-sm text-gray-600">
+                        <span>{member.email}</span>
+                        <span>|</span>
+                        <span>ID: {member.school_id}</span>
+                        <span>|</span>
+                        <span className="capitalize">{member.role.replace('_', ' ')}</span>
+                      </div>
+                    </div>
                     <button
                       onClick={() => removeMember(member.id)}
                       className="text-red-500 hover:text-red-700"
@@ -138,14 +236,6 @@ const CreateGroupModal = ({ onClose, onSave }) => {
                   </div>
                 ))}
               </div>
-
-              <button
-                onClick={() => console.log("Add member")}
-                className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
-              >
-                <Plus size={20} />
-                <span>Add Member</span>
-              </button>
             </div>
           )}
         </div>
@@ -154,14 +244,17 @@ const CreateGroupModal = ({ onClose, onSave }) => {
           <button
             onClick={onClose}
             className="px-4 py-2 text-gray-600 hover:text-gray-800"
+            disabled={isLoading}
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            className="px-6 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#F6BA18]"
+            disabled={isLoading}
+            className="px-6 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#F6BA18] disabled:opacity-50 flex items-center gap-2"
           >
-            Create Group
+            {isLoading && <Loader className="animate-spin" size={16} />}
+            {isLoading ? "Creating..." : "Create Group"}
           </button>
         </div>
       </div>
