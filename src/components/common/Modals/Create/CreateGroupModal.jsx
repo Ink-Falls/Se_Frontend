@@ -6,8 +6,7 @@ const CreateGroupModal = ({ onClose, onSave }) => {
   const [activeTab, setActiveTab] = useState("details");
   const [groupData, setGroupData] = useState({
     name: "",
-    description: "",
-    type: "learner", // or "student_teacher"
+    type: "learner", // default value matches database enum
     members: []
   });
   const [animate, setAnimate] = useState(false);
@@ -60,7 +59,14 @@ const CreateGroupModal = ({ onClose, onSave }) => {
   const addMember = (member) => {
     setGroupData(prev => ({
       ...prev,
-      members: [...prev.members, { id: member.id, name: member.name }]
+      members: [...prev.members, {
+        id: member.id,
+        first_name: member.first_name,
+        last_name: member.last_name,
+        email: member.email,
+        school_id: member.school_id,
+        role: member.role
+      }]
     }));
   };
 
@@ -76,18 +82,29 @@ const CreateGroupModal = ({ onClose, onSave }) => {
       setIsLoading(true);
       setError("");
 
-      // Create group with members in a single request
-      const createdGroup = await createGroupWithMembers({
-        name: groupData.name,
-        description: groupData.description,
-        type: groupData.type
-      }, 
-      groupData.members.map(m => m.id)
-      );
+      if (!groupData.name) {
+        setError("Group name is required");
+        return;
+      }
 
+      // Check if token exists
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError("You must be logged in to create a group");
+        return;
+      }
+
+      const createData = {
+        name: groupData.name,
+        type: groupData.type,
+        members: groupData.members
+      };
+
+      const createdGroup = await createGroupWithMembers(createData);
       onSave(createdGroup);
       onClose();
     } catch (err) {
+      console.error("Error creating group:", err);
       setError(err.message || "Failed to create group");
     } finally {
       setIsLoading(false);
@@ -151,17 +168,7 @@ const CreateGroupModal = ({ onClose, onSave }) => {
                   placeholder="Enter group name"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  name="description"
-                  value={groupData.description}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                  rows="3"
-                  placeholder="Enter group description"
-                />
-              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700">Group Type</label>
                 <select
@@ -170,8 +177,8 @@ const CreateGroupModal = ({ onClose, onSave }) => {
                   onChange={handleInputChange}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                 >
-                  <option value="learner">Learner Group</option>
-                  <option value="student_teacher">Student-Teacher Group</option>
+                  <option value="learner">Learner</option>
+                  <option value="student_teacher">Student Teacher</option>
                 </select>
               </div>
             </div>
@@ -224,7 +231,9 @@ const CreateGroupModal = ({ onClose, onSave }) => {
                         <span>|</span>
                         <span>ID: {member.school_id}</span>
                         <span>|</span>
-                        <span className="capitalize">{member.role.replace('_', ' ')}</span>
+                        <span className="capitalize">
+                          {member.role?.replace?.('_', ' ') || 'No Role'}
+                        </span>
                       </div>
                     </div>
                     <button
