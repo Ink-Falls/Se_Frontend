@@ -15,6 +15,9 @@ function EnrolleeTable({
   onApprove,
   onReject,
   onDetailsClick,
+  currentPage,
+  totalPages,
+  onPageChange
 }) {
   const [selectedIds, setSelectedIds] = useState([]);
   const [filterStatus, setFilterStatus] = useState("All");
@@ -52,10 +55,18 @@ function EnrolleeTable({
   };
 
   // Handle confirm reject in reject modal
-  const handleConfirmReject = (reason) => {
-    console.log("Rejected with reason:", reason);
-    setShowRejectModal(false); // Close reject modal
-    setSelectedEnrollee(null); // Clear selected enrollee
+  const handleConfirmReject = async (reason) => {
+    try {
+      await onReject(selectedEnrollee.id, reason);
+      setShowRejectModal(false);
+      setSelectedEnrollee(null);
+      // Refresh data through parent component
+      if (onReject) {
+        await onReject(selectedEnrollee.id);
+      }
+    } catch (error) {
+      console.error("Error rejecting enrollment:", error);
+    }
   };
 
   // Handle cancel reject in reject modal
@@ -76,6 +87,8 @@ function EnrolleeTable({
     setSelectedEnrollee(null);
   };
 
+  const ROWS_PER_PAGE = 10;
+  
   // Filter enrollees by status and search query
   const filteredEnrollees = enrollees
     .filter((enrollee) => {
@@ -85,6 +98,11 @@ function EnrolleeTable({
     .filter((enrollee) =>
       enrollee.fullName.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+  // Calculate pagination numbers
+  const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
+  const endIndex = startIndex + ROWS_PER_PAGE;
+  const paginatedEnrollees = filteredEnrollees.slice(startIndex, endIndex);
 
   const getStatusStyle = (status) => {
     switch (status.toLowerCase()) {
@@ -191,11 +209,10 @@ function EnrolleeTable({
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {filteredEnrollees.map((enrollee) => (
+          {paginatedEnrollees.map((enrollee) => (
             <tr
               key={enrollee.id}
-              onClick={() => handleRowClick(enrollee)} // Open details modal on row click
-              className="hover:bg-gray-50 transition-colors cursor-pointer"
+              className="hover:bg-gray-50 transition-colors"
             >
               {/* Checkbox for Row Selection */}
               <td
@@ -240,6 +257,35 @@ function EnrolleeTable({
         </tbody>
       </table>
 
+      {/* Pagination Controls */}
+      <div className="px-6 py-4 flex items-center justify-between border-t">
+        <div className="text-sm text-gray-700">
+          Showing {startIndex + 1} to {Math.min(endIndex, filteredEnrollees.length)} of{" "}
+          {filteredEnrollees.length} entries
+        </div>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 rounded border bg-white text-gray-600 
+                     hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          <span className="px-4 py-1 text-gray-600">
+            Page {currentPage} of {Math.ceil(filteredEnrollees.length / ROWS_PER_PAGE)}
+          </span>
+          <button
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage >= Math.ceil(filteredEnrollees.length / ROWS_PER_PAGE)}
+            className="px-3 py-1 rounded border bg-white text-gray-600 
+                     hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
       {/* Enrollee Details Modal */}
       {showDetailsModal && selectedEnrollee && (
         <EnrolleeDetailsModal
@@ -263,14 +309,14 @@ function EnrolleeTable({
       {/* Enrollee Status Modal */}
       {isModalOpen && selectedEnrollee && (
         <EnrolleeStatusModal
-          enrollee={selectedEnrollee}
+          enrolleeId={selectedEnrollee.id}
           onClose={handleCloseModal}
-          onApprove={() => {
-            onApprove(selectedEnrollee.id);
+          onApprove={async () => {
+            await onApprove(selectedEnrollee.id);
             handleCloseModal();
           }}
-          onReject={() => {
-            onReject(selectedEnrollee.id);
+          onReject={async () => {
+            await onReject(selectedEnrollee.id);
             handleCloseModal();
           }}
         />

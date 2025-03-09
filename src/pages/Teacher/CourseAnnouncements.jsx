@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Sidebar from "./common/layout/Sidebar";
-import Header from "./common/layout/Header";
-import BlackHeader from "./common/layout/BlackHeader";
+import Sidebar from "../../components/common/layout/Sidebar";
+import Header from "../../components/common/layout/Header";
+import BlackHeader from "../../components/common/layout/BlackHeader";
 import AnnouncementsComponent from "./AnnouncementsComponent";
-import Modal from "./common/Button/Modal";
+import Modal from "../../components/common/Button/Modal";
 import {
   Home,
   Megaphone,
