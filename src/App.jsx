@@ -32,6 +32,7 @@ import AdminCourses from "./pages/Admin/AdminCourses.jsx";
 import AdminEnrollment from "./pages/Admin/AdminEnrollment.jsx";
 import AdminAnnouncements from "./pages/Admin/AdminAnnouncements.jsx";
 import Error404 from "./pages/Errors/Error404.jsx"; // Updated import path
+import Error403 from "./pages/Errors/Error403";
 import { ProtectedRoute, PublicRoute } from "./components/ProtectedRoute";
 import { clearAuthData } from "./utils/auth";
 import LearnerCourseAnnouncements from "./pages/Learner/CourseAnnouncements.jsx";
@@ -315,6 +316,7 @@ function App() {
         />
 
         {/* Error routes */}
+        <Route path="/unauthorized" element={<Error403 />} />
         <Route path="*" element={<Error404 />} />
       </Routes>
     </Router>
