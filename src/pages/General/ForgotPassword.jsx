@@ -35,7 +35,7 @@ function ForgotPassword() {
       <header className="py-[3vw] px-[4vw] lg:py-[1.5vw] lg:px-[2vw] bg-[#121212] text-[#F6BA18] flex justify-between items-center shadow-xl">
         <img src={logo} alt="ARALKADEMY Logo" className="h-[5vw] lg:h-[2.5vw]" />
         <button
-          onClick={() => navigate("/enroll")}
+          onClick={() => navigate("/enrollment")}
           className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-white transition duration-300"
         >
           Enroll
