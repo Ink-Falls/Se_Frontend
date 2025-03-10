@@ -27,26 +27,46 @@ class TokenService {
     return localStorage.getItem('refreshToken');
   }
 
+  // Secure token storage
   /**
-   * Saves both access and refresh tokens to storage
-   * @param {string} accessToken - The access token to save
-   * @param {string} [refreshToken] - The refresh token to save
+   * Saves tokens to both HTTP-only cookies and local storage
+   * @param {string} accessToken 
+   * @param {string} refreshToken 
    */
-  saveTokens(accessToken, refreshToken) {
-    localStorage.setItem('token', accessToken);
-    if (refreshToken) {
-      localStorage.setItem('refreshToken', refreshToken);
+  async saveTokens(accessToken, refreshToken) {
+    try {
+      // Store tokens in HTTP-only cookies via backend
+      await fetch(`${API_BASE_URL}/auth/cookies`, {
+        method: 'POST',
+        credentials: 'include', // Enables HTTP-only cookie handling
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ accessToken, refreshToken }),
+      });
+
+      // Also store in localStorage as backup
+      localStorage.setItem('token', accessToken);
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+      }
+    } catch (error) {
+      console.error('Error setting tokens:', error);
+      throw error;
     }
   }
 
+  // Proper token cleanup
   /**
    * Removes all tokens from storage
    */
   removeTokens() {
+    // Just clear local storage - no need to call backend endpoint
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
   }
   
+  // Token expiration checking
   /**
    * Checks if the current access token is expired or will expire soon
    * @returns {boolean} True if token is expired or will expire within threshold
@@ -75,26 +95,21 @@ class TokenService {
    * @throws {Error} If refresh token is missing or refresh fails
    */
   async refreshToken() {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!response.ok) throw new Error('Token refresh failed');
+
+      const data = await response.json();
+      await this.saveTokens(data.accessToken, data.refreshToken);
+      return data.accessToken;
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      throw error;
     }
-
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refreshToken }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to refresh token');
-    }
-
-    const data = await response.json();
-    this.saveTokens(data.accessToken, data.refreshToken); 
-    return data.accessToken;
   }
 }
 

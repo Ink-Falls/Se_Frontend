@@ -1,18 +1,18 @@
+import React, { useState, useEffect, useCallback } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { isAuthenticated } from '../utils/auth';
+import { validateAuth, getUserRole } from '../utils/auth';
 
-const getUserRole = () => {
-  const token = localStorage.getItem('token');
-  if (!token) return null;
-  
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return payload.role;
-  } catch (error) {
-    console.error('Error decoding token:', error);
-    return null;
-  }
-};
+// Whitelist of routes that don't need auth checking
+const PUBLIC_ROUTES = [
+  '/login',
+  '/Enrollment',
+  '/Enrollment/New', 
+  '/ForgotPassword',
+  '/EnrollConfirm',
+  '/VerifyCode',
+  '/ChangePassword',
+  '/PasswordConfirm'
+];
 
 const getDashboardByRole = (role) => {
   switch (role?.toLowerCase()) {
@@ -30,12 +30,64 @@ const getDashboardByRole = (role) => {
 
 export const PublicRoute = ({ children }) => {
   const location = useLocation();
-  
-  if (isAuthenticated()) {
-    const userRole = getUserRole();
-    const dashboard = getDashboardByRole(userRole);
-    return <Navigate to={dashboard} state={{ from: location }} replace />;
+  const [state, setState] = useState({
+    loading: true,
+    authenticated: false,
+    error: null
+  });
+
+  const checkAuth = useCallback(async () => {
+    // Skip auth check for public routes
+    const isPublicRoute = PUBLIC_ROUTES.some(route => 
+      location.pathname.toLowerCase().startsWith(route.toLowerCase())
+    );
+
+    if (isPublicRoute) {
+      setState({ loading: false, authenticated: false, error: null });
+      return;
+    }
+
+    try {
+      const data = await validateAuth();
+      
+      if (data.valid) {
+        const userRole = getUserRole();
+        const dashboard = getDashboardByRole(userRole);
+        setState({
+          loading: false,
+          authenticated: true,
+          redirectTo: dashboard,
+          error: null
+        });
+      } else {
+        setState({
+          loading: false,
+          authenticated: false,
+          error: null
+        });
+      }
+    } catch (error) {
+      setState({
+        loading: false,
+        authenticated: false,
+        error: error.message
+      });
+    }
+  }, [location.pathname]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  if (state.loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (state.authenticated && state.redirectTo) {
+    return <Navigate to={state.redirectTo} state={{ from: location }} replace />;
   }
 
   return children;
 };
+
+export default PublicRoute;

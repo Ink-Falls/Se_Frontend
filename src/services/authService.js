@@ -16,11 +16,15 @@ import fetchWithInterceptor from './apiService';
  */
 const loginUser = async (email, password, captchaResponse) => {
   try {
+    // CAPTCHA verification prevents automated attacks
+    // Rate limiting protection (from backend)
+    // Proper error handling for invalid credentials
     const response = await fetch(`${API_BASE_URL}/auth/login`, { 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include', // Important for cookies
       body: JSON.stringify({ email, password, captchaResponse }),
     });
 
@@ -39,7 +43,13 @@ const loginUser = async (email, password, captchaResponse) => {
     }
 
     const data = await response.json();
-    tokenService.saveTokens(data.accessToken, data.refreshToken); // Save both tokens
+    
+    // Use the new saveTokens method
+    await tokenService.saveTokens(
+      data.token || data.accessToken, 
+      data.refreshToken
+    );
+    
     return data;
   } catch (error) {
       if (error.message) {
@@ -61,13 +71,16 @@ const loginUser = async (email, password, captchaResponse) => {
  */
 const logoutUser = async () => {
   try {
+    // First, call the logout endpoint
     await fetchWithInterceptor(`${API_BASE_URL}/auth/logout`, {
-      method: 'POST'
+      method: 'POST',
+      credentials: 'include'
     });
-    tokenService.removeTokens();
   } catch (error) {
     console.error('Logout error:', error);
-    tokenService.removeTokens(); // Remove tokens even if logout fails
+  } finally {
+    // Always clear tokens locally
+    tokenService.removeTokens();
   }
 };
 
@@ -224,3 +237,53 @@ const refreshUserToken = async (refreshToken) => {
 };
 
 export { loginUser, logoutUser, forgotPassword, verifyResetCode, resetPassword, validateToken, refreshUserToken };
+
+export const login = async (credentials) => {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(credentials)
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || 'Login failed');
+  }
+
+  localStorage.setItem('token', data.token);
+  localStorage.setItem('refreshToken', data.refreshToken);
+  return data;
+};
+
+export const logout = async () => {
+  try {
+    await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+  } finally {
+    // Clear local storage
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+  }
+};
+
+export const refreshToken = async () => {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (!refreshToken) throw new Error('No refresh token');
+
+  const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ refreshToken })
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error('Token refresh failed');
+
+  localStorage.setItem('token', data.token);
+  return data.token;
+};
