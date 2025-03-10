@@ -58,7 +58,26 @@ function Login() {
 
       if (data && data.token) {
         localStorage.setItem("token", data.token);
-        navigate("/Admin/Dashboard"); // Redirect to the dashboard
+        
+        // Get user role from token
+        const payload = JSON.parse(atob(data.token.split('.')[1]));
+        const userRole = payload.role;
+
+        // Role based navigation
+        switch(userRole?.toLowerCase()) {
+          case 'admin':
+            navigate("/Admin/Dashboard", { replace: true });
+            break;
+          case 'teacher':
+          case 'student_teacher':
+            navigate("/Teacher/Dashboard", { replace: true });
+            break;
+          case 'learner':
+            navigate("/Learner/Dashboard", { replace: true });
+            break;
+          default:
+            throw new Error("Invalid user role");
+        }
       }
 
     } catch (err) {

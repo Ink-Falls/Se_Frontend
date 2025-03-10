@@ -1,17 +1,63 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import logo from "/src/assets/images/ARALKADEMYLOGO.png";
-import { isAuthenticated } from "../../utils/auth";
+import { isAuthenticated, getUserRole } from "../../utils/auth";
 
 function Error404() {
   const navigate = useNavigate();
-  
+  const location = useLocation();
+  const isLearnerRoute = location.pathname.includes('/Learner/');
+  const isTeacherRoute = location.pathname.includes('/Teacher/');
+  const isAdminRoute = location.pathname.includes('/Admin/');
+
   const handleGoHome = () => {
-    if (isAuthenticated()) {
-      navigate("/Admin/Dashboard", { replace: true });
-    } else {
+    if (!isAuthenticated()) {
       navigate("/login", { replace: true });
+      return;
     }
+
+    const userRole = getUserRole();
+    switch (userRole?.toLowerCase()) {
+      case 'teacher':
+      case 'student_teacher':
+        navigate("/Teacher/Dashboard", { replace: true });
+        break;
+      case 'learner':
+        navigate("/Learner/Dashboard", { replace: true });
+        break;
+      case 'admin':
+        navigate("/Admin/Dashboard", { replace: true });
+        break;
+      default:
+        navigate("/login", { replace: true });
+    }
+  };
+
+  const getErrorMessage = () => {
+    if (isLearnerRoute) {
+      return "This learning resource or feature is currently under development. Please return to your dashboard.";
+    }
+    if (isTeacherRoute) {
+      return "This teaching resource or feature is currently under development. Please return to your dashboard.";
+    }
+    if (isAdminRoute) {
+      return "This administrative feature is currently under development. Please return to your dashboard.";
+    }
+    return "The page you are looking for doesn't exist or has been moved.";
+  };
+
+  const getTitle = () => {
+    if (isLearnerRoute) return "Learner Page Not Available";
+    if (isTeacherRoute) return "Teacher Page Not Available";
+    if (isAdminRoute) return "Admin Page Not Available";
+    return "Page Not Found";
+  };
+
+  const getButtonText = () => {
+    if (isLearnerRoute) return "Back to Learner Dashboard";
+    if (isTeacherRoute) return "Back to Teacher Dashboard";
+    if (isAdminRoute) return "Back to Admin Dashboard";
+    return "Back to Home";
   };
 
   return (
@@ -46,16 +92,16 @@ function Error404() {
                 404
               </h1>
               <h2 className="text-[4vw] lg:text-[2vw] font-semibold text-[#64748B] mb-[2vw]">
-                Page Not Found
+                {getTitle()}
               </h2>
               <p className="text-[2.5vw] lg:text-[1vw] text-[#64748B] mb-[4vw]">
-                The page you are looking for doesn't exist or has been moved.
+                {getErrorMessage()}
               </p>
               <button
                 onClick={handleGoHome}
                 className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] lg:py-[0.4vw] lg:px-[3vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
               >
-                Back to Home
+                {getButtonText()}
               </button>
             </div>
           </div>
