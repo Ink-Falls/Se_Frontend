@@ -56,8 +56,6 @@ import LearnerCourseModules from "./pages/Learner/CourseModules";
 import Error404 from "./pages/Errors/Error404";
 import Error403 from "./pages/Errors/Error403";
 
-// Components
-import Courses from "/src/pages/Admin/Courses.jsx";
 
 function App() {
   const isAuthenticated = () => {

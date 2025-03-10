@@ -28,6 +28,7 @@ const getDashboardByRole = (role) => {
   }
 };
 
+// Role-based access control (RBAC)
 export const RoleBasedRoute = ({ allowedRoles, children }) => {
   const location = useLocation();
   
@@ -38,7 +39,6 @@ export const RoleBasedRoute = ({ allowedRoles, children }) => {
   const userRole = getUserRole();
   
   if (!userRole || !allowedRoles.includes(userRole.toLowerCase())) {
-    // Redirect to unauthorized page instead of dashboard
     return <Navigate to="/unauthorized" state={{ from: location }} replace />;
   }
 
