@@ -17,7 +17,7 @@ function EnrolleeTable({
   onDetailsClick,
   currentPage,
   totalPages,
-  onPageChange
+  onPageChange,
 }) {
   const [selectedIds, setSelectedIds] = useState([]);
   const [filterStatus, setFilterStatus] = useState("All");
@@ -88,7 +88,7 @@ function EnrolleeTable({
   };
 
   const ROWS_PER_PAGE = 10;
-  
+
   // Filter enrollees by status and search query
   const filteredEnrollees = enrollees
     .filter((enrollee) => {
@@ -131,43 +131,42 @@ function EnrolleeTable({
               <Trash2 size={20} />
             </button>
           )}
+          {/* Filter Dropdown - Updated styling to match AdminDashboard */}
+          <div className="relative">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] transition duration-150 appearance-none"
+            >
+              <option value="All">Filter by: All</option>
+              <option value="Approved">Filter by: Approved</option>
+              <option value="Pending"> Filter by: Pending</option>
+              <option value="Rejected">Filter by: Rejected</option>
+            </select>
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Filter size={16} className="text-[#475569]" />
+            </div>
+          </div>
 
-          {/* Search Bar */}
+          {/* Search Bar - Updated styling to match AdminDashboard */}
           <div className="relative">
             <input
               type="text"
               placeholder="Search by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] transition duration-150"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={16} className="text-gray-400" />
-            </div>
-          </div>
-
-          {/* Filter Dropdown */}
-          <div className="relative">
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none"
-            >
-              <option value="All">All</option>
-              <option value="Approved">Approved</option>
-              <option value="Pending">Pending</option>
-              <option value="Rejected">Rejected</option>
-            </select>
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Filter size={16} className="text-gray-400" />
+              <Search size={16} className="text-[#475569]" />
             </div>
           </div>
         </div>
 
         {/* Generate Report Button */}
-        <button className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 flex items-center">
-          <FileText size={16} className="mr-2" />
-          Generate Report
+        <button className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black">
+          <FileText size={16} />
+          <span>Generate Report</span>
         </button>
       </div>
 
@@ -260,7 +259,8 @@ function EnrolleeTable({
       {/* Pagination Controls */}
       <div className="px-6 py-4 flex items-center justify-between border-t">
         <div className="text-sm text-gray-700">
-          Showing {startIndex + 1} to {Math.min(endIndex, filteredEnrollees.length)} of{" "}
+          Showing {startIndex + 1} to{" "}
+          {Math.min(endIndex, filteredEnrollees.length)} of{" "}
           {filteredEnrollees.length} entries
         </div>
         <div className="flex space-x-2">
@@ -273,11 +273,14 @@ function EnrolleeTable({
             Previous
           </button>
           <span className="px-4 py-1 text-gray-600">
-            Page {currentPage} of {Math.ceil(filteredEnrollees.length / ROWS_PER_PAGE)}
+            Page {currentPage} of{" "}
+            {Math.ceil(filteredEnrollees.length / ROWS_PER_PAGE)}
           </span>
           <button
             onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage >= Math.ceil(filteredEnrollees.length / ROWS_PER_PAGE)}
+            disabled={
+              currentPage >= Math.ceil(filteredEnrollees.length / ROWS_PER_PAGE)
+            }
             className="px-3 py-1 rounded border bg-white text-gray-600 
                      hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >

@@ -105,17 +105,17 @@ const CourseModules = () => {
           {
             text: "Home",
             icon: <Home size={20} />,
-            route: "/Dashboard",
+            route: "/Teacher/Dashboard",
           },
           {
             text: "Announcements",
             icon: <Megaphone size={20} />,
-            route: "/CourseAnnouncements",
+            route: "/Teacher/CourseAnnouncements",
           },
           {
             text: "Modules",
             icon: <BookOpen size={20} />,
-            route: "/CourseModules",
+            route: "/Teacher/CourseModules",
           },
           {
             text: "Assessments",
