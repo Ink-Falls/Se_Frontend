@@ -62,7 +62,7 @@ const LearnerCourseModules = () => {
           {
             text: "Assessments",
             icon: <ClipboardList size={20} />,
-            route: "/LearnerAssessments",
+            route: "/Learner/Assessments",
           },
         ]}
       />

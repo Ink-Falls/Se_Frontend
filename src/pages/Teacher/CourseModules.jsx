@@ -120,12 +120,12 @@ const CourseModules = () => {
           {
             text: "Assessments",
             icon: <ClipboardList size={20} />,
-            route: "/TeacherAssessments",
+            route: "/Teacher/Assessments",
           },
           {
             text: "Attendance",
             icon: <User size={20} />,
-            route: "/TeacherAttendance",
+            route: "/Teacher/Attendance",
           },
           {
             text: "Progress Tracker",
