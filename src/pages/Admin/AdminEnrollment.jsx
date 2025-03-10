@@ -101,7 +101,7 @@ function AdminEnrollment() {
         const rejected = enrollmentsList.filter(
           (e) => e.status === "rejected"
         ).length;
-        
+
         setApprovedCount(approved);
         setPendingCount(pending);
         setRejectedCount(rejected);
@@ -123,7 +123,7 @@ function AdminEnrollment() {
   const handleApprove = async (enrolleeId) => {
     try {
       console.log("Attempting to approve enrollee:", enrolleeId);
-      
+
       await approveEnrollment(enrolleeId);
 
       // After successful approval, refresh the data
@@ -133,8 +133,12 @@ function AdminEnrollment() {
       // Transform and update enrollees list
       const transformedEnrollees = enrollmentsList.map((enrollment) => ({
         id: enrollment.enrollment_id,
-        fullName: `${enrollment.first_name} ${enrollment.middle_initial || ""} ${enrollment.last_name}`,
-        status: enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1),
+        fullName: `${enrollment.first_name} ${
+          enrollment.middle_initial || ""
+        } ${enrollment.last_name}`,
+        status:
+          enrollment.status.charAt(0).toUpperCase() +
+          enrollment.status.slice(1),
         enrollmentDate: new Date(enrollment.createdAt).toLocaleDateString(),
         email: enrollment.email,
         contactNo: enrollment.contact_no,
@@ -144,16 +148,21 @@ function AdminEnrollment() {
       }));
 
       setEnrollees(transformedEnrollees);
-      
+
       // Update counts
-      const approved = enrollmentsList.filter(e => e.status === "approved").length;
-      const pending = enrollmentsList.filter(e => e.status === "pending").length;
-      const rejected = enrollmentsList.filter(e => e.status === "rejected").length;
-      
+      const approved = enrollmentsList.filter(
+        (e) => e.status === "approved"
+      ).length;
+      const pending = enrollmentsList.filter(
+        (e) => e.status === "pending"
+      ).length;
+      const rejected = enrollmentsList.filter(
+        (e) => e.status === "rejected"
+      ).length;
+
       setApprovedCount(approved);
       setPendingCount(pending);
       setRejectedCount(rejected);
-
     } catch (error) {
       console.error("Approval error:", error);
       alert("Failed to approve enrollment. Please try again.");
@@ -241,7 +250,7 @@ function AdminEnrollment() {
       const rejected = enrollmentsList.filter(
         (e) => e.status === "rejected"
       ).length;
-      
+
       setApprovedCount(approved);
       setPendingCount(pending);
       setRejectedCount(rejected);
