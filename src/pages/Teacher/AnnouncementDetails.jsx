@@ -35,7 +35,7 @@ const announcements = [
       "Don't forget to submit your final project before the deadline on December 15.",
     time: "5 minutes ago",
     userImage:
-      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWZnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
   },
   {
     id: "3",
@@ -45,7 +45,7 @@ const announcements = [
       "Tutoring sessions are available every Tuesday and Thursday at 3 PM.",
     time: "20 minutes ago",
     userImage:
-      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWZnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
   },
 ];
 
@@ -102,17 +102,17 @@ const AnnouncementDetails = () => {
           {
             text: "Home",
             icon: <Home size={20} />,
-            route: "/Dashboard",
+            route: "/Teacher/Dashboard", // Update this route
           },
           {
             text: "Announcements",
             icon: <Megaphone size={20} />,
-            route: "/CourseAnnouncements",
+            route: "/Teacher/CourseAnnouncements",
           },
           {
             text: "Modules",
             icon: <BookOpen size={20} />,
-            route: "/CourseModules",
+            route: "/Teacher/CourseModules", // Update route path
           },
           {
             text: "Assessments",
@@ -164,21 +164,47 @@ const AnnouncementDetails = () => {
           </button>
         </BlackHeader>
 
-        {/* Announcement Details */}
+        {/* Modified Announcement Details Box */}
         <div className="bg-white p-10 rounded-lg shadow-md">
-          <div className="flex items-center space-x-4">
-            <img
-              src={announcement.userImage}
-              alt="Author"
-              className="w-12 h-12 rounded-full"
-            />
-            <div>
-              <h2 className="text-xl font-semibold">{announcement.type}</h2>
-              <p className="text-gray-500 text-sm">Author's name</p>
-              <p className="text-gray-500 text-sm">{announcement.time}</p>
+          <div className="flex items-start space-x-4">
+            <div className="flex-shrink-0">
+              <img
+                src={announcement.userImage}
+                alt="Author"
+                className="h-12 w-12 rounded-full border-2 border-gray-200"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-2">
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                      announcement.type.toLowerCase().includes("test")
+                        ? "bg-blue-100 text-blue-800 border-blue-200"
+                        : announcement.type.toLowerCase().includes("project")
+                        ? "bg-purple-100 text-purple-800 border-purple-200"
+                        : "bg-green-100 text-green-800 border-green-200"
+                    }`}
+                  >
+                    {announcement.type}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {announcement.time}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <p className="text-gray-900 text-lg font-medium">
+                  {announcement.description}
+                </p>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {announcement.fullText}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-          <p className="mt-4 text-gray-700">{announcement.fullText}</p>
         </div>
       </div>
 
