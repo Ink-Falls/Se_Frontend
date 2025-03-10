@@ -100,10 +100,10 @@ function EnrolleeTable({
   };
 
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
+    <div className="bg-white shadow rounded-lg overflow-hidden p-4">
       {/* Table Header with Search, Filter, and Actions */}
-      <div className="p-4 border-b flex justify-between items-center">
-        <div className="flex items-center space-x-4">
+      <div className="border-b pb-4 flex flex-wrap md:flex-nowrap justify-between items-center gap-4">
+        <div className="flex flex-wrap md:flex-nowrap items-center gap-4 w-full">
           {/* Delete Selected Button (Visible when checkboxes are selected) */}
           {selectedIds.length > 0 && (
             <button
@@ -115,13 +115,13 @@ function EnrolleeTable({
           )}
 
           {/* Search Bar */}
-          <div className="relative">
+          <div className="relative flex-1">
             <input
               type="text"
               placeholder="Search by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
+              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search size={16} className="text-gray-400" />
@@ -145,135 +145,106 @@ function EnrolleeTable({
           </div>
         </div>
 
-        {/* Generate Report Button */}
-        <button className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 flex items-center">
-          <FileText size={16} className="mr-2" />
-          Generate Report
-        </button>
+        {/* Buttons: Wrap on small screens */}
+        <div className="flex flex-wrap md:flex-nowrap gap-4 w-full">
+          {/* Generate Report Button */}
+          <div className="w-auto md:ml-auto">
+            <button className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 flex items-center">
+              <FileText size={16} className="mr-2" />
+              Generate Report
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Table */}
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              {/* Checkbox for Select All */}
-              <input
-                type="checkbox"
-                checked={selectedIds.length === filteredEnrollees.length}
-                onChange={() => {
-                  if (selectedIds.length === filteredEnrollees.length) {
-                    setSelectedIds([]);
-                  } else {
-                    setSelectedIds(
-                      filteredEnrollees.map((enrollee) => enrollee.id)
-                    );
-                  }
-                }}
-              />
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              #
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Full Name
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Status
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Enrollment Date
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {filteredEnrollees.map((enrollee) => (
-            <tr
-              key={enrollee.id}
-              onClick={() => handleRowClick(enrollee)} // Open details modal on row click
-              className="hover:bg-gray-50 transition-colors cursor-pointer"
-            >
-              {/* Checkbox for Row Selection */}
-              <td
-                className="px-6 py-4 whitespace-nowrap"
-                onClick={(e) => e.stopPropagation()}
-              >
+      {/* Scrollable Table */}
+      <div className="overflow-auto max-w-full">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* Checkbox for Select All */}
                 <input
                   type="checkbox"
-                  checked={selectedIds.includes(enrollee.id)}
-                  onChange={() => handleCheckboxChange(enrollee.id)}
+                  checked={selectedIds.length === filteredEnrollees.length}
+                  onChange={() => {
+                    if (selectedIds.length === filteredEnrollees.length) {
+                      setSelectedIds([]);
+                    } else {
+                      setSelectedIds(
+                        filteredEnrollees.map((enrollee) => enrollee.id)
+                      );
+                    }
+                  }}
                 />
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {enrollee.id}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {enrollee.fullName}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span
-                  className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(
-                    enrollee.status
-                  )}`}
-                >
-                  {enrollee.status}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {enrollee.enrollmentDate}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button
-                  onClick={(e) => handleEditClick(enrollee, e)}
-                  className="text-blue-600 hover:text-blue-900"
-                  title="View Details"
-                >
-                  <SquarePen size={20} color="black" />
-                </button>
-              </td>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                #
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Full Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Enrollment Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* Enrollee Details Modal */}
-      {showDetailsModal && selectedEnrollee && (
-        <EnrolleeDetailsModal
-          enrollee={selectedEnrollee}
-          onClose={() => {
-            setShowDetailsModal(false);
-            setSelectedEnrollee(null);
-          }}
-          onReject={handleReject}
-        />
-      )}
-
-      {/* Reject Enrollee Modal */}
-      {showRejectModal && (
-        <RejectEnrolleeModal
-          onClose={handleCancelReject}
-          onConfirm={handleConfirmReject}
-        />
-      )}
-
-      {/* Enrollee Status Modal */}
-      {isModalOpen && selectedEnrollee && (
-        <EnrolleeStatusModal
-          enrollee={selectedEnrollee}
-          onClose={handleCloseModal}
-          onApprove={() => {
-            onApprove(selectedEnrollee.id);
-            handleCloseModal();
-          }}
-          onReject={() => {
-            onReject(selectedEnrollee.id);
-            handleCloseModal();
-          }}
-        />
-      )}
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredEnrollees.map((enrollee) => (
+              <tr
+                key={enrollee.id}
+                onClick={() => handleRowClick(enrollee)} // Open details modal on row click
+                className="hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                {/* Checkbox for Row Selection */}
+                <td
+                  className="px-6 py-4 whitespace-nowrap"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(enrollee.id)}
+                    onChange={() => handleCheckboxChange(enrollee.id)}
+                  />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {enrollee.id}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {enrollee.fullName}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span
+                    className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(
+                      enrollee.status
+                    )}`}
+                  >
+                    {enrollee.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {enrollee.enrollmentDate}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <button
+                    onClick={(e) => handleEditClick(enrollee, e)}
+                    className="text-blue-600 hover:text-blue-900"
+                    title="View Details"
+                  >
+                    <SquarePen size={20} color="black" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

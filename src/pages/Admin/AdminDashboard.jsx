@@ -43,8 +43,41 @@ function AdminDashboard() {
     });
     const [moduleToDelete, setModuleToDelete] = useState(null);
     const [isLoading, setIsLoading] = useState(true); // Add loading state
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [users, setUsers] = useState([]);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
+    const [users, setUsers] = useState([
+        {
+            id: 1,
+            name: "John Doe",
+            email: "john.doe@example.com",
+            role: "student",
+            status: "active",
+            profilePicture: "https://i.imgur.com/RTMTvNB.png"
+        },
+        {
+            id: 2,
+            name: "Jane Smith",
+            email: "jane.smith@example.com",
+            role: "teacher",
+            status: "active",
+            profilePicture: "https://i.imgur.com/RTMTvNB.png"
+        },
+        {
+            id: 3,
+            name: "Alice Johnson",
+            email: "alice.johnson@example.com",
+            role: "admin",
+            status: "inactive",
+            profilePicture: "https://i.imgur.com/RTMTvNB.png"
+        },
+        {
+            id: 4,
+            name: "Bob Brown",
+            email: "bob.brown@example.com",
+            role: "student",
+            status: "active",
+            profilePicture: "https://i.imgur.com/RTMTvNB.png"
+        }
+    ]);
     const [stats, setStats] = useState({
         totalUsers: 0,
         totalLearners: 0,
@@ -77,10 +110,10 @@ function AdminDashboard() {
     }, []);
 
     const navItems = [
-        { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
-        { text: "Courses", icon: <Book size={20} />, route: "/Admin/Courses" },
-        { text: "Enrollments", icon: <Bell size={20} />, route: "/Admin/Enrollments" },
-        { text: "Announcements", icon: <FileText size={20} />, route: "/Admin/Announcements" },
+        { text: "Users", icon: <Home size="20" />, route: "/Admin/Dashboard" },
+        { text: "Courses", icon: <Book size="20" />, route: "/Admin/Courses" },
+        { text: "Enrollments", icon: <Bell size="20" />, route: "/Admin/Enrollments" },
+        { text: "Announcements", icon: <FileText size="20" />, route: "/Admin/Announcements" },
     ];
 
     useEffect(() => {
@@ -225,19 +258,22 @@ function AdminDashboard() {
             <div className="flex h-screen bg-gray-100">
                 <Sidebar navItems={navItems} />
 
-                <div className="flex-1 p-6 overflow-auto">
+                <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto">
                     <Header title="Users" />
 
-                    <UserStats
-                        totalUsers={stats.totalUsers}
-                        totalLearners={stats.totalLearners}
-                        totalTeachers={stats.totalTeachers}
-                        totalAdmins={stats.totalAdmins}
-                    />
+                    {/* User Stats Section */}
+                    <div className="flex flex-col md:flex-row gap-[2vw] mb-[2vw]">
+                        <UserStats
+                            totalUsers={stats.totalUsers}
+                            totalLearners={stats.totalLearners}
+                            totalTeachers={stats.totalTeachers}
+                            totalAdmins={stats.totalAdmins}
+                        />
+                    </div>
 
-                    <div className="bg-white shadow rounded-lg p-6">
-                        {/* User controls moved to UserTable component */}
-                        <UserTable 
+                    {/* User Table Section */}
+                    <div className="bg-white shadow rounded-lg p-[2vw] md:p-[1vw]">
+                        <UserTable
                             users={users}
                             onEdit={(user) => {
                                 setSelectedUser(user);

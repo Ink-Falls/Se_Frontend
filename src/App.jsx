@@ -11,7 +11,6 @@ import Login from "./pages/General/Login.jsx";
 import Enrollment from "./pages/Enrollment/Enrollment.jsx";
 import NewEnrollment from "./pages/Enrollment/NewEnrollment.jsx";
 import "./icon.css";
-import StudentDashboard from "./pages/Learner/StudentDashboard.jsx";
 import Courses from "./components/Courses.jsx";
 import Dashboard from "./pages/General/Dashboard.jsx";
 import Notifications from "./components/Notifications.jsx";
@@ -30,6 +29,9 @@ import AdminDashboard from "./pages/Admin/AdminDashboard.jsx";
 import AdminCourses from "./pages/Admin/AdminCourses.jsx";
 import AdminEnrollment from "./pages/Admin/AdminEnrollment.jsx";
 import AdminAnnouncements from "./pages/Admin/AdminAnnouncements.jsx";
+
+import StudentDashboard from "./pages/Learner/StudentDashboard.jsx";
+import Assessments from "./pages/Learner/Assessments.jsx";
 
 function App() {
   const isAuthenticated = () => {
@@ -66,6 +68,9 @@ function App() {
         <Route path="/Admin/Courses" element={<AdminCourses />} />
         <Route path="/Admin/Enrollments" element={<AdminEnrollment />} />
         <Route path="/Admin/Announcements" element={<AdminAnnouncements />} />
+        
+        <Route path="/Student/Dashboard" element={<StudentDashboard />} />
+        <Route path="/Student/Assessments" element={<Assessments />} />
 
 
         <Route path="/Notifications" element={<Notifications />} />

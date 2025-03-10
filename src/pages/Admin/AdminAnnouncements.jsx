@@ -121,31 +121,31 @@ function AdminAnnouncements() {
     return (
         <div className="flex h-screen bg-gray-100 relative">
             <Sidebar navItems={navItems} />
-            <div className="flex-1 p-6 overflow-auto">
+            <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto">
                 <Header title="Announcements" />
 
                 {/* Announcement List */}
-                <div className="flex flex-col gap-4 mt-4">
-                    <div className="flex-1 bg-[#212529] shadow rounded-lg p-4 pl-6 pr-6">
+                <div className="flex flex-col gap-[2vw] md:gap-[1vw] mt-[1vw]">
+                    <div className="flex-1 bg-[#212529] shadow rounded-lg p-[0.5vw] pl-[1vw] pr-[1vw]">
                         {/* Filter and Action Buttons */}
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center">
                             {/* Filter button (left side) */}
                             <button
                                 onClick={() => console.log("Filter By: All")}
-                                className="flex text-md font-semibold items-center gap-2 py-2 text-white rounded-lg"
+                                className="flex text-md font-semibold items-center py-[2vw] md:py-[0.2vw] ml-[3vw] md:ml-[0vw] text-white rounded-lg"
                             >
                                 <span>Announcements ({announcements.length})</span>
                             </button>
 
                             {/* Buttons on the right side */}
-                            <div className="flex items-center gap-4 ml-auto">
+                            <div className="flex items-center gap-[3vw] md:gap-[1vw] ml-auto">
                                 <button
-                                    className="flex items-center gap-2 py-2 rounded-lg"
+                                    className="flex items-center rounded-lg"
                                 >
                                     <Plus className="text-white" size={22} />
                                 </button>
                                 <button
-                                    className="flex items-center gap-2 py-2 rounded-lg"
+                                    className="flex items-center rounded-lg mr-[3vw] md:mr-[0vw]"
                                 >
                                     <Search className="text-white" size={20} />
                                 </button>
@@ -155,7 +155,7 @@ function AdminAnnouncements() {
                     {announcements.map((announcement) => (
                         <div
                             key={announcement.id}
-                            className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg"
+                            className="relative bg-white rounded-lg md:p-[1vw] p-[2vw] border-l-[2vw] md:border-l-[0.5vw] border-yellow-500 transition-all shadow-sm hover:shadow-lg"
                         >
                             {/* Announcement Header */}
                             <div className="flex justify-between items-center cursor-pointer">
@@ -164,16 +164,16 @@ function AdminAnnouncements() {
                                         <img
                                             src={announcement.poster.profilePicture}
                                             alt={announcement.poster.name}
-                                            className="w-10 h-10 rounded-full mr-4"
+                                            className="w-[16vw] h-[16vw] md:w-[3vw] md:h-[3vw] rounded-full mr-[4vw] ml-[2vw] md:mr-[1vw] md:ml-[0vw]"
                                         />
                                         <div>
-                                            <h3 className="font-bold text-lg text-gray-800">
+                                            <h3 className="font-bold text-lg text-gray-800 text-justify">
                                                 {announcement.title}
                                             </h3>
-                                            <p className="text-sm text-gray-600">
+                                            <p className="text-sm text-gray-600 text-justify">
                                                 {announcement.content.substring(0, 100)}...
                                             </p>
-                                            <p className="text-xs text-gray-500 mt-2">
+                                            <p className="text-xs text-gray-500 mt-[1vw] pb-[1vw] md:pb-[0vw]">
                                                 Posted on: {announcement.date}
                                             </p>
                                         </div>
@@ -181,10 +181,10 @@ function AdminAnnouncements() {
                                 </div>
 
                                 {/* Edit and Delete Buttons */}
-                                <div className="flex items-center gap-2 pr-6">
+                                <div className="flex items-center gap-[3vw] md:gap-[0.5vw] pl-[2vw] pr-[3vw] md:pr-[1vw]">
                                     <button
                                         onClick={() => setAnnouncementToDelete(announcement)}
-                                        className="text-gray-500 hover:text-red-500 transition-colors mr-3"
+                                        className="text-gray-500 hover:text-red-500 transition-colors mr-[0.5vw]"
                                     >
                                         <Trash2 size={20} />
                                     </button>
@@ -199,9 +199,9 @@ function AdminAnnouncements() {
 
                             {/* Announcement Details */}
                             {expandedAnnouncementId === announcement.id && (
-                                <div className="mt-4 border-t pt-4">
-                                    <div className="space-y-3">
-                                        <p className="text-gray-600">
+                                <div className="mt-[1vw] border-t pt-[2vw] p-[1vw] md:pt-[1vw] md:p-[0vw]">
+                                    <div className="space-y-[1vw]">
+                                        <p className="text-gray-600 text-justify">
                                             {announcement.content}
                                         </p>
                                     </div>
