@@ -1,6 +1,6 @@
 # AralKademy Frontend
 
-![AralKademy Logo](public/ARALKADEMYICON.png)
+![AralKademy Logo](src/assets/images/ARALKADEMYLOGO.png)
 
 A modern Learning Management System (LMS) built with React and Vite, designed to provide an interactive learning experience for NSTP-LTS students and partner communities.
 
@@ -145,11 +145,18 @@ The build artifacts will be stored in the `dist/` directory.
 
 ## License 📄
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under a modified MIT License. Copyright (c) 2024 University of Santo Tomas - National Service Training Program (NSTP-LTS). 
+
+**Important Restrictions:**
+- Not for sale or commercial use
+- Intended specifically for schools under UST NSTP-LTS program
+- Primary beneficiary: Asuncion Consunji Elementary School
+
+See the [LICENSE](LICENSE) file for full details.
 
 ## Support 💬
 
-For support, email support@aralkademy.com or join our Slack channel.
+For support, email [REDACTED] or join our [REDACTED] channel.
 
 ## Acknowledgments 🙏
 
