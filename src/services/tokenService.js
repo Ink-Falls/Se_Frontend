@@ -2,7 +2,6 @@
  * @module tokenService
  * @description Service for managing authentication tokens
  */
-
 import { API_BASE_URL } from '../utils/constants';
 
 const REFRESH_THRESHOLD_MINUTES = 5;
@@ -47,7 +46,7 @@ class TokenService {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
   }
-
+  
   /**
    * Checks if the current access token is expired or will expire soon
    * @returns {boolean} True if token is expired or will expire within threshold

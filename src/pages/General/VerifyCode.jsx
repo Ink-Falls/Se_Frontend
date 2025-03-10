@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "/src/assets/images/ARALKADEMYLOGO.png";
-import { verifyResetCode } from "../../services/authService"; // Import function
+import { verifyResetCode, forgotPassword } from "../../services/authService"; // Import function
 
 function EnterCode() {
   const navigate = useNavigate();
   const location = useLocation();
   const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
-  const [isExpired, setIsExpired] = useState(false); 
+  const [isExpired, setIsExpired] = useState(false);
+  const [resendAttempts, setResendAttempts] = useState(0);
+  const [resendMessage, setResendMessage] = useState("");
 
   const email = location.state?.email;
 
@@ -29,15 +31,33 @@ function EnterCode() {
       return;
     }
 
+    setResendMessage("");
+
     try {
       await verifyResetCode(email, code);
       setMessage("Code verified! Redirecting...");
-      navigate("/ChangePassword", { state: { email }, replace: true }); 
+      navigate("/ChangePassword", { state: { email }, replace: true });
     } catch (error) {
       setMessage(error.message || "Invalid code. Please try again.");
       if (error.message === "Reset code has expired") {
         setIsExpired(true);
       }
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendAttempts >= 2) return;
+
+    setMessage("");
+    setResendMessage("");
+
+    try {
+      await forgotPassword(email);
+      setResendMessage("A new code has been sent to your email.");
+      setIsExpired(false);
+      setResendAttempts((prev) => prev + 1);
+    } catch (error) {
+      setResendMessage("Failed to resend code. Please try again later.");
     }
   };
 
@@ -82,20 +102,32 @@ function EnterCode() {
             className="w-full px-[3vw] py-[1.5vw] lg:py-[1vw] text-[3vw] max-lg:text-[2vw] lg:text-[1vw] border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F6BA18] text-center"
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            disabled={isExpired}
           />
           {message && <p className="text-red-500 mt-2">{message}</p>}
+          {resendMessage && <p className="text-green-500 mt-2">{resendMessage}</p>}
 
-          {/* Verify Button */}
-          <div className="flex justify-end mt-[4vw] lg:mt-[2vw]">
+          {/* Verify & Resend Buttons */}
+          <div className="flex justify-end mt-[4vw] lg:mt-[2vw] gap-2">
             {isExpired ? (
-              <button
-                onClick={() => navigate("/ForgotPassword", { replace: true })}
-                className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] lg:py-[0.4vw] lg:px-[3vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
-              >
-                Back to Forgot Password
-              </button>
+              resendAttempts < 2 ? (
+                // Show Resend Code Button
+                <button
+                  onClick={handleResendCode}
+                  className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] lg:py-[0.4vw] lg:px-[3vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
+                >
+                  Resend Code ({2 - resendAttempts} left)
+                </button>
+              ) : (
+                // Show Back to Forgot Password if attempts exhausted
+                <button
+                  onClick={() => navigate("/ForgotPassword", { replace: true })}
+                  className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] lg:py-[0.4vw] lg:px-[3vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
+                >
+                  Back to Forgot Password
+                </button>
+              )
             ) : (
+              // Show Verify Code button when code is active
               <button
                 onClick={handleVerifyCode}
                 className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] lg:py-[0.4vw] lg:px-[3vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
@@ -110,4 +142,6 @@ function EnterCode() {
   );
 }
 
+
 export default EnterCode;
+
