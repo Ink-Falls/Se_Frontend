@@ -63,39 +63,106 @@ function NewEnrollment() {
     setErrors((prevErrors) => ({ ...prevErrors, [name]: null }));
   };
 
+  const validateForm = () => {
+    const errors = {};
+
+    // Name validations
+    if (!formData.first_name.trim()) {
+      errors.first_name = "First name is required";
+    } else if (!/^[a-zA-Z\s]{2,30}$/.test(formData.first_name)) {
+      errors.first_name =
+        "First name must be 2-30 characters and contain only letters";
+    }
+
+    if (!formData.last_name.trim()) {
+      errors.last_name = "Last name is required";
+    } else if (!/^[a-zA-Z\s]{2,30}$/.test(formData.last_name)) {
+      errors.last_name =
+        "Last name must be 2-30 characters and contain only letters";
+    }
+
+    if (formData.middle_initial && formData.middle_initial.length > 1) {
+      errors.middle_initial = "Middle initial must be a single character";
+    }
+
+    // Contact number validation
+    const cleanedContactNo = formData.contact_no.replace(/[-\s()]/g, "");
+    if (!cleanedContactNo) {
+      errors.contact_no = "Contact number is required";
+    } else if (!cleanedContactNo.startsWith("09")) {
+      errors.contact_no = "Contact number must start with 09";
+    } else if (cleanedContactNo.length !== 11) {
+      errors.contact_no = "Contact number must be 11 digits";
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email) {
+      errors.email = "Email is required";
+    } else if (!emailRegex.test(formData.email)) {
+      errors.email = "Please enter a valid email address";
+    }
+
+    // Password validation
+    if (!formData.password) {
+      errors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+      errors.password = "Password must be at least 8 characters long";
+    } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) {
+      errors.password = "Password must contain at least one special character";
+    }
+
+    if (!formData.confirm_password) {
+      errors.confirm_password = "Please confirm your password";
+    } else if (formData.password !== formData.confirm_password) {
+      errors.confirm_password = "Passwords do not match";
+    }
+
+    // Birth date validation
+    if (!formData.birth_date) {
+      errors.birth_date = "Birth date is required";
+    } else {
+      const birthDate = new Date(formData.birth_date);
+      const today = new Date();
+
+      // Set today's time to midnight for accurate date comparison
+      today.setHours(0, 0, 0, 0);
+
+      if (birthDate > today) {
+        errors.birth_date = "Birth date cannot be in the future";
+      }
+    }
+
+    // School and year level validation
+    if (!formData.school_id) {
+      errors.school_id = "Please select a school";
+    }
+
+    if (!formData.year_level) {
+      errors.year_level = "Please select your year level";
+    }
+
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
     setSuccessMessage("");
     setIsLoading(true);
 
-    const clientErrors = {};
-
-    if (formData.password !== formData.confirm_password) {
-      clientErrors.confirm_password = "Passwords do not match.";
-    }
-
-    // Improved client-side contact number validation
-    const cleanedContactNo = formData.contact_no.replace(/[-\s()]/g, "");
-    if (!/^(?:\+63|0)\d{10}$/.test(cleanedContactNo)) {
-      clientErrors.contact_no =
-        "Invalid contact number. Must be 11 digits and start with 09 or +639.";
-    }
-
-    if (formData.middle_initial.length > 3) {
-      clientErrors.middle_initial =
-        "Middle initial must be at most 3 characters.";
-    }
-
-    if (Object.keys(clientErrors).length > 0) {
-      setErrors(clientErrors);
+    // Validate form
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       setIsLoading(false);
       return;
     }
 
+    // Prepare data for submission
     const dataToSend = {
       ...formData,
-      contact_no: formData.contact_no.replace(/[-\s()]/g, ""), // Remove hyphens, spaces, and parentheses
+      contact_no: formData.contact_no.replace(/[-\s()]/g, ""),
     };
 
     try {
@@ -117,14 +184,15 @@ function NewEnrollment() {
       setTimeout(() => {
         navigate("/EnrollConfirm");
       }, 3000);
-
     } catch (error) {
-      if (error.message === 'Email already exists') {
+      if (error.message === "Email already exists") {
         setErrors({
-          email: "Email already exists. Please use a different email."
+          email: "Email already exists. Please use a different email.",
         });
       } else {
-        setErrors({ general: error.message || "Network error. Please try again." });
+        setErrors({
+          general: error.message || "Network error. Please try again.",
+        });
       }
     } finally {
       setIsLoading(false);
