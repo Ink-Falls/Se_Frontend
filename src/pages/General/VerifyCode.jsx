@@ -8,6 +8,7 @@ function EnterCode() {
   const location = useLocation();
   const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
+  const [isExpired, setIsExpired] = useState(false); 
 
   const email = location.state?.email;
 
@@ -34,6 +35,9 @@ function EnterCode() {
       navigate("/ChangePassword", { state: { email }, replace: true }); 
     } catch (error) {
       setMessage(error.message || "Invalid code. Please try again.");
+      if (error.message === "Reset code has expired") {
+        setIsExpired(true);
+      }
     }
   };
 
@@ -78,17 +82,27 @@ function EnterCode() {
             className="w-full px-[3vw] py-[1.5vw] lg:py-[1vw] text-[3vw] max-lg:text-[2vw] lg:text-[1vw] border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F6BA18] text-center"
             value={code}
             onChange={(e) => setCode(e.target.value)}
+            disabled={isExpired}
           />
           {message && <p className="text-red-500 mt-2">{message}</p>}
 
           {/* Verify Button */}
           <div className="flex justify-end mt-[4vw] lg:mt-[2vw]">
-            <button
-              onClick={handleVerifyCode}
-              className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] lg:py-[0.4vw] lg:px-[3vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
-            >
-              Verify Code
-            </button>
+            {isExpired ? (
+              <button
+                onClick={() => navigate("/ForgotPassword", { replace: true })}
+                className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] lg:py-[0.4vw] lg:px-[3vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
+              >
+                Back to Forgot Password
+              </button>
+            ) : (
+              <button
+                onClick={handleVerifyCode}
+                className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] lg:py-[0.4vw] lg:px-[3vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
+              >
+                Verify Code
+              </button>
+            )}
           </div>
         </div>
       </div>
