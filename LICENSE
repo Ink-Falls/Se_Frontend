@@ -1,30 +1,110 @@
-MIT License
+Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License
 
 Copyright (c) 2024 University of Santo Tomas - National Service Training Program (NSTP-LTS)
+All rights reserved.
 
-SPECIAL NOTICE:
-This project is strictly intended for educational use by schools under the UST NSTP-LTS program, 
-specifically Asuncion Consunji Elementary School. This software is not for sale, resale, 
-or commercial use. Any redistribution must maintain this notice and these restrictions.
+PREAMBLE:
+This Learning Management System (LMS) software is a collaborative project developed under the 
+auspices of the University of Santo Tomas - National Service Training Program (NSTP-LTS). 
+It is designed specifically to serve the educational needs of partner communities, with 
+Asuncion Consunji Elementary School as the primary beneficiary.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+LICENSE TERMS AND CONDITIONS:
 
-1. The software may not be sold or used for commercial purposes.
-2. The software is intended solely for use by schools under UST NSTP-LTS program.
-3. Primary beneficiary: Asuncion Consunji Elementary School.
+1. DEFINITIONS
+   a. "Software" refers to the AralKademy Learning Management System and all its components
+   b. "Licensor" refers to the University of Santo Tomas - NSTP-LTS
+   c. "Users" refers to authorized educational institutions and their representatives
+   d. "Source Code" refers to the human-readable form of the software
+   e. "Documentation" refers to all manuals, user guides, and related materials
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+2. GRANT OF LICENSE
+   The Licensor hereby grants you a non-exclusive, non-transferable, non-commercial license to:
+   a. Access and use the software for educational purposes
+   b. Share and distribute unmodified copies of the software
+   c. Deploy the software within authorized educational institutions
+   
+3. RESTRICTIONS
+   You are expressly prohibited from:
+   a. Using the software for any commercial purpose
+   b. Modifying, adapting, or creating derivative works
+   c. Removing or modifying any copyright notices or branding
+   d. Selling, leasing, or monetizing the software in any way
+   e. Granting sublicenses or transferring any rights
+   f. Using the software outside the scope of UST NSTP-LTS programs
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+4. ATTRIBUTION REQUIREMENTS
+   Any use or distribution must:
+   a. Retain all copyright notices and attributions
+   b. Include prominent credit to "University of Santo Tomas - NSTP-LTS"
+   c. Provide a copy of this license
+   d. State if any changes were made (though modifications are not permitted)
+   e. Include the original project website and documentation
+
+5. AUTHORIZED USAGE CONTEXTS
+   5.1 Primary Beneficiary Rights
+       - Asuncion Consunji Elementary School has priority access
+       - Customized support and implementation assistance
+       - Direct communication channel with developers
+   
+   5.2 Educational Institution Rights
+       - Right to deploy for educational purposes
+       - Access to user documentation
+       - Permission to train staff and students
+       
+   5.3 UST NSTP-LTS Rights
+       - Full control over software development
+       - Right to authorize or revoke access
+       - Authority to modify terms of use
+
+6. TECHNICAL RESTRICTIONS
+   6.1 Hosting Requirements
+       - Must be hosted on secure servers
+       - Regular backup requirements
+       - Data protection compliance
+   
+   6.2 Security Requirements
+       - Mandatory access controls
+       - User authentication requirements
+       - Regular security audits
+
+7. WARRANTY AND LIABILITY
+   7.1 No Warranty
+       The software is provided "AS IS" without warranty of any kind, express or implied.
+   
+   7.2 Limitation of Liability
+       The Licensor shall not be liable for any damages arising from the use of the software.
+
+8. TERM AND TERMINATION
+   8.1 Duration
+       This license is effective until terminated
+   
+   8.2 Termination Conditions
+       - Violation of any terms
+       - Unauthorized modification or distribution
+       - Commercial use attempt
+   
+   8.3 Effect of Termination
+       Upon termination:
+       - Cease all use of the software
+       - Destroy all copies
+       - Remove from all systems
+
+9. GOVERNING LAW
+   This license shall be governed by Philippine law, specifically:
+   - Intellectual Property Code of the Philippines
+   - Data Privacy Act of 2012
+   - Education-related legislation
+   
+10. CONTACT INFORMATION
+    For inquiries about this license:
+    University of Santo Tomas
+    National Service Training Program (NSTP-LTS)
+    España Blvd, Sampaloc, Manila, 1008 Metro Manila
+    [Contact Information and Website]
+
+For the complete Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 
+International License text, visit: 
+https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
+
+END OF LICENSE

@@ -71,7 +71,6 @@ npm run dev
 ```
 Se_Frontend/
 ├── public/                 # Static assets
-│   └── ARALKADEMYICON.png
 ├── src/
 │   ├── assets/            # Images and media files
 │   ├── components/        # Reusable UI components
@@ -145,12 +144,14 @@ The build artifacts will be stored in the `dist/` directory.
 
 ## License 📄
 
-This project is licensed under a modified MIT License. Copyright (c) 2024 University of Santo Tomas - National Service Training Program (NSTP-LTS). 
+This project is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License (CC BY-NC-ND 4.0). Copyright (c) 2024 University of Santo Tomas - National Service Training Program (NSTP-LTS).
 
-**Important Restrictions:**
-- Not for sale or commercial use
-- Intended specifically for schools under UST NSTP-LTS program
-- Primary beneficiary: Asuncion Consunji Elementary School
+**License Terms:**
+- ✅ Share and distribute the unmodified material
+- ❌ No commercial use allowed
+- ❌ No modifications or derivative works
+- ✅ Attribution required to UST NSTP-LTS
+- 🏫 Primary beneficiary: Asuncion Consunji Elementary School
 
 See the [LICENSE](LICENSE) file for full details.
 
