@@ -265,7 +265,7 @@ function AdminEnrollment() {
         <Sidebar navItems={navItems} />
 
         <div className="flex-1 p-6 overflow-auto">
-          <Header title="Admin: Manage Enrollments" />
+          <Header title="Manage Enrollments" />
           <div className="mt-4">
             <EnrolleeStats
               totalEnrollees={totalItems}

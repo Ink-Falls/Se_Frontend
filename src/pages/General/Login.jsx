@@ -2,11 +2,11 @@
 import React, { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
-import { loginUser } from "../../services/authService"; 
-import { RECAPTCHA_SITE_KEY } from "../../utils/constants";  
-import logo from "../../assets/images/ARALKADEMYLOGO.png";   
-import icon from "../../assets/images/ARALKADEMYICON.png";   
-import nstpLogo from "../../assets/images/NSTPLOGO.png";    
+import { loginUser } from "../../services/authService";
+import { RECAPTCHA_SITE_KEY } from "../../utils/constants";
+import logo from "../../assets/images/ARALKADEMYLOGO.png";
+import icon from "../../assets/images/ARALKADEMYICON.png";
+import nstpLogo from "../../assets/images/NSTPLOGO.png";
 import { Eye, EyeOff } from "lucide-react";
 
 /**
@@ -36,6 +36,24 @@ function Login() {
     setCaptchaResponse(null);
   };
 
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      return "Email is required";
+    }
+    if (!emailRegex.test(email)) {
+      return "Please enter a valid email address";
+    }
+    return null;
+  };
+
+  const validatePassword = (password) => {
+    if (!password) {
+      return "Password is required";
+    }
+    return null;
+  };
+
   /**
    * Handles form submission for user login.
    *
@@ -47,8 +65,20 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Clear previous errors
+    setError(null);
+
+    // Validate inputs before proceeding
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
+
+    if (emailError || passwordError) {
+      setError(emailError || passwordError);
+      return;
+    }
+
     if (!captchaResponse) {
-      setError("Please verify the CAPTCHA to proceed."); //Use setError, consistent
+      setError("Please verify the CAPTCHA to proceed"); //Use setError, consistent
       return;
     }
 
@@ -60,45 +90,43 @@ function Login() {
 
       if (data && data.token) {
         localStorage.setItem("token", data.token);
-        
+
         // Get user role from token
-        const payload = JSON.parse(atob(data.token.split('.')[1]));
+        const payload = JSON.parse(atob(data.token.split(".")[1]));
         const userRole = payload.role;
 
         // Role based navigation
-        switch(userRole?.toLowerCase()) {
-          case 'admin':
+        switch (userRole?.toLowerCase()) {
+          case "admin":
             navigate("/Admin/Dashboard", { replace: true });
             break;
-          case 'teacher':
-          case 'student_teacher':
+          case "teacher":
+          case "student_teacher":
             navigate("/Teacher/Dashboard", { replace: true });
             break;
-          case 'learner':
+          case "learner":
             navigate("/Learner/Dashboard", { replace: true });
             break;
           default:
             throw new Error("Invalid user role");
         }
       }
-
     } catch (err) {
-        // Improved error handling: Log the full error, use more specific messages
-        console.error("Login failed:", err);
+      // Improved error handling: Log the full error, use more specific messages
+      console.error("Login failed:", err);
 
-        if (err.message === "Invalid credentials") { //Specific error from authService
-            setError("Invalid email or password. Please try again.");
-        } else if (err.message === "Unauthorized") {
-            setError("Unauthorized access. Please check your credentials.");
-        } else if (err.message === 'Captcha verification failed') {
-            setError("Captcha verification failed")
-        }
-        else {
-            setError("An unexpected error occurred. Please try again later.");
-        }
+      if (err.message === "Invalid credentials") {
+        //Specific error from authService
+        setError("Invalid email or password. Please try again.");
+      } else if (err.message === "Unauthorized") {
+        setError("Unauthorized access. Please check your credentials.");
+      } else if (err.message === "Captcha verification failed") {
+        setError("Captcha verification failed");
+      } else {
+        setError("An unexpected error occurred. Please try again later.");
+      }
 
-        resetRecaptcha();
-
+      resetRecaptcha();
     } finally {
       setLoading(false);
     }
@@ -119,9 +147,9 @@ function Login() {
    *  Placeholder function, now navigates to /forgot-password route.
    * @function handleForgotPassword
    */
-    const handleForgotPassword = () => {
-      navigate("/ForgotPassword"); // Navigate to the forgot password page.
-    };
+  const handleForgotPassword = () => {
+    navigate("/ForgotPassword"); // Navigate to the forgot password page.
+  };
 
   /**
    * Handles the "Enroll" button click.
