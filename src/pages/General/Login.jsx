@@ -1,12 +1,13 @@
 // src/pages/Login/Login.jsx
 import React, { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 import { loginUser } from "../../services/authService"; 
 import { RECAPTCHA_SITE_KEY } from "../../utils/constants";  
 import logo from "../../assets/images/ARALKADEMYLOGO.png";   
 import icon from "../../assets/images/ARALKADEMYICON.png";   
 import nstpLogo from "../../assets/images/NSTPLOGO.png";    
+import { Eye, EyeOff } from "lucide-react";
 
 /**
  * Login component for user authentication.
@@ -20,6 +21,7 @@ function Login() {
   const [captchaResponse, setCaptchaResponse] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const recaptchaRef = useRef(null);
 
@@ -34,14 +36,14 @@ function Login() {
     setCaptchaResponse(null);
   };
 
-    /**
-     * Handles form submission for user login.
-     *
-     * @async
-     * @function handleSubmit
-     * @param {Event} e - The form submission event.
-     * @returns {Promise<void>}
-     */
+  /**
+   * Handles form submission for user login.
+   *
+   * @async
+   * @function handleSubmit
+   * @param {Event} e - The form submission event.
+   * @returns {Promise<void>}
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -128,6 +130,15 @@ function Login() {
    */
   const handleEnroll = () => {
     navigate("/Enrollment");
+  };
+
+  /**
+   * Handles the password visibility toggle.
+   *
+   * @function handleTogglePassword
+   */
+  const handleTogglePassword = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -240,15 +251,28 @@ function Login() {
                   >
                     Password
                   </label>
-                  <input
-                    type="password"
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
-                    placeholder="Enter your password"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      id="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529] pr-[10vw] lg:pr-[3vw]"
+                      placeholder="Enter your password"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleTogglePassword}
+                      className="absolute right-[3vw] lg:right-[1vw] top-1/2 transform -translate-y-1/2 text-gray-500"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
+                      ) : (
+                        <Eye className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Forgot password button */}

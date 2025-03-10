@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/images/ARALKADEMYLOGO.png";
+import { checkEnrollmentStatus } from "../../services/enrollmentCheckService";
 
 function Enrollment() {
   const [email, setEmail] = useState("");
@@ -15,38 +16,7 @@ function Enrollment() {
     setErrorMessage(""); // Clear any previous error message
 
     try {
-      const response = await fetch(
-        "http://localhost:4000/api/enrollments/check-status",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        // Check for specific "not found" message from backend
-
-        if (
-          response.status === 404 &&
-          errorData.message === "Enrollment not found for this email"
-        ) {
-          setErrorMessage("Email not found"); // Set the specific error message
-          setStatus("Unknown"); // Reset status
-          setStatusColor("#F6BA18"); // Reset color
-          return; // Exit early, don't try to process further
-        } else {
-          // Handle other errors
-          throw new Error(
-            `HTTP error! status: ${response.status}, message: ${errorData.message}`
-          );
-        }
-      }
-
-      const data = await response.json();
+      const data = await checkEnrollmentStatus(email);
       setStatus(data.status);
 
       switch (data.status) {
@@ -66,7 +36,13 @@ function Enrollment() {
       console.error("Error fetching enrollment status:", error);
       setStatus("Error");
       setStatusColor("gray");
-      setErrorMessage("An unexpected error occurred."); // Generic error message
+      if (error.message === "Email not found") {
+        setErrorMessage("Email not found");
+        setStatus("Unknown");
+        setStatusColor("#F6BA18");
+      } else {
+        setErrorMessage("An unexpected error occurred.");
+      }
     }
   };
   return (
