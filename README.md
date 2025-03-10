@@ -1,109 +1,158 @@
 # AralKademy Frontend
-A fast, modern web application built with ReactJS, Vite, and Tailwind CSS, designed to deliver a smooth and interactive user experience. 
-This serves as the frontend for AralKademy.
 
-## Project Overview
-This project utilizes a cutting-edge front-end stack, featuring Vite for rapid development, ReactJS for a modular component-based architecture, and Tailwind CSS with PostCSS for utility-first, responsive styling. It includes React Router for efficient client-side navigation and Lucide React for a rich set of customizable icons, supporting a seamless and flexible UI development process.
+![AralKademy Logo](public/ARALKADEMYICON.png)
 
-## Features
-- ⚡ Lightning-fast development and build with Vite
-- 🎨 Utility-first styling using Tailwind CSS
-- 🌐 Client-side routing with React Router DOM
-- 🎉 Scalable and modern icons with Lucide React
-- 📱 Responsive design and mobile-first approach
+A modern Learning Management System (LMS) built with React and Vite, designed to provide an interactive learning experience for NSTP-LTS students and partner communities.
 
-## Tech Stack
-- ReactJS
-- Vite (bundler)
-- Tailwind CSS (styling) with PostCSS[^1]
-- Lucide React (icons)[^2] 
-- React Router DOM (routing)
+## Features 🚀
 
-## Getting Started
-> Prerequisites:
-> Prerequisites: Make sure you have Node.js[^3] and npm installed on your system, as well as Git[^4].
+- ⚡ **Fast Development**: Powered by Vite for rapid development and hot module replacement
+- 🎨 **Modern UI**: Built with Tailwind CSS for utility-first styling
+- 🔐 **Secure Authentication**: JWT-based authentication with reCAPTCHA integration
+- 📱 **Responsive Design**: Mobile-first approach for all screen sizes
+- 🌐 **RESTful API**: Clean API integration with modular service architecture
+- 🔄 **State Management**: Efficient React hooks and context for state management
 
-### Installation
+## Tech Stack 💻
 
-1. On GitHub, navigate to the main page of the repository.
+- **Framework**: [React](https://reactjs.org/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Icons**: [Lucide Icons](https://lucide.dev/)
+- **Routing**: [React Router](https://reactrouter.com/)
+- **Testing**: [Vitest](https://vitest.dev/)
 
-2. Above the list of files, click <> Code.
+## Prerequisites 📋
 
-3. Copy the URL for the repository.
-    - To clone the repository using HTTPS, under "HTTPS", then copy the link.
-    - To clone the repository using an SSH key, including a certificate issued by your organization's SSH certificate authority, click SSH, then copy the link.
-    - To clone a repository using GitHub CLI, click GitHub CLI, then copy the link.
+Before you begin, ensure you have installed:
+- [Node.js](https://nodejs.org/) (v16.0.0 or higher)
+- [npm](https://www.npmjs.com/) (v7.0.0 or higher)
+- [Git](https://git-scm.com/)
 
-4. Open your terminal.
+## Getting Started 🚀
 
-5. Change the current working directory to the location where you want the cloned directory.
-
-6. Type `git clone`, and then paste the URL you copied earlier.
-```
-git clone https://github.com/YOUR-USERNAME/YOUR-REPOSITORY
+1. Clone the repository:
+```bash
+git clone https://github.com/your-username/Se_Frontend.git
+cd Se_Frontend
 ```
 
-7. Press Enter to create your local clone.
-```
-  git clone https://github.com/YOUR-USERNAME/YOUR-REPOSITORY
-> Cloning into `Spoon-Knife`...
-> remote: Counting objects: 10, done.
-> remote: Compressing objects: 100% (8/8), done.
-> remove: Total 10 (delta 1), reused 10 (delta 1)
-> Unpacking objects: 100% (10/10), done.
-```
-
-8. Install dependencies:
-```
+2. Install dependencies:
+```bash
 npm install
 ```
 
-9. Start the development server:
+3. Environment setup:
+```bash
+cp .env.example .env
 ```
+
+4. Update the `.env` file with your configuration:
+```env
+VITE_REACT_APP_API_URL=your_api_url_here
+VITE_REACT_APP_RECAPTCHA_SITE_KEY=your_recaptcha_site_key_here
+```
+
+5. Start the development server:
+```bash
 npm run dev
 ```
 
-10. View the app at `[React](http://localhost:3000)`.
+## Available Scripts 📜
 
-### Scripts
-- `npm run dev` — Runs the app in development mode.
-- `npm run build` — Builds the app for production.
-- `npm run preview` — Previews the production build locally.
-- `npm run lint` — Runs linting checks.
-- `node -v` — Displays the current Node.js version.
-- `npm -v` — Displays the current npm version.
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run test` - Run tests
+- `npm run lint` - Run ESLint
 
-### Folder Structure
+## Project Structure 📁
+
 ```
-├── public/                   # Static files like favicon
+Se_Frontend/
+├── public/                 # Static assets
+│   └── ARALKADEMYICON.png
 ├── src/
-│   ├── assets/               # Images and assets
-│   ├── components/           # Reusable components
-│   │   ├── Announcement.jsx
-│   │   ├── Homepage.jsx
-│   │   └── Sidebar.jsx
-│   ├── App.css               # Global styles
-│   ├── App.jsx               # Main App component
-│   ├── index.css             # Tailwind and global CSS imports
-│   ├── main.jsx              # Entry file
-├── .gitignore
-├── index.html                # Root HTML file
-├── package.json
-├── README.md                 # Project documentation
-├── tailwind.config.js        # Tailwind CSS configuration
-├── vite.config.js            # Vite configuration
-└── postcss.config.js         # PostCSS configuration
+│   ├── assets/            # Images and media files
+│   ├── components/        # Reusable UI components
+│   ├── pages/            # Page components
+│   │   ├── Admin/
+│   │   ├── Enrollment/
+│   │   ├── Errors/
+│   │   ├── General/
+│   │   ├── Learner/
+│   │   └── Teacher/
+│   ├── services/         # API service modules
+│   ├── utils/           # Utility functions
+│   ├── context/         # React context providers
+│   ├── routes/          # Application routes
+│   ├── App.jsx         # Root component
+│   └── main.jsx        # Entry point
+├── tests/              # Test files
+├── .env.example        # Environment variables template
+├── .gitignore         # Git ignore rules
+├── index.html         # HTML entry point
+├── package.json       # Project dependencies
+├── tailwind.config.js # Tailwind CSS configuration
+├── vite.config.js     # Vite configuration
+└── README.md          # Project documentation
 ```
 
-> [!CAUTION]
-> This repository is a working prototype and currently lacks backend support.
-> The code serves solely as a foundation for frontend development.
+## Environment Variables 🔑
 
-> [!IMPORTANT]
-> If any issues persist, please open a pull request or contact me directly so we can address the problem immediately. Thank you!
+The following environment variables are required:
 
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `VITE_REACT_APP_API_URL` | Backend API URL | Yes |
+| `VITE_REACT_APP_RECAPTCHA_SITE_KEY` | Google reCAPTCHA site key | Yes |
 
-[^1]: Tailwind CSS documentation: [Tailwind CSS](https://tailwindcss.com/docs/content-configuration).
-[^2]: Lucide React icons: [Lucide React](https://lucide.dev/).
-[^3]: [Node.js installer](https://nodejs.org/en) — Download and run the installer. Click `"Next"` through each step to complete the installation. Once finished, open your terminal and type `npm -v` and `node -v` to verify the installation was successful.
-[^4]: [Git installer](https://git-scm.com/downloads) — Download and run the installer. Click "Next" through each step to complete the installation. Once finished, open your terminal and type `git --version` to verify the installation was successful.
+## API Documentation 📚
+
+Our API documentation is available at:
+- Development: `http://localhost:4000/api-docs/`
+- Production: ``
+
+## Contributing 🤝
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## Testing 🧪
+
+Run the test suite:
+```bash
+npm run test
+```
+
+## Deployment 🚀
+
+Build for production:
+```bash
+npm run build
+```
+
+The build artifacts will be stored in the `dist/` directory.
+
+## Browser Support 🌐
+
+| [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/edge/edge_48x48.png" alt="IE / Edge" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)<br/>Edge | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png" alt="Firefox" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)<br/>Firefox | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png" alt="Chrome" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)<br/>Chrome | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/safari/safari_48x48.png" alt="Safari" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)<br/>Safari |
+| --------- | --------- | --------- | --------- |
+| last 2 versions | last 2 versions | last 2 versions | last 2 versions |
+
+## License 📄
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support 💬
+
+For support, email support@aralkademy.com or join our Slack channel.
+
+## Acknowledgments 🙏
+
+- [React Documentation](https://reactjs.org/docs)
+- [Vite Documentation](https://vitejs.dev/guide/)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)

@@ -1,5 +1,18 @@
+/**
+ * @module enrollmentCheckService
+ * @description Service for checking enrollment status
+ */
+
 import { API_BASE_URL } from '../utils/constants';
 
+/**
+ * Checks the enrollment status for a given email
+ * @async
+ * @param {string} email - The email address to check enrollment status for
+ * @returns {Promise<Object>} The enrollment status data
+ * @throws {Error} If the email is not found or request fails
+ * @property {string} status - The enrollment status ('pending', 'approved', 'rejected')
+ */
 export const checkEnrollmentStatus = async (email) => {
   try {
     const response = await fetch(`${API_BASE_URL}/enrollments/check-status`, {

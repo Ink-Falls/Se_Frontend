@@ -1,8 +1,18 @@
+/**
+ * @module apiService
+ * @description Handles API requests with automatic token refresh and request queue management
+ */
+
 import tokenService from './tokenService';
 
 let isRefreshing = false;
 let failedQueue = [];
 
+/**
+ * Process queued requests after token refresh
+ * @param {Error|null} error - Error from token refresh attempt
+ * @param {string|null} token - New access token if refresh successful
+ */
 const processQueue = (error, token = null) => {
   failedQueue.forEach(prom => {
     if (error) {
@@ -14,6 +24,17 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
+/**
+ * Makes an HTTP request with automatic token refresh capabilities
+ * @async
+ * @param {string} url - The URL to make the request to
+ * @param {Object} [options={}] - Fetch API options
+ * @param {string} [options.method] - HTTP method
+ * @param {Object} [options.headers] - Request headers
+ * @param {boolean} [options._retry] - Internal flag to prevent infinite refresh loops
+ * @returns {Promise<Response>} Fetch API Response object
+ * @throws {Error} If request fails or token refresh fails
+ */
 const fetchWithInterceptor = async (url, options = {}) => {
   try {
     // Check if token is expired and refresh if needed
