@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/images/ARALKADEMYLOGO.png";
+import { createEnrollment } from "../../services/enrollmentService";
 
 function NewEnrollment() {
   const [formData, setFormData] = useState({
@@ -98,49 +99,33 @@ function NewEnrollment() {
     };
 
     try {
-      const response = await fetch("http://localhost:4000/api/enrollments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(dataToSend),
+      await createEnrollment(dataToSend);
+      setSuccessMessage("Enrollment submitted successfully!");
+      setFormData({
+        first_name: "",
+        last_name: "",
+        middle_initial: "",
+        contact_no: "",
+        birth_date: "",
+        school_id: "",
+        year_level: "",
+        email: "",
+        password: "",
+        confirm_password: "",
       });
 
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log("Enrollment successful:", responseData);
-        setSuccessMessage("Enrollment submitted successfully!");
-        setFormData({
-          first_name: "",
-          last_name: "",
-          middle_initial: "",
-          contact_no: "",
-          birth_date: "",
-          school_id: "",
-          year_level: "",
-          email: "",
-          password: "",
-          confirm_password: "",
-        });
+      setTimeout(() => {
+        navigate("/EnrollConfirm");
+      }, 3000);
 
-        setTimeout(() => {
-          navigate("/EnrollConfirm");
-        }, 3000);
-      } else {
-        const errorData = await response.json();
-        if (response.status === 409) {
-          setErrors({
-            email: "Email already exists. Please use a different email.",
-          });
-        } else if (response.status === 400 && errorData.errors) {
-          setErrors(errorData.errors);
-        } else {
-          setErrors({ general: errorData.message || "Enrollment failed." });
-        }
-      }
     } catch (error) {
-      console.error("Network error:", error);
-      setErrors({ general: "Network error. Please try again." });
+      if (error.message === 'Email already exists') {
+        setErrors({
+          email: "Email already exists. Please use a different email."
+        });
+      } else {
+        setErrors({ general: error.message || "Network error. Please try again." });
+      }
     } finally {
       setIsLoading(false);
     }

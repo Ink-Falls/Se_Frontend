@@ -9,11 +9,11 @@
  * @constant API_BASE_URL
  * @type {string}
  */
-export const API_BASE_URL = 'http://localhost:4000/api'; 
+export const API_BASE_URL = import.meta.env.VITE_REACT_APP_API_URL || 'http://localhost:4000/api';
 
 /**
  * The Google reCAPTCHA site key.
  * @constant RECAPTCHA_SITE_KEY
  * @type {string}
  */
-export const RECAPTCHA_SITE_KEY = '6Ldv39cqAAAAAML6O41KNyqN_sXx7sIOA245Hc1N';
+export const RECAPTCHA_SITE_KEY = import.meta.env.VITE_REACT_APP_RECAPTCHA_SITE_KEY;
