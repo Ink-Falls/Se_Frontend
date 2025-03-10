@@ -259,10 +259,45 @@ const getEnrollmentById = async (enrollmentId) => {
   }
 };
 
+/**
+ * Creates a new enrollment.
+ * @async
+ * @function createEnrollment
+ * @param {Object} enrollmentData - The enrollment data to be submitted
+ * @returns {Promise<Object>} The created enrollment object
+ * @throws {Error} If the API request fails
+ */
+const createEnrollment = async (enrollmentData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/enrollments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(enrollmentData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 409) {
+        throw new Error('Email already exists');
+      }
+      throw new Error(data.message || 'Failed to create enrollment');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error creating enrollment:', error);
+    throw error;
+  }
+};
+
 export {
   getAllEnrollments,
   approveEnrollment,
   rejectEnrollment,
   deleteEnrollment,
-  getEnrollmentById, // Add the new method to exports
+  getEnrollmentById,
+  createEnrollment, // Add the new function to exports
 };
