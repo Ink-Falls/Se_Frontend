@@ -65,7 +65,7 @@ const LearnerCourseAnnouncements = () => {
           {
             text: "Home",
             icon: <Home size={20} />,
-            route: "/Teacher/Dashboard", // Update this route
+            route: "/Learner/Dashboard", // Update this route
           },
           {
             text: "Announcements",
@@ -80,7 +80,7 @@ const LearnerCourseAnnouncements = () => {
           {
             text: "Assessments",
             icon: <ClipboardList size={20} />,
-            route: "/TeacherAssessments",
+            route: "/Learner/Assessments",
           },
         ]}
       />
