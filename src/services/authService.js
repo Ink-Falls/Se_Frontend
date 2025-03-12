@@ -19,7 +19,7 @@ const loginUser = async (email, password, captchaResponse) => {
     // CAPTCHA verification prevents automated attacks
     // Rate limiting protection (from backend)
     // Proper error handling for invalid credentials
-    const response = await fetch(`${API_BASE_URL}/auth/login`, { 
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -31,33 +31,31 @@ const loginUser = async (email, password, captchaResponse) => {
     if (!response.ok) {
       const errorData = await response.json();
       if (response.status === 400) {
-        throw new Error("Invalid credentials");
+        throw new Error('Invalid credentials');
       } else if (response.status === 401) {
-        throw new Error("Unauthorized");
+        throw new Error('Unauthorized');
       } else if (response.status === 403) {
-          throw new Error("Captcha verification failed")
-      }
-      else {
-        throw new Error(errorData.message || "Server error");
+        throw new Error('Captcha verification failed');
+      } else {
+        throw new Error(errorData.message || 'Server error');
       }
     }
 
     const data = await response.json();
-    
+
     // Use the new saveTokens method
     await tokenService.saveTokens(
-      data.token || data.accessToken, 
+      data.token || data.accessToken,
       data.refreshToken
     );
-    
+
     return data;
   } catch (error) {
-      if (error.message) {
-        throw error; //re-throw error caught from response
-     }
-     else{
-        throw new Error("Network error.  Please check your connection."); // Network or other error
-     }
+    if (error.message) {
+      throw error; //re-throw error caught from response
+    } else {
+      throw new Error('Network error.  Please check your connection.'); // Network or other error
+    }
   }
 };
 
@@ -71,16 +69,30 @@ const loginUser = async (email, password, captchaResponse) => {
  */
 const logoutUser = async () => {
   try {
-    // First, call the logout endpoint
-    await fetchWithInterceptor(`${API_BASE_URL}/auth/logout`, {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
       method: 'POST',
-      credentials: 'include'
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
     });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Logout failed');
+    }
+
+    await response.json(); // Consume the response
   } catch (error) {
     console.error('Logout error:', error);
+    throw error; // Re-throw to handle in UI if needed
   } finally {
     // Always clear tokens locally
     tokenService.removeTokens();
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
   }
 };
 
@@ -106,13 +118,16 @@ const forgotPassword = async (email) => {
     const responseData = await response.json();
 
     if (!response.ok) {
-      const errorMessage = responseData?.error?.message || "Failed to send password reset email.";
+      const errorMessage =
+        responseData?.error?.message || 'Failed to send password reset email.';
       throw new Error(errorMessage);
     }
 
     return responseData;
   } catch (error) {
-    throw new Error(error.message || "Network error. Please check your connection.");
+    throw new Error(
+      error.message || 'Network error. Please check your connection.'
+    );
   }
 };
 
@@ -139,13 +154,16 @@ const verifyResetCode = async (email, code) => {
     const responseData = await response.json();
 
     if (!response.ok) {
-      const errorMessage = responseData?.error?.message || "Invalid or expired reset code.";
+      const errorMessage =
+        responseData?.error?.message || 'Invalid or expired reset code.';
       throw new Error(errorMessage);
     }
 
     return responseData;
   } catch (error) {
-    throw new Error(error.message || "Network error. Please check your connection.");
+    throw new Error(
+      error.message || 'Network error. Please check your connection.'
+    );
   }
 };
 
@@ -172,18 +190,20 @@ const resetPassword = async (email, password) => {
     const responseData = await response.json();
 
     if (!response.ok) {
-      throw new Error(responseData.message || "Failed to reset password.");
+      throw new Error(responseData.message || 'Failed to reset password.');
     }
 
     return responseData;
   } catch (error) {
-    throw new Error(error.message || "Network error. Please check your connection.");
+    throw new Error(
+      error.message || 'Network error. Please check your connection.'
+    );
   }
 };
 
 /**
  * Validates the current token.
- * 
+ *
  * @async
  * @function validateToken
  * @returns {Promise<object>} - Validation response
@@ -191,9 +211,12 @@ const resetPassword = async (email, password) => {
  */
 const validateToken = async () => {
   try {
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/auth/validate`, {
-      method: 'GET'
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/auth/validate`,
+      {
+        method: 'GET',
+      }
+    );
 
     if (!response.ok) {
       throw new Error('Token validation failed');
@@ -207,7 +230,7 @@ const validateToken = async () => {
 
 /**
  * Refreshes the user's token.
- * 
+ *
  * @async
  * @function refreshUserToken
  * @param {string} refreshToken - The refresh token
@@ -236,54 +259,12 @@ const refreshUserToken = async (refreshToken) => {
   }
 };
 
-export { loginUser, logoutUser, forgotPassword, verifyResetCode, resetPassword, validateToken, refreshUserToken };
-
-export const login = async (credentials) => {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(credentials)
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || 'Login failed');
-  }
-
-  localStorage.setItem('token', data.token);
-  localStorage.setItem('refreshToken', data.refreshToken);
-  return data;
-};
-
-export const logout = async () => {
-  try {
-    await fetch(`${API_BASE_URL}/auth/logout`, {
-      method: 'POST',
-      credentials: 'include'
-    });
-  } finally {
-    // Clear local storage
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-  }
-};
-
-export const refreshToken = async () => {
-  const refreshToken = localStorage.getItem('refreshToken');
-  if (!refreshToken) throw new Error('No refresh token');
-
-  const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ refreshToken })
-  });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error('Token refresh failed');
-
-  localStorage.setItem('token', data.token);
-  return data.token;
+export {
+  loginUser,
+  logoutUser,
+  forgotPassword,
+  verifyResetCode,
+  resetPassword,
+  validateToken,
+  refreshUserToken,
 };

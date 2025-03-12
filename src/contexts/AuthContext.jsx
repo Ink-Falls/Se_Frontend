@@ -50,11 +50,15 @@ export const AuthProvider = ({ children }) => {
 
     // Set up activity listeners
     const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
-    events.forEach(event => document.addEventListener(event, resetInactivityTimer));
+    events.forEach((event) =>
+      document.addEventListener(event, resetInactivityTimer)
+    );
 
     return () => {
       if (inactivityTimer) clearTimeout(inactivityTimer);
-      events.forEach(event => document.removeEventListener(event, resetInactivityTimer));
+      events.forEach((event) =>
+        document.removeEventListener(event, resetInactivityTimer)
+      );
     };
   }, []);
 
@@ -66,17 +70,20 @@ export const AuthProvider = ({ children }) => {
     };
 
     window.addEventListener('rateLimitExceeded', handleRateLimit);
-    return () => window.removeEventListener('rateLimitExceeded', handleRateLimit);
+    return () =>
+      window.removeEventListener('rateLimitExceeded', handleRateLimit);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated, 
-      userRole, 
-      loading,
-      checkAuth,
-      logout 
-    }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        userRole,
+        loading,
+        checkAuth,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
