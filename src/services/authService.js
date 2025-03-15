@@ -19,7 +19,7 @@ const loginUser = async (email, password, captchaResponse) => {
     // CAPTCHA verification prevents automated attacks
     // Rate limiting protection (from backend)
     // Proper error handling for invalid credentials
-    const response = await fetch(${API_BASE_URL}/auth/login, { 
+    const response = await fetch(`${API_BASE_URL}/auth/login`, { 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -72,10 +72,10 @@ const loginUser = async (email, password, captchaResponse) => {
 const logoutUser = async () => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(${API_BASE_URL}/auth/logout, {
+    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
       method: 'POST',
       headers: {
-        'Authorization': Bearer ${token},
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       credentials: 'include'
@@ -109,7 +109,7 @@ const logoutUser = async () => {
  */
 const forgotPassword = async (email) => {
   try {
-    const response = await fetch(${API_BASE_URL}/users/forgot-password, {
+    const response = await fetch(`${API_BASE_URL}/users/forgot-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -142,7 +142,7 @@ const forgotPassword = async (email) => {
  */
 const verifyResetCode = async (email, code) => {
   try {
-    const response = await fetch(${API_BASE_URL}/users/verify-reset-code, {
+    const response = await fetch(`${API_BASE_URL}/users/verify-reset-code`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -175,7 +175,7 @@ const verifyResetCode = async (email, code) => {
  */
 const resetPassword = async (email, password) => {
   try {
-    const response = await fetch(${API_BASE_URL}/users/reset-password, {
+    const response = await fetch(`${API_BASE_URL}/users/reset-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -205,7 +205,7 @@ const resetPassword = async (email, password) => {
  */
 const validateToken = async () => {
   try {
-    const response = await fetchWithInterceptor(${API_BASE_URL}/auth/validate, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/auth/validate`, {
       method: 'GET'
     });
 
@@ -230,7 +230,7 @@ const validateToken = async () => {
  */
 const refreshUserToken = async (refreshToken) => {
   try {
-    const response = await fetch(${API_BASE_URL}/auth/refresh, {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
