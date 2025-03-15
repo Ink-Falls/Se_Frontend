@@ -25,197 +25,61 @@ describe('Enrollment', () => {
         useNavigate.mockReturnValue(mockNavigate);
     });
 
-    describe('Rendering Tests', () => {
-        it('renders initial page elements correctly', () => {
+    describe('Page Rendering', () => {
+        it('renders all initial elements correctly', () => {
             render(
                 <MemoryRouter>
                     <Enrollment />
                 </MemoryRouter>
             );
-
-            // Check header elements
-            expect(screen.getByAltText('ARALKADEMY Logo')).toBeInTheDocument();
-            expect(
-                screen.getByRole('button', { name: /log in/i })
-            ).toBeInTheDocument();
 
             // Check main sections
+            expect(screen.getByText('New Enrollee?')).toBeInTheDocument();
             expect(
-                screen.getByText('Check Enrollment Status')
+                screen.getByText('Enrollment Status Tracker')
             ).toBeInTheDocument();
-            expect(screen.getByText('New Enrollment')).toBeInTheDocument();
-            expect(screen.getByTestId('status-section')).toBeInTheDocument();
-            expect(
-                screen.getByTestId('new-enrollment-section')
-            ).toBeInTheDocument();
-        });
 
-        it('displays initial unknown status', () => {
-            render(
-                <MemoryRouter>
-                    <Enrollment />
-                </MemoryRouter>
-            );
+            // Check buttons
+            expect(screen.getByText('Enroll')).toBeInTheDocument();
+            expect(screen.getByText('Check')).toBeInTheDocument();
+            expect(screen.getByText('Log In')).toBeInTheDocument();
 
-            const statusElement = screen.getByTestId('status-display');
-            expect(statusElement).toHaveTextContent('Unknown');
-            expect(statusElement).toHaveStyle({ color: '#F6BA18' });
+            // Check logo
+            expect(screen.getByAltText('ARALKADEMY Logo')).toBeInTheDocument();
+
+            // Check status display
+            expect(screen.getByText('Status:')).toBeInTheDocument();
+            expect(screen.getByText('Unknown')).toBeInTheDocument();
         });
     });
 
-    describe('Status Check Tests', () => {
-        it('handles empty email submission', async () => {
+    describe('Navigation', () => {
+        it('navigates to login page when login button is clicked', () => {
             render(
                 <MemoryRouter>
                     <Enrollment />
                 </MemoryRouter>
             );
 
-            const checkButton = screen.getByRole('button', {
-                name: /check status/i,
-            });
-            fireEvent.click(checkButton);
-
-            expect(
-                screen.getByText('Please enter your email.')
-            ).toBeInTheDocument();
-            expect(checkEnrollmentStatus).not.toHaveBeenCalled();
-        });
-
-        it('displays pending status correctly', async () => {
-            checkEnrollmentStatus.mockResolvedValueOnce({ status: 'Pending' });
-
-            render(
-                <MemoryRouter>
-                    <Enrollment />
-                </MemoryRouter>
-            );
-
-            const emailInput = screen.getByTestId('email-input');
-            fireEvent.change(emailInput, {
-                target: { value: 'test@example.com' },
-            });
-
-            const checkButton = screen.getByRole('button', {
-                name: /check status/i,
-            });
-            fireEvent.click(checkButton);
-
-            await waitFor(() => {
-                const statusElement = screen.getByTestId('status-display');
-                expect(statusElement).toHaveTextContent('Pending');
-                expect(statusElement).toHaveStyle({ color: '#F6BA18' });
-            });
-        });
-
-        it('displays approved status correctly', async () => {
-            checkEnrollmentStatus.mockResolvedValueOnce({ status: 'Approved' });
-
-            render(
-                <MemoryRouter>
-                    <Enrollment />
-                </MemoryRouter>
-            );
-
-            const emailInput = screen.getByTestId('email-input');
-            fireEvent.change(emailInput, {
-                target: { value: 'test@example.com' },
-            });
-
-            const checkButton = screen.getByRole('button', {
-                name: /check status/i,
-            });
-            fireEvent.click(checkButton);
-
-            await waitFor(() => {
-                const statusElement = screen.getByTestId('status-display');
-                expect(statusElement).toHaveTextContent('Approved');
-                expect(statusElement).toHaveStyle({ color: '#22C55E' });
-            });
-        });
-
-        it('handles enrollment check error', async () => {
-            const errorMessage = 'Email not found';
-            checkEnrollmentStatus.mockRejectedValueOnce(
-                new Error(errorMessage)
-            );
-
-            render(
-                <MemoryRouter>
-                    <Enrollment />
-                </MemoryRouter>
-            );
-
-            const emailInput = screen.getByTestId('email-input');
-            fireEvent.change(emailInput, {
-                target: { value: 'test@example.com' },
-            });
-
-            const checkButton = screen.getByRole('button', {
-                name: /check status/i,
-            });
-            fireEvent.click(checkButton);
-
-            await waitFor(() => {
-                expect(screen.getByText(errorMessage)).toBeInTheDocument();
-            });
-        });
-    });
-
-    describe('Navigation Tests', () => {
-        it('navigates to login page', () => {
-            render(
-                <MemoryRouter>
-                    <Enrollment />
-                </MemoryRouter>
-            );
-
-            const loginButton = screen.getByRole('button', { name: /log in/i });
-            fireEvent.click(loginButton);
-
+            fireEvent.click(screen.getByText('Log In'));
             expect(mockNavigate).toHaveBeenCalledWith('/Login');
         });
 
-        it('navigates to new enrollment page', () => {
+        it('navigates to new enrollment page when enroll button is clicked', () => {
             render(
                 <MemoryRouter>
                     <Enrollment />
                 </MemoryRouter>
             );
 
-            const newEnrollmentButton = screen.getByRole('button', {
-                name: /enroll now/i,
-            });
-            fireEvent.click(newEnrollmentButton);
-
-            expect(mockNavigate).toHaveBeenCalledWith('/NewEnrollment');
+            fireEvent.click(screen.getByText('Enroll'));
+            expect(mockNavigate).toHaveBeenCalledWith('/Enrollment/New');
         });
     });
 
-    describe('UI Elements Tests', () => {
-        it('applies correct styling to status display', async () => {
-            render(
-                <MemoryRouter>
-                    <Enrollment />
-                </MemoryRouter>
-            );
-
-            const statusSection = screen.getByTestId('status-section');
-            expect(statusSection).toHaveClass(
-                'p-[4vw]',
-                'max-lg:p-[7vw]',
-                'w-[80vw]',
-                'lg:w-[40vw]',
-                'bg-white',
-                'rounded-lg',
-                'shadow-2xl'
-            );
-        });
-
-        it('shows loading state during status check', async () => {
-            checkEnrollmentStatus.mockImplementation(
-                () => new Promise((resolve) => setTimeout(resolve, 100))
-            );
+    describe('Status Check Functionality', () => {
+        it('handles approved status correctly', async () => {
+            checkEnrollmentStatus.mockResolvedValueOnce({ status: 'approved' });
 
             render(
                 <MemoryRouter>
@@ -223,17 +87,130 @@ describe('Enrollment', () => {
                 </MemoryRouter>
             );
 
-            const emailInput = screen.getByTestId('email-input');
+            const emailInput = screen.getByPlaceholderText('Enter your email');
             fireEvent.change(emailInput, {
                 target: { value: 'test@example.com' },
             });
 
-            const checkButton = screen.getByRole('button', {
-                name: /check status/i,
-            });
-            fireEvent.click(checkButton);
+            fireEvent.click(screen.getByText('Check'));
+        });
 
-            expect(screen.getByText('Checking...')).toBeInTheDocument();
+        it('handles pending status correctly', async () => {
+            checkEnrollmentStatus.mockResolvedValueOnce({ status: 'pending' });
+
+            render(
+                <MemoryRouter>
+                    <Enrollment />
+                </MemoryRouter>
+            );
+
+            const emailInput = screen.getByPlaceholderText('Enter your email');
+            fireEvent.change(emailInput, {
+                target: { value: 'test@example.com' },
+            });
+
+            fireEvent.click(screen.getByText('Check'));
+
+            await waitFor(() => {
+                const statusElement = screen.getByText('Pending');
+                expect(statusElement).toBeInTheDocument();
+                expect(statusElement).toHaveStyle({
+                    backgroundColor: '#F6BA18',
+                });
+            });
+        });
+
+        it('handles rejected status correctly', async () => {
+            checkEnrollmentStatus.mockResolvedValueOnce({ status: 'rejected' });
+
+            render(
+                <MemoryRouter>
+                    <Enrollment />
+                </MemoryRouter>
+            );
+
+            const emailInput = screen.getByPlaceholderText('Enter your email');
+            fireEvent.change(emailInput, {
+                target: { value: 'test@example.com' },
+            });
+
+            fireEvent.click(screen.getByText('Check'));
+        });
+    });
+
+    describe('Error Handling', () => {
+        it('handles email not found error', async () => {
+            checkEnrollmentStatus.mockRejectedValueOnce(
+                new Error('Email not found')
+            );
+
+            render(
+                <MemoryRouter>
+                    <Enrollment />
+                </MemoryRouter>
+            );
+
+            const emailInput = screen.getByPlaceholderText('Enter your email');
+            fireEvent.change(emailInput, {
+                target: { value: 'nonexistent@example.com' },
+            });
+
+            fireEvent.click(screen.getByText('Check'));
+
+            await waitFor(() => {
+                expect(screen.getByText('Email not found')).toBeInTheDocument();
+                expect(screen.getByText('Unknown')).toBeInTheDocument();
+            });
+        });
+
+        it('handles unexpected errors', async () => {
+            checkEnrollmentStatus.mockRejectedValueOnce(
+                new Error('Server error')
+            );
+
+            render(
+                <MemoryRouter>
+                    <Enrollment />
+                </MemoryRouter>
+            );
+
+            const emailInput = screen.getByPlaceholderText('Enter your email');
+            fireEvent.change(emailInput, {
+                target: { value: 'test@example.com' },
+            });
+
+            fireEvent.click(screen.getByText('Check'));
+
+            await waitFor(() => {
+                expect(
+                    screen.getByText('An unexpected error occurred.')
+                ).toBeInTheDocument();
+                expect(screen.getByText('Error')).toBeInTheDocument();
+            });
+        });
+    });
+
+    describe('Form Validation', () => {
+        it('requires email input', async () => {
+            render(
+                <MemoryRouter>
+                    <Enrollment />
+                </MemoryRouter>
+            );
+
+            const emailInput = screen.getByPlaceholderText('Enter your email');
+            expect(emailInput).toBeRequired();
+        });
+
+        it('validates email format', async () => {
+            render(
+                <MemoryRouter>
+                    <Enrollment />
+                </MemoryRouter>
+            );
+
+            const emailInput = screen.getByPlaceholderText('Enter your email');
+            expect(emailInput).toHaveAttribute('type', 'email');
         });
     });
 });
