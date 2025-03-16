@@ -90,6 +90,8 @@ function Login() {
 
       if (data && data.token) {
         localStorage.setItem("token", data.token);
+        // Save user data in localStorage
+        localStorage.setItem("user", JSON.stringify(data.user));
 
         // Get user role from token
         const payload = JSON.parse(atob(data.token.split(".")[1]));
