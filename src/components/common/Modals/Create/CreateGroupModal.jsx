@@ -14,6 +14,7 @@ const CreateGroupModal = ({ onClose, onSave }) => {
   const [availableMembers, setAvailableMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [groups, setGroups] = useState([]);
 
   useEffect(() => {
@@ -102,24 +103,23 @@ const CreateGroupModal = ({ onClose, onSave }) => {
         return;
       }
 
-      // Format data according to backend requirements
       const createData = {
         name: groupData.name.trim(),
         type: groupData.type,
-        memberIds: groupData.members.map(m => m.id) // Ensure we're only sending the IDs
+        memberIds: groupData.members.map(m => m.id)
       };
 
       const createdGroup = await createGroup(createData);
+      setError(''); // Clear any existing errors
+      // Set a success message from the response
+      setSuccessMessage(createdGroup.message || 'Group created successfully!');
       
-      // Log the response to verify the structure
-      console.log('Created group response:', createdGroup);
-      
-      if (!createdGroup.group_id) {
-        throw new Error('No group ID returned from server');
-      }
+      // Wait a moment to show the success message before closing
+      setTimeout(() => {
+        onSave(createdGroup);
+        onClose();
+      }, 1500);
 
-      onSave(createdGroup);
-      onClose();
     } catch (err) {
       setError(err.message || "Failed to create group");
     } finally {
@@ -167,6 +167,12 @@ const CreateGroupModal = ({ onClose, onSave }) => {
         {error && (
           <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
             {error}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="mb-4 p-3 bg-green-100 text-green-600 rounded-lg">
+            {successMessage}
           </div>
         )}
 

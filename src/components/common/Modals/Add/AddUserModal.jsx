@@ -6,6 +6,7 @@ const AddUserModal = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    confirm_password: "",
     first_name: "",
     last_name: "",
     middle_initial: "",
@@ -69,6 +70,11 @@ const AddUserModal = ({ onClose, onSubmit }) => {
       errors.password = "Password must contain at least one special character";
     }
 
+    // Confirm password validation
+    if (formData.password !== formData.confirm_password) {
+      errors.confirm_password = "Passwords do not match";
+    }
+
     // Student teacher specific validations
     if (formData.role === "student_teacher") {
       if (!formData.section || formData.section.length < 2) {
@@ -97,11 +103,22 @@ const AddUserModal = ({ onClose, onSubmit }) => {
     setFieldErrors({});
 
     try {
-      const createdUser = await createUser(formData);
+      // Remove confirm_password before sending
+      const { confirm_password, ...userData } = formData;
+      
+      // Clean up empty or undefined values
+      Object.keys(userData).forEach(key => {
+        if (userData[key] === "" || userData[key] === undefined) {
+          delete userData[key];
+        }
+      });
+
+      const createdUser = await createUser(userData);
       onSubmit(createdUser);
       onClose();
     } catch (err) {
       setError(err.message || "Failed to create user");
+      console.error('User creation error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -266,7 +283,7 @@ const AddUserModal = ({ onClose, onSubmit }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                School ID
+                School
               </label>
               <select
                 name="school_id"
@@ -374,6 +391,28 @@ const AddUserModal = ({ onClose, onSubmit }) => {
               {fieldErrors.password && (
                 <p className="text-red-500 text-xs mt-1">
                   {fieldErrors.password}
+                </p>
+              )}
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                name="confirm_password"
+                value={formData.confirm_password}
+                onChange={handleChange}
+                placeholder="Confirm password"
+                className={`mt-1 block w-full rounded-md border ${
+                  fieldErrors.confirm_password ? "border-red-500" : "border-gray-300"
+                } px-3 py-2`}
+                required
+              />
+              {fieldErrors.confirm_password && (
+                <p className="text-red-500 text-xs mt-1">
+                  {fieldErrors.confirm_password}
                 </p>
               )}
             </div>

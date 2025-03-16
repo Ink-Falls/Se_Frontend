@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import { Book, Bell } from "lucide-react";
 import Header from "../../components/common/layout/Header";
-import MobileNavBar from "../../components/common/layout/MobileNavbar"; // Import the bottom nav bar
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
+import { getUserCourses } from "../../services/courseService";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -20,73 +21,14 @@ const Dashboard = () => {
     },
   ];
 
-  const placeholderImageUrl =
-    "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg";
-
   useEffect(() => {
     const fetchCourses = async () => {
       setLoading(true);
       try {
-        const response = await new Promise((resolve) => {
-          setTimeout(() => {
-            resolve({
-              ok: true,
-              json: () =>
-                Promise.resolve([
-                  {
-                    name: "Environmental Science",
-                    code: "ENV-101",
-                    description: "An introduction to environmental science.",
-                    studentCount: 32,
-                  },
-                  {
-                    name: "Course Name 2",
-                    code: "COURSE-002",
-                    description: "Another fascinating course.",
-                    studentCount: 20,
-                  },
-                  {
-                    name: "Course Name 3",
-                    code: "COURSE-003",
-                    description: "Description of course 3.",
-                    studentCount: 25,
-                  },
-                  {
-                    name: "Course Name 4",
-                    code: "COURSE-004",
-                    description: "Description of course 4.",
-                    studentCount: 15,
-                  },
-                  {
-                    name: "Course Name 5",
-                    code: "COURSE-005",
-                    description: "Description of course 5.",
-                    studentCount: 40,
-                  },
-                  {
-                    name: "Course Name 6",
-                    code: "COURSE-006",
-                    description: "Description of course 6.",
-                    studentCount: 10,
-                  },
-                ]),
-            });
-          }, 500);
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const coursesWithImages = data.map((course) => ({
-            ...course,
-            imageUrl: placeholderImageUrl,
-          }));
-          setCourses(coursesWithImages);
-        } else {
-          throw new Error("Failed to fetch courses.");
-        }
+        const coursesData = await getUserCourses();
+        setCourses(coursesData);
       } catch (error) {
-        setError(error.message);
-        console.error("Error fetching courses:", error);
+        setError(error.message || 'Failed to fetch courses');
       } finally {
         setLoading(false);
       }

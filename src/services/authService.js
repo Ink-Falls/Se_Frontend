@@ -16,15 +16,12 @@ import fetchWithInterceptor from './apiService';
  */
 const loginUser = async (email, password, captchaResponse) => {
   try {
-    // CAPTCHA verification prevents automated attacks
-    // Rate limiting protection (from backend)
-    // Proper error handling for invalid credentials
-    const response = await fetch(`${API_BASE_URL}/auth/login`, { 
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include', // Important for cookies
+      credentials: 'include',
       body: JSON.stringify({ email, password, captchaResponse }),
     });
 
@@ -44,11 +41,13 @@ const loginUser = async (email, password, captchaResponse) => {
 
     const data = await response.json();
     
-    // Use the new saveTokens method
-    await tokenService.saveTokens(
-      data.token || data.accessToken, 
-      data.refreshToken
-    );
+    if (data.token) {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify({
+        id: data.user?.id,
+        ...data.user
+      }));
+    }
     
     return data;
   } catch (error) {

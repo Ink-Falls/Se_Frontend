@@ -18,7 +18,9 @@ import {
     Users,
     Search,
 } from "lucide-react";
-import { getAllCourses, getCourseById, assignTeacher, getCoursesWithGroups } from "../../services/courseService";
+import { getAllCourses, getCourseById, updateCourse, deleteCourse } from "../../services/courseService";
+import { getTeachers } from "../../services/userService";
+import { getGroupsByType } from "../../services/groupService";
 import AddCourse from "../../components/common/Modals/Add/AddCourse";
 
 function AdminCourses() {
@@ -40,6 +42,9 @@ function AdminCourses() {
     });
     const [courseToDelete, setCourseToDelete] = useState(null);
     const [isLoading, setIsLoading] = useState(false); // Set to false since we're using hardcoded data
+    const [availableTeachers, setAvailableTeachers] = useState([]);
+    const [learnerGroups, setLearnerGroups] = useState([]);
+    const [studentTeacherGroups, setStudentTeacherGroups] = useState([]);
 
     const toggleDropdown = (id, event) => {
         event.stopPropagation();
@@ -68,49 +73,144 @@ function AdminCourses() {
     ];
 
     useEffect(() => {
-        fetchCourses();
+        const loadInitialData = async () => {
+            try {
+                setLoading(true);
+                const coursesData = await getAllCourses(); // Changed from getCoursesWithGroups to getAllCourses
+                if (Array.isArray(coursesData)) {
+                    setCourses(coursesData);
+                } else {
+                    console.error('Courses data is not an array:', coursesData);
+                    setCourses([]);
+                }
+            } catch (err) {
+                setError(err.message || 'Failed to load courses');
+                console.error('Error loading courses:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadInitialData();
     }, []);
 
-    const fetchCourses = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            // Data is already formatted in courseService, use it directly
-            const coursesData = await getCoursesWithGroups();
-            setCourses(coursesData);
-        } catch (err) {
-            setError('Failed to fetch courses: ' + err.message);
-            console.error('Error:', err);
-            setCourses([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+    useEffect(() => {
+        console.log('Current courses:', courses);
+        console.log('Loading state:', loading);
+        console.log('Error state:', error);
+    }, [courses, loading, error]);
+
+    useEffect(() => {
+        const fetchEditData = async () => {
+            if (editingCourse) {
+                try {
+                    const [teachers, learners, studentTeachers] = await Promise.all([
+                        getTeachers(),
+                        getGroupsByType('learner'),
+                        getGroupsByType('student_teacher')
+                    ]);
+                    
+                    setAvailableTeachers(teachers);
+                    setLearnerGroups(learners);
+                    setStudentTeacherGroups(studentTeachers);
+                } catch (error) {
+                    console.error('Error fetching edit data:', error);
+                    setError('Failed to load edit data');
+                }
+            }
+        };
+
+        fetchEditData();
+    }, [editingCourse]);
+
+    if (loading) {
+        return (
+            <div className="flex h-screen bg-gray-100">
+                <Sidebar navItems={navItems} />
+                <div className="flex-1 p-6 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex h-screen bg-gray-100">
+                <Sidebar navItems={navItems} />
+                <div className="flex-1 p-6">
+                    <div className="text-red-500 text-center">
+                        Error: {error}
+                        <button 
+                            onClick={() => window.location.reload()}
+                            className="ml-4 px-4 py-2 bg-yellow-500 text-white rounded-lg"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     const handleEdit = (course) => {
-        setEditingCourse({
+        // Log the course data being edited
+        console.log('Course being edited:', course);
+        
+        const editData = {
             ...course,
-            teacher: "Not assigned",
-            learner_group: "Not assigned",
-            student_teacher_group: "Not assigned"
-        });
+            user_id: course.user_id || course.teacher_id || '', // Try both possible fields
+            learner_group_id: course.learner_group_id || '',
+            student_teacher_group_id: course.student_teacher_group_id || ''
+        };
+        
+        console.log('Formatted edit data:', editData); // For debugging
+        setEditingCourse(editData);
         setDropdownOpen(null);
     };
 
-    const saveCourseChanges = (updatedCourse) => {
-        setCourses((prev) =>
-            prev.map((c) => (c.id === updatedCourse.id ? updatedCourse : c))
-        );
-        setEditingCourse(null);
+    const saveCourseChanges = async (updatedCourse) => {
+        try {
+            const result = await updateCourse(updatedCourse.id, {
+                name: updatedCourse.name,
+                description: updatedCourse.description,
+                user_id: parseInt(updatedCourse.user_id),
+                learner_group_id: parseInt(updatedCourse.learner_group_id),
+                student_teacher_group_id: parseInt(updatedCourse.student_teacher_group_id)
+            });
+
+            // Refresh the courses list
+            const allCourses = await getAllCourses();
+            setCourses(allCourses);
+            setEditingCourse(null);
+        } catch (error) {
+            console.error('Error updating course:', error);
+            // Handle error (you might want to show an error message to the user)
+        }
     };
 
-    const confirmDelete = () => {
-        setCourses((prev) => prev.filter((c) => c.id !== courseToDelete.id));
-        setCourseToDelete(null);
+    const confirmDelete = async () => {
+        try {
+            await deleteCourse(courseToDelete.id);
+            setCourses(prev => prev.filter((c) => c.id !== courseToDelete.id));
+            setCourseToDelete(null);
+        } catch (error) {
+            console.error('Error deleting course:', error);
+            setError('Failed to delete course');
+        }
     };
 
-    const handleCourseAdded = (newCourse) => {
-        setCourses(prev => [...prev, newCourse]);
+    const handleCourseAdded = async (newCourse) => {
+        try {
+            // Refresh the entire course list immediately
+            const allCourses = await getAllCourses();
+            setCourses(allCourses);
+            setIsAddCourseOpen(false);
+        } catch (error) {
+            console.error('Error refreshing courses:', error);
+            // If the immediate refresh fails, at least add the new course
+            setCourses(prev => [...prev, newCourse]);
+        }
     };
 
     return (
@@ -229,7 +329,7 @@ function AdminCourses() {
 
                 <button
                     onClick={() => setIsAddCourseOpen(true)}
-                    className="fixed bottom-8 right-8 bg-yellow-500 text-white rounded-full p-4 shadow-lg hover:bg-yellow-600 transition-colors"
+                    className="fixed bottom-8 right-8 bg-yellow-500 text-white rounded-full p-4 shadow-lg hover:bg-yellow-600 transition-colors z-50 flex items-center justify-center"
                 >
                     <Plus size={24} />
                 </button>
@@ -246,38 +346,86 @@ function AdminCourses() {
                                 saveCourseChanges(editingCourse);
                             }}
                         >
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={editingCourse.name}
-                                    onChange={(e) =>
-                                        setEditingCourse({ ...editingCourse, name: e.target.value })
-                                    }
-                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500"
-                                    required
-                                />
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Name</label>
+                                    <input
+                                        type="text"
+                                        value={editingCourse.name}
+                                        onChange={(e) => setEditingCourse({ ...editingCourse, name: e.target.value })}
+                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                                    <textarea
+                                        value={editingCourse.description}
+                                        onChange={(e) => setEditingCourse({ ...editingCourse, description: e.target.value })}
+                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                                        rows={3}
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Teacher</label>
+                                    <select
+                                        value={editingCourse.user_id}
+                                        onChange={(e) => setEditingCourse({ ...editingCourse, user_id: e.target.value })}
+                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                                        required
+                                    >
+                                        <option value="">Select a teacher</option>
+                                        {availableTeachers?.map((teacher) => (
+                                            <option key={teacher.id} value={teacher.id}>
+                                                {`${teacher.first_name} ${teacher.last_name}`}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Learner Group</label>
+                                    <select
+                                        value={editingCourse.learner_group_id}
+                                        onChange={(e) => setEditingCourse({ ...editingCourse, learner_group_id: e.target.value })}
+                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                                        required
+                                    >
+                                        <option value="">Select a learner group</option>
+                                        {learnerGroups?.map((group) => (
+                                            <option key={group.id} value={group.id}>
+                                                {group.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Student Teacher Group</label>
+                                    <select
+                                        value={editingCourse.student_teacher_group_id}
+                                        onChange={(e) => setEditingCourse({ ...editingCourse, student_teacher_group_id: e.target.value })}
+                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                                        required
+                                    >
+                                        <option value="">Select a student teacher group</option>
+                                        {studentTeacherGroups?.map((group) => (
+                                            <option key={group.id} value={group.id}>
+                                                {group.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Description
-                                </label>
-                                <textarea
-                                    value={editingCourse.description}
-                                    onChange={(e) =>
-                                        setEditingCourse({ ...editingCourse, description: e.target.value })
-                                    }
-                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500"
-                                    required
-                                />
-                            </div>
-                            <div className="flex justify-end">
+
+                            <div className="mt-6 flex justify-end space-x-3">
                                 <button
                                     type="button"
                                     onClick={() => setEditingCourse(null)}
-                                    className="mr-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
                                 >
                                     Cancel
                                 </button>

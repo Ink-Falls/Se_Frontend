@@ -42,6 +42,40 @@ export const getAllUsers = async (options = {}) => {
 };
 
 /**
+ * Fetches all teachers from the API.
+ * @async
+ * @function getTeachers
+ * @returns {Promise<Array>} Array of teacher objects
+ * @throws {Error} If the API request fails
+ */
+export const getTeachers = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/users`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch users');
+    }
+
+    const data = await response.json();
+    // Filter only teachers from the response
+    return (data.users || []).filter(user => user.role === 'teacher');
+  } catch (error) {
+    console.error('Error fetching teachers:', error);
+    throw error;
+  }
+};
+
+/**
  * Creates a new user.
  * @async
  * @function createUser
@@ -61,13 +95,32 @@ export const createUser = async (userData) => {
       throw new Error('Not authenticated');
     }
 
+    // Format data to match backend parameter order and naming
+    const formattedData = {
+      email: userData.email,
+      password: userData.password,
+      first_name: userData.first_name,
+      last_name: userData.last_name,
+      birth_date: userData.birth_date,
+      contact_no: userData.contact_no.replace(/[^0-9]/g, ''),
+      school_id: parseInt(userData.school_id),
+      role: userData.role,
+      middle_initial: userData.middle_initial || null,
+      department: userData.role === 'student_teacher' ? userData.department : null,
+      section: userData.role === 'student_teacher' ? userData.section : null,
+      group_id: null // Optional, can be added later if needed
+    };
+
+    // Log formatted data for debugging
+    console.log('Creating user with formatted data:', formattedData);
+
     const response = await fetch(`${API_BASE_URL}/users`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(userData),
+      body: JSON.stringify(formattedData),
     });
 
     if (!response.ok) {
@@ -75,8 +128,7 @@ export const createUser = async (userData) => {
       throw new Error(error.message || 'Failed to create user');
     }
 
-    const data = await response.json();
-    return data.user;
+    return await response.json();
   } catch (error) {
     console.error('Error creating user:', error);
     throw error;
