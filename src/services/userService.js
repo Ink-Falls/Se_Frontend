@@ -93,7 +93,53 @@ export const createUser = async (userData) => {
  * @throws {Error} If the API request fails
  */
 export const updateUser = async (userId, updateData) => {
-  // ...existing code...
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    let cleanedData = { ...updateData };
+    
+    // Format contact number if present
+    if (cleanedData.contact_no) {
+      // Remove all non-digits
+      let contactNo = cleanedData.contact_no.replace(/\D/g, '');
+      
+      // Ensure it starts with '09'
+      if (contactNo.startsWith('63')) {
+        contactNo = '0' + contactNo.substring(2);
+      }
+      
+      // Validate number format
+      if (!contactNo.startsWith('09') || contactNo.length !== 11) {
+        throw new Error('Contact number must start with 09 and be 11 digits long');
+      }
+      
+      // Store cleaned number without hyphens
+      cleanedData.contact_no = contactNo;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(cleanedData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Failed to update user (${response.status})`);
+    }
+
+    const data = await response.json();
+    return data.user || data;
+  } catch (error) {
+    console.error('Error in updateUser:', error);
+    throw error;
+  }
 };
 
 /**
@@ -105,7 +151,30 @@ export const updateUser = async (userId, updateData) => {
  * @throws {Error} If the API request fails
  */
 export const deleteUser = async (userId) => {
-  // ...existing code...
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to delete user');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    throw error;
+  }
 };
 
 /**

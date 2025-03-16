@@ -12,6 +12,25 @@ import {
 } from "lucide-react";
 
 const LearnerCourseModules = () => {
+  const navItems = [
+    { text: "Home", icon: <Home size={20} />, route: "/Learner/Dashboard" },
+    {
+      text: "Announcements",
+      icon: <Megaphone size={20} />,
+      route: "/Learner/CourseAnnouncements",
+    },
+    {
+      text: "Modules",
+      icon: <BookOpen size={20} />,
+      route: "/Learner/CourseModules",
+    },
+    {
+      text: "Assessments",
+      icon: <ClipboardList size={20} />,
+      route: "/Learner/Assessment",
+    },
+  ];
+
   const [modules, setModules] = useState([
     {
       id: 1,
@@ -42,30 +61,7 @@ const LearnerCourseModules = () => {
 
   return (
     <div className="flex h-screen bg-gray-100 relative">
-      <Sidebar
-        navItems={[
-          {
-            text: "Home",
-            icon: <Home size={20} />,
-            route: "/Learner/Dashboard",
-          },
-          {
-            text: "Announcements",
-            icon: <Megaphone size={20} />,
-            route: "/Learner/CourseAnnouncements",
-          },
-          {
-            text: "Modules",
-            icon: <BookOpen size={20} />,
-            route: "/Learner/CourseModules",
-          },
-          {
-            text: "Assessments",
-            icon: <ClipboardList size={20} />,
-            route: "/Learner/Assessments",
-          },
-        ]}
-      />
+      <Sidebar navItems={navItems} />
       <div className="flex-1 p-6 overflow-auto">
         <Header title="Environmental Science" subtitle="ENVI 101" />
         <div className="flex flex-col gap-4 mt-4">

@@ -51,6 +51,8 @@ import LearnerAnnouncementDetails from "./pages/Learner/AnnouncementDetails";
 import LearnerNotifications from "./pages/Learner/Notifications";
 import LearnerNotificationDetails from "./pages/Learner/NotificationDetails";
 import LearnerCourseModules from "./pages/Learner/CourseModules";
+import Assessment from "./pages/Learner/CourseAssessment";
+import CourseAssessment from "./pages/Learner/CourseAssessment";
 
 // Error Pages
 import Error404 from "./pages/Errors/Error404";
@@ -217,6 +219,7 @@ function App() {
               {/* Nested learner routes */}
               <Routes>
                 <Route path="Dashboard" element={<LearnerDashboard />} />
+                <Route path="Assessment" element={<CourseAssessment />} />
                 <Route path="CourseAnnouncements" element={<LearnerCourseAnnouncements />} />
                 <Route path="AnnouncementDetails/:id" element={<LearnerAnnouncementDetails />} />
                 <Route path="Notifications" element={<LearnerNotifications />} />
