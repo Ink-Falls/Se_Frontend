@@ -5,6 +5,8 @@ import Modal from "../../components/common/Button/Modal";
 import DeleteModal from "/src/components/common/Modals/Delete/DeleteModal.jsx";
 import AddUserModal from "/src/components/common/Modals/Add/AddUserModal.jsx";
 import CreateGroupModal from "/src/components/common/Modals/Create/CreateGroupModal.jsx";
+import EditUserModal from "/src/components/common/Modals/Edit/EditUserModal.jsx";
+import GroupDetailsModal from "../../components/common/Modals/View/GroupDetailsModal";
 import {
     MoreVertical,
     ChevronDown,
@@ -22,7 +24,7 @@ import {
 } from "lucide-react";
 import UserStats from "/src/components/specific/users/UserStats.jsx";
 import UserTable from "/src/components/specific/users/UserTable.jsx";
-import { getAllUsers } from "/src/services/userService.js";
+import { getAllUsers, updateUser, deleteUser } from "/src/services/userService.js";
 
 function AdminDashboard() {
     const [courses, setCourses] = useState([]);
@@ -59,6 +61,7 @@ function AdminDashboard() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
     const [roleFilter, setRoleFilter] = useState('all');
+    const [isGroupListModalOpen, setIsGroupListModalOpen] = useState(false);
 
     const toggleDropdown = (id, event) => {
         event.stopPropagation();
@@ -223,19 +226,8 @@ function AdminDashboard() {
 
     const handleDeleteSelected = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const headers = {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            };
-
-            // Delete each selected user
-            await Promise.all(selectedIds.map(id =>
-                fetch(`http://localhost:4000/api/users/${id}`, {
-                    method: 'DELETE',
-                    headers
-                })
-            ));
+            // Delete each selected user using the service function
+            await Promise.all(selectedIds.map(id => deleteUser(id)));
 
             // Refresh users list after deletion
             const userData = await getAllUsers();
@@ -244,6 +236,7 @@ function AdminDashboard() {
             setShowDeleteModal(false);
         } catch (error) {
             console.error('Error deleting users:', error);
+            alert(error.message || 'Failed to delete users');
         }
     };
 
@@ -266,6 +259,38 @@ function AdminDashboard() {
         } catch (error) {
             console.error('Error handling new user:', error);
         }
+    };
+
+    const handleEditUser = async (user) => {
+        try {
+            // Add this to handle opening the modal
+            setSelectedUser(user);
+            setIsEditModalOpen(true);
+        } catch (error) {
+            console.error('Error updating user:', error);
+            alert(error.message || 'Failed to update user');
+        }
+    };
+
+    // Add handleSaveUser function
+    const handleSaveUser = async (updatedUser) => {
+        try {
+            const { password, ...userWithoutPassword } = updatedUser;
+            const updated = await updateUser(updatedUser.id, userWithoutPassword);
+            
+            setUsers(prevUsers => 
+                prevUsers.map(u => u.id === updated.id ? updated : u)
+            );
+            setIsEditModalOpen(false);
+            setSelectedUser(null);
+        } catch (error) {
+            console.error('Error saving user:', error);
+            alert(error.message || 'Failed to save user');
+        }
+    };
+
+    const handleShowGroupList = () => {
+        setIsGroupListModalOpen(true);
     };
 
     if (isLoading) {
@@ -291,16 +316,14 @@ function AdminDashboard() {
                         {/* User controls moved to UserTable component */}
                         <UserTable 
                             users={filteredUsers} // Pass filtered users instead of all users
-                            onEdit={(user) => {
-                                setSelectedUser(user);
-                                setIsEditModalOpen(true);
-                            }}
+                            onEdit={handleEditUser} // Updated to use handleEditUser
                             onAddUser={() => setIsAddModalOpen(true)}
                             onDelete={() => setShowDeleteModal(true)}
                             selectedIds={selectedIds}
                             setSelectedIds={setSelectedIds}
                             onSearch={handleSearch} // Pass search handler
                             onCreateGroup={() => setIsCreateGroupModalOpen(true)}
+                            onShowGroupList={handleShowGroupList}
                             onFilterChange={handleFilterChange} // Add this prop
                             currentFilter={roleFilter} // Add this prop
                         />
@@ -328,6 +351,21 @@ function AdminDashboard() {
                     onClose={() => setIsCreateGroupModalOpen(false)}
                     onSave={handleCreateGroup}
                 />
+            )}
+
+            {isEditModalOpen && selectedUser && (
+                <EditUserModal
+                    user={selectedUser}
+                    onClose={() => {
+                        setIsEditModalOpen(false);
+                        setSelectedUser(null);
+                    }}
+                    onSave={handleSaveUser}
+                />
+            )}
+
+            {isGroupListModalOpen && (
+                <GroupDetailsModal onClose={() => setIsGroupListModalOpen(false)} />
             )}
         </>
     );

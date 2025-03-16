@@ -116,7 +116,7 @@ function AdminCourses() {
     return (
         <div className="flex h-screen bg-gray-100 relative">
             <Sidebar navItems={navItems} />
-            <div className="flex-1 p-6 overflow-auto">
+            <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto">
                 <Header title="Courses" />
 
                 {loading ? (

@@ -264,7 +264,7 @@ function AdminEnrollment() {
       <div className="flex h-screen bg-gray-100">
         <Sidebar navItems={navItems} />
 
-        <div className="flex-1 p-6 overflow-auto">
+        <div className="flex-1 p-[1vw] overflow-auto">
           <Header title="Manage Enrollments" />
           <div className="mt-4">
             <EnrolleeStats

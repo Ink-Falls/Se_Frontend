@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Plus, Trash2, Users, Loader } from "lucide-react";
-import { getAvailableMembers, createGroupWithMembers, getAllGroups } from "../../../../services/groupService";
+import { getAvailableMembers, createGroup, getAllGroups } from "../../../../services/groupService";
 
 const CreateGroupModal = ({ onClose, onSave }) => {
   const [activeTab, setActiveTab] = useState("details");
@@ -39,10 +39,25 @@ const CreateGroupModal = ({ onClose, onSave }) => {
   const fetchAvailableMembers = async (type) => {
     try {
       setIsLoading(true);
-      const members = await getAvailableMembers(type, groups);
+      setError("");
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError("Please login to continue");
+        return;
+      }
+
+      const members = await getAvailableMembers(type);
       setAvailableMembers(members);
     } catch (err) {
-      setError("Failed to fetch available members");
+      if (err.message.includes('session has expired')) {
+        // Handle expired token
+        setError("Your session has expired. Please login again.");
+        // Optionally redirect to login page
+        // window.location.href = '/login';
+      } else {
+        setError(err.message || "Failed to fetch available members");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -87,24 +102,25 @@ const CreateGroupModal = ({ onClose, onSave }) => {
         return;
       }
 
-      // Check if token exists
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError("You must be logged in to create a group");
-        return;
-      }
-
+      // Format data according to backend requirements
       const createData = {
-        name: groupData.name,
+        name: groupData.name.trim(),
         type: groupData.type,
-        members: groupData.members
+        memberIds: groupData.members.map(m => m.id) // Ensure we're only sending the IDs
       };
 
-      const createdGroup = await createGroupWithMembers(createData);
+      const createdGroup = await createGroup(createData);
+      
+      // Log the response to verify the structure
+      console.log('Created group response:', createdGroup);
+      
+      if (!createdGroup.group_id) {
+        throw new Error('No group ID returned from server');
+      }
+
       onSave(createdGroup);
       onClose();
     } catch (err) {
-      console.error("Error creating group:", err);
       setError(err.message || "Failed to create group");
     } finally {
       setIsLoading(false);

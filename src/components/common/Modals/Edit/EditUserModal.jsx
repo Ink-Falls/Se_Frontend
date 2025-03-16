@@ -1,9 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import Modal from '../../Button/Modal'; // Your Modal component
 
 function EditUserModal({ user, onClose, onSave }) {
-    const [editedUser, setEditedUser] = useState(user);
+    const [editedUser, setEditedUser] = useState({
+        ...user,
+        // Explicitly exclude password
+        password: undefined
+    });
 
     // IMPORTANT: Update local state if the 'user' prop changes
     useEffect(() => {
@@ -12,25 +15,50 @@ function EditUserModal({ user, onClose, onSave }) {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setEditedUser(prev => ({
+        
+        if (name === 'contact_no') {
+          // Remove all non-digits
+          let numbers = value.replace(/\D/g, '');
+          
+          // Ensure starts with '09'
+          if (!numbers.startsWith('09')) {
+            if (numbers.startsWith('63')) {
+              numbers = '0' + numbers.substring(2);
+            } else if (!numbers.startsWith('0')) {
+              numbers = '09';
+            }
+          }
+          
+          // Limit to 11 digits
+          numbers = numbers.slice(0, 11);
+          
+          // Format as 09XX-XXX-XXXX
+          let formatted = numbers;
+          if (numbers.length >= 4) {
+            formatted = numbers.slice(0, 4) + '-' + numbers.slice(4);
+          }
+          if (numbers.length >= 7) {
+            formatted = formatted.slice(0, 8) + '-' + formatted.slice(8);
+          }
+          
+          setEditedUser(prev => ({
             ...prev,
-            [name]: value
-        }));
-    };
-     const handleImageChange = (e) => { //added image change
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setEditedUser(prev => ({ ...prev, image: reader.result }));
-            };
-            reader.readAsDataURL(file);
+            [name]: formatted
+          }));
+          return;
         }
+        
+        setEditedUser(prev => ({
+          ...prev,
+          [name]: value
+        }));
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave(editedUser); // Pass the updated user data to the parent
+        // Remove password from submission
+        const { password, ...userWithoutPassword } = editedUser;
+        onSave(userWithoutPassword); // Pass the updated user data to the parent
         onClose();        // Close the modal
     };
 
@@ -39,6 +67,11 @@ function EditUserModal({ user, onClose, onSave }) {
         return null; // Don't render anything if no user is provided
     }
 
+    const schoolOptions = [
+        { id: "1001", name: "Asuncion Consunji Elementary School (ACES)" },
+        { id: "1002", name: "University of Santo Tomas (UST)" },
+        { id: "1003", name: "De la Salle University (DLSU)" }
+    ];
 
     return (
       <Modal isOpen={true} onClose={onClose}>
@@ -117,15 +150,21 @@ function EditUserModal({ user, onClose, onSave }) {
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 />
             </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700">School ID:</label>
-                <input
-                    type="text"
+            <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">School:</label>
+                <select
                     name="school_id"
                     value={editedUser.school_id || ''}
                     onChange={handleInputChange}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                />
+                >
+                    <option value="">Select School</option>
+                    {schoolOptions.map(school => (
+                        <option key={school.id} value={school.id}>
+                            {school.name}
+                        </option>
+                    ))}
+                </select>
             </div>
 
           <div className="mb-4">
@@ -146,15 +185,6 @@ function EditUserModal({ user, onClose, onSave }) {
               <option value="student_teacher">Student Teacher</option>
             </select>
           </div>
-           <div>
-                <label className="block text-sm font-medium text-gray-700 mt-4"> Image </label>
-                    <input type="file" name="image" onChange={handleImageChange} className="mt-1 block w-full" accept="image/*"/>
-                        {editedUser.image && (
-                            <img src={editedUser.image} alt="User Image" className="mt-2 h-20 w-auto" />
-                        )}
-            </div>
-
-          {/* Add more input fields for other user properties as needed */}
 
           <div className="mt-4">
             <button type="submit" className="px-4 py-2 mr-2 bg-green-500 text-white rounded hover:bg-green-700">Save Changes</button>

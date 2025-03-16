@@ -9,6 +9,7 @@ const UserTable = ({
   selectedIds, 
   setSelectedIds, 
   onCreateGroup,
+  onShowGroupList, // Add new prop
   onSearch, // Add onSearch prop
   onFilterChange, // Add this prop
   currentFilter // Add this prop
@@ -102,6 +103,13 @@ const UserTable = ({
             <span>Create Group</span>
           </button>
           <button
+            onClick={onShowGroupList}
+            className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black"
+          >
+            <Users size={16} />
+            <span>Group List</span>
+          </button>
+          <button
             onClick={() => console.log("Generate Report")}
             className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black"
           >
@@ -161,7 +169,7 @@ const UserTable = ({
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
                     onClick={() => onEdit(user)}
-                    className="text-blue-600 hover:text-blue-900"
+                    className="text-black hover:text-gray-700" // Changed color to black
                   >
                     <SquarePen size={20} />
                   </button>

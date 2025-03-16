@@ -21,6 +21,25 @@ const LearnerCourseAnnouncements = () => {
   const courseTitle = location.state?.courseTitle || "Course Name";
   const courseCode = location.state?.courseCode || "COURSE 101";
 
+  const navItems = [
+    { text: "Home", icon: <Home size={20} />, route: "/Learner/Dashboard" },
+    {
+      text: "Announcements",
+      icon: <Megaphone size={20} />,
+      route: "/Learner/CourseAnnouncements",
+    },
+    {
+      text: "Modules",
+      icon: <BookOpen size={20} />,
+      route: "/Learner/CourseModules",
+    },
+    {
+      text: "Assessments",
+      icon: <ClipboardList size={20} />,
+      route: "/Learner/Assessment",
+    },
+  ];
+
   const [announcements, setAnnouncements] = useState([
     {
       id: 1,
@@ -60,30 +79,7 @@ const LearnerCourseAnnouncements = () => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar
-        navItems={[
-          {
-            text: "Home",
-            icon: <Home size={20} />,
-            route: "/Learner/Dashboard", // Update this route
-          },
-          {
-            text: "Announcements",
-            icon: <Megaphone size={20} />,
-            route: "/Learner/CourseAnnouncements", // Updated route to match current path
-          },
-          {
-            text: "Modules",
-            icon: <BookOpen size={20} />,
-            route: "/Learner/CourseModules",
-          },
-          {
-            text: "Assessments",
-            icon: <ClipboardList size={20} />,
-            route: "/Learner/Assessments",
-          },
-        ]}
-      />
+      <Sidebar navItems={navItems} />
 
       <div className="flex-1 p-6">
         <Header title={courseTitle} subtitle={courseCode} />
