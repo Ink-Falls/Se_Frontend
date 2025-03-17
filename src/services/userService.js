@@ -242,3 +242,34 @@ export const deleteUser = async (userId) => {
 export const updatePassword = async (userId, oldPassword, newPassword) => {
   // ...existing code...
 };
+
+/**
+ * Fetches a single user by ID
+ * @param {number} userId - The ID of the user to fetch
+ * @returns {Promise<Object>} User object
+ */
+export const getUserById = async (userId) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch user');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    throw error;
+  }
+};

@@ -4,6 +4,7 @@
  */
 
 import { API_BASE_URL } from '../utils/constants';
+import { getUserById } from './userService';
 
 /**
  * Fetches available members for a group based on type.
@@ -157,39 +158,6 @@ export const createGroup = async (groupData) => {
   }
 };
 
-/**
- * Updates an existing group.
- * @async
- * @function updateGroup
- * @param {number|string} groupId - ID of the group to update
- * @param {Object} updateData - The updated group data
- * @returns {Promise<Object>} Updated group object
- * @throws {Error} If the API request fails
- */
-export const updateGroup = async (groupId, updateData) => {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) throw new Error('Authentication token not found');
-
-    const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updateData)
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to update group');
-    }
-
-    return await response.json();
-  } catch (error) {
-    throw error;
-  }
-};
 
 /**
  * Deletes a group.
@@ -322,6 +290,122 @@ export const getGroupsByType = async (type) => {
     }));
   } catch (error) {
     console.error(`Error fetching ${type} groups:`, error);
+    throw error;
+  }
+};
+
+export const getGroupMembers = async (groupId) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Authentication token not found');
+    }
+
+    console.log('Fetching members for group:', groupId);
+
+    const response = await fetch(`${API_BASE_URL}/groups/${groupId}/members`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch group members');
+    }
+
+    const membersData = await response.json();
+    console.log('Raw members data:', membersData);
+
+    // Fetch user details for each member
+    const membersWithDetails = await Promise.all(
+      membersData.map(async (member) => {
+        try {
+          const userDetails = await getUserById(member.user_id);
+          return {
+            id: member.id,
+            user_id: member.user_id,
+            year_level: member.year_level,
+            group_id: member.group_id,
+            first_name: userDetails.first_name,
+            last_name: userDetails.last_name,
+            email: userDetails.email,
+            school_id: userDetails.school_id,
+            role: userDetails.role
+          };
+        } catch (error) {
+          console.error(`Failed to fetch details for user ${member.user_id}:`, error);
+          return member;
+        }
+      })
+    );
+
+    console.log('Members with details:', membersWithDetails);
+    return membersWithDetails;
+  } catch (error) {
+    console.error('Error fetching group members:', error);
+    throw error;
+  }
+};
+
+export const updateGroupMembers = async (groupId, addMembers = [], removeMembers = []) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('Authentication token not found');
+
+    const response = await fetch(`${API_BASE_URL}/groups/${groupId}/members`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        addMembers,
+        removeMembers
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update group members');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating group members:', error);
+    throw error;
+  }
+};
+
+export const updateGroup = async (groupId, updateData) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('Authentication token not found');
+
+    const formattedData = {
+      name: updateData.name,
+      groupType: updateData.groupType,
+      addUserIds: updateData.addUserIds || [],
+      removeUserIds: updateData.removeUserIds || []
+    };
+
+    const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formattedData)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update group');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating group:', error);
     throw error;
   }
 };

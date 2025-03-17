@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
-import { Book, Bell, ClipboardList } from "lucide-react";
+import { Book, Bell } from "lucide-react";
 import Header from "../../components/common/layout/Header";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
+import { getLearnerCourses } from "../../services/courseService"; // Add this import
 
 const LearnerDashboard = () => {
   const navigate = useNavigate();
@@ -20,60 +21,21 @@ const LearnerDashboard = () => {
     },
   ];
 
-  const placeholderImageUrl =
-    "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg";
+  const fetchCourses = async () => {
+    setLoading(true);
+    try {
+      const coursesData = await getLearnerCourses();
+      console.log('Fetched courses:', coursesData); // For debugging
+      setCourses(coursesData);
+    } catch (error) {
+      setError(error.message || 'Failed to fetch courses');
+      console.error('Error fetching courses:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      setLoading(true);
-      try {
-        const response = await new Promise((resolve) => {
-          setTimeout(() => {
-            resolve({
-              ok: true,
-              json: () =>
-                Promise.resolve([
-                  {
-                    name: "Environmental Science",
-                    code: "ENV-101",
-                    description: "An introduction to environmental science.",
-                    studentCount: 32,
-                  },
-                  {
-                    name: "Computer Programming",
-                    code: "CS-101",
-                    description: "Introduction to programming concepts.",
-                    studentCount: 28,
-                  },
-                  {
-                    name: "Digital Arts",
-                    code: "ART-201",
-                    description: "Explore digital art and design.",
-                    studentCount: 24,
-                  },
-                ]),
-            });
-          }, 500);
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const coursesWithImages = data.map((course) => ({
-            ...course,
-            imageUrl: placeholderImageUrl,
-          }));
-          setCourses(coursesWithImages);
-        } else {
-          throw new Error("Failed to fetch courses.");
-        }
-      } catch (error) {
-        setError(error.message);
-        console.error("Error fetching courses:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchCourses();
   }, []);
 
@@ -93,9 +55,68 @@ const LearnerDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 p-6 max-md:p-5 overflow-y-auto">
         <Header title="My Courses" />
-        {loading && <p>Loading courses...</p>}
-        {error && <p className="text-red-500">Error: {error}</p>}
-        {!loading && !error && (
+        
+        {loading && (
+          <div className="flex items-center justify-center h-[60vh]">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F6BA18]"></div>
+          </div>
+        )}
+
+        {error && (
+          <div className="flex flex-col items-center justify-center h-[60vh] p-4">
+            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+              <div className="text-center">
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-400 mb-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Courses</h3>
+                <p className="text-sm text-gray-500 mb-6">{error}</p>
+                <button
+                  onClick={() => fetchCourses()}
+                  className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!loading && !error && courses.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-[60vh] p-4">
+            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400 mb-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                />
+              </svg>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Courses Found</h3>
+              <p className="text-sm text-gray-500">
+                You are not enrolled in any courses at the moment.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {!loading && !error && courses.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {courses.map((course) => (
               <div

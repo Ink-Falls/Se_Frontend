@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router-dom";
 import { vi } from "vitest";
-import TeacherModules from "../../src/components/TeacherModules";
+import TeacherModules from "../../src/pages/Teacher/TeacherCourseModules";
 import { act } from 'react-dom/test-utils';
 
 describe("TeacherModules Component", () => {

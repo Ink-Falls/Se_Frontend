@@ -141,7 +141,13 @@ const CourseAnnouncements = () => {
 
           <AnnouncementsComponent
             announcements={announcements}
-            onAnnouncementClick={(id) => navigate(`/AnnouncementDetails/${id}`)}
+            onAnnouncementClick={(id) =>
+              navigate(`/Teacher/NotificationDetails/${id}`, {
+                state: {
+                  notification: announcements.find(ann => ann.id === id)
+                }
+              })
+            }
             onEdit={handleEditAnnouncement} // Pass edit handler
             onDelete={setAnnouncementToDelete} // Pass delete handler
           />

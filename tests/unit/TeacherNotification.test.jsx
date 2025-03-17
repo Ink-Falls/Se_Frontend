@@ -1,7 +1,8 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
-import TeacherNotifications from "../../src/components/TeacherNotification";
+// Update import path to match new file name
+import TeacherNotifications from "../../src/pages/Teacher/TeacherNotifications";
 
 describe("TeacherNotifications Component", () => {
   test("renders sidebar with navigation items", () => {

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { X, Users, Loader, PencilIcon, Trash2 } from "lucide-react";
-import { getAllGroups, getAvailableMembers, updateGroup, deleteGroups } from "../../../../services/groupService";
+import { getAllGroups, getAvailableMembers, updateGroup, deleteGroups, getGroupMembers } from "../../../../services/groupService";
+import GroupMembersModal from "./GroupMembersModal";
+import EditGroupModal from '../Edit/EditGroupModal';
 
 const GroupDetailsModal = ({ onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,6 +14,11 @@ const GroupDetailsModal = ({ onClose }) => {
   const [availableMembers, setAvailableMembers] = useState([]);
   const [selectedGroups, setSelectedGroups] = useState([]);
   const [editingGroup, setEditingGroup] = useState(null);
+  const [selectedGroupMembers, setSelectedGroupMembers] = useState([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     setTimeout(() => setAnimate(true), 50);
@@ -76,7 +83,47 @@ const GroupDetailsModal = ({ onClose }) => {
 
   const handleUpdateGroup = async (group) => {
     setEditingGroup(group);
-    // Implement update modal/form logic here
+    setShowEditModal(true);
+  };
+
+  const handleGroupUpdated = async () => {
+    try {
+      setIsLoading(true);
+      const updatedGroups = await getAllGroups();
+      setExistingGroups(updatedGroups);
+      setEditingGroup(null);
+      setShowEditModal(false);
+    } catch (err) {
+      setError('Failed to refresh groups');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleViewMembers = async (group) => {
+    try {
+      setLoadingMembers(true);
+      setSelectedGroup(group);
+      console.log('Viewing members for group:', group);
+      
+      const groupId = group.group_id || group.id;
+      const members = await getGroupMembers(groupId);
+      
+      if (Array.isArray(members)) {
+        console.log('Setting members:', members);
+        setSelectedGroupMembers(members);
+      } else {
+        console.error('Invalid members data received:', members);
+        setError('Invalid member data format received');
+      }
+      
+      setShowMembersModal(true);
+    } catch (err) {
+      console.error('Error loading members:', err);
+      setError('Failed to load group members: ' + err.message);
+    } finally {
+      setLoadingMembers(false);
+    }
   };
 
   return (
@@ -155,8 +202,32 @@ const GroupDetailsModal = ({ onClose }) => {
                         <span>|</span>
                         <span>ID: {group.id}</span>
                       </div>
+                      {/* Add members list if this group's members are loaded */}
+                      {selectedGroupMembers.length > 0 && group.id === selectedGroupMembers[0]?.groupId && (
+                        <div className="mt-2 pl-4 border-l-2 border-gray-200">
+                          <p className="text-sm font-medium text-gray-600 mb-1">Members:</p>
+                          <div className="space-y-1">
+                            {selectedGroupMembers.map(member => (
+                              <div key={member.id} className="text-sm text-gray-600">
+                                {member.first_name} {member.last_name} ({member.role})
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleViewMembers(group)}
+                        className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800"
+                        disabled={loadingMembers}
+                      >
+                        {loadingMembers ? (
+                          <Loader className="animate-spin" size={16} />
+                        ) : (
+                          <Users size={16} />
+                        )}
+                      </button>
                       <button
                         onClick={() => handleUpdateGroup(group)}
                         className="p-1 text-gray-600 hover:text-yellow-600"
@@ -220,6 +291,33 @@ const GroupDetailsModal = ({ onClose }) => {
           </div>
         )}
       </div>
+
+      {/* Add GroupMembersModal */}
+      {showMembersModal && selectedGroup && (
+        <GroupMembersModal
+          isOpen={showMembersModal}
+          onClose={() => {
+            setShowMembersModal(false);
+            setSelectedGroup(null);
+            setSelectedGroupMembers([]);
+          }}
+          group={selectedGroup}
+          members={selectedGroupMembers}
+          isLoading={loadingMembers}
+        />
+      )}
+
+      {showEditModal && editingGroup && (
+        <EditGroupModal
+          group={editingGroup}
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingGroup(null);
+          }}
+          onUpdate={handleGroupUpdated}
+        />
+      )}
     </div>
   );
 };

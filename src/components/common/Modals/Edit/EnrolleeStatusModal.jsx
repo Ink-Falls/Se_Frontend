@@ -133,13 +133,13 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
         <>
           <button
             onClick={handleReject}
-            className="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+            className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-red-500 transition-colors"
           >
             Reject
           </button>
           <button
             onClick={handleApprove}
-            className="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+            className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] transition-colors"
           >
             Approve
           </button>
@@ -246,7 +246,7 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
         <div className="mt-8 flex justify-end space-x-4 border-t pt-4">
           <button
             onClick={onClose}
-            className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
           >
             Close
           </button>
