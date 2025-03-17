@@ -7,7 +7,15 @@ import Sidebar, {
 import Header from "/src/components/common/layout/Header.jsx";
 import EnrolleeStats from "/src/components/specific/enrollments/EnrolleeStats.jsx";
 import EnrolleeTable from "/src/components/specific/enrollments/EnrolleeTable.jsx";
-import { Users, Book, Bell, FileText, Home } from "lucide-react";
+import {
+  Users,
+  Book,
+  Bell,
+  FileText,
+  Home,
+  AlertTriangle,
+  InboxIcon,
+} from "lucide-react";
 import {
   getAllEnrollments,
   approveEnrollment,
@@ -24,6 +32,7 @@ function AdminEnrollment() {
   const [approvedCount, setApprovedCount] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
   const [rejectedCount, setRejectedCount] = useState(0);
+  const [error, setError] = useState(null);
 
   const navItems = [
     { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
@@ -45,6 +54,7 @@ function AdminEnrollment() {
     const fetchEnrollments = async () => {
       try {
         setLoading(true);
+        setError(null);
         const response = await getAllEnrollments(currentPage);
 
         console.log("API Response:", response);
@@ -107,6 +117,7 @@ function AdminEnrollment() {
         setRejectedCount(rejected);
       } catch (error) {
         console.error("Error fetching enrollments:", error);
+        setError(error.message || "Failed to fetch enrollments");
         setEnrollees([]);
       } finally {
         setLoading(false);
@@ -259,6 +270,44 @@ function AdminEnrollment() {
     }
   };
 
+  const EmptyState = () => (
+    <div className="flex flex-col items-center justify-center py-16 px-4">
+      <InboxIcon size={64} className="text-gray-300 mb-4" />
+      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        No Enrollments Found
+      </h3>
+      <p className="text-gray-500 text-center max-w-md mb-4">
+        There are currently no enrollments in the system. New enrollments will
+        appear here once students begin the enrollment process.
+      </p>
+    </div>
+  );
+
+  const ErrorState = () => (
+    <div className="flex flex-col items-center justify-center py-16 px-4">
+      <AlertTriangle size={64} className="text-red-500 mb-4" />
+      <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+        Failed to Load Enrollments
+      </h3>
+      <p className="text-gray-600 text-center max-w-md mb-8">
+        We encountered an error while trying to fetch the enrollment data. This
+        could be due to network issues or server unavailability.
+      </p>
+      <div className="flex flex-col items-center gap-2">
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 flex items-center gap-2"
+        >
+          Refresh Page
+        </button>
+        <span className="text-sm text-gray-500 mt-2">
+          You can try refreshing the page or contact support if the issue
+          persists
+        </span>
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div className="flex h-screen bg-gray-100">
@@ -274,9 +323,15 @@ function AdminEnrollment() {
               rejectedEnrollees={rejectedCount}
             />
           </div>
-          <div className="bg-white shadow rounded-lg overflow-x-auto mt-4 p-4">
+          <div className="bg-white shadow rounded-lg overflow-hidden mt-4">
             {loading ? (
-              <div className="text-center py-4">Loading enrollments...</div>
+              <div className="flex items-center justify-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#212529]"></div>
+              </div>
+            ) : error ? (
+              <ErrorState />
+            ) : enrollees.length === 0 ? (
+              <EmptyState />
             ) : (
               <EnrolleeTable
                 enrollees={enrollees}
