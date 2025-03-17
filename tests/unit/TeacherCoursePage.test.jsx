@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
-import TeacherCoursePage from "../../src/components/TeacherCoursePage"; // Ensure correct import
+// Update import path to match new file name
+import TeacherCoursePage from "../../src/pages/Teacher/TeacherCourseAnnouncements";
 
 vi.mock("./Sidebar", () => ({
     default: () => <div data-testid="sidebar">Mock Sidebar</div>,
@@ -30,7 +31,7 @@ vi.mock("./Sidebar", () => ({
       <ul>
         {announcements.map((ann) => (
           <li key={ann.id}>{ann.type}</li>
-        ))}
+        ))} 
       </ul>
     ),
   }));

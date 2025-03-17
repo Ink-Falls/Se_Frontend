@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router-dom";
 import { vi } from "vitest";
-import TeacherDashboard from "../../src/components/TeacherDashboard";
+import TeacherDashboard from "../../src/pages/Teacher/TeacherDashboard";
 import { act } from 'react-dom/test-utils';
 
 // Mock useNavigate

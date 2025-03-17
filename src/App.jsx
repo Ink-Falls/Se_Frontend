@@ -37,22 +37,22 @@ import AdminEnrollment from "./pages/Admin/AdminEnrollment";
 import AdminAnnouncements from "./pages/Admin/AdminAnnouncements";
 
 // Teacher Pages
-import Dashboard from "./pages/Teacher/Dashboard";
-import Notifications from "./pages/Teacher/Notifications";
-import NotificationDetails from "./pages/Teacher/NotificationDetails";
-import CourseAnnouncements from "./pages/Teacher/CourseAnnouncements";
-import AnnouncementDetails from "./pages/Teacher/AnnouncementDetails";
-import CourseModules from "./pages/Teacher/CourseModules";
+import TeacherDashboard from "./pages/Teacher/TeacherDashboard";
+import TeacherNotifications from "./pages/Teacher/TeacherNotifications";
+import TeacherNotificationDetails from "./pages/Teacher/TeacherNotificationDetails";
+import TeacherCourseAnnouncements from "./pages/Teacher/TeacherCourseAnnouncements";
+import TeacherAnnouncementDetails from "./pages/Teacher/TeacherAnnouncementDetails";
+import TeacherCourseModules from "./pages/Teacher/TeacherCourseModules";
+import TeacherCourseAssessment from "./pages/Teacher/TeacherCourseAssessment";
 
 // Learner Pages
-import LearnerDashboard from "./pages/Learner/Dashboard";
-import LearnerCourseAnnouncements from "./pages/Learner/CourseAnnouncements";
-import LearnerAnnouncementDetails from "./pages/Learner/AnnouncementDetails";
-import LearnerNotifications from "./pages/Learner/Notifications";
-import LearnerNotificationDetails from "./pages/Learner/NotificationDetails";
-import LearnerCourseModules from "./pages/Learner/CourseModules";
-import Assessment from "./pages/Learner/CourseAssessment";
-import CourseAssessment from "./pages/Learner/CourseAssessment";
+import LearnerDashboard from "./pages/Learner/LearnerDashboard";
+import LearnerCourseAnnouncements from "./pages/Learner/LearnerCourseAnnouncements";
+import LearnerAnnouncementDetails from "./pages/Learner/LearnerAnnouncementDetails";
+import LearnerNotifications from "./pages/Learner/LearnerNotifications";
+import LearnerNotificationDetails from "./pages/Learner/LearnerNotificationDetails";
+import LearnerCourseModules from "./pages/Learner/LearnerCourseModules";
+import LearnerCourseAssessment from "./pages/Learner/LearnerCourseAssessment";
 
 // Error Pages
 import Error404 from "./pages/Errors/Error404";
@@ -199,11 +199,13 @@ function App() {
             <RoleBasedRoute allowedRoles={["teacher", "student_teacher"]}>
               {/* Nested teacher routes */}
               <Routes>
-                <Route path="Dashboard" element={<Dashboard />} />
-                <Route path="Notifications" element={<Notifications />} />
-                <Route path="NotificationDetails/:id" element={<NotificationDetails />} />
-                <Route path="CourseAnnouncements" element={<CourseAnnouncements />} />
-                <Route path="CourseModules" element={<CourseModules />} />
+                <Route path="Dashboard" element={<TeacherDashboard />} />
+                <Route path="Notifications" element={<TeacherNotifications />} />
+                <Route path="NotificationDetails/:id" element={<TeacherNotificationDetails />} />
+                <Route path="CourseAnnouncements" element={<TeacherCourseAnnouncements />} />
+                <Route path="AnnouncementDetails/:id" element={<TeacherAnnouncementDetails />} /> {/* Add this line */}
+                <Route path="CourseModules" element={<TeacherCourseModules />} />
+                <Route path="Assessment" element={<TeacherCourseAssessment />} />
                 {/* Catch all unmatched routes under /Teacher/ */}
                 <Route path="*" element={<Error404 />} />
               </Routes>
@@ -219,7 +221,7 @@ function App() {
               {/* Nested learner routes */}
               <Routes>
                 <Route path="Dashboard" element={<LearnerDashboard />} />
-                <Route path="Assessment" element={<CourseAssessment />} />
+                <Route path="Assessment" element={<LearnerCourseAssessment />} />
                 <Route path="CourseAnnouncements" element={<LearnerCourseAnnouncements />} />
                 <Route path="AnnouncementDetails/:id" element={<LearnerAnnouncementDetails />} />
                 <Route path="Notifications" element={<LearnerNotifications />} />
