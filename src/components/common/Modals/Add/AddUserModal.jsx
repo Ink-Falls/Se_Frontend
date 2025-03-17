@@ -91,7 +91,6 @@ const AddUserModal = ({ onClose, onSubmit }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate form
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setFieldErrors(validationErrors);
@@ -103,22 +102,19 @@ const AddUserModal = ({ onClose, onSubmit }) => {
     setFieldErrors({});
 
     try {
-      // Remove confirm_password before sending
       const { confirm_password, ...userData } = formData;
-      
-      // Clean up empty or undefined values
-      Object.keys(userData).forEach(key => {
+
+      Object.keys(userData).forEach((key) => {
         if (userData[key] === "" || userData[key] === undefined) {
           delete userData[key];
         }
       });
 
       const createdUser = await createUser(userData);
-      onSubmit(createdUser);
-      onClose();
+      onSubmit(createdUser); // Pass the created user up
     } catch (err) {
       setError(err.message || "Failed to create user");
-      console.error('User creation error:', err);
+      console.error("User creation error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -406,7 +402,9 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 onChange={handleChange}
                 placeholder="Confirm password"
                 className={`mt-1 block w-full rounded-md border ${
-                  fieldErrors.confirm_password ? "border-red-500" : "border-gray-300"
+                  fieldErrors.confirm_password
+                    ? "border-red-500"
+                    : "border-gray-300"
                 } px-3 py-2`}
                 required
               />
