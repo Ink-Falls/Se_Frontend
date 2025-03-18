@@ -77,13 +77,24 @@ class TokenService {
   /**
    * Removes all tokens from storage
    */
-  removeTokens() {
+  async removeTokens() {
     try {
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      sessionStorage.removeItem('auth_validation');
+      await this.#checkRateLimit();
+      
+      // Clear server-side session
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      // Clear client-side storage
+      localStorage.clear();
+      sessionStorage.clear();
     } catch (error) {
       console.error('Error removing tokens:', error);
+      // Still clear local storage even if server request fails
+      localStorage.clear();
+      sessionStorage.clear();
     }
   }
   

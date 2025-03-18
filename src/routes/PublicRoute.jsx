@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { validateAuth, getUserRole } from '../utils/auth';
+import { validateAuth } from '../services/authService';
+import { getUserRole } from '../utils/auth';
 
 // Whitelist of routes that don't need auth checking
 const PUBLIC_ROUTES = [
