@@ -12,21 +12,21 @@ const UserTable = ({
   onShowGroupList, // Add new prop
   onSearch, // Add onSearch prop
   onFilterChange, // Add this prop
-  currentFilter // Add this prop
+  currentFilter, // Add this prop
+  totalPages: totalPagesFromProps, // Add this prop
+  onPageChange: onPageChangeFromProps // Add this prop
 }) => {
   // Remove local selectedIds state since it's now passed as prop
   
   const [currentPage, setCurrentPage] = useState(1);
   const ROWS_PER_PAGE = 10;
 
-  // Calculate pagination numbers
-  const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
-  const endIndex = startIndex + ROWS_PER_PAGE;
-  const paginatedUsers = users.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(users.length / ROWS_PER_PAGE);
-
+  // Update pagination logic to use total count from API
   const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
+    if (newPage >= 1 && newPage <= totalPagesFromProps) {
+      setCurrentPage(newPage);
+      onPageChangeFromProps(newPage); // Call parent handler to fetch new page data
+    }
   };
 
   const handleCheckboxChange = (id) => {
@@ -145,7 +145,7 @@ const UserTable = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {paginatedUsers.map((user, index) => (
+            {users.map((user, index) => (
               <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <input
@@ -182,8 +182,7 @@ const UserTable = ({
         {/* Add Pagination Controls */}
         <div className="px-6 py-4 flex items-center justify-between border-t">
           <div className="text-sm text-gray-700">
-            Showing {startIndex + 1} to {Math.min(endIndex, users.length)} of{" "}
-            {users.length} entries
+            Page {currentPage} of {totalPagesFromProps}
           </div>
           <div className="flex space-x-2">
             <button
@@ -195,11 +194,11 @@ const UserTable = ({
               Previous
             </button>
             <span className="px-4 py-1 text-gray-600">
-              Page {currentPage} of {totalPages}
+              Page {currentPage} of {totalPagesFromProps}
             </span>
             <button
               onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages}
+              disabled={currentPage >= totalPagesFromProps}
               className="px-3 py-1 rounded border bg-white text-gray-600 
                        hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >

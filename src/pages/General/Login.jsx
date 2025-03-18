@@ -8,6 +8,7 @@ import logo from "../../assets/images/ARALKADEMYLOGO.png";
 import icon from "../../assets/images/ARALKADEMYICON.png";
 import nstpLogo from "../../assets/images/NSTPLOGO.png";
 import { Eye, EyeOff } from "lucide-react";
+import { useAuth } from '../../contexts/AuthContext';
 
 /**
  * Login component for user authentication.
@@ -24,6 +25,7 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const recaptchaRef = useRef(null);
+  const { checkAuth } = useAuth();
 
   /**
    * Resets the reCAPTCHA component.
@@ -64,8 +66,6 @@ function Login() {
    */
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Clear previous errors
     setError(null);
 
     // Validate inputs before proceeding
@@ -78,56 +78,52 @@ function Login() {
     }
 
     if (!captchaResponse) {
-      setError("Please verify the CAPTCHA to proceed"); //Use setError, consistent
+      setError("Please verify the CAPTCHA");
       return;
     }
 
-    setError(null); //Clear previous error
     setLoading(true);
 
     try {
-      const data = await loginUser(email, password, captchaResponse); // Use the service function
+      // First attempt login
+      const loginData = await loginUser(email, password, captchaResponse);
+      console.log('Login response:', loginData);
 
-      if (data && data.token) {
-        localStorage.setItem("token", data.token);
-        // Save user data in localStorage
-        localStorage.setItem("user", JSON.stringify(data.user));
-
-        // Get user role from token
-        const payload = JSON.parse(atob(data.token.split(".")[1]));
-        const userRole = payload.role;
-
-        // Role based navigation
-        switch (userRole?.toLowerCase()) {
-          case "admin":
-            navigate("/Admin/Dashboard", { replace: true });
-            break;
-          case "teacher":
-          case "student_teacher":
-            navigate("/Teacher/Dashboard", { replace: true });
-            break;
-          case "learner":
-            navigate("/Learner/Dashboard", { replace: true });
-            break;
-          default:
-            throw new Error("Invalid user role");
-        }
+      if (!loginData.token || !loginData.user) {
+        throw new Error('Invalid login response');
       }
+
+      // Wait a moment for token to be saved
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Update auth context
+      const authResult = await checkAuth();
+      console.log('Auth validation result:', authResult);
+
+      // Check if we have a valid user object
+      if (!authResult.user) {
+        throw new Error('No user data received');
+      }
+
+      const userRole = loginData.user.role?.toLowerCase();
+      const dashboardRoutes = {
+        admin: "/Admin/Dashboard",
+        teacher: "/Teacher/Dashboard",
+        student_teacher: "/Teacher/Dashboard",
+        learner: "/Learner/Dashboard"
+      };
+
+      const route = dashboardRoutes[userRole];
+      if (!route) {
+        throw new Error(`Invalid user role: ${userRole}`);
+      }
+
+      console.log('Redirecting to:', route);
+      navigate(route, { replace: true });
+
     } catch (err) {
-      // Improved error handling: Log the full error, use more specific messages
       console.error("Login failed:", err);
-
-      if (err.message === "Invalid credentials") {
-        //Specific error from authService
-        setError("Invalid email or password. Please try again.");
-      } else if (err.message === "Unauthorized") {
-        setError("Unauthorized access. Please check your credentials.");
-      } else if (err.message === "Captcha verification failed") {
-        setError("Captcha verification failed");
-      } else {
-        setError("An unexpected error occurred. Please try again later.");
-      }
-
+      setError(err.message || 'Login failed. Please try again.');
       resetRecaptcha();
     } finally {
       setLoading(false);

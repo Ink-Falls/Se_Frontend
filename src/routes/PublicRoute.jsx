@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { validateAuth } from '../services/authService';
-import { getUserRole } from '../utils/auth';
+import { useAuth } from '../contexts/AuthContext';
+import tokenService from '../services/tokenService';
 
-// Whitelist of routes that don't need auth checking
+// Whitelist of public routes
 const PUBLIC_ROUTES = [
   '/login',
   '/Enrollment',
@@ -31,61 +31,23 @@ const getDashboardByRole = (role) => {
 
 export const PublicRoute = ({ children }) => {
   const location = useLocation();
-  const [state, setState] = useState({
-    loading: true,
-    authenticated: false,
-    error: null
-  });
+  const { isAuthenticated, user, loading } = useAuth();
 
-  const checkAuth = useCallback(async () => {
-    // Skip auth check for public routes
-    const isPublicRoute = PUBLIC_ROUTES.some(route => 
-      location.pathname.toLowerCase().startsWith(route.toLowerCase())
-    );
+  // Skip auth check for public routes
+  const isPublicRoute = PUBLIC_ROUTES.some(route => 
+    location.pathname.toLowerCase().startsWith(route.toLowerCase())
+  );
 
-    if (isPublicRoute) {
-      setState({ loading: false, authenticated: false, error: null });
-      return;
-    }
+  if (isPublicRoute) {
+    return children;
+  }
 
-    try {
-      const data = await validateAuth();
-      
-      if (data.valid) {
-        const userRole = getUserRole();
-        const dashboard = getDashboardByRole(userRole);
-        setState({
-          loading: false,
-          authenticated: true,
-          redirectTo: dashboard,
-          error: null
-        });
-      } else {
-        setState({
-          loading: false,
-          authenticated: false,
-          error: null
-        });
-      }
-    } catch (error) {
-      setState({
-        loading: false,
-        authenticated: false,
-        error: error.message
-      });
-    }
-  }, [location.pathname]);
-
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  if (state.loading) {
+  if (loading) {
     return <div>Loading...</div>;
   }
 
-  if (state.authenticated && state.redirectTo) {
-    return <Navigate to={state.redirectTo} state={{ from: location }} replace />;
+  if (isAuthenticated && user) {
+    return <Navigate to={getDashboardByRole(user.role)} replace />;
   }
 
   return children;

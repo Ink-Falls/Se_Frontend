@@ -46,29 +46,35 @@ class TokenService {
 
   // Secure token storage
   /**
-   * Saves tokens to both HTTP-only cookies and local storage
+   * Saves tokens to local storage
    * @param {string} accessToken 
    * @param {string} refreshToken 
    */
   async saveTokens(accessToken, refreshToken) {
     try {
-      // Store tokens in HTTP-only cookies via backend
-      await fetch(`${API_BASE_URL}/auth/cookies`, {
-        method: 'POST',
-        credentials: 'include', // Enables HTTP-only cookie handling
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ accessToken, refreshToken }),
-      });
+      if (!accessToken) {
+        throw new Error('Access token is required');
+      }
 
-      // Also store in localStorage as backup
       localStorage.setItem('token', accessToken);
+      
       if (refreshToken) {
         localStorage.setItem('refreshToken', refreshToken);
       }
+
+      // Verify storage
+      const verifyToken = localStorage.getItem('token');
+      if (!verifyToken) {
+        throw new Error('Token storage verification failed');
+      }
+
+      console.log('✅ Tokens saved successfully');
+      return true;
     } catch (error) {
-      console.error('Error setting tokens:', error);
+      console.error('❌ Token storage error:', error);
+      // Clean up on error
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
       throw error;
     }
   }
@@ -100,54 +106,131 @@ class TokenService {
   
   // Token expiration checking
   /**
-   * Checks if the current access token is expired or will expire soon
-   * @returns {boolean} True if token is expired or will expire within threshold
+   * Single source of truth for token expiration checking
    */
   isTokenExpired() {
     const token = this.getAccessToken();
     if (!token) return true;
 
     try {
-      // Parse the JWT payload
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const payload = JSON.parse(window.atob(base64));
-
-      // Check if token will expire within REFRESH_THRESHOLD_MINUTES
-      return payload.exp * 1000 < Date.now() + (REFRESH_THRESHOLD_MINUTES * 60 * 1000);
+      
+      // Check if token will expire within next 5 minutes
+      return payload.exp * 1000 < Date.now() + (5 * 60 * 1000);
     } catch (e) {
       return true;
     }
   }
 
   /**
-   * Attempts to refresh the access token using the refresh token
-   * @async
-   * @returns {Promise<string>} The new access token
-   * @throws {Error} If refresh token is missing or refresh fails
+   * Manual token refresh - used when token is explicitly detected as expired
    */
   async refreshToken() {
+    console.log('🔄 Attempting token refresh');
     try {
       await this.#checkRateLimit();
 
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      if (response.status === 429) {
-        const retryAfter = parseInt(response.headers.get('Retry-After')) || 60;
-        throw new Error(`Rate limit exceeded. Please try again in ${retryAfter} seconds.`);
+      const refreshToken = this.getRefreshToken();
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
       }
 
-      if (!response.ok) throw new Error('Token refresh failed');
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken })
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          await this.removeTokens();
+          window.location.href = '/login';
+        }
+        throw new Error('Failed to refresh token');
+      }
+
+      const { token } = await response.json(); // Changed to match API response
+      await this.saveTokens(token, refreshToken); // Keep existing refresh token
+      console.log('✅ Token refresh successful');
+      return token;
+    } catch (error) {
+      console.error('❌ Token refresh failed:', error);
+      await this.removeTokens();
+      throw error;
+    }
+  }
+
+  /**
+   * Sets up automatic background token refresh
+   * This runs periodically to prevent token expiration
+   */
+  setupAutoRefresh() {
+    const REFRESH_INTERVAL = 15 * 60 * 1000; // Check every 15 minutes
+    
+    // Clear any existing refresh interval
+    if (this._refreshInterval) {
+      clearInterval(this._refreshInterval);
+    }
+    
+    // Set up new refresh interval
+    this._refreshInterval = setInterval(async () => {
+      try {
+        if (this.isTokenExpired()) {
+          await this.refreshToken();
+        }
+      } catch (error) {
+        console.error('Auto refresh failed:', error);
+        // If auto-refresh fails multiple times, could trigger re-login
+      }
+    }, REFRESH_INTERVAL);
+
+    // Initial check
+    if (this.isTokenExpired()) {
+      this.refreshToken().catch(console.error);
+    }
+  }
+
+  // Clean up refresh interval when needed
+  clearAutoRefresh() {
+    if (this._refreshInterval) {
+      clearInterval(this._refreshInterval);
+      this._refreshInterval = null;
+    }
+  }
+
+  /**
+   * Validates the current authentication status
+   * @returns {Promise<{valid: boolean, user: object|null}>}
+   */
+  async validateAuth() {
+    console.log('🔍 Validating authentication');
+    try {
+      const token = this.getAccessToken();
+      if (!token) {
+        console.log('No token found during validation');
+        return { valid: false, user: null };
+      }
+
+      const response = await fetch(`${API_BASE_URL}/auth/validate`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
       const data = await response.json();
-      await this.saveTokens(data.accessToken, data.refreshToken);
-      return data.accessToken;
+      console.log('Validation response:', data);
+
+      return {
+        valid: response.ok,
+        user: data.user || null
+      };
     } catch (error) {
-      console.error('Error refreshing token:', error);
-      throw error;
+      console.error('❌ Auth validation failed:', error);
+      return { valid: false, user: null };
     }
   }
 }

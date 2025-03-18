@@ -1,9 +1,10 @@
 // src/components/common/Sidebar/Sidebar.jsx  (Assuming it's a common component)
 import { ChevronFirst, ChevronLast, LogOut } from "lucide-react";
-import logo from "/src/assets/images/ARALKADEMYLOGO.png"; // Correct relative path
-import React, { createContext, useContext, useState } from "react";  // Import React
+import PropTypes from 'prop-types'; // Add prop types
+import React, { createContext, useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { logoutUser } from "/src/services/authService.js"; // Import logout function
+import logo from "/src/assets/images/ARALKADEMYLOGO.png";
+import { useAuth } from '../../../contexts/AuthContext';
 
 const SidebarContext = createContext();
 
@@ -19,8 +20,10 @@ const SidebarContext = createContext();
  */
 export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
   const [expanded, setExpanded] = useState(true); // Controls the expanded/collapsed state of the sidebar (desktop)
+  const [isLoggingOut, setIsLoggingOut] = useState(false); // Add loading state
   const location = useLocation();  // Get the current route path
   const navigate = useNavigate();   // For programmatic navigation
+  const { logout, user } = useAuth(); // Add useAuth hook
 
   /**
    * Handles user logout.
@@ -29,16 +32,20 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
    */
   const handleLogout = async () => {
     try {
-      await logoutUser(); // Call the logout service function
-      localStorage.removeItem("token"); // Clear the token
-      // localStorage.removeItem("user"); // Clear other user data, if you store it
-
-      navigate("/login");  // Redirect to the login page
+      setIsLoggingOut(true);
+      await logout(); // Use AuthContext logout instead of direct service call
+      navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout failed:", error);
-      // Display a user-friendly error message (e.g., using a toast or notification)
-      alert(`Logout failed: ${error.message}`); //  A basic alert; use a better UI element in a real app.
-        navigate("/login"); //even if logout fail, navigate to login
+      
+      // Show error message to user
+      const errorMessage = error.message || "Logout failed. You will be redirected to login.";
+      alert(errorMessage); // Consider using a proper notification system
+      
+      // Redirect to login anyway for safety
+      navigate("/login", { replace: true });
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -84,16 +91,28 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
         <div className="mt-auto px-3 py-3">
           <button
             onClick={handleLogout}
+            disabled={isLoggingOut}
             className="flex w-full py-3 px-4 my-5 font-medium items-center text-gray-50 hover:bg-[#F6BA18] hover:text-black rounded-md p-2 transition-colors group"
           >
             <LogOut className="mr-1" size={20} />
-            {expanded && <span>Logout</span>}
+            {expanded && <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>}
           </button>
         </div>
       </nav>
     </aside>
   );
 }
+
+// Add prop types validation
+Sidebar.propTypes = {
+  navItems: PropTypes.arrayOf(PropTypes.shape({
+    text: PropTypes.string.isRequired,
+    icon: PropTypes.element.isRequired, 
+    route: PropTypes.string.isRequired
+  })).isRequired,
+  isSidebarOpen: PropTypes.bool,
+  setIsSidebarOpen: PropTypes.func
+};
 
 /**
  * SidebarItem component for individual navigation items.
