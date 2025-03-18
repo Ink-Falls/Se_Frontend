@@ -3,6 +3,8 @@ import { API_BASE_URL } from '../utils/constants';
 import tokenService from './tokenService';
 import fetchWithInterceptor from './apiService';
 
+const CACHE_DURATION = 10000; // 10 seconds
+
 /**
  * Handles user login.
  *
@@ -256,37 +258,67 @@ const refreshUserToken = async (refreshToken) => {
   }
 };
 
-export const validateAuth = async () => {
+const validateAuth = async () => {
   try {
-    // Add exponential backoff for retries
-    let retryCount = 0;
-    const maxRetries = 3;
+    const token = tokenService.getAccessToken();
+    if (!token) return { valid: false, user: null };
 
-    while (retryCount < maxRetries) {
-      try {
-        const response = await fetchWithInterceptor(`${API_BASE_URL}/auth/validate`);
-        
-        if (response.status === 429) {
-          const retryAfter = parseInt(response.headers.get('Retry-After')) || 60;
-          await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-          retryCount++;
-          continue;
-        }
-
-        const data = await response.json();
-        return { valid: response.ok, user: data.user };
-      } catch (error) {
-        if (retryCount === maxRetries - 1) throw error;
-        retryCount++;
-        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+    // Check cache
+    const cached = sessionStorage.getItem('auth_validation');
+    if (cached) {
+      const { data, expiry } = JSON.parse(cached);
+      if (expiry > Date.now()) {
+        return data;
       }
+      sessionStorage.removeItem('auth_validation');
     }
 
-    throw new Error('Authentication validation failed after retries');
+    const response = await fetch(`${API_BASE_URL}/auth/validate`, {
+      credentials: 'include',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.status === 429) {
+      return { valid: false, rateLimited: true, user: null };
+    }
+
+    if (response.status === 401) {
+      tokenService.removeTokens();
+      return { valid: false, user: null };
+    }
+
+    const data = await response.json();
+    
+    if (response.ok) {
+      const result = {
+        valid: true,
+        user: data.user
+      };
+
+      sessionStorage.setItem('auth_validation', JSON.stringify({
+        data: result,
+        expiry: Date.now() + CACHE_DURATION
+      }));
+
+      return result;
+    }
+
+    return { valid: false, user: null };
   } catch (error) {
     console.error('Validate auth error:', error);
     return { valid: false, user: null };
   }
 };
 
-export { loginUser, logoutUser, forgotPassword, verifyResetCode, resetPassword, validateToken, refreshUserToken, validateAuth };
+export { 
+  loginUser, 
+  logoutUser, 
+  forgotPassword, 
+  verifyResetCode, 
+  resetPassword, 
+  validateToken, 
+  refreshUserToken, 
+  validateAuth 
+};

@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import profileImg from "/src/assets/images/profile2.jpeg"; // Adjust the path if necessary
 
 const Header = ({ title }) => {
@@ -16,7 +17,9 @@ const Header = ({ title }) => {
           <h1 className="text-xl font-semibold text-[#334155]">{title}</h1>
           <p className="text-xs text-[#334155]">{currentDate}</p>
         </div>
-        <img src={profileImg} alt="Profile" className="w-8 h-8 rounded-full" />
+        <Link to="/profile">
+          <img src={profileImg} alt="Profile" className="w-8 h-8 rounded-full" />
+        </Link>
       </div>
 
       {/* Desktop & Tablet View (Medium to Large Screens) */}
@@ -31,11 +34,13 @@ const Header = ({ title }) => {
           <span className="ml-2 text-sm mr-5 font-semibold text-[#334155]">
             Account
           </span>
-          <img
-            src={profileImg}
-            alt="Profile"
-            className="w-8 h-8 md:w-10 md:h-10 rounded-full"
-          />
+          <Link to="/profile">
+            <img
+              src={profileImg}
+              alt="Profile"
+              className="w-8 h-8 md:w-10 md:h-10 rounded-full"
+            />
+          </Link>
         </div>
       </div>
     </div>

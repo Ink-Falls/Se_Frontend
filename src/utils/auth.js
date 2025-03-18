@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './constants';
+import tokenService from '../services/tokenService';
 
 // Simple cache duration
 const CACHE_DURATION = 10000; // 10 seconds
@@ -31,7 +32,7 @@ const validateAuthStatus = async () => {
     }
 
     const isValid = response.ok;
-    
+
     // Cache the result
     sessionStorage.setItem('auth_validation', JSON.stringify({
       value: isValid,
@@ -65,9 +66,9 @@ const clearAuthData = async () => {
   }
 };
 
-export const getUserRole = () => {
+const getUserRole = () => {
   try {
-    const token = localStorage.getItem('token');
+    const token = tokenService.getAccessToken();
     if (!token) return null;
 
     const payload = JSON.parse(atob(token.split('.')[1]));
@@ -78,74 +79,8 @@ export const getUserRole = () => {
   }
 };
 
-export const validateAuth = async () => {
-  console.log('validateAuth called', {
-    timestamp: new Date().toISOString(),
-    hasToken: !!localStorage.getItem('token')
-  });
-
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.log('No token found in validateAuth');
-      return { valid: false, user: null };
-    }
-
-    // Check cache
-    const cached = sessionStorage.getItem('auth_validation');
-    if (cached) {
-      const { data, expiry } = JSON.parse(cached);
-      console.log('Cache check:', { 
-        hasCachedData: !!data,
-        expired: expiry < Date.now()
-      });
-      
-      if (expiry > Date.now()) {
-        console.log('Returning cached validation result');
-        return data;
-      }
-      sessionStorage.removeItem('auth_validation');
-    }
-
-    console.log('Making validation API call');
-    const response = await fetch(`${API_BASE_URL}/auth/validate`, {
-      credentials: 'include',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    console.log('Validation response:', {
-      status: response.status,
-      ok: response.ok
-    });
-
-    if (response.status === 429) {
-      return { valid: false, user: null };
-    }
-
-    const data = await response.json();
-    
-    if (response.ok) {
-      const result = {
-        valid: true,
-        user: data.user
-      };
-
-      // Cache successful response
-      sessionStorage.setItem('auth_validation', JSON.stringify({
-        data: result,
-        expiry: Date.now() + CACHE_DURATION
-      }));
-
-      return result;
-    }
-
-    return { valid: false, user: null };
-  } catch (error) {
-    console.error('Validate auth error:', error);
-    return { valid: false, user: null };
-  }
+// Export all functions together in one statement
+export {
+  isAuthenticated, clearAuthData,
+  getUserRole
 };
-
-export { isAuthenticated, clearAuthData };
