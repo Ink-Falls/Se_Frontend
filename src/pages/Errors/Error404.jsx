@@ -1,23 +1,24 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "/src/assets/images/ARALKADEMYLOGO.png";
-import { isAuthenticated, getUserRole } from "../../utils/auth";
+import { useAuth } from '../../contexts/AuthContext';
 
 function Error404() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated, user } = useAuth();
   const isLearnerRoute = location.pathname.includes('/Learner/');
   const isTeacherRoute = location.pathname.includes('/Teacher/');
   const isAdminRoute = location.pathname.includes('/Admin/');
 
   const handleGoHome = () => {
-    if (!isAuthenticated()) {
+    if (!isAuthenticated) {
       navigate("/login", { replace: true });
       return;
     }
 
-    const userRole = getUserRole();
-    switch (userRole?.toLowerCase()) {
+    const role = user?.role?.toLowerCase();
+    switch (role) {
       case 'teacher':
       case 'student_teacher':
         navigate("/Teacher/Dashboard", { replace: true });

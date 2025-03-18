@@ -4,6 +4,8 @@
  */
 
 import { API_BASE_URL } from '../utils/constants';
+import { getUserGroupIds } from './groupService';
+import tokenService from './tokenService';
 
 /**
  * Fetches all courses with their associated groups
@@ -47,81 +49,22 @@ export const getAllCourses = async () => {
 };
 
 /**
- * Determines if a user is a member of a given group
- * @param {Object[]} groupMembers - Array of group members
- * @param {number} userId - Current user's ID
- * @returns {boolean} True if user is a member
- */
-const isUserInGroup = (groupMembers, userId) => {
-  return groupMembers.some(member => member.user_id === userId);
-};
-
-/**
- * Gets all groups where user is a member and matches their role
- * @param {number} userId - Current user's ID
- * @param {string} role - User's role ('learner' or 'student_teacher')
- * @returns {Promise<Array>} Array of group IDs user belongs to
- */
-const getUserGroups = async (userId, role) => {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) throw new Error('No authentication token');
-
-    // Get all groups
-    const response = await fetch(`${API_BASE_URL}/groups`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) throw new Error('Failed to fetch groups');
-    const groups = await response.json();
-
-    // Get membership info for each relevant group
-    const userGroups = [];
-    for (const group of groups) {
-      // Only check groups matching user's role
-      if ((role === 'learner' && group.group_type === 'learner') ||
-          (role === 'student_teacher' && group.group_type === 'student_teacher')) {
-        
-        const membersResponse = await fetch(`${API_BASE_URL}/groups/${group.id}/members`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (membersResponse.ok) {
-          const members = await membersResponse.json();
-          if (isUserInGroup(members, userId)) {
-            userGroups.push(group.id);
-          }
-        }
-      }
-    }
-
-    return userGroups;
-  } catch (error) {
-    console.error('Error getting user groups:', error);
-    throw error;
-  }
-};
-
-/**
  * Fetches courses for the currently logged-in learner
  * @returns {Promise<Array>} Array of course objects
  */
 export const getLearnerCourses = async () => {
   try {
-    const token = localStorage.getItem('token');
+    const token = tokenService.getAccessToken();
     if (!token) throw new Error('No authentication token');
 
-    const userStr = localStorage.getItem('user');
-    if (!userStr) throw new Error('User information not found');
-    
-    const user = JSON.parse(userStr);
-    const userGroups = await getUserGroups(user.id, user.role);
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user?.id) throw new Error('User data not found');
+
+    // First get user's groups
+    const userGroups = await getUserGroupIds(user.id);
+    console.log('User groups:', userGroups);
+
+    // Then fetch all courses
     const response = await fetch(`${API_BASE_URL}/courses`, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -131,62 +74,13 @@ export const getLearnerCourses = async () => {
 
     if (!response.ok) throw new Error('Failed to fetch courses');
     const data = await response.json();
-    
-    // Define regex patterns for each subject
-    const subjectPatterns = {
-      FIL: /\b(?:FILIPINO|FIL|FILIPINO\s+SUBJECT|FILIPINO\s+STUDIES)\b/i,
-      ENG: /\b(?:ENGLISH|ENG|ENGLISH\s+SUBJECT|ENGLISH\s+STUDIES)\b/i,
-      MATH: /\b(?:MATHEMATICS|MATH|MATHS|MATEMATIKA)\b/i,
-      SCI: /\b(?:SCIENCE|SCI|NATURAL\s+SCIENCE|GENERAL\s+SCIENCE)\b/i,
-      AP: /\b(?:ARALING\s+PANLIPUNAN|AP|SOCIAL\s+STUDIES)\b/i,
-      EsP: /\b(?:EDUKASYON\s+SA\s+PAGPAPAKATAO|ESP|EsP|VALUES\s+EDUCATION)\b/i
-    };
 
-    // Filter and format courses
-    const courses = data.courses
-      .filter(course => {
-        if (user.role === 'learner') {
-          return userGroups.includes(course.learner_group_id);
-        } else if (user.role === 'student_teacher') {
-          return userGroups.includes(course.student_teacher_group_id);
-        }
-        return false;
-      })
-      .map(course => {
-        // Generate course code based on name
-        let courseCode;
-        const courseName = course.name.toUpperCase();
+    // Filter courses where learner_group_id matches any of user's group_ids
+    const accessibleCourses = (data.rows || []).filter(course => 
+      userGroups.includes(course.learner_group_id)
+    );
 
-        if (subjectPatterns.FIL.test(courseName)) {
-          courseCode = `FIL-${String(course.id).padStart(3, '0')}`;
-        } else if (subjectPatterns.ENG.test(courseName)) {
-          courseCode = `ENG-${String(course.id).padStart(3, '0')}`;
-        } else if (subjectPatterns.MATH.test(courseName)) {
-          courseCode = `MATH-${String(course.id).padStart(3, '0')}`;
-        } else if (subjectPatterns.SCI.test(courseName)) {
-          courseCode = `SCI-${String(course.id).padStart(3, '0')}`;
-        } else if (subjectPatterns.AP.test(courseName)) {
-          courseCode = `AP-${String(course.id).padStart(3, '0')}`;
-        } else if (subjectPatterns.EsP.test(courseName)) {
-          courseCode = `EsP-${String(course.id).padStart(3, '0')}`;
-        } else {
-          courseCode = `COURSE-${String(course.id).padStart(3, '0')}`;
-        }
-
-        return {
-          id: course.id,
-          name: course.name,
-          code: courseCode,
-          description: course.description,
-          teacher: course.teacher_name || 'Not assigned',
-          learner_group_id: course.learner_group_id,
-          student_teacher_group_id: course.student_teacher_group_id,
-          studentCount: Math.floor(Math.random() * 30) + 10, // Random number between 10-40
-          imageUrl: "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg"
-        };
-      });
-
-    return courses;
+    return formatCourses(accessibleCourses);
   } catch (error) {
     console.error('Error fetching learner courses:', error);
     throw error;
@@ -198,77 +92,6 @@ export const getLearnerCourses = async () => {
  * @returns {Promise<Array>} Array of course objects
  */
 export const getTeacherCourses = async () => {
-  const token = localStorage.getItem('token');
-  const userId = JSON.parse(localStorage.getItem('user'))?.id;
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/courses`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch courses');
-    }
-
-    const data = await response.json();
-    const teacherCourses = (data.rows || [])
-      .filter(course => course.user_id === userId || course.teacher?.id === userId)
-      .map(course => {
-        // Create course code based on subject name using regex
-        let courseCode;
-        const courseName = course.name.toUpperCase();
-        
-        // Define regex patterns for each subject
-        const subjectPatterns = {
-          FIL: /\b(?:FILIPINO|FIL|FILIPINO\s+SUBJECT|FILIPINO\s+STUDIES)\b/,
-          ENG: /\b(?:ENGLISH|ENG|ENGLISH\s+SUBJECT|ENGLISH\s+STUDIES)\b/,
-          MATH: /\b(?:MATHEMATICS|MATH|MATHS|MATEMATIKA)\b/,
-          SCI: /\b(?:SCIENCE|SCI|NATURAL\s+SCIENCE|GENERAL\s+SCIENCE)\b/,
-          AP: /\b(?:ARALING\s+PANLIPUNAN|AP|SOCIAL\s+STUDIES)\b/,
-          EsP: /\b(?:EDUKASYON\s+SA\s+PAGPAPAKATAO|ESP|EsP|VALUES\s+EDUCATION)\b/
-        };
-
-        // Test course name against patterns
-        if (subjectPatterns.FIL.test(courseName)) {
-          courseCode = `FIL-${String(course.id).padStart(3, '0')}`;
-        } else if (subjectPatterns.ENG.test(courseName)) {
-          courseCode = `ENG-${String(course.id).padStart(3, '0')}`;
-        } else if (subjectPatterns.MATH.test(courseName)) {
-          courseCode = `MATH-${String(course.id).padStart(3, '0')}`;
-        } else if (subjectPatterns.SCI.test(courseName)) {
-          courseCode = `SCI-${String(course.id).padStart(3, '0')}`;
-        } else if (subjectPatterns.AP.test(courseName)) {
-          courseCode = `AP-${String(course.id).padStart(3, '0')}`;
-        } else if (subjectPatterns.EsP.test(courseName)) {
-          courseCode = `EsP-${String(course.id).padStart(3, '0')}`;
-        } else {
-          courseCode = `COURSE-${String(course.id).padStart(3, '0')}`;
-        }
-
-        return {
-          id: course.id,
-          name: course.name,
-          code: courseCode,
-          description: course.description,
-          studentCount: Math.floor(Math.random() * 30) + 10,
-          imageUrl: course.imageUrl || "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg"
-        };
-      });
-
-    return teacherCourses;
-  } catch (error) {
-    throw error;
-  }
-};
-
-/**
- * Fetches courses for the currently logged-in user
- * @returns {Promise<Array>} Array of courses assigned to the current user
- */
-export const getUserCourses = async () => {
   const token = localStorage.getItem('token');
   const currentUser = JSON.parse(localStorage.getItem('user'));
   
@@ -295,50 +118,10 @@ export const getUserCourses = async () => {
     const data = await response.json();
     
     // Filter courses where user_id matches current user's id
-    const userCourses = (data.rows || [])
-      .filter(course => course.user_id === currentUser.id)
-      .map(course => {
-        // Define regex patterns for each subject
-        const subjectPatterns = {
-          FIL: /\b(?:FILIPINO|FIL|FILIPINO\s+SUBJECT|FILIPINO\s+STUDIES)\b/i,
-          ENG: /\b(?:ENGLISH|ENG|ENGLISH\s+SUBJECT|ENGLISH\s+STUDIES)\b/i,
-          MATH: /\b(?:MATHEMATICS|MATH|MATHS|MATEMATIKA)\b/i,
-          SCI: /\b(?:SCIENCE|SCI|NATURAL\s+SCIENCE|GENERAL\s+SCIENCE)\b/i,
-          AP: /\b(?:ARALING\s+PANLIPUNAN|AP|SOCIAL\s+STUDIES)\b/i,
-          EsP: /\b(?:EDUKASYON\s+SA\s+PAGPAPAKATAO|ESP|EsP|VALUES\s+EDUCATION)\b/i
-        };
+    const teacherCourses = (data.rows || [])
+      .filter(course => course.user_id === currentUser.id);
 
-        // Test course name against patterns
-        let courseCode;
-        const courseName = course.name.toUpperCase();
-
-        if (subjectPatterns.FIL.test(courseName)) {
-          courseCode = `FIL-${String(course.id).padStart(3, '0')}`;
-        } else if (subjectPatterns.ENG.test(courseName)) {
-          courseCode = `ENG-${String(course.id).padStart(3, '0')}`;
-        } else if (subjectPatterns.MATH.test(courseName)) {
-          courseCode = `MATH-${String(course.id).padStart(3, '0')}`;
-        } else if (subjectPatterns.SCI.test(courseName)) {
-          courseCode = `SCI-${String(course.id).padStart(3, '0')}`;
-        } else if (subjectPatterns.AP.test(courseName)) {
-          courseCode = `AP-${String(course.id).padStart(3, '0')}`;
-        } else if (subjectPatterns.EsP.test(courseName)) {
-          courseCode = `EsP-${String(course.id).padStart(3, '0')}`;
-        } else {
-          courseCode = `COURSE-${String(course.id).padStart(3, '0')}`;
-        }
-
-        return {
-          id: course.id,
-          name: course.name,
-          code: courseCode,
-          description: course.description,
-          studentCount: Math.floor(Math.random() * 30) + 10,
-          imageUrl: course.imageUrl || "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg"
-        };
-      });
-
-    return userCourses;
+    return formatCourses(teacherCourses);
   } catch (error) {
     throw error;
   }
@@ -511,4 +294,86 @@ export const deleteCourse = async (courseId) => {
     console.error('Error deleting course:', error);
     throw error;
   }
+};
+
+/**
+ * Gets courses accessible to the current user based on their group memberships
+ * @returns {Promise<Array>} Array of courses the user has access to
+ */
+export const getUserAccessibleCourses = async () => {
+  try {
+    // Get current user from token
+    const token = tokenService.getAccessToken();
+    if (!token) throw new Error('No authentication token');
+
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user?.id) throw new Error('User data not found');
+
+    // Get user's groups
+    const userGroups = await getUserGroupIds(user.id);
+    
+    // Get all courses
+    const response = await fetch(`${API_BASE_URL}/courses`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch courses');
+    const data = await response.json();
+
+    // Filter courses based on user's groups
+    const courses = (data.rows || []).filter(course => {
+      if (user.role === 'learner') {
+        return userGroups.includes(course.learner_group_id);
+      } else if (user.role === 'student_teacher') {
+        return userGroups.includes(course.student_teacher_group_id);
+      }
+      return false;
+    });
+
+    return formatCourses(courses);
+  } catch (error) {
+    console.error('Error fetching user accessible courses:', error);
+    throw error;
+  }
+};
+
+// Add this helper function before formatCourses
+const generateCourseCode = (courseName, courseId) => {
+  const courseTags = {
+    FIL: /\b(?:FILIPINO|FIL|FILIPINO\s+SUBJECT|FILIPINO\s+STUDIES)\b/i,
+    ENG: /\b(?:ENGLISH|ENG|ENGLISH\s+SUBJECT|ENGLISH\s+STUDIES)\b/i,
+    MATH: /\b(?:MATHEMATICS|MATH|MATHS|MATEMATIKA)\b/i,
+    SCI: /\b(?:SCIENCE|SCI|NATURAL\s+SCIENCE|GENERAL\s+SCIENCE)\b/i,
+    AP: /\b(?:ARALING\s+PANLIPUNAN|AP|SOCIAL\s+STUDIES)\b/i,
+    EsP: /\b(?:EDUKASYON\s+SA\s+PAGPAPAKATAO|ESP|EsP|VALUES\s+EDUCATION)\b/i
+  };
+
+  const name = courseName.toUpperCase();
+  const id = String(courseId).padStart(3, '0');
+
+  for (const [prefix, pattern] of Object.entries(courseTags)) {
+    if (pattern.test(name)) {
+      return `${prefix}-${id}`;
+    }
+  }
+
+  return `COURSE-${id}`;
+};
+
+// Helper function to format course data consistently
+const formatCourses = (courses) => {
+  return courses.map(course => ({
+    id: course.id,
+    name: course.name,
+    code: generateCourseCode(course.name, course.id),
+    description: course.description,
+    teacher: course.teacher_name || 'Not assigned',
+    learner_group_id: course.learner_group_id,
+    student_teacher_group_id: course.student_teacher_group_id,
+    studentCount: Math.floor(Math.random() * 30) + 10, // Consider replacing with actual count
+    imageUrl: course.imageUrl || "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg"
+  }));
 };
