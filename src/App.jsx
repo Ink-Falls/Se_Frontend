@@ -23,6 +23,7 @@ import Login from "./pages/General/Login";
 import ForgotPassword from "./pages/General/ForgotPassword";
 import ChangePassword from "./pages/General/ChangePassword";
 import PasswordConfirm from "./pages/General/PasswordConfirm";
+import Profile from "./pages/General/Profile";
 import VerifyCode from "./pages/General/VerifyCode";
 
 // Enrollment Pages
@@ -145,6 +146,14 @@ function App() {
           element={
             <PublicRoute>
               <PasswordConfirm />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/Profile"
+          element={
+            <PublicRoute>
+              <Profile />
             </PublicRoute>
           }
         />
