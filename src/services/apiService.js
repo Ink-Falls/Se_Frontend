@@ -16,81 +16,18 @@ const CIRCUIT_BREAKER = {
   RESET_TIMEOUT: 30000
 };
 
-let isRefreshing = false;
-let failedQueue = [];
 let requestCount = 0;
 let requestTimestamp = Date.now();
 let failureCount = 0;
 let circuitOpen = false;
 let circuitTimer = null;
 
-/**
- * Process queued requests after token refresh
- * @param {Error|null} error - Error from token refresh attempt
- * @param {string|null} token - New access token if refresh successful
- */
-const processQueue = (error, token = null) => {
-  failedQueue.forEach(prom => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-  failedQueue = [];
-};
-
-/**
- * Handles token refresh and retries the original request
- * @async
- * @param {string} url - The URL to make the request to
- * @param {Object} options - Fetch API options
- * @returns {Promise<Response>} Fetch API Response object
- * @throws {Error} If token refresh fails
- */
-const handleTokenRefresh = async (url, options) => {
-  if (isRefreshing) {
-    // Wait for the ongoing refresh to complete
-    return new Promise((resolve, reject) => {
-      failedQueue.push({ resolve, reject });
-    }).then(token => {
-      options.headers['Authorization'] = `Bearer ${token}`;
-      return fetchWithInterceptor(url, { ...options, _retry: true });
-    });
-  }
-
-  isRefreshing = true;
-  try {
-    const newToken = await tokenService.refreshToken();
-    isRefreshing = false;
-    processQueue(null, newToken);
-    options.headers['Authorization'] = `Bearer ${newToken}`;
-    return fetchWithInterceptor(url, { ...options, _retry: true });
-  } catch (error) {
-    isRefreshing = false;
-    processQueue(error, null);
-    tokenService.removeTokens();
-    window.location.href = '/login';
-    throw error;
-  }
-};
-
-/**
- * Makes an HTTP request with automatic token refresh capabilities
- * @async
- * @param {string} url - The URL to make the request to
- * @param {Object} [options={}] - Fetch API options
- * @param {string} [options.method] - HTTP method
- * @param {Object} [options.headers] - Request headers
- * @param {boolean} [options._retry] - Internal flag to prevent infinite refresh loops
- * @returns {Promise<Response>} Fetch API Response object
- * @throws {Error} If request fails or token refresh fails
- */
 const fetchWithInterceptor = async (url, options = {}) => {
-  // Adds custom Authorization header that same-origin policies prevent other sites from adding
+  // Add token to headers
+  const token = tokenService.getAccessToken();
   options.headers = {
     ...options.headers,
-    'Authorization': `Bearer ${token}`
+    'Authorization': token ? `Bearer ${token}` : ''
   };
   
   try {
@@ -117,40 +54,31 @@ const fetchWithInterceptor = async (url, options = {}) => {
     // Add credentials for cookie handling
     options.credentials = 'include';
 
-    // Check if token is expired and refresh if needed
+    // Check token and refresh if needed
     if (tokenService.isTokenExpired()) {
-      if (!isRefreshing) {
-        isRefreshing = true;
-        try {
-          const newToken = await tokenService.refreshToken();
-          isRefreshing = false;
-          processQueue(null, newToken);
-        } catch (error) {
-          isRefreshing = false;
-          processQueue(error, null);
-          tokenService.removeTokens();
-          window.location.href = '/login';
-          throw error;
-        }
-      } else {
-        // Wait for the ongoing refresh to complete
-        await new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        });
+      try {
+        await tokenService.refreshToken();
+        // Update header with new token
+        options.headers['Authorization'] = `Bearer ${tokenService.getAccessToken()}`;
+      } catch (error) {
+        window.location.href = '/login';
+        throw error;
       }
     }
 
-    // Add Authorization header
-    const token = tokenService.getAccessToken();
-    if (token) {
-      options.headers = {
-        ...options.headers,
-        'Authorization': `Bearer ${token}`
-      };
-    }
-
-    // Make the request
     const response = await fetch(url, options);
+
+    // Handle 401 (Unauthorized) by attempting token refresh
+    if (response.status === 401) {
+      try {
+        const newToken = await tokenService.refreshToken();
+        options.headers['Authorization'] = `Bearer ${newToken}`;
+        return fetchWithInterceptor(url, { ...options, _retry: true });
+      } catch (error) {
+        window.location.href = '/login';
+        throw error;
+      }
+    }
 
     // Enhanced error handling
     if (!response.ok) {
@@ -168,9 +96,6 @@ const fetchWithInterceptor = async (url, options = {}) => {
       switch (response.status) {
         case 400:
           throw new Error(errorData.message || 'Invalid request');
-        case 401:
-          await handleTokenRefresh(url, options);
-          break;
         case 403:
           window.dispatchEvent(new CustomEvent('authError', { 
             detail: { type: 'forbidden', message: 'Access denied' }

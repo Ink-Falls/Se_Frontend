@@ -1,256 +1,150 @@
-// React and Router imports
-import React, { useEffect } from "react";
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  Navigate,
-  useNavigate,
-} from "react-router-dom";
-
-// Styles
+import React, { Suspense, lazy, useEffect } from "react";
+import { BrowserRouter as Router, Route, Routes, useNavigate } from "react-router-dom";
+import { AuthProvider } from './contexts/AuthContext';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import LoadingSpinner from './components/common/LoadingSpinner';
+import tokenService from './services/tokenService';
 import "./icon.css";
 
-// Route Protection Components
+// Lazy load route components
+const Home = lazy(() => import("./pages/General/Home"));
+const Login = lazy(() => import("./pages/General/Login"));
+const ForgotPassword = lazy(() => import("./pages/General/ForgotPassword"));
+const ChangePassword = lazy(() => import("./pages/General/ChangePassword"));
+const PasswordConfirm = lazy(() => import("./pages/General/PasswordConfirm"));
+const Profile = lazy(() => import("./pages/General/Profile"));
+const VerifyCode = lazy(() => import("./pages/General/VerifyCode"));
+const Enrollment = lazy(() => import("./pages/Enrollment/Enrollment"));
+const NewEnrollment = lazy(() => import("./pages/Enrollment/NewEnrollment"));
+const EnrollConfirm = lazy(() => import("./pages/Enrollment/EnrollConfirm"));
+const AdminDashboard = lazy(() => import("./pages/Admin/AdminDashboard"));
+const AdminCourses = lazy(() => import("./pages/Admin/AdminCourses"));
+const AdminEnrollment = lazy(() => import("./pages/Admin/AdminEnrollment"));
+const AdminAnnouncements = lazy(() => import("./pages/Admin/AdminAnnouncements"));
+const TeacherDashboard = lazy(() => import("./pages/Teacher/TeacherDashboard"));
+const TeacherNotifications = lazy(() => import("./pages/Teacher/TeacherNotifications"));
+const TeacherNotificationDetails = lazy(() => import("./pages/Teacher/TeacherNotificationDetails"));
+const TeacherCourseAnnouncements = lazy(() => import("./pages/Teacher/TeacherCourseAnnouncements"));
+const TeacherAnnouncementDetails = lazy(() => import("./pages/Teacher/TeacherAnnouncementDetails"));
+const TeacherCourseModules = lazy(() => import("./pages/Teacher/TeacherCourseModules"));
+const TeacherCourseAssessment = lazy(() => import("./pages/Teacher/TeacherCourseAssessment"));
+const LearnerDashboard = lazy(() => import("./pages/Learner/LearnerDashboard"));
+const LearnerCourseAnnouncements = lazy(() => import("./pages/Learner/LearnerCourseAnnouncements"));
+const LearnerAnnouncementDetails = lazy(() => import("./pages/Learner/LearnerAnnouncementDetails"));
+const LearnerNotifications = lazy(() => import("./pages/Learner/LearnerNotifications"));
+const LearnerNotificationDetails = lazy(() => import("./pages/Learner/LearnerNotificationDetails"));
+const LearnerCourseModules = lazy(() => import("./pages/Learner/LearnerCourseModules"));
+const LearnerCourseAssessment = lazy(() => import("./pages/Learner/LearnerCourseAssessment"));
+const Error404 = lazy(() => import("./pages/Errors/Error404"));
+const Error403 = lazy(() => import("./pages/Errors/Error403"));
+const TestComponents = lazy(() => import("./components/test/TestComponents"));
+
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { PublicRoute } from "./routes/PublicRoute";
 import { RoleBasedRoute } from "./routes/RoleBasedRoute";
-import { clearAuthData } from "./utils/auth";
 
-// General Pages
-import Home from "./pages/General/Home";
-import Login from "./pages/General/Login";
-import ForgotPassword from "./pages/General/ForgotPassword";
-import ChangePassword from "./pages/General/ChangePassword";
-import PasswordConfirm from "./pages/General/PasswordConfirm";
-import Profile from "./pages/General/Profile";
-import VerifyCode from "./pages/General/VerifyCode";
+const Logout = () => {
+  const navigate = useNavigate();
 
-// Enrollment Pages
-import Enrollment from "./pages/Enrollment/Enrollment";
-import NewEnrollment from "./pages/Enrollment/NewEnrollment";
-import EnrollConfirm from "./pages/Enrollment/EnrollConfirm";
+  useEffect(() => {
+    const handleLogout = async () => {
+      try {
+        await tokenService.removeTokens(); // Use tokenService instead
+        navigate("/login", { replace: true });
+      } catch (error) {
+        console.error("Logout failed:", error);
+        // Still clear tokens and redirect even if API call fails
+        await tokenService.removeTokens();
+        navigate("/login", { replace: true });
+      }
+    };
 
-// Admin Pages
-import AdminDashboard from "./pages/Admin/AdminDashboard";
-import AdminCourses from "./pages/Admin/AdminCourses";
-import AdminEnrollment from "./pages/Admin/AdminEnrollment";
-import AdminAnnouncements from "./pages/Admin/AdminAnnouncements";
+    handleLogout();
+  }, [navigate]);
 
-// Teacher Pages
-import TeacherDashboard from "./pages/Teacher/TeacherDashboard";
-import TeacherNotifications from "./pages/Teacher/TeacherNotifications";
-import TeacherNotificationDetails from "./pages/Teacher/TeacherNotificationDetails";
-import TeacherCourseAnnouncements from "./pages/Teacher/TeacherCourseAnnouncements";
-import TeacherAnnouncementDetails from "./pages/Teacher/TeacherAnnouncementDetails";
-import TeacherCourseModules from "./pages/Teacher/TeacherCourseModules";
-import TeacherCourseAssessment from "./pages/Teacher/TeacherCourseAssessment";
-
-// Learner Pages
-import LearnerDashboard from "./pages/Learner/LearnerDashboard";
-import LearnerCourseAnnouncements from "./pages/Learner/LearnerCourseAnnouncements";
-import LearnerAnnouncementDetails from "./pages/Learner/LearnerAnnouncementDetails";
-import LearnerNotifications from "./pages/Learner/LearnerNotifications";
-import LearnerNotificationDetails from "./pages/Learner/LearnerNotificationDetails";
-import LearnerCourseModules from "./pages/Learner/LearnerCourseModules";
-import LearnerCourseAssessment from "./pages/Learner/LearnerCourseAssessment";
-
-// Error Pages
-import Error404 from "./pages/Errors/Error404";
-import Error403 from "./pages/Errors/Error403";
-
-import { AuthProvider } from './contexts/AuthContext';
+  return null;
+};
 
 function App() {
-  const isAuthenticated = () => {
-    return !!localStorage.getItem("token");
-  };
-
-  // Updated Logout component
-  const Logout = () => {
-    const navigate = useNavigate();
-
-    useEffect(() => {
-      const handleLogout = async () => {
-        try {
-          // Add API logout call here if needed
-          clearAuthData();
-          navigate("/login", { replace: true });
-        } catch (error) {
-          console.error("Logout failed:", error);
-          // Still clear local data and redirect even if API call fails
-          clearAuthData();
-          navigate("/login", { replace: true });
-        }
-      };
-
-      handleLogout();
-    }, [navigate]);
-
-    return null;
-  };
-
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public routes - accessible when not logged in */}
-          <Route
-            path="/"
-            element={
-              <PublicRoute>
-                <Login />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/login"
-            element={
-              <PublicRoute>
-                <Login />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/Enrollment"
-            element={
-              <PublicRoute>
-                <Enrollment />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/Enrollment/New"
-            element={
-              <PublicRoute>
-                <NewEnrollment />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/ForgotPassword"
-            element={
-              <PublicRoute>
-                <ForgotPassword />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/ChangePassword"
-            element={
-              <PublicRoute>
-                <ChangePassword />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/PasswordConfirm"
-            element={
-              <PublicRoute>
-                <PasswordConfirm />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/VerifyCode"
-            element={
-              <PublicRoute>
-                <VerifyCode />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/EnrollConfirm"
-            element={
-              <PublicRoute>
-                <EnrollConfirm />
-              </PublicRoute>
-            }
-          />
-         
-          {/* Protected routes - only accessible when logged in */}
-          <Route
-            path="/logout"
-            element={
-              <ProtectedRoute>
-                <Logout />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/Profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+              {/* Add this new route near the top of your routes */}
+              <Route path="/test" element={<TestComponents />} />
 
-          {/* Protected Admin Routes */}
-          <Route
-            path="/Admin/*"
-            element={
-              <RoleBasedRoute allowedRoles={["admin"]}>
-                <Routes>
-                  <Route path="Dashboard" element={<AdminDashboard />} />
-                  <Route path="Courses" element={<AdminCourses />} />
-                  <Route path="Enrollments" element={<AdminEnrollment />} />
-                  <Route path="Announcements" element={<AdminAnnouncements />} />
-                  {/* Catch all unmatched routes under /Admin/ */}
-                  <Route path="*" element={<Error404 />} />
-                </Routes>
-              </RoleBasedRoute>
-            }
-          />
+              {/* Group routes logically */}
+              
+              {/* Public Routes */}
+              <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
+              <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+              <Route path="/Enrollment" element={<PublicRoute><Enrollment /></PublicRoute>} />
+              <Route path="/Enrollment/New" element={<PublicRoute><NewEnrollment /></PublicRoute>} />
+              <Route path="/ForgotPassword" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+              <Route path="/ChangePassword" element={<PublicRoute><ChangePassword /></PublicRoute>} />
+              <Route path="/PasswordConfirm" element={<PublicRoute><PasswordConfirm /></PublicRoute>} />
+              <Route path="/VerifyCode" element={<PublicRoute><VerifyCode /></PublicRoute>} />
+              <Route path="/EnrollConfirm" element={<PublicRoute><EnrollConfirm /></PublicRoute>} />
 
-          {/* Protected Teacher Routes */}
-          <Route
-            path="/Teacher/*"
-            element={
-              <RoleBasedRoute allowedRoles={["teacher", "student_teacher"]}>
-                {/* Nested teacher routes */}
-                <Routes>
-                  <Route path="Dashboard" element={<TeacherDashboard />} />
-                  <Route path="Notifications" element={<TeacherNotifications />} />
-                  <Route path="NotificationDetails/:id" element={<TeacherNotificationDetails />} />
-                  <Route path="CourseAnnouncements" element={<TeacherCourseAnnouncements />} />
-                  <Route path="AnnouncementDetails/:id" element={<TeacherAnnouncementDetails />} /> {/* Add this line */}
-                  <Route path="CourseModules" element={<TeacherCourseModules />} />
-                  <Route path="Assessment" element={<TeacherCourseAssessment />} />
-                  {/* Catch all unmatched routes under /Teacher/ */}
-                  <Route path="*" element={<Error404 />} />
-                </Routes>
-              </RoleBasedRoute>
-            }
-          />
+              {/* Auth Protected Routes */}
+              <Route path="/logout" element={<ProtectedRoute><Logout /></ProtectedRoute>} />
+              <Route path="/Profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
-          {/* Protected Learner Routes */}
-          <Route
-            path="/Learner/*"
-            element={
-              <RoleBasedRoute allowedRoles={["learner"]}>
-                {/* Nested learner routes */}
-                <Routes>
-                  <Route path="Dashboard" element={<LearnerDashboard />} />
-                  <Route path="Assessment" element={<LearnerCourseAssessment />} />
-                  <Route path="CourseAnnouncements" element={<LearnerCourseAnnouncements />} />
-                  <Route path="AnnouncementDetails/:id" element={<LearnerAnnouncementDetails />} />
-                  <Route path="Notifications" element={<LearnerNotifications />} />
-                  <Route path="NotificationDetails/:id" element={<LearnerNotificationDetails />} />
-                  <Route path="CourseModules" element={<LearnerCourseModules />} />
-                  {/* Catch all unmatched routes under /Learner/ */}
-                  <Route path="*" element={<Error404 />} />
-                </Routes>
-              </RoleBasedRoute>
-            }
-          />
+              {/* Admin Routes */}
+              <Route path="/Admin/*" element={
+                <RoleBasedRoute allowedRoles={["admin"]}>
+                  <Routes>
+                    <Route path="Dashboard" element={<AdminDashboard />} />
+                    <Route path="Courses" element={<AdminCourses />} />
+                    <Route path="Enrollments" element={<AdminEnrollment />} />
+                    <Route path="Announcements" element={<AdminAnnouncements />} />
+                    <Route path="*" element={<Error404 />} />
+                  </Routes>
+                </RoleBasedRoute>
+              } />
 
-          {/* Error routes */}
-          <Route path="/unauthorized" element={<Error403 />} />
-          <Route path="*" element={<Error404 />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+              {/* Teacher Routes */} 
+              <Route path="/Teacher/*" element={
+                <RoleBasedRoute allowedRoles={["teacher", "student_teacher"]}>
+                  <Routes>
+                    <Route path="Dashboard" element={<TeacherDashboard />} />
+                    <Route path="Notifications" element={<TeacherNotifications />} />
+                    <Route path="NotificationDetails/:id" element={<TeacherNotificationDetails />} />
+                    <Route path="CourseAnnouncements" element={<TeacherCourseAnnouncements />} />
+                    <Route path="AnnouncementDetails/:id" element={<TeacherAnnouncementDetails />} />
+                    <Route path="CourseModules" element={<TeacherCourseModules />} />
+                    <Route path="Assessment" element={<TeacherCourseAssessment />} />
+                    <Route path="*" element={<Error404 />} />
+                  </Routes>
+                </RoleBasedRoute>
+              } />
+
+              {/* Learner Routes */}
+              <Route path="/Learner/*" element={
+                <RoleBasedRoute allowedRoles={["learner"]}>
+                  <Routes>
+                    <Route path="Dashboard" element={<LearnerDashboard />} />
+                    <Route path="Assessment" element={<LearnerCourseAssessment />} />
+                    <Route path="CourseAnnouncements" element={<LearnerCourseAnnouncements />} />
+                    <Route path="AnnouncementDetails/:id" element={<LearnerAnnouncementDetails />} />
+                    <Route path="Notifications" element={<LearnerNotifications />} />
+                    <Route path="NotificationDetails/:id" element={<LearnerNotificationDetails />} />
+                    <Route path="CourseModules" element={<LearnerCourseModules />} />
+                    <Route path="*" element={<Error404 />} />
+                  </Routes>
+                </RoleBasedRoute>
+              } />
+
+              {/* Error Routes */}
+              <Route path="/unauthorized" element={<Error403 />} />
+              <Route path="*" element={<Error404 />} />
+            </Routes>
+          </Suspense>
+        </Router>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
