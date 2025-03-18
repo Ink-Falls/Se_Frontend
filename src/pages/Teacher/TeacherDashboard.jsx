@@ -4,7 +4,7 @@ import Sidebar from "../../components/common/layout/Sidebar";
 import { Book, Bell } from "lucide-react";
 import Header from "../../components/common/layout/Header";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
-import { getUserCourses } from "../../services/courseService";
+import { getTeacherCourses } from "../../services/courseService";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -25,7 +25,7 @@ const Dashboard = () => {
     const fetchCourses = async () => {
       setLoading(true);
       try {
-        const coursesData = await getUserCourses();
+        const coursesData = await getTeacherCourses();
         setCourses(coursesData);
       } catch (error) {
         setError(error.message || 'Failed to fetch courses');

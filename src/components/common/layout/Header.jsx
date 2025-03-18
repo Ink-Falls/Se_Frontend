@@ -26,7 +26,7 @@ const Header = ({ title }) => {
           <p className="text-xs text-[#334155]">{currentDate}</p>
         </div>
         <Link to="/profile" className="flex items-center">
-          <span className="mr-2 text-sm font-medium text-[#334155]">
+          <span className="mr-2 text-base font-bold text-[#334155]">
             {userData?.first_name} {userData?.last_name}
           </span>
           <img src={profileImg} alt="Profile" className="w-8 h-8 rounded-full" />
@@ -42,7 +42,7 @@ const Header = ({ title }) => {
           <p className="text-xs text-[#334155]">{currentDate}</p>
         </div>
         <Link to="/profile" className="flex items-center">
-          <span className="mr-4 text-sm font-medium text-[#334155]">
+          <span className="mr-4 text-lg font-bold text-[#334155]">
             {userData?.first_name} {userData?.last_name}
           </span>
           <img

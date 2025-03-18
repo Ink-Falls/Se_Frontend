@@ -1,20 +1,20 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "/src/assets/images/ARALKADEMYLOGO.png";
-import { isAuthenticated } from "../../utils/auth";
-import { getUserRole } from "../../utils/auth"; // Add this helper function to auth.js
+import { useAuth } from '../../contexts/AuthContext';
 
 function Error403() {
   const navigate = useNavigate();
-  
-  const handleGoBack = () => {
-    if (!isAuthenticated()) {
+  const { isAuthenticated, user } = useAuth();
+
+  const handleGoHome = () => {
+    if (!isAuthenticated) {
       navigate("/login", { replace: true });
       return;
     }
 
-    const userRole = getUserRole();
-    switch (userRole?.toLowerCase()) {
+    const role = user?.role?.toLowerCase();
+    switch (role) {
       case 'teacher':
       case 'student_teacher':
         navigate("/Teacher/Dashboard", { replace: true });
@@ -65,7 +65,7 @@ function Error403() {
                 You don't have permission to access this page.
               </p>
               <button
-                onClick={handleGoBack}
+                onClick={handleGoHome}
                 className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] lg:py-[0.4vw] lg:px-[3vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
               >
                 Return to Dashboard

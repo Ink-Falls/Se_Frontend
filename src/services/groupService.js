@@ -5,6 +5,7 @@
 
 import { API_BASE_URL } from '../utils/constants';
 import { getUserById } from './userService';
+import tokenService from './tokenService';
 
 /**
  * Fetches available members for a group based on type.
@@ -407,5 +408,71 @@ export const updateGroup = async (groupId, updateData) => {
   } catch (error) {
     console.error('Error updating group:', error);
     throw error;
+  }
+};
+
+/**
+ * Gets all groups where user is a member
+ * @param {number} userId - The user's ID to check membership
+ * @returns {Promise<Array>} Array of group IDs the user belongs to
+ */
+export const getUserGroupIds = async (userId) => {
+  const token = tokenService.getAccessToken();
+  let userGroups = [];
+  let currentGroupId = 1;  // Start from group 1
+  let consecutiveErrors = 0;
+  const MAX_CONSECUTIVE_ERRORS = 2; // Stop after 2 consecutive errors
+  const DELAY = 1000; // 1 second delay between requests
+
+  try {
+    while (consecutiveErrors < MAX_CONSECUTIVE_ERRORS) {
+      try {
+        // Add delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, DELAY));
+
+        console.log(`Checking group ${currentGroupId} for user ${userId}`);
+        const response = await fetch(`${API_BASE_URL}/groups/${currentGroupId}/members`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const members = await response.json();
+          const isMember = members.some(member => member.user_id === userId);
+          
+          if (isMember) {
+            console.log(`User ${userId} is member of group ${currentGroupId}`);
+            userGroups.push(currentGroupId);
+            console.log('Assigned courses to learner has been found');
+            return userGroups; // Stop here since we found a group
+          }
+          
+          currentGroupId++;
+          consecutiveErrors = 0; // Reset error count on success
+        } else {
+          throw new Error(`Failed to fetch group ${currentGroupId} members`);
+        }
+
+      } catch (error) {
+        console.warn(`Error checking group ${currentGroupId}:`, error);
+        consecutiveErrors++;
+        currentGroupId++;
+
+        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          console.log('Reached maximum consecutive errors. No more groups to check.');
+          if (userGroups.length === 0) {
+            console.log('No assigned courses to learner found');
+          }
+          break;
+        }
+      }
+    }
+
+    return userGroups;
+  } catch (error) {
+    console.error('Error fetching user groups:', error);
+    return userGroups;
   }
 };
