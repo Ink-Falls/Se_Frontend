@@ -104,7 +104,7 @@ const CourseAnnouncements = () => {
           {
             text: "Assessments",
             icon: <ClipboardList size={20} />,
-            route: "/TeacherAssessments",
+            route: "/Teacher/Assessment",
           },
           {
             text: "Attendance",

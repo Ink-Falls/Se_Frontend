@@ -11,6 +11,23 @@ const REFRESH_THRESHOLD_MINUTES = 5;
  * @class TokenService
  */
 class TokenService {
+  // Add rate limiting protection
+  #lastRequestTime = 0;
+  #minRequestInterval = 1000; // 1 second minimum between requests
+
+  async #checkRateLimit() {
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.#lastRequestTime;
+    
+    if (timeSinceLastRequest < this.#minRequestInterval) {
+      await new Promise(resolve => 
+        setTimeout(resolve, this.#minRequestInterval - timeSinceLastRequest)
+      );
+    }
+    
+    this.#lastRequestTime = Date.now();
+  }
+
   /**
    * Gets the current access token from storage
    * @returns {string|null} The access token or null if not found
@@ -61,9 +78,13 @@ class TokenService {
    * Removes all tokens from storage
    */
   removeTokens() {
-    // Just clear local storage - no need to call backend endpoint
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
+    try {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('auth_validation');
+    } catch (error) {
+      console.error('Error removing tokens:', error);
+    }
   }
   
   // Token expiration checking
@@ -96,10 +117,17 @@ class TokenService {
    */
   async refreshToken() {
     try {
+      await this.#checkRateLimit();
+
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
       });
+
+      if (response.status === 429) {
+        const retryAfter = parseInt(response.headers.get('Retry-After')) || 60;
+        throw new Error(`Rate limit exceeded. Please try again in ${retryAfter} seconds.`);
+      }
 
       if (!response.ok) throw new Error('Token refresh failed');
 

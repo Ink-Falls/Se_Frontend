@@ -22,27 +22,46 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      const result = await validateToken();
-      setIsAuthenticated(true);
-      setUserRole(result.role);
-    } catch (error) {
-      if (error.message?.includes('Rate limit exceeded')) {
-        // Don't change authentication state if rate limited
-        console.warn('Rate limit reached during auth check');
-        return;
+      const result = await validateAuth();
+      if (result.valid) {
+        setIsAuthenticated(true);
+        setUserRole(result.user?.role);
+      } else {
+        // Don't change auth state if rate limited
+        if (!result.rateLimited) {
+          setIsAuthenticated(false);
+          setUserRole(null);
+        }
       }
-      setIsAuthenticated(false);
-      setUserRole(null);
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      if (!error.message?.includes('Rate limit')) {
+        setIsAuthenticated(false);
+        setUserRole(null);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
-    tokenService.removeTokens();
-    setIsAuthenticated(false);
-    setUserRole(null);
-    window.location.href = '/login';
+  const logout = async () => {
+    try {
+      setLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Add delay
+      await tokenService.removeTokens();
+      setIsAuthenticated(false);
+      setUserRole(null);
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Still clear local state even if server request fails
+      tokenService.removeTokens();
+      setIsAuthenticated(false);
+      setUserRole(null);
+      window.location.href = '/login';
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

@@ -70,7 +70,11 @@ const loginUser = async (email, password, captchaResponse) => {
  */
 const logoutUser = async () => {
   try {
-    const token = localStorage.getItem('token');
+    const token = tokenService.getAccessToken();
+    
+    // Add delay between requests to prevent rate limiting
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     const response = await fetch(`${API_BASE_URL}/auth/logout`, {
       method: 'POST',
       headers: {
@@ -80,20 +84,23 @@ const logoutUser = async () => {
       credentials: 'include'
     });
 
+    if (response.status === 429) {
+      throw new Error('Rate limit exceeded. Please try again in a few minutes.');
+    }
+
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || 'Logout failed');
     }
 
-    await response.json(); // Consume the response
   } catch (error) {
     console.error('Logout error:', error);
-    throw error; // Re-throw to handle in UI if needed
+    throw error;
   } finally {
-    // Always clear tokens locally
+    // Always clear local tokens regardless of server response
     tokenService.removeTokens();
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
+    localStorage.clear();
+    sessionStorage.clear();
   }
 };
 
@@ -249,4 +256,37 @@ const refreshUserToken = async (refreshToken) => {
   }
 };
 
-export { loginUser, logoutUser, forgotPassword, verifyResetCode, resetPassword, validateToken, refreshUserToken };
+export const validateAuth = async () => {
+  try {
+    // Add exponential backoff for retries
+    let retryCount = 0;
+    const maxRetries = 3;
+
+    while (retryCount < maxRetries) {
+      try {
+        const response = await fetchWithInterceptor(`${API_BASE_URL}/auth/validate`);
+        
+        if (response.status === 429) {
+          const retryAfter = parseInt(response.headers.get('Retry-After')) || 60;
+          await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+          retryCount++;
+          continue;
+        }
+
+        const data = await response.json();
+        return { valid: response.ok, user: data.user };
+      } catch (error) {
+        if (retryCount === maxRetries - 1) throw error;
+        retryCount++;
+        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+      }
+    }
+
+    throw new Error('Authentication validation failed after retries');
+  } catch (error) {
+    console.error('Validate auth error:', error);
+    return { valid: false, user: null };
+  }
+};
+
+export { loginUser, logoutUser, forgotPassword, verifyResetCode, resetPassword, validateToken, refreshUserToken, validateAuth };
