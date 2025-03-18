@@ -118,6 +118,16 @@ const TeacherCourseAssessment = () => {
             icon: <ClipboardList size={20} />,
             route: "/Teacher/Assessment",
           },
+          {
+            text: "Attendance",
+            icon: <User size={20} />,
+            route: "/Teacher/Attendance",
+          },
+          {
+            text: "Progress Tracker",
+            icon: <LineChart size={20} />,
+            route: "/Teacher/Progress",
+          },
         ]}
       />
       <div className="flex-1 p-6 overflow-auto">
