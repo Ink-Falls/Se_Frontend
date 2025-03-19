@@ -1,42 +1,38 @@
 import React, { useState, useEffect } from "react";
-import Modal from "../../Button/Modal";
+import Modal from "../../Button/Modal.jsx";
 import { createCourse } from "../../../../services/courseService";
-import { getTeachers } from '../../../../services/userService';
-import { getGroupsByType } from '../../../../services/groupService';
+import { getTeachers } from "../../../../services/userService";
+import { getGroupsByType } from "../../../../services/groupService";
 
 const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    user_id: '',
-    learner_group_id: '',
-    student_teacher_group_id: ''
+    name: "",
+    description: "",
+    user_id: "",
+    learner_group_id: "",
+    student_teacher_group_id: "",
   });
-  
   const [availableTeachers, setAvailableTeachers] = useState([]);
   const [learnerGroups, setLearnerGroups] = useState([]);
   const [studentTeacherGroups, setStudentTeacherGroups] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setIsLoading(true);
-        setError('');
-        
         const [teachers, learners, studentTeachers] = await Promise.all([
           getTeachers(),
-          getGroupsByType('learner'),
-          getGroupsByType('student_teacher')
+          getGroupsByType("learner"),
+          getGroupsByType("student_teacher"),
         ]);
 
         setAvailableTeachers(teachers);
         setLearnerGroups(learners);
         setStudentTeacherGroups(studentTeachers);
       } catch (err) {
-        setError('Failed to load data: ' + err.message);
+        setError("Failed to load data: " + err.message);
       } finally {
         setIsLoading(false);
       }
@@ -51,48 +47,44 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    setSuccessMessage('');
+    setSuccessMessage("");
 
     try {
-        if (!formData.name || !formData.description || !formData.user_id || 
-            !formData.learner_group_id || !formData.student_teacher_group_id) {
-            setError('Please fill in all required fields');
-            return;
-        }
+      if (
+        !formData.name ||
+        !formData.description ||
+        !formData.user_id ||
+        !formData.learner_group_id ||
+        !formData.student_teacher_group_id
+      ) {
+        setError("Please fill in all required fields");
+        return;
+      }
 
-        const courseToSubmit = {
-            name: formData.name.trim(),
-            description: formData.description.trim(),
-            user_id: parseInt(formData.user_id),
-            learner_group_id: parseInt(formData.learner_group_id),
-            student_teacher_group_id: parseInt(formData.student_teacher_group_id)
-        };
+      const courseToSubmit = {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        user_id: parseInt(formData.user_id),
+        learner_group_id: parseInt(formData.learner_group_id),
+        student_teacher_group_id: parseInt(formData.student_teacher_group_id),
+      };
 
-        const newCourse = await createCourse(courseToSubmit);
-        setSuccessMessage('Course created successfully!');
-
-        // Call onCourseAdded immediately with the new course
-        onCourseAdded(newCourse);
-
-        // Reset form
-        setFormData({
-            name: '',
-            description: '',
-            user_id: '',
-            learner_group_id: '',
-            student_teacher_group_id: ''
-        });
-        
-        // Close modal with a slight delay to show success message
-        setTimeout(() => {
-            onClose();
-        }, 1000);
-
+      const newCourse = await createCourse(courseToSubmit);
+      onCourseAdded(newCourse);
+      onClose();
     } catch (err) {
-        setError(err.message || 'Failed to create course');
+      setError(err.message || "Failed to create course");
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   return (
@@ -113,49 +105,49 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
               {successMessage}
             </div>
           )}
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                 Course Name
               </label>
               <input
                 type="text"
-                required
+                id="name"
+                name="name"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
                 Description
               </label>
               <textarea
-                required
+                id="description"
+                name="description"
                 value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
+                onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                 rows={3}
+                required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="user_id" className="block text-sm font-medium text-gray-700">
                 Teacher
               </label>
               <select
-                required
+                id="user_id"
+                name="user_id"
                 value={formData.user_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, user_id: e.target.value })
-                }
+                onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                required
               >
                 <option value="">Select a teacher</option>
                 {availableTeachers.map((teacher) => (
@@ -167,19 +159,16 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="learner_group_id" className="block text-sm font-medium text-gray-700">
                 Learner Group
               </label>
               <select
-                required
+                id="learner_group_id"
+                name="learner_group_id"
                 value={formData.learner_group_id}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    learner_group_id: e.target.value,
-                  })
-                }
+                onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                required
               >
                 <option value="">Select a learner group</option>
                 {learnerGroups.map((group) => (
@@ -191,19 +180,16 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="student_teacher_group_id" className="block text-sm font-medium text-gray-700">
                 Student Teacher Group
               </label>
               <select
-                required
+                id="student_teacher_group_id"
+                name="student_teacher_group_id"
                 value={formData.student_teacher_group_id}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    student_teacher_group_id: e.target.value,
-                  })
-                }
+                onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                required
               >
                 <option value="">Select a student teacher group</option>
                 {studentTeacherGroups.map((group) => (

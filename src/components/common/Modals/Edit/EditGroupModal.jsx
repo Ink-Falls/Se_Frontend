@@ -96,8 +96,9 @@ const EditGroupModal = ({ group, isOpen, onClose, onUpdate }) => {
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Group Name</label>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">Group Name</label>
               <input
+                id = "name"
                 type="text"
                 name="name"
                 value={formData.name}
@@ -108,8 +109,9 @@ const EditGroupModal = ({ group, isOpen, onClose, onUpdate }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Group Type</label>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">Group Type</label>
               <select
+                id="groupType"
                 name="groupType"
                 value={formData.groupType}
                 onChange={handleInputChange}

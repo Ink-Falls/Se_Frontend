@@ -282,6 +282,8 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 School
               </label>
               <select
+                id = "school_id"
+                placeholder="Select a school"
                 name="school_id"
                 value={formData.school_id}
                 onChange={handleChange}
@@ -305,6 +307,8 @@ const AddUserModal = ({ onClose, onSubmit }) => {
               </label>
               <select
                 name="role"
+                placeholder="Select a role"
+                id="role"
                 value={formData.role}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-500"
