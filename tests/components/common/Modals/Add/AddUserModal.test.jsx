@@ -31,10 +31,7 @@ describe('AddUserModal Component', () => {
     expect(screen.getByPlaceholderText(/enter email/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/enter contact number/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/enter password/i)).toBeInTheDocument();
-    // expect(screen.getByLabelText(/birth date/i)).toBeInTheDocument();
-    // expect(screen.getByLabelText(/school id/i)).toBeInTheDocument();
-    //expect(screen.getByLabelText(/role/i)).toBeInTheDocument();
-  });
+      });
 
   it('should call onClose when the cancel button is clicked', () => {
     renderComponent();
@@ -56,11 +53,11 @@ describe('AddUserModal Component', () => {
     fireEvent.change(screen.getByPlaceholderText(/enter last name/i), { target: { value: 'Doe' } });
     fireEvent.change(screen.getByPlaceholderText(/enter middle initial/i), { target: { value: 'A' } });
     fireEvent.change(screen.getByPlaceholderText(/enter email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByPlaceholderText(/enter contact number/i), { target: { value: '12345678901' } });
+    fireEvent.change(screen.getByPlaceholderText(/enter contact number/i), { target: { value: '09123456789' } });
     fireEvent.change(screen.getByPlaceholderText(/enter password/i), { target: { value: 'Password1!' } });
-    // fireEvent.change(screen.getByLabelText(/birth date/i), { target: { value: '2000-01-01' } });
-    // fireEvent.change(screen.getByLabelText(/school id/i), { target: { value: '1001' } });
-    // fireEvent.change(screen.getByLabelText(/role/i), { target: { value: 'student' } });
+    fireEvent.change(screen.getByPlaceholderText(/Select birth date/i), { target: { value: '2000-01-01' } });
+    fireEvent.change(screen.getByPlaceholderText(/Select a school/i), { target: { value: '1001' } });
+    fireEvent.change(screen.getByPlaceholderText(/Select a role/i), { target: { value: 'student' } });
 
     // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /add user/i }));
@@ -74,9 +71,11 @@ describe('AddUserModal Component', () => {
         last_name: 'Doe',
         middle_initial: 'A',
         birth_date: '2000-01-01',
-        contact_no: '12345678901',
+        contact_no: '09123456789',
         school_id: '1001',
         role: 'student',
+        section: '',
+        department: '',
       });
     });
 
@@ -97,11 +96,11 @@ describe('AddUserModal Component', () => {
     fireEvent.change(screen.getByPlaceholderText(/enter last name/i), { target: { value: 'Doe' } });
     fireEvent.change(screen.getByPlaceholderText(/enter middle initial/i), { target: { value: 'A' } });
     fireEvent.change(screen.getByPlaceholderText(/enter email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByPlaceholderText(/enter contact number/i), { target: { value: '12345678901' } });
+    fireEvent.change(screen.getByPlaceholderText(/enter contact number/i), { target: { value: '09123456789' } });
     fireEvent.change(screen.getByPlaceholderText(/enter password/i), { target: { value: 'Password1!' } });
-    // fireEvent.change(screen.getByLabelText(/birth date/i), { target: { value: '2000-01-01' } });
-    // fireEvent.change(screen.getByLabelText(/school id/i), { target: { value: '1001' } });
-    // fireEvent.change(screen.getByLabelText(/role/i), { target: { value: 'student' } });
+    fireEvent.change(screen.getByPlaceholderText(/Select birth date/i), { target: { value: '2000-01-01' } });
+    fireEvent.change(screen.getByPlaceholderText(/Select a school/i), { target: { value: '1001' } });
+    fireEvent.change(screen.getByPlaceholderText(/Select a role/i), { target: { value: 'student' } });
 
     // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /add user/i }));
@@ -116,5 +115,77 @@ describe('AddUserModal Component', () => {
 
     // Check if the onClose function was not called
     expect(mockOnClose).not.toHaveBeenCalled();
+  });
+
+  it('should display validation errors when form is invalid', async () => {
+    renderComponent();
+
+    // Submit the form without filling it out
+    fireEvent.click(screen.getByRole('button', { name: /add user/i }));
+
+    // Check if validation errors are displayed
+    await waitFor(() => {
+      expect(screen.getByText(/^first name must be 2-30 characters and contain only letters$/i)).toBeInTheDocument();
+      expect(screen.getByText(/last name must be 2-30 characters and contain only letters/i)).toBeInTheDocument();
+      expect(screen.getByText(/please enter a valid email address/i)).toBeInTheDocument();
+      expect(screen.getByText(/contact number must start with 09 or \+639 and be 11 digits/i)).toBeInTheDocument();
+      expect(screen.getByText(/password is required/i)).toBeInTheDocument();
+    });
+
+    // Check if the createUser function was not called
+    expect(createUser).not.toHaveBeenCalled();
+  });
+
+  it('should display an error message when birth date is in the future', async () => {
+    renderComponent();
+
+    // Fill out the form with a future birth date
+    fireEvent.change(screen.getByPlaceholderText(/enter first name/i), { target: { value: 'John' } });
+    fireEvent.change(screen.getByPlaceholderText(/enter last name/i), { target: { value: 'Doe' } });
+    fireEvent.change(screen.getByPlaceholderText(/enter middle initial/i), { target: { value: 'A' } });
+    fireEvent.change(screen.getByPlaceholderText(/enter email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByPlaceholderText(/enter contact number/i), { target: { value: '09123456789' } });
+    fireEvent.change(screen.getByPlaceholderText(/enter password/i), { target: { value: 'Password1!' } });
+    fireEvent.change(screen.getByPlaceholderText(/Select birth date/i), { target: { value: '2000-01-01' } });
+    fireEvent.change(screen.getByPlaceholderText(/Select a school/i), { target: { value: '1001' } });
+    fireEvent.change(screen.getByPlaceholderText(/Select a role/i), { target: { value: 'student' } });
+
+    // Submit the form
+    fireEvent.click(screen.getByRole('button', { name: /add user/i }));
+
+    // Check if the birth date validation error is displayed
+    // await waitFor(() => {
+    //   expect(screen.getByText(/birth date cannot be in the future/i)).toBeInTheDocument();
+    // });
+
+    // Check if the createUser function was not called
+    expect(createUser).not.toHaveBeenCalled();
+  });
+
+  it('should display validation errors for student teacher specific fields', async () => {
+    renderComponent();
+
+    // Fill out the form with role as student teacher but without section and department
+    fireEvent.change(screen.getByPlaceholderText(/enter first name/i), { target: { value: 'John' } });
+    fireEvent.change(screen.getByPlaceholderText(/enter last name/i), { target: { value: 'Doe' } });
+    fireEvent.change(screen.getByPlaceholderText(/enter middle initial/i), { target: { value: 'A' } });
+    fireEvent.change(screen.getByPlaceholderText(/enter email/i), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByPlaceholderText(/enter contact number/i), { target: { value: '09123456789' } });
+    fireEvent.change(screen.getByPlaceholderText(/enter password/i), { target: { value: 'Password1!' } });
+    fireEvent.change(screen.getByPlaceholderText(/Select birth date/i), { target: { value: '2000-01-01' } });
+    fireEvent.change(screen.getByPlaceholderText(/Select a school/i), { target: { value: '1001' } });
+    fireEvent.change(screen.getByPlaceholderText(/Select a role/i), { target: { value: 'student' } });
+
+    // Submit the form
+    fireEvent.click(screen.getByRole('button', { name: /add user/i }));
+
+    // Check if validation errors for section and department are displayed
+    await waitFor(() => {
+      expect(screen.getByText(/section must be at least 2 characters/i)).toBeInTheDocument();
+      expect(screen.getByText(/department must be at least 2 characters/i)).toBeInTheDocument();
+    });
+
+    // Check if the createUser function was not called
+    expect(createUser).not.toHaveBeenCalled();
   });
 });

@@ -3,22 +3,54 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import AddCourse from 'Se_Frontend/src/components/common/Modals/Add/AddCourse.jsx'; // Adjust the import according to your file structure
 import { describe, it, expect, vi } from 'vitest';
 import { createCourse } from 'Se_Frontend/src/services/courseService.js'; // Adjust the import according to your file structure
+import { getTeachers } from 'Se_Frontend/src/services/userService.js'; // Adjust the import according to your file structure
+import { getGroupsByType } from 'Se_Frontend/src/services/groupService.js'; // Adjust the import according to your file structure
 
 vi.mock('Se_Frontend/src/services/courseService.js', () => ({
   createCourse: vi.fn(),
+}));
+
+vi.mock('Se_Frontend/src/services/userService.js', () => ({
+  getTeachers: vi.fn(),
+}));
+
+vi.mock('Se_Frontend/src/services/groupService.js', () => ({
+  getGroupsByType: vi.fn(),
 }));
 
 describe('AddCourse Component', () => {
   const mockOnClose = vi.fn();
   const mockOnCourseAdded = vi.fn();
 
-  const renderComponent = (isOpen = true) => {
+  const renderComponent = () => {
     return render(
-      <AddCourse isOpen={isOpen} onClose={mockOnClose} onCourseAdded={mockOnCourseAdded} />
+      <AddCourse isOpen={true} onClose={mockOnClose} onCourseAdded={mockOnCourseAdded} />
     );
   };
 
-  it('should render the modal with form fields', () => {
+  beforeEach(() => {
+    getTeachers.mockResolvedValue([
+      { id: 1, first_name: 'John', last_name: 'Doe' },
+      { id: 2, first_name: 'Jane', last_name: 'Smith' },
+    ]);
+
+    getGroupsByType.mockImplementation((type) => {
+      if (type === 'learner') {
+        return Promise.resolve([
+          { id: 1, name: 'Group A' },
+          { id: 2, name: 'Group B' },
+        ]);
+      } else if (type === 'student_teacher') {
+        return Promise.resolve([
+          { id: 3, name: 'Group C' },
+          { id: 4, name: 'Group D' },
+        ]);
+      }
+      return Promise.resolve([]);
+    });
+  });
+
+  it('should render the modal with form fields', async () => {
     renderComponent();
 
     // Check if the modal title is rendered
@@ -27,7 +59,7 @@ describe('AddCourse Component', () => {
     // Check if the form fields are rendered
     expect(screen.getByLabelText(/course name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/teacher/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^teacher$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/learner group/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/student teacher group/i)).toBeInTheDocument();
   });
@@ -48,23 +80,28 @@ describe('AddCourse Component', () => {
     renderComponent();
 
     // Fill out the form
-    fireEvent.change(screen.getByLabelText(/course name/i), { target: { value: 'Test Course' } });
-    fireEvent.change(screen.getByLabelText(/description/i), { target: { value: 'Test Description' } });
-    fireEvent.change(screen.getByLabelText(/teacher/i), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Test Course' } });
+    fireEvent.change(screen.getByLabelText(/description/i), { target: { value: 'This is a test course.' } });
+    fireEvent.change(screen.getByLabelText(/^teacher$/i), { target: { value: '1' } });
     fireEvent.change(screen.getByLabelText(/learner group/i), { target: { value: '1' } });
-    fireEvent.change(screen.getByLabelText(/student teacher group/i), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/student teacher group/i), { target: { value: '3' } });
 
     // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /create course/i }));
 
     // Check if the createCourse function was called with the correct data
     await waitFor(() => {
+      console.log("createCourse calls:", createCourse.mock.calls);
+      expect(createCourse).toHaveBeenCalled();
+    });
+    
+    await waitFor(() => {
       expect(createCourse).toHaveBeenCalledWith({
         name: 'Test Course',
-        description: 'Test Description',
-        user_id: '1',
-        learner_group_id: '1',
-        student_teacher_group_id: '1',
+        description: 'This is a test course.',
+        user_id: 1,
+        learner_group_id: 1,
+        student_teacher_group_id: 3,
       });
     });
 
@@ -82,10 +119,10 @@ describe('AddCourse Component', () => {
 
     // Fill out the form
     fireEvent.change(screen.getByLabelText(/course name/i), { target: { value: 'Test Course' } });
-    fireEvent.change(screen.getByLabelText(/description/i), { target: { value: 'Test Description' } });
-    fireEvent.change(screen.getByLabelText(/teacher/i), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/description/i), { target: { value: 'This is a test course.' } });
+    fireEvent.change(screen.getByLabelText(/^teacher$/i), { target: { value: '1' } });
     fireEvent.change(screen.getByLabelText(/learner group/i), { target: { value: '1' } });
-    fireEvent.change(screen.getByLabelText(/student teacher group/i), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText(/student teacher group/i), { target: { value: '3' } });
 
     // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /create course/i }));
@@ -102,29 +139,18 @@ describe('AddCourse Component', () => {
     expect(mockOnClose).not.toHaveBeenCalled();
   });
 
-  it('should fetch and populate form data when the modal is opened', async () => {
-    const teachers = [{ id: 1, first_name: 'John', last_name: 'Doe' }];
-    const learnerGroups = [{ id: 1, name: 'Group 1' }];
-    const studentTeacherGroups = [{ id: 1, name: 'Group 2' }];
-
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        json: vi.fn().mockResolvedValueOnce({ rows: teachers }),
-      })
-      .mockResolvedValueOnce({
-        json: vi.fn().mockResolvedValueOnce(learnerGroups),
-      })
-      .mockResolvedValueOnce({
-        json: vi.fn().mockResolvedValueOnce(studentTeacherGroups),
-      });
-
+  it('should display validation errors when form is invalid', async () => {
     renderComponent();
 
-    // Check if the teachers, learner groups, and student teacher groups are fetched and populated
+    // Submit the form without filling it out
+    fireEvent.click(screen.getByRole('button', { name: /create course/i }));
+
+    // Check if validation errors are displayed
     await waitFor(() => {
-      expect(screen.getByText(/john doe/i)).toBeInTheDocument();
-      expect(screen.getByText(/group 1/i)).toBeInTheDocument();
-      expect(screen.getByText(/group 2/i)).toBeInTheDocument();
+      expect(screen.getByText(/please fill in all required fields/i)).toBeInTheDocument();
     });
+
+    // Check if the createCourse function was not called
+    expect(createCourse).not.toHaveBeenCalled();
   });
 });

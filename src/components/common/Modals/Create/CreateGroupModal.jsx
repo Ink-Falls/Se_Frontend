@@ -192,8 +192,9 @@ const CreateGroupModal = ({ onClose, onSave }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Group Type</label>
+                <label htmlFor="type" className="block text-sm font-medium text-gray-700">Group Type</label>
                 <select
+                  id="type"
                   name="type"
                   value={groupData.type}
                   onChange={handleInputChange}
