@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
@@ -15,12 +15,17 @@ import {
   Plus,
   ArrowUpDown,
 } from "lucide-react";
+import { useCourse } from '../../contexts/CourseContext';
 
 const CourseAnnouncements = () => {
-  const location = useLocation();
+  const { selectedCourse } = useCourse();
   const navigate = useNavigate();
-  const courseTitle = location.state?.courseTitle || "Course Name";
-  const courseCode = location.state?.courseCode || "COURSE 101";
+
+  useEffect(() => {
+    if (!selectedCourse?.id) {
+      navigate('/Teacher/Dashboard');
+    }
+  }, [selectedCourse, navigate]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [announcements, setAnnouncements] = useState([
@@ -120,7 +125,10 @@ const CourseAnnouncements = () => {
       />
 
       <div className="flex-1 p-6">
-        <Header title={courseTitle} subtitle={courseCode} />
+        <Header 
+          title={selectedCourse?.name || 'Course'} 
+          subtitle={selectedCourse?.code} 
+        />
 
         {/* Announcements Section */}
         <div className="bg-white rounded-lg shadow-md">

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Modal from "../../components/common/Button/Modal"; // Import the Modal component
 import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // Import the DeleteModal component
+import { useCourse } from '../../contexts/CourseContext';
 
 const announcements = [
   {
@@ -51,11 +52,19 @@ const announcements = [
 
 const AnnouncementDetails = () => {
   const { id } = useParams();
+  const { selectedCourse } = useCourse();
   const navigate = useNavigate();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); // State for edit modal
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // State for delete modal
   const [editedType, setEditedType] = useState(""); // State for edited type
   const [editedFullText, setEditedFullText] = useState(""); // State for edited full text
+
+  useEffect(() => {
+    if (!selectedCourse?.id) {
+      navigate('/Teacher/Dashboard');
+      return;
+    }
+  }, [selectedCourse, navigate]);
 
   const announcement = announcements.find((ann) => ann.id === id);
 
@@ -134,7 +143,10 @@ const AnnouncementDetails = () => {
 
       <div className="flex-1 p-6">
         {/* Header (Same as TeacherCoursePage) */}
-        <Header title="Announcement Details" subtitle="Details" />
+        <Header 
+          title={selectedCourse?.name || 'Announcement Details'} 
+          subtitle={selectedCourse?.code} 
+        />
 
         {/* BlackHeader with Back Button before Title */}
         <BlackHeader

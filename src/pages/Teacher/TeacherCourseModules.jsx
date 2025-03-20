@@ -32,9 +32,13 @@ import {
   addModuleContent,
 } from "../../services/moduleService";
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useCourse } from '../../contexts/CourseContext';
 
 const TeacherCourseModules = () => {
-  // Add navItems definition at the top of the component
+  const { selectedCourse } = useCourse();
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const navItems = [
     { text: "Home", icon: <Home size={20} />, route: "/Teacher/Dashboard" },
     {
@@ -73,9 +77,6 @@ const TeacherCourseModules = () => {
   const [newModule, setNewModule] = useState({ title: "", description: "" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const location = useLocation();
-  const courseData = location.state?.course;
-  const navigate = useNavigate();
   const [isCreateModuleOpen, setIsCreateModuleOpen] = useState(false);
   const [isCreateContentOpen, setIsCreateContentOpen] = useState(false);
   const [selectedModuleId, setSelectedModuleId] = useState(null);
@@ -105,75 +106,84 @@ const TeacherCourseModules = () => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  const fetchModules = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      if (!courseData?.id) {
-        setError('No course selected. Please select a course from the dashboard.');
-        setLoading(false);
-        return;
-      }
-      
-      // Get base module data
-      const response = await getModulesByCourseId(courseData.id);
-      let modulesArray = response?.modules || [];
-      
-      if (modulesArray.length === 0 && response.length > 0) {
-        modulesArray = response;
-      }
-
-      // Fetch contents for each module
-      const modulesWithContents = await Promise.all(
-        modulesArray.map(async (module) => {
-          try {
-            const moduleId = module.module_id || module.id;
-            const contentsResponse = await getModuleContents(moduleId);
-            const contents = contentsResponse?.contents || [];
-            
-            return {
-              id: moduleId,
-              title: module.name,
-              description: module.description,
-              resources: contents.map(content => ({
-                id: content.content_id || content.id,
-                title: content.name,
-                link: content.link,
-                content: content.link,
-                type: content.type || 'link'
-              })),
-              createdAt: module.createdAt,
-              updatedAt: module.updatedAt
-            };
-          } catch (error) {
-            console.error(`Error fetching contents for module ${module.id}:`, error);
-            return {
-              id: module.module_id || module.id,
-              title: module.name,
-              description: module.description,
-              resources: [],
-              createdAt: module.createdAt,
-              updatedAt: module.updatedAt
-            };
-          }
-        })
-      );
-
-      console.log('Modules with contents:', modulesWithContents);
-      setModules(modulesWithContents);
-      
-    } catch (error) {
-      console.error('Error fetching modules:', error);
-      setError('Failed to connect to server. Please try again later.');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (!selectedCourse?.id) {
+      navigate('/Teacher/Dashboard');
+      return;
     }
-  };
+    
+    const fetchModules = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        if (!selectedCourse?.id) {
+          setError('No course selected. Please select a course from the dashboard.');
+          setLoading(false);
+          return;
+        }
+        
+        // Get base module data
+        const response = await getModulesByCourseId(selectedCourse.id);
+        let modulesArray = response?.modules || [];
+        
+        if (modulesArray.length === 0 && response.length > 0) {
+          modulesArray = response;
+        }
+
+        // Fetch contents for each module
+        const modulesWithContents = await Promise.all(
+          modulesArray.map(async (module) => {
+            try {
+              const moduleId = module.module_id || module.id;
+              const contentsResponse = await getModuleContents(moduleId);
+              const contents = contentsResponse?.contents || [];
+              
+              return {
+                id: moduleId,
+                title: module.name,
+                description: module.description,
+                resources: contents.map(content => ({
+                  id: content.content_id || content.id,
+                  title: content.name,
+                  link: content.link,
+                  content: content.link,
+                  type: content.type || 'link'
+                })),
+                createdAt: module.createdAt,
+                updatedAt: module.updatedAt
+              };
+            } catch (error) {
+              console.error(`Error fetching contents for module ${module.id}:`, error);
+              return {
+                id: module.module_id || module.id,
+                title: module.name,
+                description: module.description,
+                resources: [],
+                createdAt: module.createdAt,
+                updatedAt: module.updatedAt
+              };
+            }
+          })
+        );
+
+        console.log('Modules with contents:', modulesWithContents);
+        setModules(modulesWithContents);
+        
+      } catch (error) {
+        console.error('Error fetching modules:', error);
+        setError('Failed to connect to server. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchModules();
+  }, [selectedCourse?.id, navigate]);
 
   const handleCreateModule = async (moduleData) => {
     try {
-      await createModule(courseData.id, moduleData);
+      await createModule(selectedCourse.id, moduleData);
       // After creating module, refresh the modules list
       await fetchModules();
       setIsCreateModuleOpen(false);
@@ -183,16 +193,11 @@ const TeacherCourseModules = () => {
     }
   };
 
-  // Update effect to use fetchModules function
-  useEffect(() => {
-    fetchModules();
-  }, [courseData]);
-
   // Add debug logging
   useEffect(() => {
     console.log('Location state:', location.state);
-    console.log('Course data:', courseData);
-  }, [location.state, courseData]);
+    console.log('Course data:', selectedCourse);
+  }, [location.state, selectedCourse]);
 
   const handleEdit = (module) => {
     setEditingModule(module);
@@ -361,7 +366,7 @@ const TeacherCourseModules = () => {
   // Check conditions in this specific order:
   
   // 1. First check if course is selected
-  if (!courseData?.id) {
+  if (!selectedCourse?.id) {
     return (
       <div className="flex h-screen bg-gray-100">
         <Sidebar navItems={navItems} />
@@ -471,7 +476,7 @@ const TeacherCourseModules = () => {
           ]}
         />
         <div className="flex-1 p-6">
-          <Header title={courseData?.name || 'Course Modules'} subtitle={courseData?.code} />
+          <Header title={selectedCourse?.name || 'Course Modules'} subtitle={selectedCourse?.code} />
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <AlertTriangle size={64} className="text-red-500 mb-4" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">
@@ -529,7 +534,7 @@ const TeacherCourseModules = () => {
           ]}
         />
         <div className="flex-1 p-6">
-          <Header title={courseData.name} subtitle={courseData.code} />
+          <Header title={selectedCourse.name} subtitle={selectedCourse.code} />
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <InboxIcon size={64} className="text-gray-400 mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -550,7 +555,7 @@ const TeacherCourseModules = () => {
         {/* Add CreateModuleModal here */}
         {isCreateModuleOpen && (
           <CreateModuleModal
-            courseId={courseData.id}
+            courseId={selectedCourse.id}
             onClose={() => setIsCreateModuleOpen(false)}
             onSubmit={handleCreateModule}
           />
@@ -598,8 +603,8 @@ const TeacherCourseModules = () => {
       />
       <div className="flex-1 p-6 overflow-auto">
         <Header 
-          title={courseData?.name || 'Course Modules'} 
-          subtitle={courseData?.code} 
+          title={selectedCourse?.name || 'Course Modules'} 
+          subtitle={selectedCourse?.code} 
         />
         {renderModulesList()}
         
@@ -633,7 +638,7 @@ const TeacherCourseModules = () => {
 
         {isCreateModuleOpen && (
           <CreateModuleModal
-            courseId={courseData.id}
+            courseId={selectedCourse.id}
             onClose={() => setIsCreateModuleOpen(false)}
             onSubmit={handleCreateModule}
           />

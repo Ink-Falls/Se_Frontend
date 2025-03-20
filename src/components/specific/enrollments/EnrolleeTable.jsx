@@ -8,6 +8,8 @@ import {
   SquarePen,
 } from "lucide-react";
 import EnrolleeStatusModal from "/src/components/common/Modals/Edit/EnrolleeStatusModal.jsx";
+import ReportViewerModal from "../../common/Modals/View/ReportViewerModal";
+import { generateEnrollmentReport } from "../../../services/enrollmentReportService";
 
 function EnrolleeTable({
   enrollees,
@@ -28,6 +30,8 @@ function EnrolleeTable({
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportUrl, setReportUrl] = useState(null);
 
   // Handle checkbox selection
   const handleCheckboxChange = (id) => {
@@ -85,6 +89,32 @@ function EnrolleeTable({
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedEnrollee(null);
+  };
+
+  const handleGenerateReport = async () => {
+    try {
+      const doc = await generateEnrollmentReport(filteredEnrollees);
+      const pdfBlob = doc.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      setReportUrl(pdfUrl);
+      setShowReportModal(true);
+    } catch (error) {
+      console.error('Error generating report:', error);
+    }
+  };
+
+  const handlePrintReport = () => {
+    if (reportUrl) {
+      window.open(reportUrl, '_blank');
+    }
+  };
+
+  const handleDeleteReport = () => {
+    if (reportUrl) {
+      URL.revokeObjectURL(reportUrl);
+      setReportUrl(null);
+      setShowReportModal(false);
+    }
   };
 
   const ROWS_PER_PAGE = 10;
@@ -164,7 +194,10 @@ function EnrolleeTable({
         </div>
 
         {/* Generate Report Button */}
-        <button className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black">
+        <button 
+          onClick={handleGenerateReport}
+          className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black"
+        >
           <FileText size={16} />
           <span>Generate Report</span>
         </button>
@@ -324,6 +357,14 @@ function EnrolleeTable({
           }}
         />
       )}
+
+      <ReportViewerModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        pdfUrl={reportUrl}
+        onPrint={handlePrintReport}
+        onDelete={handleDeleteReport}
+      />
     </div>
   );
 }

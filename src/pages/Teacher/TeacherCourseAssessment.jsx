@@ -14,8 +14,19 @@ import {
   User,
   LineChart,
 } from "lucide-react";
+import { useCourse } from '../../contexts/CourseContext';
+import { useNavigate } from 'react-router-dom';
 
 const TeacherCourseAssessment = () => {
+  const { selectedCourse } = useCourse();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!selectedCourse?.id) {
+      navigate('/Teacher/Dashboard');
+    }
+  }, [selectedCourse, navigate]);
+
   const [assessments, setAssessments] = useState([
     {
       id: 1,
@@ -131,7 +142,10 @@ const TeacherCourseAssessment = () => {
         ]}
       />
       <div className="flex-1 p-6 overflow-auto">
-        <Header title="Environmental Science" subtitle="ENVI 101" />
+        <Header 
+          title={selectedCourse?.name || 'Course Assessment'} 
+          subtitle={selectedCourse?.code} 
+        />
 
         {/* Assessment List */}
         <div className="flex flex-col gap-4 mt-4">
