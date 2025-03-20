@@ -13,10 +13,12 @@ import {
   FileText,
   ArrowLeft,
 } from "lucide-react";
+import { useCourse } from "../../contexts/CourseContext";
 
 const AssessmentView = () => {
-  const location = useLocation();
+  const { selectedCourse } = useCourse();
   const navigate = useNavigate();
+  const location = useLocation();
   const { assessment } = location.state || {};
   const [textAnswer, setTextAnswer] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
@@ -33,6 +35,13 @@ const AssessmentView = () => {
       }
     };
   }, [pdfPreviewUrl]);
+
+  useEffect(() => {
+    if (!selectedCourse?.id) {
+      navigate('/Learner/Dashboard');
+      return;
+    }
+  }, [selectedCourse, navigate]);
 
   if (!assessment) {
     navigate("/Learner/Assessment");
@@ -142,8 +151,11 @@ const AssessmentView = () => {
     <div className="flex h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-6 overflow-auto">
+        <Header 
+          title={selectedCourse?.name || "Assessment"}
+          subtitle={selectedCourse?.code} 
+        />
         <div className="max-w-7xl mx-auto">
-          <Header title="Assessment" />
 
           <div className="mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
             {/* Header Section */}

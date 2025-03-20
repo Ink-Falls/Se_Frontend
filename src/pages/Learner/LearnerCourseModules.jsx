@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   getModulesByCourseId,
   getModuleContents,
@@ -15,8 +15,12 @@ import {
   FileText,
   ExternalLink,
 } from "lucide-react";
+import { useCourse } from "../../contexts/CourseContext";
 
 const LearnerCourseModules = () => {
+  const { selectedCourse } = useCourse();
+  const navigate = useNavigate();
+  
   const navItems = [
     { text: "Home", icon: <Home size={20} />, route: "/Learner/Dashboard" },
     {
@@ -40,84 +44,78 @@ const LearnerCourseModules = () => {
   const [expandedModules, setExpandedModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const location = useLocation();
-  const courseData = location.state?.course;
-  const navigate = useNavigate();
 
-  const fetchModules = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Debug courseData
-      console.log('Attempting to fetch modules with courseData:', courseData);
-      
-      if (!courseData?.id) {
-        console.error('Missing course data:', location.state);
-        setError('No course selected. Please select a course from the dashboard.');
-        setLoading(false);
-        return;
-      }
-
-      // Fetch modules for the course
-      const response = await getModulesByCourseId(courseData.id);
-      console.log('API Response:', response);
-
-      let modulesArray = Array.isArray(response) ? response : response?.modules || [];
-      
-      // Fetch contents for each module
-      const modulesWithContents = await Promise.all(
-        modulesArray.map(async (module) => {
-          try {
-            const moduleId = module.module_id || module.id;
-            const contentsResponse = await getModuleContents(moduleId);
-            console.log(`Contents for module ${moduleId}:`, contentsResponse);
-            
-            return {
-              id: moduleId,
-              title: module.name,
-              description: module.description,
-              resources: (contentsResponse?.contents || []).map(content => ({
-                id: content.content_id || content.id,
-                title: content.name,
-                link: content.link,
-                content: content.link
-              }))
-            };
-          } catch (error) {
-            console.error(`Error fetching contents for module ${module.id}:`, error);
-            return {
-              id: module.module_id || module.id,
-              title: module.name,
-              description: module.description,
-              resources: []
-            };
-          }
-        })
-      );
-
-      console.log('Final formatted modules:', modulesWithContents);
-      setModules(modulesWithContents);
-      
-    } catch (error) {
-      console.error('Error fetching modules:', error);
-      setError('Failed to load modules. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Update useEffect to add better debugging
   useEffect(() => {
-    console.log('CourseData changed:', courseData);
-    if (courseData?.id) {
-      fetchModules();
-    } else {
-      console.log('No course data available:', location.state);
-      setError('Please select a course from the dashboard');
-      setLoading(false);
+    if (!selectedCourse?.id) {
+      navigate('/Learner/Dashboard');
+      return;
     }
-  }, [courseData]);
+
+    const fetchModules = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Debug selectedCourse
+        console.log('Attempting to fetch modules with selectedCourse:', selectedCourse);
+        
+        if (!selectedCourse?.id) {
+          console.error('Missing course data:', selectedCourse);
+          setError('No course selected. Please select a course from the dashboard.');
+          setLoading(false);
+          return;
+        }
+
+        // Fetch modules for the course
+        const response = await getModulesByCourseId(selectedCourse.id);
+        console.log('API Response:', response);
+
+        let modulesArray = Array.isArray(response) ? response : response?.modules || [];
+        
+        // Fetch contents for each module
+        const modulesWithContents = await Promise.all(
+          modulesArray.map(async (module) => {
+            try {
+              const moduleId = module.module_id || module.id;
+              const contentsResponse = await getModuleContents(moduleId);
+              console.log(`Contents for module ${moduleId}:`, contentsResponse);
+              
+              return {
+                id: moduleId,
+                title: module.name,
+                description: module.description,
+                resources: (contentsResponse?.contents || []).map(content => ({
+                  id: content.content_id || content.id,
+                  title: content.name,
+                  link: content.link,
+                  content: content.link
+                }))
+              };
+            } catch (error) {
+              console.error(`Error fetching contents for module ${module.id}:`, error);
+              return {
+                id: module.module_id || module.id,
+                title: module.name,
+                description: module.description,
+                resources: []
+              };
+            }
+          })
+        );
+
+        console.log('Final formatted modules:', modulesWithContents);
+        setModules(modulesWithContents);
+        
+      } catch (error) {
+        console.error('Error fetching modules:', error);
+        setError('Failed to load modules. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchModules();
+  }, [selectedCourse, navigate]);
 
   const toggleModule = (id) => {
     setExpandedModules((prev) =>
@@ -143,7 +141,7 @@ const LearnerCourseModules = () => {
       <div className="flex h-screen bg-gray-100">
         <Sidebar navItems={navItems} />
         <div className="flex-1 p-6">
-          <Header title={courseData?.name || 'Course Modules'} subtitle={courseData?.code} />
+          <Header title={selectedCourse?.name || 'Course Modules'} subtitle={selectedCourse?.code} />
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className="text-red-500 mb-4">⚠️</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">{error}</h3>
@@ -165,7 +163,7 @@ const LearnerCourseModules = () => {
       <div className="flex h-screen bg-gray-100">
         <Sidebar navItems={navItems} />
         <div className="flex-1 p-6">
-          <Header title={courseData?.name || 'Course Modules'} subtitle={courseData?.code} />
+          <Header title={selectedCourse?.name || 'Course Modules'} subtitle={selectedCourse?.code} />
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className="w-full max-w-md text-center">
               <div className="mx-auto w-24 h-24 bg-yellow-50 rounded-full flex items-center justify-center mb-6">
@@ -196,7 +194,7 @@ const LearnerCourseModules = () => {
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-6 overflow-auto">
-        <Header title={courseData?.name || 'Course Modules'} subtitle={courseData?.code} />
+        <Header title={selectedCourse?.name || 'Course Modules'} subtitle={selectedCourse?.code} />
         
         <div className="flex flex-col gap-4 mt-4">
           {modules.map((module) => (

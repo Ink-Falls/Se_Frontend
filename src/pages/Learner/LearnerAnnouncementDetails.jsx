@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
@@ -10,6 +10,7 @@ import {
   BookOpen,
   ClipboardList,
 } from "lucide-react";
+import { useCourse } from "../../contexts/CourseContext";
 
 const announcements = [
   {
@@ -45,7 +46,14 @@ const announcements = [
 
 const LearnerAnnouncementDetails = () => {
   const { id } = useParams();
+  const { selectedCourse } = useCourse();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!selectedCourse?.id) {
+      navigate('/Learner/Dashboard');
+    }
+  }, [selectedCourse, navigate]);
 
   const announcement = announcements.find((ann) => ann.id === id);
 
@@ -81,7 +89,10 @@ const LearnerAnnouncementDetails = () => {
       />
 
       <div className="flex-1 p-6">
-        <Header title="Announcement Details" subtitle="Details" />
+        <Header 
+          title={selectedCourse?.name || "Announcement Details"} 
+          subtitle={selectedCourse?.code} 
+        />
 
         <BlackHeader
           title={
