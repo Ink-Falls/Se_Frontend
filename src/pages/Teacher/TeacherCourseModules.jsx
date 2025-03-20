@@ -21,8 +21,8 @@ import {
 } from "lucide-react";
 import EditModuleModal from "../../components/common/Modals/Edit/EditModuleModal";
 import DeleteModal from "../../components/common/Modals/Delete/DeleteModal";
-import CreateModuleModal from '../../components/common/Modals/Create/CreateModuleModal';
-import CreateContentModal from '../../components/common/Modals/Create/CreateContentModal';
+import CreateModuleModal from "../../components/common/Modals/Create/CreateModuleModal";
+import CreateContentModal from "../../components/common/Modals/Create/CreateContentModal";
 import {
   getModulesByCourseId,
   createModule,
@@ -31,8 +31,8 @@ import {
   getModuleContents,
   addModuleContent,
 } from "../../services/moduleService";
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useCourse } from '../../contexts/CourseContext';
+import { useLocation, useNavigate } from "react-router-dom";
+import { useCourse } from "../../contexts/CourseContext";
 
 const TeacherCourseModules = () => {
   const { selectedCourse } = useCourse();
@@ -108,25 +108,27 @@ const TeacherCourseModules = () => {
 
   useEffect(() => {
     if (!selectedCourse?.id) {
-      navigate('/Teacher/Dashboard');
+      navigate("/Teacher/Dashboard");
       return;
     }
-    
+
     const fetchModules = async () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         if (!selectedCourse?.id) {
-          setError('No course selected. Please select a course from the dashboard.');
+          setError(
+            "No course selected. Please select a course from the dashboard."
+          );
           setLoading(false);
           return;
         }
-        
+
         // Get base module data
         const response = await getModulesByCourseId(selectedCourse.id);
         let modulesArray = response?.modules || [];
-        
+
         if (modulesArray.length === 0 && response.length > 0) {
           modulesArray = response;
         }
@@ -138,41 +140,43 @@ const TeacherCourseModules = () => {
               const moduleId = module.module_id || module.id;
               const contentsResponse = await getModuleContents(moduleId);
               const contents = contentsResponse?.contents || [];
-              
+
               return {
                 id: moduleId,
                 title: module.name,
                 description: module.description,
-                resources: contents.map(content => ({
+                resources: contents.map((content) => ({
                   id: content.content_id || content.id,
                   title: content.name,
                   link: content.link,
                   content: content.link,
-                  type: content.type || 'link'
+                  type: content.type || "link",
                 })),
                 createdAt: module.createdAt,
-                updatedAt: module.updatedAt
+                updatedAt: module.updatedAt,
               };
             } catch (error) {
-              console.error(`Error fetching contents for module ${module.id}:`, error);
+              console.error(
+                `Error fetching contents for module ${module.id}:`,
+                error
+              );
               return {
                 id: module.module_id || module.id,
                 title: module.name,
                 description: module.description,
                 resources: [],
                 createdAt: module.createdAt,
-                updatedAt: module.updatedAt
+                updatedAt: module.updatedAt,
               };
             }
           })
         );
 
-        console.log('Modules with contents:', modulesWithContents);
+        console.log("Modules with contents:", modulesWithContents);
         setModules(modulesWithContents);
-        
       } catch (error) {
-        console.error('Error fetching modules:', error);
-        setError('Failed to connect to server. Please try again later.');
+        console.error("Error fetching modules:", error);
+        setError("Failed to connect to server. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -188,15 +192,15 @@ const TeacherCourseModules = () => {
       await fetchModules();
       setIsCreateModuleOpen(false);
     } catch (error) {
-      console.error('Error creating module:', error);
+      console.error("Error creating module:", error);
       // Keep the modal open if there's an error
     }
   };
 
   // Add debug logging
   useEffect(() => {
-    console.log('Location state:', location.state);
-    console.log('Course data:', selectedCourse);
+    console.log("Location state:", location.state);
+    console.log("Course data:", selectedCourse);
   }, [location.state, selectedCourse]);
 
   const handleEdit = (module) => {
@@ -233,38 +237,40 @@ const TeacherCourseModules = () => {
 
   const handleCreateContent = async (contentData) => {
     try {
-      console.log('Creating content for module:', selectedModuleId);
-      
+      console.log("Creating content for module:", selectedModuleId);
+
       await addModuleContent(selectedModuleId, {
         title: contentData.title.trim(),
-        type: 'link',
-        content: contentData.content.trim()
+        type: "link",
+        content: contentData.content.trim(),
       });
-      
+
       // Fetch updated contents for the module
       const updatedContents = await getModuleContents(selectedModuleId);
-      
+
       // Update the specific module with new contents
-      setModules(currentModules => currentModules.map(module => {
-        if (module.id === selectedModuleId) {
-          return {
-            ...module,
-            resources: (updatedContents?.contents || []).map(content => ({
-              id: content.content_id || content.id,
-              title: content.name,
-              link: content.link,
-              content: content.link,
-              type: content.type || 'link'
-            }))
-          };
-        }
-        return module;
-      }));
+      setModules((currentModules) =>
+        currentModules.map((module) => {
+          if (module.id === selectedModuleId) {
+            return {
+              ...module,
+              resources: (updatedContents?.contents || []).map((content) => ({
+                id: content.content_id || content.id,
+                title: content.name,
+                link: content.link,
+                content: content.link,
+                type: content.type || "link",
+              })),
+            };
+          }
+          return module;
+        })
+      );
 
       setIsCreateContentOpen(false);
     } catch (error) {
-      console.error('Error creating content:', error);
-      alert(error.message || 'Failed to add content');
+      console.error("Error creating content:", error);
+      alert(error.message || "Failed to add content");
     }
   };
 
@@ -277,12 +283,17 @@ const TeacherCourseModules = () => {
   const renderModulesList = () => (
     <div className="flex flex-col gap-4 mt-4">
       {modules.map((module) => (
-        <div key={module.id} className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg">
+        <div
+          key={module.id}
+          className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg"
+        >
           {/* Module Header */}
           <div className="flex justify-between items-center cursor-pointer">
             <div className="w-full" onClick={() => toggleModule(module.id)}>
               <p className="text-xs text-gray-500">MODULE {module.id}</p>
-              <h3 className="font-bold text-lg text-gray-800">{module.title}</h3>
+              <h3 className="font-bold text-lg text-gray-800">
+                {module.title}
+              </h3>
               <p className="text-sm text-gray-600">{module.description}</p>
             </div>
 
@@ -331,7 +342,9 @@ const TeacherCourseModules = () => {
           {expandedModules.includes(module.id) && (
             <div className="mt-4 border-t pt-4">
               <div className="flex justify-between items-center mb-2">
-                <h4 className="font-semibold text-gray-700">Learning Resources</h4>
+                <h4 className="font-semibold text-gray-700">
+                  Learning Resources
+                </h4>
               </div>
               <div className="space-y-3">
                 {module.resources && module.resources.length > 0 ? (
@@ -353,7 +366,9 @@ const TeacherCourseModules = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-sm">No resources available.</p>
+                  <p className="text-gray-500 text-sm">
+                    No resources available.
+                  </p>
                 )}
               </div>
             </div>
@@ -364,7 +379,7 @@ const TeacherCourseModules = () => {
   );
 
   // Check conditions in this specific order:
-  
+
   // 1. First check if course is selected
   if (!selectedCourse?.id) {
     return (
@@ -381,7 +396,7 @@ const TeacherCourseModules = () => {
               Please select a course from the dashboard to view its modules.
             </p>
             <button
-              onClick={() => navigate('/Teacher/Dashboard')}
+              onClick={() => navigate("/Teacher/Dashboard")}
               className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
             >
               Go to Dashboard
@@ -438,7 +453,7 @@ const TeacherCourseModules = () => {
   }
 
   // 3. Then check for server/connection errors
-  if (error && error !== 'No modules found') {
+  if (error && error !== "No modules found") {
     return (
       <div className="flex h-screen bg-gray-100">
         <Sidebar
@@ -476,7 +491,10 @@ const TeacherCourseModules = () => {
           ]}
         />
         <div className="flex-1 p-6">
-          <Header title={selectedCourse?.name || 'Course Modules'} subtitle={selectedCourse?.code} />
+          <Header
+            title={selectedCourse?.name || "Course Modules"}
+            subtitle={selectedCourse?.code}
+          />
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <AlertTriangle size={64} className="text-red-500 mb-4" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">
@@ -541,7 +559,8 @@ const TeacherCourseModules = () => {
               No Modules Yet
             </h3>
             <p className="text-gray-500 text-center max-w-md mb-4">
-              This course doesn't have any modules yet. Get started by creating your first module.
+              This course doesn't have any modules yet. Get started by creating
+              your first module.
             </p>
             <button
               onClick={() => setIsCreateModuleOpen(true)} // Changed from setIsAddModuleOpen
@@ -602,12 +621,12 @@ const TeacherCourseModules = () => {
         ]}
       />
       <div className="flex-1 p-6 overflow-auto">
-        <Header 
-          title={selectedCourse?.name || 'Course Modules'} 
-          subtitle={selectedCourse?.code} 
+        <Header
+          title={selectedCourse?.name || "Course Modules"}
+          subtitle={selectedCourse?.code}
         />
         {renderModulesList()}
-        
+
         {/* Add Module Button */}
         <button
           onClick={() => setIsAddModuleOpen(true)}

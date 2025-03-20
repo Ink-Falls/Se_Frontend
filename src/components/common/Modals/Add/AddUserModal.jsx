@@ -282,7 +282,7 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 School
               </label>
               <select
-                id = "school_id"
+                id="school_id"
                 placeholder="Select a school"
                 name="school_id"
                 value={formData.school_id}

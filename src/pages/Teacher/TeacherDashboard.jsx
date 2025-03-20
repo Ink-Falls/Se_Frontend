@@ -5,15 +5,15 @@ import { Book, Bell } from "lucide-react";
 import Header from "../../components/common/layout/Header";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import { getTeacherCourses } from "../../services/courseService";
-import EmptyState from '../../components/common/states/EmptyState';
-import { useCourse } from '../../contexts/CourseContext';
+import EmptyState from "../../components/common/states/EmptyState";
+import { useCourse } from "../../contexts/CourseContext"; // Add this import
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { setSelectedCourse } = useCourse();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { setSelectedCourse } = useCourse(); // Add this line
 
   const navItems = [
     { text: "Courses", icon: <Book size={20} />, route: "/Teacher/Dashboard" },
@@ -31,7 +31,7 @@ const Dashboard = () => {
         const coursesData = await getTeacherCourses();
         setCourses(coursesData);
       } catch (error) {
-        setError(error.message || 'Failed to fetch courses');
+        setError(error.message || "Failed to fetch courses");
       } finally {
         setLoading(false);
       }
@@ -41,15 +41,16 @@ const Dashboard = () => {
   }, []);
 
   const handleCourseClick = (course) => {
-    // Save full course data to context
+    // Update the selected course in context before navigating
     setSelectedCourse({
       id: course.id,
       name: course.name,
-      code: course.code || 'No Code',
-      description: course.description
+      code: course.code || "No Code",
+      description: course.description,
     });
-    
-    navigate('/Teacher/CourseModules');  // Remove state from navigation
+
+    // Then navigate to modules
+    navigate("/Teacher/CourseModules");
   };
 
   return (
@@ -65,7 +66,7 @@ const Dashboard = () => {
         {loading && <p>Loading courses...</p>}
         {error && <p className="text-red-500">Error: {error}</p>}
         {!loading && !error && courses.length === 0 && (
-          <EmptyState 
+          <EmptyState
             title="No Subjects Available"
             message="You don't have any subjects assigned to you at the moment. Please contact your administrator for subject assignments."
           />
@@ -74,8 +75,8 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {courses.map((course) => (
               <div
-                key={course.code}
-                className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col"
+                key={course.id || course.course_id}
+                className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col cursor-pointer"
                 onClick={() => handleCourseClick(course)}
               >
                 {/* Image Container with Gradient Overlay */}

@@ -1,10 +1,15 @@
 import React, { Suspense, lazy, useEffect } from "react";
-import { BrowserRouter as Router, Route, Routes, useNavigate } from "react-router-dom";
-import { AuthProvider } from './contexts/AuthContext';
-import { CourseProvider } from './contexts/CourseContext';
-import ErrorBoundary from './components/common/ErrorBoundary';
-import LoadingSpinner from './components/common/LoadingSpinner';
-import tokenService from './services/tokenService';
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useNavigate,
+} from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import { CourseProvider } from "./contexts/CourseContext";
+import ErrorBoundary from "./components/common/ErrorBoundary";
+import LoadingSpinner from "./components/common/LoadingSpinner";
+import tokenService from "./services/tokenService";
 import "./icon.css";
 
 // Lazy load route components
@@ -21,24 +26,60 @@ const EnrollConfirm = lazy(() => import("./pages/Enrollment/EnrollConfirm"));
 const AdminDashboard = lazy(() => import("./pages/Admin/AdminDashboard"));
 const AdminCourses = lazy(() => import("./pages/Admin/AdminCourses"));
 const AdminEnrollment = lazy(() => import("./pages/Admin/AdminEnrollment"));
-const AdminAnnouncements = lazy(() => import("./pages/Admin/AdminAnnouncements"));
+const AdminAnnouncements = lazy(() =>
+  import("./pages/Admin/AdminAnnouncements")
+);
 const TeacherDashboard = lazy(() => import("./pages/Teacher/TeacherDashboard"));
-const TeacherNotifications = lazy(() => import("./pages/Teacher/TeacherNotifications"));
-const TeacherNotificationDetails = lazy(() => import("./pages/Teacher/TeacherNotificationDetails"));
-const TeacherCourseAnnouncements = lazy(() => import("./pages/Teacher/TeacherCourseAnnouncements"));
-const TeacherAnnouncementDetails = lazy(() => import("./pages/Teacher/TeacherAnnouncementDetails"));
-const TeacherCourseModules = lazy(() => import("./pages/Teacher/TeacherCourseModules"));
-const TeacherCourseAssessment = lazy(() => import("./pages/Teacher/TeacherCourseAssessment"));
+const TeacherNotifications = lazy(() =>
+  import("./pages/Teacher/TeacherNotifications")
+);
+const TeacherNotificationDetails = lazy(() =>
+  import("./pages/Teacher/TeacherNotificationDetails")
+);
+const TeacherCourseAnnouncements = lazy(() =>
+  import("./pages/Teacher/TeacherCourseAnnouncements")
+);
+const TeacherAnnouncementDetails = lazy(() =>
+  import("./pages/Teacher/TeacherAnnouncementDetails")
+);
+const TeacherCourseModules = lazy(() =>
+  import("./pages/Teacher/TeacherCourseModules")
+);
+const TeacherCourseAssessment = lazy(() =>
+  import("./pages/Teacher/TeacherCourseAssessment")
+);
+const TeacherAssessmentView = lazy(() =>
+  import("./pages/Teacher/TeacherAssessmentView")
+);
 const LearnerDashboard = lazy(() => import("./pages/Learner/LearnerDashboard"));
-const LearnerCourseAnnouncements = lazy(() => import("./pages/Learner/LearnerCourseAnnouncements"));
-const LearnerAnnouncementDetails = lazy(() => import("./pages/Learner/LearnerAnnouncementDetails"));
-const LearnerNotifications = lazy(() => import("./pages/Learner/LearnerNotifications"));
-const LearnerNotificationDetails = lazy(() => import("./pages/Learner/LearnerNotificationDetails"));
-const LearnerCourseModules = lazy(() => import("./pages/Learner/LearnerCourseModules"));
-const LearnerCourseAssessment = lazy(() => import("./pages/Learner/LearnerCourseAssessment"));
+const LearnerCourseAnnouncements = lazy(() =>
+  import("./pages/Learner/LearnerCourseAnnouncements")
+);
+const LearnerAnnouncementDetails = lazy(() =>
+  import("./pages/Learner/LearnerAnnouncementDetails")
+);
+const LearnerNotifications = lazy(() =>
+  import("./pages/Learner/LearnerNotifications")
+);
+const LearnerNotificationDetails = lazy(() =>
+  import("./pages/Learner/LearnerNotificationDetails")
+);
+const LearnerCourseModules = lazy(() =>
+  import("./pages/Learner/LearnerCourseModules")
+);
+const LearnerCourseAssessment = lazy(() =>
+  import("./pages/Learner/LearnerCourseAssessment")
+);
 const Error404 = lazy(() => import("./pages/Errors/Error404"));
 const Error403 = lazy(() => import("./pages/Errors/Error403"));
 const TestComponents = lazy(() => import("./components/test/TestComponents"));
+const AssessmentView = lazy(() => import("./pages/Learner/AssessmentView"));
+const StudentSubmissionView = lazy(() =>
+  import("./pages/Teacher/StudentSubmissionView")
+);
+const LearnerSubmission = lazy(() =>
+  import("./pages/Teacher/StudentSubmissionView")
+);
 
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { PublicRoute } from "./routes/PublicRoute";
@@ -56,65 +97,214 @@ function App() {
                 <Route path="/test" element={<TestComponents />} />
 
                 {/* Group routes logically */}
-                
+
                 {/* Public Routes */}
-                <Route path="/" element={<PublicRoute><Login /></PublicRoute>} />
-                <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-                <Route path="/Enrollment" element={<PublicRoute><Enrollment /></PublicRoute>} />
-                <Route path="/Enrollment/New" element={<PublicRoute><NewEnrollment /></PublicRoute>} />
-                <Route path="/ForgotPassword" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-                <Route path="/ChangePassword" element={<PublicRoute><ChangePassword /></PublicRoute>} />
-                <Route path="/PasswordConfirm" element={<PublicRoute><PasswordConfirm /></PublicRoute>} />
-                <Route path="/VerifyCode" element={<PublicRoute><VerifyCode /></PublicRoute>} />
-                <Route path="/EnrollConfirm" element={<PublicRoute><EnrollConfirm /></PublicRoute>} />
+                <Route
+                  path="/"
+                  element={
+                    <PublicRoute>
+                      <Login />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/login"
+                  element={
+                    <PublicRoute>
+                      <Login />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/Enrollment"
+                  element={
+                    <PublicRoute>
+                      <Enrollment />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/Enrollment/New"
+                  element={
+                    <PublicRoute>
+                      <NewEnrollment />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/ForgotPassword"
+                  element={
+                    <PublicRoute>
+                      <ForgotPassword />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/ChangePassword"
+                  element={
+                    <PublicRoute>
+                      <ChangePassword />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/PasswordConfirm"
+                  element={
+                    <PublicRoute>
+                      <PasswordConfirm />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/VerifyCode"
+                  element={
+                    <PublicRoute>
+                      <VerifyCode />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/EnrollConfirm"
+                  element={
+                    <PublicRoute>
+                      <EnrollConfirm />
+                    </PublicRoute>
+                  }
+                />
 
                 {/* Auth Protected Routes */}
-                <Route path="/Profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route
+                  path="/Profile"
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Admin Routes */}
-                <Route path="/Admin/*" element={
-                  <RoleBasedRoute allowedRoles={["admin"]}>
-                    <Routes>
-                      <Route path="Dashboard" element={<AdminDashboard />} />
-                      <Route path="Courses" element={<AdminCourses />} />
-                      <Route path="Enrollments" element={<AdminEnrollment />} />
-                      <Route path="Announcements" element={<AdminAnnouncements />} />
-                      <Route path="*" element={<Error404 />} />
-                    </Routes>
-                  </RoleBasedRoute>
-                } />
+                <Route
+                  path="/Admin/*"
+                  element={
+                    <RoleBasedRoute allowedRoles={["admin"]}>
+                      <Routes>
+                        <Route path="Dashboard" element={<AdminDashboard />} />
+                        <Route path="Courses" element={<AdminCourses />} />
+                        <Route
+                          path="Enrollments"
+                          element={<AdminEnrollment />}
+                        />
+                        <Route
+                          path="Announcements"
+                          element={<AdminAnnouncements />}
+                        />
+                        <Route path="*" element={<Error404 />} />
+                      </Routes>
+                    </RoleBasedRoute>
+                  }
+                />
 
-                {/* Teacher Routes */} 
-                <Route path="/Teacher/*" element={
-                  <RoleBasedRoute allowedRoles={["teacher", "student_teacher"]}>
-                    <Routes>
-                      <Route path="Dashboard" element={<TeacherDashboard />} />
-                      <Route path="Notifications" element={<TeacherNotifications />} />
-                      <Route path="NotificationDetails/:id" element={<TeacherNotificationDetails />} />
-                      <Route path="CourseAnnouncements" element={<TeacherCourseAnnouncements />} />
-                      <Route path="AnnouncementDetails/:id" element={<TeacherAnnouncementDetails />} />
-                      <Route path="CourseModules" element={<TeacherCourseModules />} />
-                      <Route path="Assessment" element={<TeacherCourseAssessment />} />
-                      <Route path="*" element={<Error404 />} />
-                    </Routes>
-                  </RoleBasedRoute>
-                } />
+                {/* Teacher Routes */}
+                <Route
+                  path="/Teacher/*"
+                  element={
+                    <RoleBasedRoute
+                      allowedRoles={["teacher", "student_teacher"]}
+                    >
+                      <Routes>
+                        <Route
+                          path="Dashboard"
+                          element={<TeacherDashboard />}
+                        />
+                        <Route
+                          path="Notifications"
+                          element={<TeacherNotifications />}
+                        />
+                        <Route
+                          path="NotificationDetails/:id"
+                          element={<TeacherNotificationDetails />}
+                        />
+                        <Route
+                          path="CourseAnnouncements"
+                          element={<TeacherCourseAnnouncements />}
+                        />
+                        <Route
+                          path="AnnouncementDetails/:id"
+                          element={<TeacherAnnouncementDetails />}
+                        />
+                        <Route
+                          path="CourseModules"
+                          element={<TeacherCourseModules />}
+                        />
+                        <Route
+                          path="Assessment"
+                          element={<TeacherCourseAssessment />}
+                        />
+                        <Route
+                          path="Assessment/View/:id"
+                          element={<TeacherAssessmentView />}
+                        />
+                        <Route
+                          path="Assessment/Submission/:id"
+                          element={<StudentSubmissionView />}
+                        />
+                        <Route path="*" element={<Error404 />} />
+                      </Routes>
+                    </RoleBasedRoute>
+                  }
+                />
 
                 {/* Learner Routes */}
-                <Route path="/Learner/*" element={
-                  <RoleBasedRoute allowedRoles={["learner"]}>
-                    <Routes>
-                      <Route path="Dashboard" element={<LearnerDashboard />} />
-                      <Route path="Assessment" element={<LearnerCourseAssessment />} />
-                      <Route path="CourseAnnouncements" element={<LearnerCourseAnnouncements />} />
-                      <Route path="AnnouncementDetails/:id" element={<LearnerAnnouncementDetails />} />
-                      <Route path="Notifications" element={<LearnerNotifications />} />
-                      <Route path="NotificationDetails/:id" element={<LearnerNotificationDetails />} />
-                      <Route path="CourseModules" element={<LearnerCourseModules />} />
-                      <Route path="*" element={<Error404 />} />
-                    </Routes>
-                  </RoleBasedRoute>
-                } />
+                <Route
+                  path="/Learner/*"
+                  element={
+                    <RoleBasedRoute allowedRoles={["learner"]}>
+                      <Routes>
+                        <Route
+                          path="Dashboard"
+                          element={<LearnerDashboard />}
+                        />
+                        <Route
+                          path="Assessment"
+                          element={<LearnerCourseAssessment />}
+                        />
+                        <Route
+                          path="CourseAnnouncements"
+                          element={<LearnerCourseAnnouncements />}
+                        />
+                        <Route
+                          path="AnnouncementDetails/:id"
+                          element={<LearnerAnnouncementDetails />}
+                        />
+                        <Route
+                          path="Notifications"
+                          element={<LearnerNotifications />}
+                        />
+                        <Route
+                          path="NotificationDetails/:id"
+                          element={<LearnerNotificationDetails />}
+                        />
+                        <Route
+                          path="CourseModules"
+                          element={<LearnerCourseModules />}
+                        />
+                        <Route
+                          path="Assessment/:id"
+                          element={<LearnerCourseAssessment />}
+                        />
+                        <Route
+                          path="Assessment/View/:id"
+                          element={<AssessmentView />}
+                        />
+                        <Route
+                          path="Assessment/Submission/:id"
+                          element={<LearnerSubmission />}
+                        />
+                        <Route path="*" element={<Error404 />} />
+                      </Routes>
+                    </RoleBasedRoute>
+                  }
+                />
 
                 {/* Error Routes */}
                 <Route path="/unauthorized" element={<Error403 />} />

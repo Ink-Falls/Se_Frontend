@@ -14,8 +14,8 @@ import {
   User,
   LineChart,
 } from "lucide-react";
-import { useCourse } from '../../contexts/CourseContext';
-import { useNavigate } from 'react-router-dom';
+import { useCourse } from "../../contexts/CourseContext";
+import { useNavigate } from "react-router-dom";
 
 const TeacherCourseAssessment = () => {
   const { selectedCourse } = useCourse();
@@ -23,7 +23,7 @@ const TeacherCourseAssessment = () => {
 
   useEffect(() => {
     if (!selectedCourse?.id) {
-      navigate('/Teacher/Dashboard');
+      navigate("/Teacher/Dashboard");
     }
   }, [selectedCourse, navigate]);
 
@@ -105,6 +105,12 @@ const TeacherCourseAssessment = () => {
     }
   };
 
+  const handleAssessmentClick = (assessment) => {
+    navigate(`/Teacher/Assessment/View/${assessment.id}`, {
+      state: { assessment },
+    });
+  };
+
   return (
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar
@@ -142,9 +148,9 @@ const TeacherCourseAssessment = () => {
         ]}
       />
       <div className="flex-1 p-6 overflow-auto">
-        <Header 
-          title={selectedCourse?.name || 'Course Assessment'} 
-          subtitle={selectedCourse?.code} 
+        <Header
+          title={selectedCourse?.name || "Course Assessment"}
+          subtitle={selectedCourse?.code}
         />
 
         {/* Assessment List */}
@@ -152,14 +158,12 @@ const TeacherCourseAssessment = () => {
           {assessments.map((assessment) => (
             <div
               key={assessment.id}
-              className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg"
+              className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg cursor-pointer"
+              onClick={() => handleAssessmentClick(assessment)}
             >
               {/* Assessment Header */}
-              <div className="flex justify-between items-center cursor-pointer">
-                <div
-                  className="w-full"
-                  onClick={() => toggleAssessment(assessment.id)}
-                >
+              <div className="flex justify-between items-center">
+                <div className="w-full">
                   <p className="text-xs text-gray-500">ASSESSMENT</p>
                   <h3 className="font-bold text-lg text-gray-800">
                     {assessment.title}
