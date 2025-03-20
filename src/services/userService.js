@@ -17,52 +17,46 @@ import { API_BASE_URL } from '../utils/constants';
  */
 export const getAllUsers = async (options = {}) => {
   try {
-    console.log('🚀 Starting getAllUsers fetch request');
+    console.log('🚀 Starting getAllUsers fetch request with options:', options);
     const token = localStorage.getItem('token');
     if (!token) {
       console.error('❌ No authentication token found');
       throw new Error('Not authenticated');
     }
 
-    // Initialize an array to store all users
-    let allUsers = [];
-    let currentPage = 1;
-    let hasMorePages = true;
-    const limit = 10;  // Items per page
+    // Ensure parameters are numbers
+    const params = new URLSearchParams({
+      page: Number(options.page) || 1,
+      limit: Number(options.limit) || 10
+    }).toString();
 
-    // Fetch users page by page
-    while (hasMorePages) {
-      console.log(`📃 Fetching page ${currentPage}`);
-      const response = await fetch(`${API_BASE_URL}/users?page=${currentPage}&limit=${limit}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+    console.log('Request URL:', `${API_BASE_URL}/users?${params}`);
 
-      if (!response.ok) {
-        console.error('❌ API request failed:', response.status);
-        throw new Error('Failed to fetch users');
-      }
+    const response = await fetch(`${API_BASE_URL}/users?${params}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-      const data = await response.json();
-      console.log(`📥 Received data for page ${currentPage}:`, data);
-
-      // Extract users from response
-      const pageUsers = data.users || [];
-      allUsers = [...allUsers, ...pageUsers];
-
-      // Check if we've received fewer items than the limit
-      // or if we've reached the total count
-      if (pageUsers.length < limit || (data.count && allUsers.length >= data.count)) {
-        hasMorePages = false;
-      } else {
-        currentPage++;
-      }
+    if (!response.ok) {
+      throw new Error(`Failed to fetch users: ${response.status}`);
     }
 
-    console.log('✅ Total users fetched:', allUsers.length);
-    return allUsers;
+    const data = await response.json();
+    console.log('📥 Raw API response:', data);
+
+    // Handle response structure
+    const result = {
+      users: data.rows || data.users || [],
+      totalItems: data.count || data.totalItems || 0,
+      totalPages: data.totalPages || Math.ceil((data.count || data.totalItems || 0) / (options.limit || 10)),
+      currentPage: Number(options.page) || 1
+    };
+
+    console.log('📤 Processed response:', result);
+    return result;
+
   } catch (error) {
     console.error('❌ Error in getAllUsers:', error);
     throw error;
