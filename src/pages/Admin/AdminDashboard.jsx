@@ -222,32 +222,47 @@ function AdminDashboard() {
         console.log('🚀 Starting fetchUsers - Page:', currentPage);
         setIsLoading(true);
         
-        const userData = await getAllUsers();
-        console.log('📥 Received paginated data:', userData);
-
-        // Set users data
-        setUsers(userData);
-        setFilteredUsers(userData);
-
-        // Calculate stats from all users
-        setStats({
-          totalUsers: userData.length,
-          totalLearners: userData.filter(u => u.role === "learner").length,
-          totalTeachers: userData.filter(u => u.role === "teacher").length,
-          totalAdmins: userData.filter(u => u.role === "admin").length,
+        const result = await getAllUsers({
+          page: currentPage,
+          limit: 10
         });
+        
+        console.log('Received data for page', currentPage, ':', result);
 
-        setIsLoading(false);
-        setError(null);
+        if (result && Array.isArray(result.users)) {
+          // Update users state
+          setUsers(result.users);
+          setFilteredUsers(result.users);
+          
+          // Update pagination state
+          setTotalPages(result.totalPages || 1);
+          setTotalUsers(result.totalItems || 0);
+
+          // Update stats based on total counts
+          setStats({
+            totalUsers: result.totalItems || 0,
+            totalLearners: result.users.filter(u => u.role === "learner").length,
+            totalTeachers: result.users.filter(u => u.role === "teacher").length,
+            totalAdmins: result.users.filter(u => u.role === "admin").length,
+          });
+          
+          setError(null);
+        } else {
+          console.error('Invalid data structure received:', result);
+          setError('Invalid data received from server');
+        }
       } catch (error) {
         console.error('❌ Error fetching users:', error);
         setError('Failed to load users');
+        // Keep existing data on error
+        setFilteredUsers(users);
+      } finally {
         setIsLoading(false);
       }
     };
 
     fetchUsers();
-  }, [currentPage]); // Add currentPage as dependency
+  }, [currentPage]); // Only depend on currentPage
 
   useEffect(() => {
     // Filter users based on both search query and role
@@ -309,20 +324,32 @@ function AdminDashboard() {
   const refreshUsers = async () => {
     try {
       setIsLoading(true);
-      const userData = await getAllUsers();
-      setUsers(userData);
+      const response = await getAllUsers({
+        page: currentPage,
+        limit: 10
+      });
+      
+      const usersArray = response.users || response.rows || [];
+      const totalItems = response.totalItems || response.count || 0;
+      const totalPagesCount = response.totalPages || Math.ceil(totalItems / 10);
+      
+      setUsers(usersArray);
+      setFilteredUsers(usersArray);
+      setTotalPages(totalPagesCount);
+      setTotalUsers(totalItems);
 
       // Update stats
       setStats({
-        totalUsers: userData.length,
-        totalLearners: userData.filter((u) => u.role === "learner").length,
-        totalTeachers: userData.filter((u) => u.role === "teacher").length,
-        totalAdmins: userData.filter((u) => u.role === "admin").length,
+        totalUsers: totalItems,
+        totalLearners: usersArray.filter((u) => u.role === "learner").length,
+        totalTeachers: usersArray.filter((u) => u.role === "teacher").length,
+        totalAdmins: usersArray.filter((u) => u.role === "admin").length,
       });
-      setError(false);
+      
+      setError(null);
     } catch (error) {
-      console.error("Error refreshing users:", error);
-      setError(true);
+      console.error('❌ Error refreshing users:', error);
+      setError('Failed to refresh users');
     } finally {
       setIsLoading(false);
     }
@@ -369,9 +396,12 @@ function AdminDashboard() {
     setIsGroupListModalOpen(true);
   };
 
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
-    window.scrollTo(0, 0); // Scroll to top on page change
+  const handlePageChange = async (newPage) => {
+    console.log('Changing to page:', newPage);
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      window.scrollTo(0, 0);
+    }
   };
 
   const EmptyState = () => (

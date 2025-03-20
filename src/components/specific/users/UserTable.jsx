@@ -66,10 +66,6 @@ const UserTable = ({
     onSearch(query); // Call the search handler from parent
   };
 
-  const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
-  const endIndex = Math.min(startIndex + ROWS_PER_PAGE, users.length);
-  const paginatedUsers = users.slice(startIndex, endIndex);
-
   return (
     <div>
       {/* Controls Section */}
@@ -190,7 +186,7 @@ const UserTable = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {getSortedUsers(paginatedUsers).map((user, index) => (
+            {getSortedUsers(users).map((user, index) => (
               <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <input
