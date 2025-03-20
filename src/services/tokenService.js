@@ -263,16 +263,22 @@ class TokenService {
       }
 
       const response = await fetch(`${API_BASE_URL}/auth/validate`, {
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
+
+      if (!response.ok) {
+        throw new Error('Token validation failed');
+      }
 
       const data = await response.json();
       console.log('Validation response:', data);
 
       return {
-        valid: response.ok,
+        valid: data.isValid || false,
         user: data.user || null
       };
     } catch (error) {
