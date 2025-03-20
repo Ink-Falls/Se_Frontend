@@ -16,8 +16,18 @@ import {
   LineChart,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useCourse } from "../../contexts/CourseContext";
 
-const Assessments = () => {
+const LearnerCourseAssessment = () => {
+  const { selectedCourse } = useCourse();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!selectedCourse?.id) {
+      navigate('/Learner/Dashboard');
+    }
+  }, [selectedCourse, navigate]);
+
   const [assessments, setAssessments] = useState([
     {
       id: 1,
@@ -47,8 +57,6 @@ const Assessments = () => {
     dueDate: "",
     status: "Not Started",
   });
-
-  const navigate = useNavigate();
 
   const toggleAssessment = (id) => {
     setExpandedAssessments((prev) =>
@@ -127,7 +135,10 @@ const Assessments = () => {
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-6 overflow-auto">
-        <Header title="Environmental Science" subtitle="ENVI 101" />
+        <Header 
+          title={selectedCourse?.name || "Course"} 
+          subtitle={selectedCourse?.code} 
+        />
 
         {/* Assessment List */}
         <div className="flex flex-col gap-4 mt-4">
@@ -171,4 +182,4 @@ const Assessments = () => {
   );
 };
 
-export default Assessments;
+export default LearnerCourseAssessment;
