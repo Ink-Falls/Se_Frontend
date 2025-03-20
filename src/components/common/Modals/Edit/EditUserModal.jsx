@@ -18,48 +18,50 @@ function EditUserModal({ user, onClose, onSave }) {
     const { name, value } = e.target;
 
     if (name === "contact_no") {
-      // Remove all non-digits
-      let numbers = value.replace(/\D/g, "");
+      // Remove non-digits first
+      let cleanedValue = value.replace(/\D/g, "");
 
-      // Ensure starts with '09'
-      if (!numbers.startsWith("09")) {
-        if (numbers.startsWith("63")) {
-          numbers = "0" + numbers.substring(2);
-        } else if (!numbers.startsWith("0")) {
-          numbers = "09";
-        }
+      // Ensure it starts with "0" if not starting with +63
+      if (!cleanedValue.startsWith("0") && !value.startsWith("+63")) {
+        cleanedValue = "0" + cleanedValue;
       }
 
       // Limit to 11 digits
-      numbers = numbers.slice(0, 11);
+      cleanedValue = cleanedValue.slice(0, 11);
 
-      // Format as 09XX-XXX-XXXX
-      let formatted = numbers;
-      if (numbers.length >= 4) {
-        formatted = numbers.slice(0, 4) + "-" + numbers.slice(4);
+      // Format with hyphens for display
+      let formattedContactNo = cleanedValue;
+      if (formattedContactNo.length > 4) {
+        formattedContactNo = formattedContactNo.replace(/^(\d{4})/, "$1-");
       }
-      if (numbers.length >= 7) {
-        formatted = formatted.slice(0, 8) + "-" + formatted.slice(8);
+      if (formattedContactNo.length > 8) {
+        formattedContactNo = formattedContactNo.replace(/-(\d{3})/, "-$1-");
       }
 
       setEditedUser((prev) => ({
         ...prev,
-        [name]: formatted,
+        [name]: formattedContactNo,
       }));
-      return;
+    } else {
+      setEditedUser((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
     }
-
-    setEditedUser((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const { password, ...userWithoutPassword } = editedUser;
-      await onSave(userWithoutPassword); // Pass the updated user up
+
+      // Remove hyphens from contact_no before saving
+      const cleanedData = {
+        ...userWithoutPassword,
+        contact_no: userWithoutPassword.contact_no.replace(/-/g, ""),
+      };
+
+      await onSave(cleanedData);
       onClose();
     } catch (err) {
       setError(err.message || "Failed to update user");

@@ -5,7 +5,8 @@ import { Book, Bell } from "lucide-react";
 import Header from "../../components/common/layout/Header";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import { getLearnerCourses } from "../../services/courseService"; // Add this import
-import EmptyState from '../../components/common/states/EmptyState';
+import EmptyState from "../../components/common/states/EmptyState";
+import LoadingSpinner from "../../components/common/LoadingSpinner"; // Add this import
 
 const LearnerDashboard = () => {
   const navigate = useNavigate();
@@ -26,11 +27,11 @@ const LearnerDashboard = () => {
     setLoading(true);
     try {
       const coursesData = await getLearnerCourses();
-      console.log('Fetched courses:', coursesData); // For debugging
+      console.log("Fetched courses:", coursesData); // For debugging
       setCourses(coursesData);
     } catch (error) {
-      setError(error.message || 'Failed to fetch courses');
-      console.error('Error fetching courses:', error);
+      setError(error.message || "Failed to fetch courses");
+      console.error("Error fetching courses:", error);
     } finally {
       setLoading(false);
     }
@@ -42,16 +43,16 @@ const LearnerDashboard = () => {
 
   const handleCourseClick = (course) => {
     // Debug log the course data
-    console.log('Clicking course:', course);
-    
-    navigate('/Learner/CourseModules', {
-      state: { 
+    console.log("Clicking course:", course);
+
+    navigate("/Learner/CourseModules", {
+      state: {
         course: {
           id: course.id || course.course_id, // Handle both possible ID fields
           name: course.name,
-          code: course.code
-        }
-      }
+          code: course.code,
+        },
+      },
     });
   };
 
@@ -65,12 +66,8 @@ const LearnerDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 p-6 max-md:p-5 overflow-y-auto">
         <Header title="My Courses" />
-        
-        {loading && (
-          <div className="flex items-center justify-center h-[60vh]">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F6BA18]"></div>
-          </div>
-        )}
+
+        {loading && <LoadingSpinner />}
 
         {error && (
           <div className="flex flex-col items-center justify-center h-[60vh] p-4">
@@ -89,7 +86,9 @@ const LearnerDashboard = () => {
                     d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                   />
                 </svg>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Courses</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Failed to Load Courses
+                </h3>
                 <p className="text-sm text-gray-500 mb-6">{error}</p>
                 <button
                   onClick={() => fetchCourses()}
@@ -103,7 +102,7 @@ const LearnerDashboard = () => {
         )}
 
         {!loading && !error && courses.length === 0 && (
-          <EmptyState 
+          <EmptyState
             title="No Subjects Available"
             message="You are not enrolled in any subjects at the moment. Please wait for your enrollment to be processed or contact your administrator."
           />

@@ -15,6 +15,7 @@ import {
   User,
   LineChart,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Assessments = () => {
   const [assessments, setAssessments] = useState([
@@ -46,6 +47,8 @@ const Assessments = () => {
     dueDate: "",
     status: "Not Started",
   });
+
+  const navigate = useNavigate();
 
   const toggleAssessment = (id) => {
     setExpandedAssessments((prev) =>
@@ -95,6 +98,12 @@ const Assessments = () => {
     }
   };
 
+  const handleAssessmentClick = (assessment) => {
+    navigate(`/Learner/Assessment/View/${assessment.id}`, {
+      state: { assessment },
+    });
+  };
+
   const navItems = [
     { text: "Home", icon: <Home size={20} />, route: "/Learner/Dashboard" },
     {
@@ -116,9 +125,7 @@ const Assessments = () => {
 
   return (
     <div className="flex h-screen bg-gray-100 relative">
-      <Sidebar
-        navItems={navItems}
-      />
+      <Sidebar navItems={navItems} />
       <div className="flex-1 p-6 overflow-auto">
         <Header title="Environmental Science" subtitle="ENVI 101" />
 
@@ -127,7 +134,8 @@ const Assessments = () => {
           {assessments.map((assessment) => (
             <div
               key={assessment.id}
-              className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg"
+              className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg cursor-pointer"
+              onClick={() => handleAssessmentClick(assessment)}
             >
               {/* Assessment Header */}
               <div className="flex justify-between items-center cursor-pointer">
