@@ -13,19 +13,37 @@ const UserTable = ({
   onSearch, // Add onSearch prop
   onFilterChange, // Add this prop
   currentFilter, // Add this prop
-  totalPages: totalPagesFromProps, // Add this prop
-  onPageChange: onPageChangeFromProps // Add this prop
+  currentPage, // Add this prop
+  totalPages, // Add this prop
+  onPageChange // Add this prop
 }) => {
   // Remove local selectedIds state since it's now passed as prop
   
-  const [currentPage, setCurrentPage] = useState(1);
   const ROWS_PER_PAGE = 10;
+
+  const [sortOption, setSortOption] = useState('none'); // Add this state
+
+  // Add sorting function
+  const getSortedUsers = (users) => {
+    const sortedUsers = [...users];
+    switch (sortOption) {
+      case 'name-asc':
+        return sortedUsers.sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`));
+      case 'name-desc':
+        return sortedUsers.sort((a, b) => `${b.first_name} ${b.last_name}`.localeCompare(`${a.first_name} ${a.last_name}`));
+      case 'id-asc':
+        return sortedUsers.sort((a, b) => a.school_id - b.school_id);
+      case 'id-desc':
+        return sortedUsers.sort((a, b) => b.school_id - a.school_id);
+      default:
+        return sortedUsers;
+    }
+  };
 
   // Update pagination logic to use total count from API
   const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPagesFromProps) {
-      setCurrentPage(newPage);
-      onPageChangeFromProps(newPage); // Call parent handler to fetch new page data
+    if (newPage >= 1 && newPage <= totalPages) {
+      onPageChange(newPage); // Call parent handler to fetch new page data
     }
   };
 
@@ -35,14 +53,22 @@ const UserTable = ({
     );
   };
 
+  // Ensure users is always an array
+  const usersList = Array.isArray(users) ? users : [];
+
+  // Update handleSelectAll to use usersList
   const handleSelectAll = () => {
-    setSelectedIds(selectedIds.length === users.length ? [] : users.map(user => user.id));
+    setSelectedIds(selectedIds.length === usersList.length ? [] : usersList.map(user => user.id));
   };
 
   const handleSearchChange = (e) => {
     const query = e.target.value;
     onSearch(query); // Call the search handler from parent
   };
+
+  const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ROWS_PER_PAGE, users.length);
+  const paginatedUsers = users.slice(startIndex, endIndex);
 
   return (
     <div>
@@ -69,7 +95,26 @@ const UserTable = ({
             <option value="all">Filter By: All</option>
             <option value="learner">Filter By: Learner</option>
             <option value="teacher">Filter By: Teacher</option>
+            <option value="student_teacher">Filter By: Student Teacher</option>
             <option value="admin">Filter By: Admin</option>
+          </select>
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Filter size={16} className="text-gray-400" />
+          </div>
+        </div>
+
+        {/* Sort Dropdown */}
+        <div className="relative">
+          <select
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none"
+          >
+            <option value="none">Sort By</option>
+            <option value="name-asc">Name (A-Z)</option>
+            <option value="name-desc">Name (Z-A)</option>
+            <option value="id-asc">ID Number (Ascending)</option>
+            <option value="id-desc">ID Number (Descending)</option>
           </select>
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Filter size={16} className="text-gray-400" />
@@ -145,7 +190,7 @@ const UserTable = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {users.map((user, index) => (
+            {getSortedUsers(paginatedUsers).map((user, index) => (
               <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <input
@@ -182,7 +227,7 @@ const UserTable = ({
         {/* Add Pagination Controls */}
         <div className="px-6 py-4 flex items-center justify-between border-t">
           <div className="text-sm text-gray-700">
-            Page {currentPage} of {totalPagesFromProps}
+            Showing page {currentPage} of {totalPages}
           </div>
           <div className="flex space-x-2">
             <button
@@ -194,11 +239,11 @@ const UserTable = ({
               Previous
             </button>
             <span className="px-4 py-1 text-gray-600">
-              Page {currentPage} of {totalPagesFromProps}
+              Page {currentPage} of {totalPages}
             </span>
             <button
               onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage >= totalPagesFromProps}
+              disabled={currentPage >= totalPages}
               className="px-3 py-1 rounded border bg-white text-gray-600 
                        hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >

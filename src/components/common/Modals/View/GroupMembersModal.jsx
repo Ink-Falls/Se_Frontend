@@ -1,7 +1,32 @@
-import React from "react";
-import { X, Users } from "lucide-react";
+import React, { useState } from 'react';
+import { X, Users, Loader, Trash2 } from 'lucide-react';
+import { removeUserFromGroup } from '../../../../services/userService';
 
-const GroupMembersModal = ({ isOpen, onClose, group, members, isLoading }) => {
+const GroupMembersModal = ({ isOpen, onClose, group, members, isLoading, onMemberRemoved }) => {
+  const [removingMember, setRemovingMember] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const handleRemoveMember = async (member) => {
+    try {
+      setRemovingMember(true);
+      setError('');
+      await removeUserFromGroup(group.id, member.user_id);
+      
+      setSuccessMessage(`Successfully removed ${member.first_name} ${member.last_name}`);
+      
+      // Notify parent component to refresh the members list
+      if (onMemberRemoved) {
+        onMemberRemoved(group.id);
+      }
+    } catch (error) {
+      console.error('Error removing member:', error);
+      setError('Failed to remove member: ' + error.message);
+    } finally {
+      setRemovingMember(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   console.log('GroupMembersModal rendered with:', { group, members }); // Add logging
@@ -19,6 +44,18 @@ const GroupMembersModal = ({ isOpen, onClose, group, members, isLoading }) => {
           </button>
         </div>
 
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="mb-4 p-3 bg-green-100 text-green-600 rounded-lg">
+            {successMessage}
+          </div>
+        )}
+
         <div className="border-t pt-4">
           {isLoading ? (
             <div className="text-center py-4">Loading members...</div>
@@ -31,37 +68,44 @@ const GroupMembersModal = ({ isOpen, onClose, group, members, isLoading }) => {
               {members.map((member) => (
                 <div
                   key={member.id || member.user_id}
-                  className="flex items-center justify-between bg-gray-50 p-3 rounded-lg"
+                  className="flex items-center bg-gray-50 p-3 rounded-lg"
                 >
-                  <div className="flex flex-col">
+                  {/* Main content container with flex-grow */}
+                  <div className="flex-grow">
                     <span className="font-medium">
                       {member.first_name} {member.last_name}
                     </span>
-                    <div className="flex gap-4 text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 mt-1">
                       <span>{member.email}</span>
                       {member.school_id && (
-                        <>
-                          <span>|</span>
-                          <span>ID: {member.school_id}</span>
-                        </>
+                        <span className="ml-2">• ID: {member.school_id}</span>
                       )}
                       {member.year_level && (
-                        <>
-                          <span>|</span>
-                          <span>Year Level: {member.year_level}</span>
-                        </>
+                        <span className="ml-2">• Year Level: {member.year_level}</span>
                       )}
                     </div>
                   </div>
-                  {member.role && (
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      member.role.includes('learner')
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-green-100 text-green-800'
-                    }`}>
-                      {member.role}
-                    </span>
-                  )}
+
+                  {/* Right side container with fixed layout */}
+                  <div className="flex items-center gap-3 ml-4">
+                    {member.role && (
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
+                        member.role.includes('learner')
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {member.role}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => handleRemoveMember(member)}
+                      disabled={removingMember}
+                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors flex-shrink-0"
+                      title="Remove member"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

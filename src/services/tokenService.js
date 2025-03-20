@@ -56,13 +56,15 @@ class TokenService {
         throw new Error('Access token is required');
       }
 
+      // Save access token
       localStorage.setItem('token', accessToken);
       
+      // Only update refresh token if provided
       if (refreshToken) {
         localStorage.setItem('refreshToken', refreshToken);
       }
 
-      // Verify storage
+      // Verify token was saved
       const verifyToken = localStorage.getItem('token');
       if (!verifyToken) {
         throw new Error('Token storage verification failed');
@@ -134,6 +136,10 @@ class TokenService {
 
       const refreshToken = this.getRefreshToken();
       if (!refreshToken) {
+        console.error('❌ No refresh token available');
+        // Clear tokens and redirect to login
+        await this.removeTokens();
+        window.location.href = '/login';
         throw new Error('No refresh token available');
       }
 
@@ -141,11 +147,15 @@ class TokenService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.getAccessToken()}` // Add current access token
         },
+        credentials: 'include', // Important for cookies
         body: JSON.stringify({ refreshToken })
       });
 
       if (!response.ok) {
+        console.error('❌ Refresh failed with status:', response.status);
+        // Clear tokens and redirect to login on 401
         if (response.status === 401) {
           await this.removeTokens();
           window.location.href = '/login';
@@ -153,13 +163,25 @@ class TokenService {
         throw new Error('Failed to refresh token');
       }
 
-      const { token } = await response.json(); // Changed to match API response
-      await this.saveTokens(token, refreshToken); // Keep existing refresh token
+      const data = await response.json();
+      
+      if (!data.accessToken) {
+        console.error('❌ Invalid refresh response - missing access token');
+        throw new Error('Invalid refresh response');
+      }
+
+      // Save the new tokens
+      await this.saveTokens(data.accessToken, data.refreshToken || refreshToken);
       console.log('✅ Token refresh successful');
-      return token;
+      return data.accessToken;
+
     } catch (error) {
       console.error('❌ Token refresh failed:', error);
-      await this.removeTokens();
+      // Only redirect if it's an auth error
+      if (error.message.includes('token')) {
+        await this.removeTokens();
+        window.location.href = '/login';
+      }
       throw error;
     }
   }
@@ -169,7 +191,8 @@ class TokenService {
    * This runs periodically to prevent token expiration
    */
   setupAutoRefresh() {
-    const REFRESH_INTERVAL = 15 * 60 * 1000; // Check every 15 minutes
+    const REFRESH_INTERVAL = 4 * 60 * 1000; // Check every 4 minutes instead of 10
+    console.log('🔄 Setting up auto refresh every 4 minutes');
     
     // Clear any existing refresh interval
     if (this._refreshInterval) {
@@ -179,18 +202,42 @@ class TokenService {
     // Set up new refresh interval
     this._refreshInterval = setInterval(async () => {
       try {
+        const currentTime = new Date().toLocaleTimeString();
+        console.log(`⏰ Auto refresh check at ${currentTime}`);
+        
+        // Only refresh if there's a valid refresh token
+        const refreshToken = this.getRefreshToken();
+        if (!refreshToken) {
+          console.log('⚠️ No refresh token found, clearing auto refresh');
+          this.clearAutoRefresh();
+          return;
+        }
+
         if (this.isTokenExpired()) {
+          console.log('🔑 Token needs refresh, initiating refresh...');
           await this.refreshToken();
+          console.log('✅ Auto refresh completed successfully');
+        } else {
+          console.log('✨ Token is still valid, no refresh needed');
         }
       } catch (error) {
-        console.error('Auto refresh failed:', error);
-        // If auto-refresh fails multiple times, could trigger re-login
+        console.error('❌ Auto refresh failed:', error);
+        // Clear interval on critical errors
+        if (error.message.includes('token')) {
+          this.clearAutoRefresh();
+        }
       }
     }, REFRESH_INTERVAL);
 
     // Initial check
     if (this.isTokenExpired()) {
-      this.refreshToken().catch(console.error);
+      console.log('🚀 Performing initial token refresh check');
+      this.refreshToken().catch(error => {
+        console.error('Initial refresh failed:', error);
+        if (error.message.includes('token')) {
+          this.clearAutoRefresh();
+        }
+      });
     }
   }
 

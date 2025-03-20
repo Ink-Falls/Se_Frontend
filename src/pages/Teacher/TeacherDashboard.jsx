@@ -5,6 +5,7 @@ import { Book, Bell } from "lucide-react";
 import Header from "../../components/common/layout/Header";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import { getTeacherCourses } from "../../services/courseService";
+import EmptyState from '../../components/common/states/EmptyState';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -55,7 +56,13 @@ const Dashboard = () => {
         <Header title="My Courses" />
         {loading && <p>Loading courses...</p>}
         {error && <p className="text-red-500">Error: {error}</p>}
-        {!loading && !error && (
+        {!loading && !error && courses.length === 0 && (
+          <EmptyState 
+            title="No Subjects Available"
+            message="You don't have any subjects assigned to you at the moment. Please contact your administrator for subject assignments."
+          />
+        )}
+        {!loading && !error && courses.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {courses.map((course) => (
               <div

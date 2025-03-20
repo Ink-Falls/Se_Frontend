@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import tokenService from '../services/tokenService';
+import { logoutUser } from '../services/authService'; // Add this import
 
 const AuthContext = createContext(null);
 
@@ -44,22 +45,35 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      setAuthState(prev => ({ ...prev, loading: true }));
+      // Don't set loading state for logout
+      await logoutUser();
       await tokenService.removeTokens();
+      tokenService.clearAutoRefresh();
+      localStorage.clear();
+      sessionStorage.clear();
+      
       setAuthState({
         isAuthenticated: false,
         user: null,
         loading: false
       });
-      window.location.href = '/login';
+      
+      return true;
     } catch (error) {
       console.error('Logout failed:', error);
-      // Ensure state is cleared even if server request fails
+      // Still clear everything on error
+      await tokenService.removeTokens();
+      tokenService.clearAutoRefresh();
+      localStorage.clear();
+      sessionStorage.clear();
+      
       setAuthState({
         isAuthenticated: false,
         user: null,
         loading: false
       });
+      
+      throw error;
     }
   };
 

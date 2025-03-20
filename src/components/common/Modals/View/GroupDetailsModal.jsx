@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Users, Loader, PencilIcon, Trash2 } from "lucide-react";
-import { getAllGroups, getAvailableMembers, updateGroup, deleteGroups, getGroupMembers } from "../../../../services/groupService";
+import { getAllGroups, getAvailableMembers, updateGroup, deleteGroups, getGroupMembers, assignUsersToGroup } from "../../../../services/groupService";
 import GroupMembersModal from "./GroupMembersModal";
 import EditGroupModal from '../Edit/EditGroupModal';
 
@@ -19,6 +19,10 @@ const GroupDetailsModal = ({ onClose }) => {
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedAvailableMembers, setSelectedAvailableMembers] = useState([]);
+  const [assigningMembers, setAssigningMembers] = useState(false);
+  const [selectedGroupForAssignment, setSelectedGroupForAssignment] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     setTimeout(() => setAnimate(true), 50);
@@ -44,10 +48,16 @@ const GroupDetailsModal = ({ onClose }) => {
     const fetchMembers = async () => {
       try {
         setIsLoading(true);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No token found');
+        }
         const members = await getAvailableMembers(memberType);
         setAvailableMembers(members);
       } catch (err) {
+        console.error('Error fetching members:', err);
         setError('Failed to load available members');
+        setAvailableMembers([]);
       } finally {
         setIsLoading(false);
       }
@@ -126,6 +136,90 @@ const GroupDetailsModal = ({ onClose }) => {
     }
   };
 
+  const getCompatibleGroups = (memberType) => {
+    return existingGroups.filter(group => 
+      group.groupType.toLowerCase() === memberType.toLowerCase()
+    );
+  };
+
+  const refreshGroups = async () => {
+    try {
+      setIsLoading(true);
+      const updatedGroups = await getAllGroups();
+      setExistingGroups(updatedGroups || []);
+    } catch (err) {
+      setError('Failed to refresh groups');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const refreshMembers = async () => {
+    try {
+      const members = await getAvailableMembers(memberType);
+      setAvailableMembers(members);
+    } catch (err) {
+      console.error('Error refreshing members:', err);
+      setError('Failed to refresh member list');
+    }
+  };
+
+  const handleAssignMembers = async () => {
+    if (!selectedGroupForAssignment) {
+      setError('Please select a group to assign members to');
+      return;
+    }
+    
+    try {
+      setAssigningMembers(true);
+      await assignUsersToGroup(
+        selectedGroupForAssignment.id,
+        selectedAvailableMembers,
+        selectedGroupForAssignment.groupType
+      );
+      
+      // Refresh both groups and available members
+      await Promise.all([
+        refreshGroups(),
+        refreshMembers()
+      ]);
+      
+      // Clear selections and show success message
+      setSelectedAvailableMembers([]);
+      setSelectedGroupForAssignment(null);
+      setError('');
+      setSuccessMessage('Members assigned successfully');
+      
+    } catch (error) {
+      console.error('Assignment error:', error);
+      setError(error.message || 'Failed to assign members');
+    } finally {
+      setAssigningMembers(false);
+    }
+  };
+
+  const handleSelectAvailableMember = (memberId) => {
+    setSelectedAvailableMembers(prev => 
+      prev.includes(memberId)
+        ? prev.filter(id => id !== memberId)
+        : [...prev, memberId]
+    );
+  };
+
+  const handleMemberRemoved = async (groupId) => {
+    try {
+      // Refresh the members list for the current group
+      const updatedMembers = await getGroupMembers(groupId);
+      setSelectedGroupMembers(updatedMembers);
+      
+      // Refresh available members list
+      const newAvailableMembers = await getAvailableMembers(memberType);
+      setAvailableMembers(newAvailableMembers);
+    } catch (error) {
+      setError('Failed to refresh members list');
+    }
+  };
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className={`bg-white rounded-2xl shadow-lg w-[700px] p-8 relative ${
@@ -162,6 +256,12 @@ const GroupDetailsModal = ({ onClose }) => {
         {error && (
           <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
             {error}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="mb-4 p-3 bg-green-100 text-green-600 rounded-lg">
+            {successMessage}
           </div>
         )}
 
@@ -208,8 +308,16 @@ const GroupDetailsModal = ({ onClose }) => {
                           <p className="text-sm font-medium text-gray-600 mb-1">Members:</p>
                           <div className="space-y-1">
                             {selectedGroupMembers.map(member => (
-                              <div key={member.id} className="text-sm text-gray-600">
-                                {member.first_name} {member.last_name} ({member.role})
+                              <div key={member.id} className="flex items-center justify-between text-sm text-gray-600 p-2 hover:bg-gray-100 rounded">
+                                <span>{member.first_name} {member.last_name} ({member.role})</span>
+                                <button
+                                  onClick={() => handleRemoveMember(group, member)}
+                                  className="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors"
+                                  disabled={loadingMembers}
+                                  title="Remove member"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
                               </div>
                             ))}
                           </div>
@@ -266,6 +374,24 @@ const GroupDetailsModal = ({ onClose }) => {
               </select>
             </div>
 
+            <div className="flex items-center justify-between mb-4">
+              <select
+                value={selectedGroupForAssignment?.id || ''}
+                onChange={(e) => {
+                  const group = existingGroups.find(g => g.id === parseInt(e.target.value));
+                  setSelectedGroupForAssignment(group);
+                }}
+                className="px-3 py-2 border border-gray-300 rounded-lg"
+              >
+                <option value="">Select a group to assign to...</option>
+                {getCompatibleGroups(memberType).map(group => (
+                  <option key={group.id} value={group.id}>
+                    {group.name} ({group.groupType})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {isLoading ? (
               <div className="flex items-center justify-center py-4">
                 <Loader className="animate-spin" size={24} />
@@ -274,18 +400,41 @@ const GroupDetailsModal = ({ onClose }) => {
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
                 {availableMembers.map((member) => (
                   <div key={member.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                    <div className="flex flex-col">
-                      <span className="font-medium">{member.first_name} {member.last_name}</span>
-                      <div className="flex gap-4 text-sm text-gray-600">
-                        <span>{member.email}</span>
-                        <span>|</span>
-                        <span>ID: {member.school_id}</span>
-                        <span>|</span>
-                        <span className="capitalize">{member.role.replace('_', ' ')}</span>
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedAvailableMembers.includes(member.id)}
+                        onChange={() => handleSelectAvailableMember(member.id)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <div className="flex flex-col">
+                        <span className="font-medium">{member.first_name} {member.last_name}</span>
+                        <div className="flex gap-4 text-sm text-gray-600">
+                          <span>{member.email}</span>
+                          <span>|</span>
+                          <span>ID: {member.school_id}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {selectedAvailableMembers.length > 0 && (
+              <div className="flex justify-end mt-4 items-center gap-4">
+                <span className="text-sm text-gray-600">
+                  {selectedGroupForAssignment 
+                    ? `Assigning to: ${selectedGroupForAssignment.name}`
+                    : 'Please select a group'}
+                </span>
+                <button
+                  onClick={handleAssignMembers}
+                  disabled={assigningMembers || !selectedGroupForAssignment}
+                  className="px-4 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#F6BA18] hover:text-black transition-colors disabled:opacity-50"
+                >
+                  {assigningMembers ? 'Assigning...' : `Assign Selected (${selectedAvailableMembers.length})`}
+                </button>
               </div>
             )}
           </div>
@@ -304,6 +453,7 @@ const GroupDetailsModal = ({ onClose }) => {
           group={selectedGroup}
           members={selectedGroupMembers}
           isLoading={loadingMembers}
+          onMemberRemoved={handleMemberRemoved}
         />
       )}
 

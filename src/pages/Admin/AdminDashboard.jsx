@@ -73,6 +73,9 @@ function AdminDashboard() {
   const [isGroupListModalOpen, setIsGroupListModalOpen] = useState(false);
   const [error, setError] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
 
   const toggleDropdown = (id, event) => {
     event.stopPropagation();
@@ -216,24 +219,35 @@ function AdminDashboard() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        console.log('🚀 Starting fetchUsers - Page:', currentPage);
+        setIsLoading(true);
+        
         const userData = await getAllUsers();
-        setUsers(userData);
+        console.log('📥 Received paginated data:', userData);
 
-        // Calculate stats
+        // Set users data
+        setUsers(userData);
+        setFilteredUsers(userData);
+
+        // Calculate stats from all users
         setStats({
           totalUsers: userData.length,
-          totalLearners: userData.filter((u) => u.role === "learner").length,
-          totalTeachers: userData.filter((u) => u.role === "teacher").length,
-          totalAdmins: userData.filter((u) => u.role === "admin").length,
+          totalLearners: userData.filter(u => u.role === "learner").length,
+          totalTeachers: userData.filter(u => u.role === "teacher").length,
+          totalAdmins: userData.filter(u => u.role === "admin").length,
         });
+
+        setIsLoading(false);
+        setError(null);
       } catch (error) {
-        console.error("Error fetching users:", error);
-        setError(true);
+        console.error('❌ Error fetching users:', error);
+        setError('Failed to load users');
+        setIsLoading(false);
       }
     };
 
     fetchUsers();
-  }, []);
+  }, [currentPage]); // Add currentPage as dependency
 
   useEffect(() => {
     // Filter users based on both search query and role
@@ -355,6 +369,11 @@ function AdminDashboard() {
     setIsGroupListModalOpen(true);
   };
 
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    window.scrollTo(0, 0); // Scroll to top on page change
+  };
+
   const EmptyState = () => (
     <div className="flex flex-col items-center justify-center py-16 px-4">
       <InboxIcon size={64} className="text-gray-300 mb-4" />
@@ -472,6 +491,9 @@ function AdminDashboard() {
                 onShowGroupList={handleShowGroupList}
                 onFilterChange={handleFilterChange} // Add this prop
                 currentFilter={roleFilter} // Add this prop
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
               />
             )}
           </div>
