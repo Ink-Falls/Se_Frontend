@@ -6,6 +6,7 @@ const AnnouncementsComponent = ({
   onAnnouncementClick,
   onEdit,
   onDelete,
+  courseId // Add courseId prop
 }) => {
   const getAnnouncementStyles = (type) => {
     switch (type.toLowerCase()) {
@@ -20,6 +21,12 @@ const AnnouncementsComponent = ({
     }
   };
 
+  const handleAnnouncementClick = (announcement) => {
+    if (onAnnouncementClick) {
+      onAnnouncementClick(announcement.id, courseId);
+    }
+  };
+
   return (
     <div className="divide-y divide-gray-200">
       {announcements.length === 0 ? (
@@ -30,7 +37,7 @@ const AnnouncementsComponent = ({
         announcements.map((announcement) => (
           <div
             key={announcement.id}
-            onClick={() => onAnnouncementClick(announcement.id)}
+            onClick={() => handleAnnouncementClick(announcement)}
             className="group p-6 hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
           >
             <div className="flex items-start space-x-4">

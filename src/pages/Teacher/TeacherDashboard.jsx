@@ -6,9 +6,11 @@ import Header from "../../components/common/layout/Header";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import { getTeacherCourses } from "../../services/courseService";
 import EmptyState from '../../components/common/states/EmptyState';
+import { useCourse } from '../../contexts/CourseContext';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { setSelectedCourse } = useCourse();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,15 +41,15 @@ const Dashboard = () => {
   }, []);
 
   const handleCourseClick = (course) => {
-    navigate('/Teacher/CourseModules', { 
-      state: { 
-        course: {
-          id: course.id,
-          name: course.name,
-          code: course.code || 'No Code'
-        } 
-      }
+    // Save full course data to context
+    setSelectedCourse({
+      id: course.id,
+      name: course.name,
+      code: course.code || 'No Code',
+      description: course.description
     });
+    
+    navigate('/Teacher/CourseModules');  // Remove state from navigation
   };
 
   return (

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { SquarePen, Plus, Search, Users, FileText, Filter, Trash2 } from 'lucide-react';
+import { generateUsersReport } from '../../../services/reportService';
+import ReportViewerModal from '../../common/Modals/View/ReportViewerModal';
 
 const UserTable = ({ 
   users, 
@@ -22,6 +24,9 @@ const UserTable = ({
   const ROWS_PER_PAGE = 10;
 
   const [sortOption, setSortOption] = useState('none'); // Add this state
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportUrl, setReportUrl] = useState(null);
+  const [reportError, setReportError] = useState(null);
 
   // Add sorting function
   const getSortedUsers = (users) => {
@@ -64,6 +69,36 @@ const UserTable = ({
   const handleSearchChange = (e) => {
     const query = e.target.value;
     onSearch(query); // Call the search handler from parent
+  };
+
+  const handleGenerateReport = async () => {
+    try {
+      const currentUser = JSON.parse(localStorage.getItem('user')); // Get current user from localStorage
+      setReportError(null);
+      const doc = await generateUsersReport(currentUser);
+      const pdfBlob = doc.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      setReportUrl(pdfUrl);
+      setShowReportModal(true);
+    } catch (error) {
+      console.error('Error generating report:', error);
+      setReportError(error.message || 'Failed to generate report');
+      setShowReportModal(true);
+    }
+  };
+
+  const handlePrintReport = () => {
+    if (reportUrl) {
+      window.open(reportUrl, '_blank');
+    }
+  };
+
+  const handleDeleteReport = () => {
+    if (reportUrl) {
+      URL.revokeObjectURL(reportUrl);
+      setReportUrl(null);
+      setShowReportModal(false);
+    }
   };
 
   return (
@@ -151,7 +186,7 @@ const UserTable = ({
             <span>Group List</span>
           </button>
           <button
-            onClick={() => console.log("Generate Report")}
+            onClick={handleGenerateReport}
             className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black"
           >
             <FileText size={16} />
@@ -248,6 +283,22 @@ const UserTable = ({
           </div>
         </div>
       </div>
+
+      <ReportViewerModal
+        isOpen={showReportModal}
+        onClose={() => {
+          setShowReportModal(false);
+          setReportError(null);
+          if (reportUrl) {
+            URL.revokeObjectURL(reportUrl);
+            setReportUrl(null);
+          }
+        }}
+        pdfUrl={reportUrl}
+        onPrint={handlePrintReport}
+        onDelete={handleDeleteReport}
+        error={reportError}
+      />
     </div>
   );
 };
