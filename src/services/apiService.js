@@ -22,6 +22,25 @@ let failureCount = 0;
 let circuitOpen = false;
 let circuitTimer = null;
 
+const showAlert = (message, retryAfter) => {
+  const div = document.createElement('div');
+  div.className = 'fixed bottom-4 right-4 max-w-md w-full bg-white rounded-lg shadow-lg border-l-4 border-[#F6BA18] p-4 z-50';
+  div.innerHTML = `
+    <div class="flex items-start">
+      <div class="ml-3 w-full">
+        <h3 class="text-sm font-medium text-gray-800">Rate Limit Exceeded</h3>
+        <div class="mt-1">
+          <p class="text-sm text-gray-600">${message}</p>
+          <p class="text-xs text-[#F6BA18] mt-1">Try again in ${Math.ceil(retryAfter/1000)} seconds</p>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), retryAfter);
+};
+
 const fetchWithInterceptor = async (url, options = {}) => {
   // Add token to headers
   const token = tokenService.getAccessToken();
@@ -108,11 +127,10 @@ const fetchWithInterceptor = async (url, options = {}) => {
           throw new Error('Resource not found');
         case 429:
           const retryAfter = parseInt(response.headers.get('Retry-After')) * 1000 || RATE_LIMIT.RETRY_AFTER;
-          window.dispatchEvent(new CustomEvent('rateLimitError', {
-            detail: { retryAfter, message: `Rate limit exceeded. Try again in ${retryAfter/1000}s` }
-          }));
-          
-          // Auto-retry after delay
+          showAlert(
+            errorData.message || 'Too many requests. Please wait before trying again.',
+            retryAfter
+          );
           await new Promise(resolve => setTimeout(resolve, retryAfter));
           return fetchWithInterceptor(url, options);
         case 500:
@@ -132,6 +150,11 @@ const fetchWithInterceptor = async (url, options = {}) => {
     failureCount = 0;
     return response;
   } catch (error) {
+    if (error.status === 429) {
+      const retryAfter = parseInt(error.response?.headers?.get('Retry-After')) * 1000 || RATE_LIMIT.RETRY_AFTER;
+      showAlert(error.message || 'Rate limit exceeded', retryAfter);
+      return;
+    }
     // Network error handling
     if (!navigator.onLine) {
       window.dispatchEvent(new CustomEvent('networkError', {

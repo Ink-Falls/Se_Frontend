@@ -2,7 +2,23 @@
 import { API_BASE_URL } from '../utils/constants';
 import tokenService from './tokenService';
 import fetchWithInterceptor from './apiService';
-import { handleAuthError } from '../utils/errorHandler';
+
+const handleAuthErrors = (status, data) => {
+  switch (status) {
+    case 401:
+      return 'Invalid credentials. Please check your email and password.';
+    case 402:
+      return 'Payment required. Please update your subscription.';
+    case 403:
+      return 'Account locked or inactive. Please contact support.';
+    case 404:
+      return 'Account not found. Please check your email or register.';
+    case 429:
+      return 'Too many login attempts. Please try again later.';
+    default:
+      return data.message || 'Login failed. Please try again.';
+  }
+};
 
 /**
  * Handles user login.
@@ -33,10 +49,8 @@ const loginUser = async (email, password, captchaResponse) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw {
-        status: response.status,
-        message: data.message || 'Login failed'
-      };
+      const errorMessage = handleAuthErrors(response.status, data);
+      throw new Error(errorMessage);
     }
 
     // Ensure we have both token and user data
@@ -81,7 +95,8 @@ const logoutUser = async () => {
   try {
     const token = tokenService.getAccessToken();
     if (!token) {
-      throw new Error('No active session');
+      console.warn('No active session token found');
+      return { success: true, message: 'No active session to logout' };
     }
 
     const response = await fetch(`${API_BASE_URL}/auth/logout`, {
@@ -93,31 +108,29 @@ const logoutUser = async () => {
       credentials: 'include',
     });
 
-    if (!response.ok) {
-      throw {
-        status: response.status,
-        message: 'Logout failed'
-      };
+    // Still consider logout successful even if API call fails
+    const success = response.ok;
+    if (!success) {
+      console.warn('Backend logout failed but continuing with client cleanup');
     }
 
-    // Clear all auth data even if API call fails
+    // Clear all auth data regardless of API response
     await tokenService.removeTokens();
     tokenService.clearAutoRefresh();
     localStorage.clear();
     sessionStorage.clear();
 
-    console.log('✅ Logout successful');
+    console.log('✅ Logout complete');
     return { success: true, message: 'Logged out successfully' };
   } catch (error) {
-    // Still clear tokens on error
+    console.error('❌ Logout failed:', error);
+    // Still clear everything on error
     await tokenService.removeTokens();
     tokenService.clearAutoRefresh();
     localStorage.clear();
     sessionStorage.clear();
     
-    console.error('❌ Logout failed:', error);
-    const errorMessage = handleAuthError(error);
-    throw new Error(errorMessage);
+    throw new Error('Logout failed, but session cleared');
   }
 };
 

@@ -425,9 +425,17 @@ export const getUserGroupIds = async (userId) => {
   const DELAY = 1000; // 1 second delay between requests
 
   try {
+    // Get user role from localStorage
+    const user = JSON.parse(localStorage.getItem('user'));
+    const userRole = user?.role;
+
+    if (!userRole) {
+      console.error('User role not found in localStorage');
+      return userGroups;
+    }
+
     while (consecutiveErrors < MAX_CONSECUTIVE_ERRORS) {
       try {
-        // Add delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, DELAY));
 
         console.log(`Checking group ${currentGroupId} for user ${userId}`);
@@ -444,13 +452,23 @@ export const getUserGroupIds = async (userId) => {
           
           if (isMember) {
             console.log(`User ${userId} is member of group ${currentGroupId}`);
-            userGroups.push(currentGroupId);
-            console.log('Assigned courses to learner has been found');
-            return userGroups; // Stop here since we found a group
+            // Check if this is a valid group based on user role
+            const group = await getGroupById(currentGroupId);
+            if (group) {
+              const isValidGroup = userRole === 'student_teacher' 
+                ? group.group_type === 'student_teacher'  // For student teachers
+                : group.group_type === 'learner';        // For learners
+              
+              if (isValidGroup) {
+                userGroups.push(currentGroupId);
+                console.log(`Found valid ${group.group_type} group for ${userRole}`);
+                return userGroups; // Return once we find a valid group
+              }
+            }
           }
           
           currentGroupId++;
-          consecutiveErrors = 0; // Reset error count on success
+          consecutiveErrors = 0;
         } else {
           throw new Error(`Failed to fetch group ${currentGroupId} members`);
         }
@@ -462,9 +480,6 @@ export const getUserGroupIds = async (userId) => {
 
         if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
           console.log('Reached maximum consecutive errors. No more groups to check.');
-          if (userGroups.length === 0) {
-            console.log('No assigned courses to learner found');
-          }
           break;
         }
       }
@@ -474,5 +489,54 @@ export const getUserGroupIds = async (userId) => {
   } catch (error) {
     console.error('Error fetching user groups:', error);
     return userGroups;
+  }
+};
+
+/**
+ * Assigns users to an existing group
+ * @async
+ * @function assignUsersToGroup
+ * @param {number} groupId - ID of the target group
+ * @param {Array<number>} userIds - Array of user IDs to assign
+ * @param {string} groupType - Type of group ('learner' or 'student_teacher')
+ * @returns {Promise<Object>} Response from the server
+ * @throws {Error} If the assignment fails
+ */
+export const assignUsersToGroup = async (groupId, userIds, groupType) => {
+  try {
+    console.log('🎯 Assigning users to group:', { groupId, userIds, groupType });
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Authentication token not found');
+    }
+
+    // Determine the endpoint based on group type
+    const endpoint = groupType === 'learner' 
+      ? '/groups/assign-learners'
+      : '/groups/assign-student-teachers';
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        groupId: parseInt(groupId),
+        userIds: userIds.map(id => parseInt(id))
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to assign users to group');
+    }
+
+    const result = await response.json();
+    console.log('✅ Users successfully assigned to group:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Error assigning users to group:', error);
+    throw error;
   }
 };

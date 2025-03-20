@@ -43,28 +43,6 @@ import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { PublicRoute } from "./routes/PublicRoute";
 import { RoleBasedRoute } from "./routes/RoleBasedRoute";
 
-const Logout = () => {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const handleLogout = async () => {
-      try {
-        await tokenService.removeTokens(); // Use tokenService instead
-        navigate("/login", { replace: true });
-      } catch (error) {
-        console.error("Logout failed:", error);
-        // Still clear tokens and redirect even if API call fails
-        await tokenService.removeTokens();
-        navigate("/login", { replace: true });
-      }
-    };
-
-    handleLogout();
-  }, [navigate]);
-
-  return null;
-};
-
 function App() {
   return (
     <ErrorBoundary>
@@ -89,7 +67,6 @@ function App() {
               <Route path="/EnrollConfirm" element={<PublicRoute><EnrollConfirm /></PublicRoute>} />
 
               {/* Auth Protected Routes */}
-              <Route path="/logout" element={<ProtectedRoute><Logout /></ProtectedRoute>} />
               <Route path="/Profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
               {/* Admin Routes */}

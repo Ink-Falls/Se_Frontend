@@ -17,26 +17,54 @@ import { API_BASE_URL } from '../utils/constants';
  */
 export const getAllUsers = async (options = {}) => {
   try {
+    console.log('🚀 Starting getAllUsers fetch request');
     const token = localStorage.getItem('token');
     if (!token) {
+      console.error('❌ No authentication token found');
       throw new Error('Not authenticated');
     }
 
-    const response = await fetch(`${API_BASE_URL}/users`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    // Initialize an array to store all users
+    let allUsers = [];
+    let currentPage = 1;
+    let hasMorePages = true;
+    const limit = 10;  // Items per page
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch users');
+    // Fetch users page by page
+    while (hasMorePages) {
+      console.log(`📃 Fetching page ${currentPage}`);
+      const response = await fetch(`${API_BASE_URL}/users?page=${currentPage}&limit=${limit}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.error('❌ API request failed:', response.status);
+        throw new Error('Failed to fetch users');
+      }
+
+      const data = await response.json();
+      console.log(`📥 Received data for page ${currentPage}:`, data);
+
+      // Extract users from response
+      const pageUsers = data.users || [];
+      allUsers = [...allUsers, ...pageUsers];
+
+      // Check if we've received fewer items than the limit
+      // or if we've reached the total count
+      if (pageUsers.length < limit || (data.count && allUsers.length >= data.count)) {
+        hasMorePages = false;
+      } else {
+        currentPage++;
+      }
     }
 
-    const data = await response.json();
-    return data.users || [];
+    console.log('✅ Total users fetched:', allUsers.length);
+    return allUsers;
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error('❌ Error in getAllUsers:', error);
     throw error;
   }
 };
@@ -67,8 +95,10 @@ export const getTeachers = async () => {
     }
 
     const data = await response.json();
-    // Filter only teachers from the response
-    return (data.users || []).filter(user => user.role === 'teacher');
+    // Handle the new response structure
+    const usersList = data.users || [];
+    console.log("user List:" ,usersList)
+    return usersList.filter(user => user.role === 'teacher');
   } catch (error) {
     console.error('Error fetching teachers:', error);
     throw error;
@@ -225,6 +255,44 @@ export const deleteUser = async (userId) => {
     return true;
   } catch (error) {
     console.error('Error deleting user:', error);
+    throw error;
+  }
+};
+
+/**
+ * Removes a user from a specific group
+ * @async
+ * @function removeUserFromGroup
+ * @param {number|string} groupId - ID of the group
+ * @param {number|string} userId - ID of the user to remove
+ * @returns {Promise<boolean>} True if successful
+ * @throws {Error} If the removal fails
+ */
+export const removeUserFromGroup = async (groupId, userId) => {
+  try {
+    console.log('🗑️ Removing user from group:', { groupId, userId });
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/groups/${groupId}/members/${userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to remove user from group');
+    }
+
+    console.log('✅ User successfully removed from group');
+    return true;
+  } catch (error) {
+    console.error('❌ Error removing user from group:', error);
     throw error;
   }
 };

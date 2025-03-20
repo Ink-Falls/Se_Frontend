@@ -80,10 +80,12 @@ export const getLearnerCourses = async () => {
       userGroups.includes(course.learner_group_id)
     );
 
+    // Return empty array instead of throwing error
     return formatCourses(accessibleCourses);
+
   } catch (error) {
     console.error('Error fetching learner courses:', error);
-    throw error;
+    return []; // Return empty array on error
   }
 };
 
@@ -117,13 +119,28 @@ export const getTeacherCourses = async () => {
 
     const data = await response.json();
     
-    // Filter courses where user_id matches current user's id
-    const teacherCourses = (data.rows || [])
-      .filter(course => course.user_id === currentUser.id);
+    // Get user's groups if they are a student teacher
+    let studentTeacherGroups = [];
+    if (currentUser.role === 'student_teacher') {
+      const userGroups = await getUserGroupIds(currentUser.id);
+      studentTeacherGroups = userGroups;
+    }
+    
+    // Filter courses based on user's role
+    const teacherCourses = (data.rows || []).filter(course => {
+      if (currentUser.role === 'teacher') {
+        return course.user_id === currentUser.id;
+      } else if (currentUser.role === 'student_teacher') {
+        return studentTeacherGroups.includes(course.student_teacher_group_id);
+      }
+      return false;
+    });
 
     return formatCourses(teacherCourses);
+
   } catch (error) {
-    throw error;
+    console.error('Error fetching teacher courses:', error);
+    return []; // Return empty array on error
   }
 };
 

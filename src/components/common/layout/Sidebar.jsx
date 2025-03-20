@@ -33,22 +33,19 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      await logout(); // Use AuthContext logout instead of direct service call
-      navigate("/login", { replace: true });
+      // Wait for logout to complete before navigating
+      await logout();
+      // Use window.location.href instead of navigate for full page refresh
+      window.location.href = "/login";
     } catch (error) {
       console.error("Logout failed:", error);
-      
       // Show error message to user
-      const errorMessage = error.message || "Logout failed. You will be redirected to login.";
-      alert(errorMessage); // Consider using a proper notification system
-      
-      // Redirect to login anyway for safety
-      navigate("/login", { replace: true });
+      const errorMessage = error.message || "Logout failed. Please try again.";
+      alert(errorMessage);
     } finally {
       setIsLoggingOut(false);
     }
   };
-
 
   return (
     <aside
@@ -94,8 +91,17 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
             disabled={isLoggingOut}
             className="flex w-full py-3 px-4 my-5 font-medium items-center text-gray-50 hover:bg-[#F6BA18] hover:text-black rounded-md p-2 transition-colors group"
           >
-            <LogOut className="mr-1" size={20} />
-            {expanded && <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>}
+            {isLoggingOut ? (
+              <div className="flex items-center justify-center w-full gap-2">
+                <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                <span>Logging out...</span>
+              </div>
+            ) : (
+              <>
+                <LogOut className="mr-1" size={20} />
+                {expanded && <span>Logout</span>}
+              </>
+            )}
           </button>
         </div>
       </nav>
