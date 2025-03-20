@@ -63,19 +63,19 @@ const LearnerAnnouncementDetails = () => {
             route: "/Learner/Dashboard",
           },
           {
-            text: "Announcements",
-            icon: <Megaphone size={20} />,
-            route: "/Learner/CourseAnnouncements",
-          },
-          {
             text: "Modules",
             icon: <BookOpen size={20} />,
-            route: "/CourseModules",
+            route: "/Learner/CourseModules", // Fixed route
+          },
+          {
+            text: "Announcements",
+            icon: <Megaphone size={20} />,
+            route: "/Learner/CourseAnnouncements", // Fixed route
           },
           {
             text: "Assessments",
             icon: <ClipboardList size={20} />,
-            route: "/LearnerAssessments",
+            route: "/Learner/Assessment", // Fixed route
           },
         ]}
       />

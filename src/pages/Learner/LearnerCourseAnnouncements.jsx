@@ -24,14 +24,14 @@ const LearnerCourseAnnouncements = () => {
   const navItems = [
     { text: "Home", icon: <Home size={20} />, route: "/Learner/Dashboard" },
     {
-      text: "Announcements",
-      icon: <Megaphone size={20} />,
-      route: "/Learner/CourseAnnouncements",
-    },
-    {
       text: "Modules",
       icon: <BookOpen size={20} />,
       route: "/Learner/CourseModules",
+    },
+    {
+      text: "Announcements",
+      icon: <Megaphone size={20} />,
+      route: "/Learner/CourseAnnouncements",
     },
     {
       text: "Assessments",

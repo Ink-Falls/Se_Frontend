@@ -41,8 +41,17 @@ const LearnerDashboard = () => {
   }, []);
 
   const handleCourseClick = (course) => {
-    navigate("/Learner/CourseAnnouncements", {
-      state: { courseTitle: course.name, courseCode: course.code },
+    // Debug log the course data
+    console.log('Clicking course:', course);
+    
+    navigate('/Learner/CourseModules', {
+      state: { 
+        course: {
+          id: course.id || course.course_id, // Handle both possible ID fields
+          name: course.name,
+          code: course.code
+        }
+      }
     });
   };
 

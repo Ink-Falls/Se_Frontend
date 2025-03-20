@@ -95,31 +95,29 @@ const Assessments = () => {
     }
   };
 
+  const navItems = [
+    { text: "Home", icon: <Home size={20} />, route: "/Learner/Dashboard" },
+    {
+      text: "Modules",
+      icon: <BookOpen size={20} />,
+      route: "/Learner/CourseModules",
+    },
+    {
+      text: "Announcements",
+      icon: <Megaphone size={20} />,
+      route: "/Learner/CourseAnnouncements",
+    },
+    {
+      text: "Assessments",
+      icon: <ClipboardList size={20} />,
+      route: "/Learner/Assessment",
+    },
+  ];
+
   return (
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar
-        navItems={[
-          {
-            text: "Home",
-            icon: <Home size={20} />,
-            route: "/Learner/Dashboard",
-          },
-          {
-            text: "Announcements",
-            icon: <Megaphone size={20} />,
-            route: "/Learner/CourseAnnouncements",
-          },
-          {
-            text: "Modules",
-            icon: <BookOpen size={20} />,
-            route: "/Learner/CourseModules",
-          },
-          {
-            text: "Assessments",
-            icon: <ClipboardList size={20} />,
-            route: "/Learner/Assessment",
-          },
-        ]}
+        navItems={navItems}
       />
       <div className="flex-1 p-6 overflow-auto">
         <Header title="Environmental Science" subtitle="ENVI 101" />

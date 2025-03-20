@@ -39,8 +39,14 @@ const Dashboard = () => {
   }, []);
 
   const handleCourseClick = (course) => {
-    navigate("/Teacher/CourseAnnouncements", {
-      state: { courseTitle: course.name, courseCode: course.code },
+    navigate('/Teacher/CourseModules', { 
+      state: { 
+        course: {
+          id: course.id,
+          name: course.name,
+          code: course.code || 'No Code'
+        } 
+      }
     });
   };
 
