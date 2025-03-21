@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
 import { useNavigate } from "react-router-dom";
+import CreateAssessmentModal from "../../components/common/Modals/Create/CreateAssessmentModal";
 
 const TeacherCourseAssessment = () => {
   const { selectedCourse } = useCourse();
@@ -32,16 +33,19 @@ const TeacherCourseAssessment = () => {
       id: 1,
       title: "Midterm Exam",
       status: "Not Started",
+      dueDate: "2024-03-15",
     },
     {
       id: 2,
       title: "Final Project",
       status: "In Progress",
+      dueDate: "2024-03-20",
     },
     {
       id: 3,
       title: "Quiz 1",
       status: "Completed",
+      dueDate: "2024-03-10",
     },
   ]);
 
@@ -56,6 +60,7 @@ const TeacherCourseAssessment = () => {
     dueDate: "",
     status: "Not Started",
   });
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const toggleAssessment = (id) => {
     setExpandedAssessments((prev) =>
@@ -111,6 +116,22 @@ const TeacherCourseAssessment = () => {
     });
   };
 
+  const handleCreateAssessment = async (assessmentData) => {
+    try {
+      // TODO: Add API call to create assessment
+      const newAssessment = {
+        id: assessments.length + 1,
+        ...assessmentData,
+        status: "Not Started",
+      };
+
+      setAssessments([...assessments, newAssessment]);
+    } catch (error) {
+      console.error("Error creating assessment:", error);
+      throw error; // This will be caught by the modal
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar
@@ -161,32 +182,52 @@ const TeacherCourseAssessment = () => {
               className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg cursor-pointer"
               onClick={() => handleAssessmentClick(assessment)}
             >
-              {/* Assessment Header */}
               <div className="flex justify-between items-center">
-                <div className="w-full">
-                  <p className="text-xs text-gray-500">ASSESSMENT</p>
-                  <h3 className="font-bold text-lg text-gray-800">
+                <div className="flex-1">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">
+                    ASSESSMENT {assessment.id}
+                  </p>
+                  <h3 className="font-bold text-lg text-gray-800 mt-1">
                     {assessment.title}
                   </h3>
-                  <p className="text-sm text-gray-600">
-                    Status:{" "}
+                  <div className="flex items-center gap-3 mt-2">
                     <span
-                      className={`font-semibold ${
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                      ${
                         assessment.status === "Completed"
-                          ? "text-green-600"
+                          ? "bg-green-100 text-green-800"
                           : assessment.status === "In Progress"
-                          ? "text-yellow-600"
-                          : "text-red-600"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-gray-100 text-gray-800"
                       }`}
                     >
                       {assessment.status}
                     </span>
-                  </p>
+                    <span className="text-sm text-gray-500">
+                      Due: {new Date(assessment.dueDate).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
+
+        {/* Add Assessment Button */}
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="fixed bottom-8 right-8 bg-yellow-500 text-white rounded-full p-4 shadow-lg hover:bg-yellow-600 transition-colors"
+        >
+          <Plus size={24} />
+        </button>
+
+        {/* Create Assessment Modal */}
+        {isCreateModalOpen && (
+          <CreateAssessmentModal
+            onClose={() => setIsCreateModalOpen(false)}
+            onSubmit={handleCreateAssessment}
+          />
+        )}
       </div>
     </div>
   );

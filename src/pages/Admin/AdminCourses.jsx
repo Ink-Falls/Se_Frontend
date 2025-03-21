@@ -91,12 +91,49 @@ function AdminCourses() {
     },
   ];
 
+  // Add cache-related state
+  const [cache, setCache] = useState({});
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+  const checkCache = (key) => {
+    const cached = cache[key];
+    if (!cached) return null;
+    if (Date.now() - cached.timestamp > CACHE_DURATION) {
+      const newCache = { ...cache };
+      delete newCache[key];
+      setCache(newCache);
+      return null;
+    }
+    return cached.data;
+  };
+
+  const updateCache = (key, data) => {
+    setCache((prev) => ({
+      ...prev,
+      [key]: {
+        data,
+        timestamp: Date.now(),
+      },
+    }));
+  };
+
   useEffect(() => {
     const loadInitialData = async () => {
       try {
+        const cachedCourses = checkCache("courses");
+        if (cachedCourses) {
+          console.log("Using cached course data");
+          setCourses(cachedCourses);
+          setLoading(false);
+          return;
+        }
+
+        console.log("Fetching fresh course data");
         setLoading(true);
-        const coursesData = await getAllCourses(); // Changed from getCoursesWithGroups to getAllCourses
+        const coursesData = await getAllCourses();
+
         if (Array.isArray(coursesData)) {
+          updateCache("courses", coursesData);
           setCourses(coursesData);
         } else {
           console.error("Courses data is not an array:", coursesData);
@@ -204,7 +241,7 @@ function AdminCourses() {
 
   const saveCourseChanges = async (updatedCourse) => {
     try {
-      const result = await updateCourse(updatedCourse.id, {
+      await updateCourse(updatedCourse.id, {
         name: updatedCourse.name,
         description: updatedCourse.description,
         user_id: parseInt(updatedCourse.user_id),
@@ -214,7 +251,7 @@ function AdminCourses() {
         ),
       });
 
-      // Refresh the courses list
+      setCache({}); // Clear cache
       const allCourses = await getAllCourses();
       setCourses(allCourses);
       setEditingCourse(null);
@@ -227,7 +264,9 @@ function AdminCourses() {
   const confirmDelete = async () => {
     try {
       await deleteCourse(courseToDelete.id);
-      setCourses((prev) => prev.filter((c) => c.id !== courseToDelete.id));
+      setCache({}); // Clear cache
+      const allCourses = await getAllCourses();
+      setCourses(allCourses);
       setCourseToDelete(null);
     } catch (error) {
       console.error("Error deleting course:", error);
@@ -237,6 +276,7 @@ function AdminCourses() {
 
   const handleCourseAdded = async (newCourse) => {
     try {
+      setCache({}); // Clear cache
       // Refresh the entire course list immediately
       const allCourses = await getAllCourses();
       setCourses(allCourses);

@@ -378,9 +378,7 @@ const TeacherCourseModules = () => {
     </div>
   );
 
-  // Check conditions in this specific order:
-
-  // 1. First check if course is selected
+  // 1. No Course Selected State
   if (!selectedCourse?.id) {
     return (
       <div className="flex h-screen bg-gray-100">
@@ -388,18 +386,18 @@ const TeacherCourseModules = () => {
         <div className="flex-1 p-6">
           <Header title="Course Modules" />
           <div className="flex flex-col items-center justify-center py-16 px-4">
-            <InboxIcon size={64} className="text-gray-400 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <AlertTriangle size={64} className="text-red-500 mb-4" />
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">
               No Course Selected
             </h3>
-            <p className="text-gray-500 text-center max-w-md mb-4">
+            <p className="text-gray-600 text-center max-w-md mb-8">
               Please select a course from the dashboard to view its modules.
             </p>
             <button
               onClick={() => navigate("/Teacher/Dashboard")}
               className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
             >
-              Go to Dashboard
+              Return to Dashboard
             </button>
           </div>
         </div>
@@ -407,89 +405,29 @@ const TeacherCourseModules = () => {
     );
   }
 
-  // 2. Then check if it's loading
+  // 2. Loading State
   if (loading) {
     return (
       <div className="flex h-screen bg-gray-100">
-        <Sidebar
-          navItems={[
-            {
-              text: "Home",
-              icon: <Home size={20} />,
-              route: "/Teacher/Dashboard",
-            },
-            {
-              text: "Announcements",
-              icon: <Megaphone size={20} />,
-              route: "/Teacher/CourseAnnouncements",
-            },
-            {
-              text: "Modules",
-              icon: <BookOpen size={20} />,
-              route: "/Teacher/CourseModules",
-            },
-            {
-              text: "Assessments",
-              icon: <ClipboardList size={20} />,
-              route: "/Teacher/Assessment",
-            },
-            {
-              text: "Attendance",
-              icon: <User size={20} />,
-              route: "/Teacher/Attendance",
-            },
-            {
-              text: "Progress Tracker",
-              icon: <LineChart size={20} />,
-              route: "/TeacherProgress",
-            },
-          ]}
-        />
-        <div className="flex-1 p-6 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
+        <Sidebar navItems={navItems} />
+        <div className="flex-1 p-6">
+          <Header
+            title={selectedCourse?.name || "Course Modules"}
+            subtitle={selectedCourse?.code}
+          />
+          <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+            <div className="w-16 h-16 border-4 border-[#F6BA18] border-t-[#212529] rounded-full animate-spin"></div>
+          </div>
         </div>
       </div>
     );
   }
 
-  // 3. Then check for server/connection errors
-  if (error && error !== "No modules found") {
+  // 3. Error State
+  if (error) {
     return (
       <div className="flex h-screen bg-gray-100">
-        <Sidebar
-          navItems={[
-            {
-              text: "Home",
-              icon: <Home size={20} />,
-              route: "/Teacher/Dashboard",
-            },
-            {
-              text: "Announcements",
-              icon: <Megaphone size={20} />,
-              route: "/Teacher/CourseAnnouncements",
-            },
-            {
-              text: "Modules",
-              icon: <BookOpen size={20} />,
-              route: "/Teacher/CourseModules",
-            },
-            {
-              text: "Assessments",
-              icon: <ClipboardList size={20} />,
-              route: "/Teacher/Assessment",
-            },
-            {
-              text: "Attendance",
-              icon: <User size={20} />,
-              route: "/Teacher/Attendance",
-            },
-            {
-              text: "Progress Tracker",
-              icon: <LineChart size={20} />,
-              route: "/TeacherProgress",
-            },
-          ]}
-        />
+        <Sidebar navItems={navItems} />
         <div className="flex-1 p-6">
           <Header
             title={selectedCourse?.name || "Course Modules"}
@@ -498,128 +436,65 @@ const TeacherCourseModules = () => {
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <AlertTriangle size={64} className="text-red-500 mb-4" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-              Connection Error
+              Failed to Load Modules
             </h3>
-            <p className="text-gray-600 text-center max-w-md mb-8">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
-            >
-              Try Again
-            </button>
+            <p className="text-gray-600 text-center max-w-md mb-8">
+              We encountered an error while trying to fetch the module data.
+              This could be due to network issues or server unavailability.
+            </p>
+            <div className="flex flex-col items-center gap-2">
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 flex items-center gap-2"
+              >
+                Try Again
+              </button>
+              <span className="text-sm text-gray-500 mt-2">
+                You can try refreshing the page or contact support if the issue
+                persists
+              </span>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  // 4. Finally check for empty modules state
+  // 4. Empty State
   if (!loading && modules.length === 0) {
     return (
       <div className="flex h-screen bg-gray-100">
-        <Sidebar
-          navItems={[
-            {
-              text: "Home",
-              icon: <Home size={20} />,
-              route: "/Teacher/Dashboard",
-            },
-            {
-              text: "Announcements",
-              icon: <Megaphone size={20} />,
-              route: "/Teacher/CourseAnnouncements",
-            },
-            {
-              text: "Modules",
-              icon: <BookOpen size={20} />,
-              route: "/Teacher/CourseModules",
-            },
-            {
-              text: "Assessments",
-              icon: <ClipboardList size={20} />,
-              route: "/Teacher/Assessment",
-            },
-            {
-              text: "Attendance",
-              icon: <User size={20} />,
-              route: "/Teacher/Attendance",
-            },
-            {
-              text: "Progress Tracker",
-              icon: <LineChart size={20} />,
-              route: "/TeacherProgress",
-            },
-          ]}
-        />
+        <Sidebar navItems={navItems} />
         <div className="flex-1 p-6">
-          <Header title={selectedCourse.name} subtitle={selectedCourse.code} />
+          <Header
+            title={selectedCourse?.name || "Course Modules"}
+            subtitle={selectedCourse?.code}
+          />
           <div className="flex flex-col items-center justify-center py-16 px-4">
-            <InboxIcon size={64} className="text-gray-400 mb-4" />
+            <InboxIcon size={64} className="text-gray-300 mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No Modules Yet
+              No Modules Found
             </h3>
             <p className="text-gray-500 text-center max-w-md mb-4">
-              This course doesn't have any modules yet. Get started by creating
-              your first module.
+              There are currently no modules in this course. Get started by
+              creating your first module.
             </p>
             <button
-              onClick={() => setIsCreateModuleOpen(true)} // Changed from setIsAddModuleOpen
+              onClick={() => setIsCreateModuleOpen(true)}
               className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
             >
               Create First Module
             </button>
           </div>
         </div>
-
-        {/* Add CreateModuleModal here */}
-        {isCreateModuleOpen && (
-          <CreateModuleModal
-            courseId={selectedCourse.id}
-            onClose={() => setIsCreateModuleOpen(false)}
-            onSubmit={handleCreateModule}
-          />
-        )}
       </div>
     );
   }
 
-  // 5. Normal render with modules list
+  // 5. Normal render with data
   return (
-    <div className="flex h-screen bg-gray-100 relative">
-      <Sidebar
-        navItems={[
-          {
-            text: "Home",
-            icon: <Home size={20} />,
-            route: "/Teacher/Dashboard",
-          },
-          {
-            text: "Announcements",
-            icon: <Megaphone size={20} />,
-            route: "/Teacher/CourseAnnouncements",
-          },
-          {
-            text: "Modules",
-            icon: <BookOpen size={20} />,
-            route: "/Teacher/CourseModules",
-          },
-          {
-            text: "Assessments",
-            icon: <ClipboardList size={20} />,
-            route: "/Teacher/Assessment",
-          },
-          {
-            text: "Attendance",
-            icon: <User size={20} />,
-            route: "/Teacher/Attendance",
-          },
-          {
-            text: "Progress Tracker",
-            icon: <LineChart size={20} />,
-            route: "/TeacherProgress",
-          },
-        ]}
-      />
+    <div className="flex h-screen bg-gray-100">
+      <Sidebar navItems={navItems} />
       <div className="flex-1 p-6 overflow-auto">
         <Header
           title={selectedCourse?.name || "Course Modules"}

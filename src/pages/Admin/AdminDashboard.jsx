@@ -216,53 +216,89 @@ function AdminDashboard() {
     fetchData();
   }, []);
 
+  // Add cache-related state
+  const [cache, setCache] = useState({});
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+  const checkCache = (key) => {
+    const cached = cache[key];
+    if (!cached) return null;
+    if (Date.now() - cached.timestamp > CACHE_DURATION) {
+      const newCache = { ...cache };
+      delete newCache[key];
+      setCache(newCache);
+      return null;
+    }
+    return cached.data;
+  };
+
+  const updateCache = (key, data) => {
+    setCache((prev) => ({
+      ...prev,
+      [key]: {
+        data,
+        timestamp: Date.now(),
+      },
+    }));
+  };
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        console.log('🚀 Starting fetchUsers - Page:', currentPage);
+        const cacheKey = `users_page_${currentPage}`;
+        const cachedData = checkCache(cacheKey);
+
+        if (cachedData) {
+          console.log("Using cached user data for page", currentPage);
+          setUsers(cachedData.users);
+          setFilteredUsers(cachedData.users);
+          setTotalPages(cachedData.totalPages);
+          setTotalUsers(cachedData.totalItems);
+          setStats(cachedData.stats);
+          return;
+        }
+
+        console.log("Fetching fresh user data for page", currentPage);
         setIsLoading(true);
-        
+
         const result = await getAllUsers({
           page: currentPage,
-          limit: 10
+          limit: 10,
         });
-        
-        console.log('Received data for page', currentPage, ':', result);
 
         if (result && Array.isArray(result.users)) {
-          // Update users state
+          const statsData = {
+            totalUsers: result.totalItems || 0,
+            totalLearners: result.users.filter((u) => u.role === "learner")
+              .length,
+            totalTeachers: result.users.filter((u) => u.role === "teacher")
+              .length,
+            totalAdmins: result.users.filter((u) => u.role === "admin").length,
+          };
+
+          updateCache(cacheKey, {
+            users: result.users,
+            totalPages: result.totalPages,
+            totalItems: result.totalItems,
+            stats: statsData,
+          });
+
           setUsers(result.users);
           setFilteredUsers(result.users);
-          
-          // Update pagination state
-          setTotalPages(result.totalPages || 1);
-          setTotalUsers(result.totalItems || 0);
-
-          // Update stats based on total counts
-          setStats({
-            totalUsers: result.totalItems || 0,
-            totalLearners: result.users.filter(u => u.role === "learner").length,
-            totalTeachers: result.users.filter(u => u.role === "teacher").length,
-            totalAdmins: result.users.filter(u => u.role === "admin").length,
-          });
-          
-          setError(null);
-        } else {
-          console.error('Invalid data structure received:', result);
-          setError('Invalid data received from server');
+          setTotalPages(result.totalPages);
+          setTotalUsers(result.totalItems);
+          setStats(statsData);
         }
       } catch (error) {
-        console.error('❌ Error fetching users:', error);
-        setError('Failed to load users');
-        // Keep existing data on error
-        setFilteredUsers(users);
+        console.error("Error fetching users:", error);
+        setError("Failed to load users");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchUsers();
-  }, [currentPage]); // Only depend on currentPage
+  }, [currentPage]);
 
   useEffect(() => {
     // Filter users based on both search query and role
@@ -326,13 +362,13 @@ function AdminDashboard() {
       setIsLoading(true);
       const response = await getAllUsers({
         page: currentPage,
-        limit: 10
+        limit: 10,
       });
-      
+
       const usersArray = response.users || response.rows || [];
       const totalItems = response.totalItems || response.count || 0;
       const totalPagesCount = response.totalPages || Math.ceil(totalItems / 10);
-      
+
       setUsers(usersArray);
       setFilteredUsers(usersArray);
       setTotalPages(totalPagesCount);
@@ -345,11 +381,11 @@ function AdminDashboard() {
         totalTeachers: usersArray.filter((u) => u.role === "teacher").length,
         totalAdmins: usersArray.filter((u) => u.role === "admin").length,
       });
-      
+
       setError(null);
     } catch (error) {
-      console.error('❌ Error refreshing users:', error);
-      setError('Failed to refresh users');
+      console.error("❌ Error refreshing users:", error);
+      setError("Failed to refresh users");
     } finally {
       setIsLoading(false);
     }
@@ -357,6 +393,7 @@ function AdminDashboard() {
 
   const handleUserCreated = async (newUser) => {
     try {
+      setCache({}); // Clear all cache
       await refreshUsers();
       setIsAddModalOpen(false);
       setSuccessMessage("Successfully added user");
@@ -397,7 +434,7 @@ function AdminDashboard() {
   };
 
   const handlePageChange = async (newPage) => {
-    console.log('Changing to page:', newPage);
+    console.log("Changing to page:", newPage);
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
       window.scrollTo(0, 0);

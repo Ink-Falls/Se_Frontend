@@ -15,15 +15,15 @@ import {
   Plus,
   ArrowUpDown,
 } from "lucide-react";
-import { useCourse } from '../../contexts/CourseContext';
+import { useCourse } from "../../contexts/CourseContext";
 
-const CourseAnnouncements = () => {
+const TeacherCourseAnnouncements = () => {
   const { selectedCourse } = useCourse();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!selectedCourse?.id) {
-      navigate('/Teacher/Dashboard');
+      navigate("/Teacher/Dashboard");
     }
   }, [selectedCourse, navigate]);
 
@@ -125,9 +125,9 @@ const CourseAnnouncements = () => {
       />
 
       <div className="flex-1 p-6">
-        <Header 
-          title={selectedCourse?.name || 'Course'} 
-          subtitle={selectedCourse?.code} 
+        <Header
+          title={selectedCourse?.name || "Course"}
+          subtitle={selectedCourse?.code}
         />
 
         {/* Announcements Section */}
@@ -152,8 +152,8 @@ const CourseAnnouncements = () => {
             onAnnouncementClick={(id) =>
               navigate(`/Teacher/NotificationDetails/${id}`, {
                 state: {
-                  notification: announcements.find(ann => ann.id === id)
-                }
+                  notification: announcements.find((ann) => ann.id === id),
+                },
               })
             }
             onEdit={handleEditAnnouncement} // Pass edit handler
@@ -206,4 +206,4 @@ const CourseAnnouncements = () => {
   );
 };
 
-export default CourseAnnouncements;
+export default TeacherCourseAnnouncements;
