@@ -10,11 +10,14 @@ import {
   Clock,
   Calendar,
   Award,
-  AlertTriangle
+  AlertTriangle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCourse } from "../../contexts/CourseContext";
-import { getCourseAssessments, getUserSubmission } from "../../services/assessmentService";
+import {
+  getCourseAssessments,
+  getUserSubmission,
+} from "../../services/assessmentService";
 
 const LearnerCourseAssessment = () => {
   const { selectedCourse } = useCourse();
@@ -45,36 +48,47 @@ const LearnerCourseAssessment = () => {
 
   useEffect(() => {
     if (!selectedCourse?.id) {
-      navigate('/Learner/Dashboard');
+      navigate("/Learner/Dashboard");
       return;
     }
 
     const fetchAssessmentsAndSubmissions = async () => {
       try {
         setLoading(true);
-        const assessmentsData = await getCourseAssessments(selectedCourse.id, true); // Add true to include questions
+        const assessmentsData = await getCourseAssessments(
+          selectedCourse.id,
+          true
+        ); // Add true to include questions
         const courseAssessments = assessmentsData.assessments || [];
 
         // Fetch user's submission for each assessment with full details
         const submissionsMap = {};
-        await Promise.all(courseAssessments.map(async (assessment) => {
-          try {
-            const submissionData = await getUserSubmission(assessment.id, true); // Add true to include answers
-            if (submissionData.success && submissionData.submission) {
-              submissionsMap[assessment.id] = {
-                ...submissionData.submission,
-                assessment: assessment // Include assessment details with questions
-              };
+        await Promise.all(
+          courseAssessments.map(async (assessment) => {
+            try {
+              const submissionData = await getUserSubmission(
+                assessment.id,
+                true
+              ); // Add true to include answers
+              if (submissionData.success && submissionData.submission) {
+                submissionsMap[assessment.id] = {
+                  ...submissionData.submission,
+                  assessment: assessment, // Include assessment details with questions
+                };
+              }
+            } catch (err) {
+              console.error(
+                `Error fetching submission for assessment ${assessment.id}:`,
+                err
+              );
             }
-          } catch (err) {
-            console.error(`Error fetching submission for assessment ${assessment.id}:`, err);
-          }
-        }));
+          })
+        );
 
         setAssessments(courseAssessments);
         setSubmissions(submissionsMap);
       } catch (err) {
-        setError(err.message || 'Failed to fetch assessments');
+        setError(err.message || "Failed to fetch assessments");
       } finally {
         setLoading(false);
       }
@@ -84,68 +98,74 @@ const LearnerCourseAssessment = () => {
   }, [selectedCourse, navigate]);
 
   const getStatus = (submission) => {
-    if (!submission) return 'Not Started';
-    if (submission.is_late) return 'Late';
-    if (!submission.status || submission.status === 'null') return 'Not Started';
-  
+    if (!submission) return "Not Started";
+    if (submission.is_late) return "Late";
+    if (!submission.status || submission.status === "null")
+      return "Not Started";
+
     // Check if assessment has any manual grading questions (essay or short_answer)
     const hasManualGradingQuestions = submission.assessment?.questions?.some(
-      q => q.question_type === 'essay' || q.question_type === 'short_answer'
+      (q) => q.question_type === "essay" || q.question_type === "short_answer"
     );
-  
+
     // If there are manual grading questions, always show as "Submitted" until fully graded
-    if (hasManualGradingQuestions && submission.status !== 'graded') {
-      return 'Submitted';
+    if (hasManualGradingQuestions && submission.status !== "graded") {
+      return "Submitted";
     }
-  
+
     return submission.status;
   };
 
   const getStatusColor = (status, isLate = false) => {
     if (isLate) return "bg-red-100 text-red-800";
     switch (status?.toLowerCase()) {
-      case 'graded': return "bg-green-100 text-green-800";
-      case 'submitted': return "bg-yellow-100 text-yellow-800";
-      case 'in_progress': return "bg-blue-100 text-blue-800";
-      case 'not started': return "bg-gray-100 text-gray-600";
-      default: return "bg-gray-100 text-gray-600";
+      case "graded":
+        return "bg-green-100 text-green-800";
+      case "submitted":
+        return "bg-yellow-100 text-yellow-800";
+      case "in_progress":
+        return "bg-blue-100 text-blue-800";
+      case "not started":
+        return "bg-gray-100 text-gray-600";
+      default:
+        return "bg-gray-100 text-gray-600";
     }
   };
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(date).toLocaleString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const handleAssessmentClick = (assessment) => {
     navigate(`/Learner/Assessment/View/${assessment.id}`, {
-      state: { assessment }
+      state: { assessment },
     });
   };
 
   const calculateTotalPoints = (submission) => {
     if (!submission?.assessment?.questions) return 0;
     return submission.assessment.questions.reduce(
-      (sum, question) => sum + (parseInt(question.points) || 0), 
+      (sum, question) => sum + (parseInt(question.points) || 0),
       0
     );
   };
 
   const renderSubmissionScore = (submission, assessment) => {
-    if (!submission || !submission.status || submission.status === 'null') {
+    if (!submission || !submission.status || submission.status === "null") {
       return <div className="text-sm text-gray-600">Not Started</div>;
     }
-    if (submission.status === 'submitted' && submission.score === null) {
+    if (submission.status === "submitted" && submission.score === null) {
       return <div className="text-sm text-gray-600">Not yet graded</div>;
     }
-    
+
     const totalPoints = calculateTotalPoints(submission);
-    
+
     return submission.score !== undefined && submission.score !== null ? (
       <div className="text-2xl font-bold text-gray-900">
         {submission.score}/{totalPoints}
@@ -157,9 +177,9 @@ const LearnerCourseAssessment = () => {
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-6 overflow-auto">
-        <Header 
-          title={selectedCourse?.name || "Course"} 
-          subtitle={selectedCourse?.code} 
+        <Header
+          title={selectedCourse?.name || "Course"}
+          subtitle={selectedCourse?.code}
         />
 
         {loading && (
@@ -171,7 +191,9 @@ const LearnerCourseAssessment = () => {
         {error && (
           <div className="flex flex-col items-center justify-center min-h-[400px]">
             <AlertTriangle size={48} className="text-red-500 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Assessments</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Failed to Load Assessments
+            </h3>
             <p className="text-gray-500 text-center max-w-md mb-4">{error}</p>
             <button
               onClick={() => window.location.reload()}
@@ -189,7 +211,9 @@ const LearnerCourseAssessment = () => {
                 <div className="text-gray-400 mb-4">
                   <ClipboardList size={48} className="mx-auto" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900">No Assessments Available</h3>
+                <h3 className="text-lg font-medium text-gray-900">
+                  No Assessments Available
+                </h3>
                 <p className="text-gray-500 mt-2">
                   There are no assessments for this course yet.
                 </p>
@@ -204,24 +228,32 @@ const LearnerCourseAssessment = () => {
                   <div className="flex justify-between items-start">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          assessment.type === 'quiz' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                        }`}>
-                          {assessment.type?.toUpperCase() || 'QUIZ'}
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            assessment.type === "quiz"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-purple-100 text-purple-800"
+                          }`}
+                        >
+                          {assessment.type?.toUpperCase() || "QUIZ"}
                         </span>
                         {submissions[assessment.id] && (
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            getStatusColor(
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
                               getStatus(submissions[assessment.id]),
                               submissions[assessment.id].is_late
-                            )
-                          }`}>
+                            )}`}
+                          >
                             {getStatus(submissions[assessment.id])}
                           </span>
                         )}
                       </div>
-                      <h3 className="font-bold text-lg text-gray-800">{assessment.title}</h3>
-                      <p className="text-sm text-gray-600">{assessment.description}</p>
+                      <h3 className="font-bold text-lg text-gray-800">
+                        {assessment.title}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {assessment.description}
+                      </p>
                       <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
                           <Clock size={16} />
@@ -239,7 +271,10 @@ const LearnerCourseAssessment = () => {
                     </div>
 
                     <div className="text-right">
-                      {renderSubmissionScore(submissions[assessment.id], assessment)}
+                      {renderSubmissionScore(
+                        submissions[assessment.id],
+                        assessment
+                      )}
                     </div>
                   </div>
                 </div>

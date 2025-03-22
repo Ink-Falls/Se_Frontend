@@ -2,11 +2,10 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
-import CreateAssessmentModal from '../../components/common/Modals/Create/CreateAssessmentModal';
-import { 
-  Home, 
-  Megaphone, 
-  BookOpen, 
+import {
+  Home,
+  Megaphone,
+  BookOpen,
   ClipboardList,
   User,
   LineChart,
@@ -14,12 +13,17 @@ import {
   Clock,
   Calendar,
   Award,
-  AlertTriangle
+  AlertTriangle,
+  MoreVertical,
+  Edit2,
+  Trash2,
 } from "lucide-react";
-import { getCourseAssessments } from "../../services/assessmentService";
 import { useCourse } from "../../contexts/CourseContext";
 import { useNavigate } from "react-router-dom";
 import CreateAssessmentModal from "../../components/common/Modals/Create/CreateAssessmentModal";
+import EditAssessmentModal from "../../components/common/Modals/Edit/EditAssessmentModal";
+import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // Change this import
+import { getCourseAssessments } from "../../services/assessmentService";
 
 const TeacherCourseAssessment = () => {
   const { selectedCourse } = useCourse();
@@ -28,6 +32,10 @@ const TeacherCourseAssessment = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingAssessment, setEditingAssessment] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [assessmentToDelete, setAssessmentToDelete] = useState(null);
+  const [showMenu, setShowMenu] = useState(null);
 
   const navItems = [
     {
@@ -65,10 +73,15 @@ const TeacherCourseAssessment = () => {
   const fetchAssessments = async () => {
     try {
       setLoading(true);
-      const response = await getCourseAssessments(selectedCourse.id);
-      setAssessments(response.assessments || []);
+      const response = await getCourseAssessments(selectedCourse.id, true);
+      if (response.success) {
+        setAssessments(response.assessments || []);
+      } else {
+        throw new Error(response.message || "Failed to fetch assessments");
+      }
     } catch (err) {
-      setError(err.message || 'Failed to fetch assessments');
+      setError("Failed to fetch assessments");
+      console.error("Error fetching assessments:", err);
     } finally {
       setLoading(false);
     }
@@ -76,7 +89,7 @@ const TeacherCourseAssessment = () => {
 
   useEffect(() => {
     if (!selectedCourse?.id) {
-      navigate('/Teacher/Dashboard');
+      navigate("/Teacher/Dashboard");
       return;
     }
 
@@ -84,24 +97,32 @@ const TeacherCourseAssessment = () => {
   }, [selectedCourse, navigate]);
 
   const handleAssessmentCreated = async (newAssessment) => {
-    // Immediately refresh the assessments list after creation
-    await fetchAssessments();
-    setIsCreateModalOpen(false);
+    try {
+      // Add the new assessment to the list immediately
+      setAssessments((prev) => [newAssessment, ...prev]);
+      setIsCreateModalOpen(false);
+
+      // Optionally refresh the full list
+      await fetchAssessments();
+    } catch (err) {
+      console.error("Error handling new assessment:", err);
+      // Optionally show an error message to user
+    }
   };
 
   const handleAssessmentClick = (assessment) => {
     navigate(`/Teacher/Assessment/View/${assessment.id}`, {
-      state: { 
+      state: {
         assessment,
         // Add any additional data needed for submissions view
-        courseId: selectedCourse?.id 
-      }
+        courseId: selectedCourse?.id,
+      },
     });
   };
 
   const handleSubmissionClick = (submission, assessment) => {
     navigate(`/Teacher/Assessment/Submission/${submission.id}`, {
-      state: { 
+      state: {
         assessment,
         submission: {
           ...submission,
@@ -112,72 +133,117 @@ const TeacherCourseAssessment = () => {
           status: submission.status,
           submissionDate: submission.submit_time,
           score: submission.score,
-          maxScore: assessment.max_score
-        }
-      }
+          maxScore: assessment.max_score,
+        },
+      },
     });
   };
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(date).toLocaleString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const requiresManualGrading = (assessment) => {
     return assessment.questions?.some(
-      question => question.question_type === 'short_answer' || question.question_type === 'essay'
+      (question) =>
+        question.question_type === "short_answer" ||
+        question.question_type === "essay"
     );
   };
 
   const getSubmissionStatus = (submission, assessment) => {
-    if (!submission) return 'Not Submitted';
-    if (submission.is_late) return 'Late';
-    
-    const hasManualQuestions = assessment.questions?.some(q => 
-      q.question_type === 'short_answer' || q.question_type === 'essay'
+    if (!submission) return "Not Submitted";
+    if (submission.is_late) return "Late";
+
+    const hasManualQuestions = assessment.questions?.some(
+      (q) => q.question_type === "short_answer" || q.question_type === "essay"
     );
 
     // Force 'submitted' status if there are manual grading questions
     if (hasManualQuestions) {
-      return 'Submitted';
+      return "Submitted";
     }
-    
+
     return submission.status;
   };
 
   const getStatusColor = (submission, assessment) => {
     const status = getSubmissionStatus(submission, assessment);
-    
+
     switch (status) {
-      case 'Not Submitted':
-        return 'bg-gray-100 text-gray-600';
-      case 'Late':
-        return 'bg-red-100 text-red-800';
-      case 'Submitted':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Graded':
-        return 'bg-green-100 text-green-800';
+      case "Not Submitted":
+        return "bg-gray-100 text-gray-600";
+      case "Late":
+        return "bg-red-100 text-red-800";
+      case "Submitted":
+        return "bg-yellow-100 text-yellow-800";
+      case "Graded":
+        return "bg-green-100 text-green-800";
       default:
-        return 'bg-blue-100 text-blue-800';
+        return "bg-blue-100 text-blue-800";
     }
   };
 
   const renderSubmissionStatus = (submission, assessment) => (
-    <span className={`text-sm px-2 py-1 rounded ${getStatusColor(submission, assessment)}`}>
+    <span
+      className={`text-sm px-2 py-1 rounded ${getStatusColor(
+        submission,
+        assessment
+      )}`}
+    >
       {getSubmissionStatus(submission, assessment)}
     </span>
   );
+
+  const handleEdit = (e, assessment) => {
+    e.stopPropagation();
+    setEditingAssessment(assessment);
+    setShowMenu(null);
+  };
+
+  const handleDelete = (e, assessment) => {
+    e.stopPropagation();
+    setAssessmentToDelete(assessment);
+    setIsDeleteModalOpen(true);
+    setShowMenu(null);
+  };
+
+  const handleEditSubmit = async (updatedAssessment) => {
+    try {
+      // Mock update - just update local state
+      setAssessments((prev) =>
+        prev.map((a) => (a.id === updatedAssessment.id ? updatedAssessment : a))
+      );
+      setEditingAssessment(null);
+    } catch (err) {
+      console.error("Error updating assessment:", err);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      // Mock delete - just remove from local state
+      setAssessments((prev) =>
+        prev.filter((a) => a.id !== assessmentToDelete.id)
+      );
+      setIsDeleteModalOpen(false);
+      setAssessmentToDelete(null);
+    } catch (err) {
+      console.error("Error deleting assessment:", err);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-6 overflow-auto">
-        <Header 
+        <Header
           title={selectedCourse?.name || "Course Assessment"}
           subtitle={selectedCourse?.code}
         />
@@ -191,7 +257,9 @@ const TeacherCourseAssessment = () => {
         {error && (
           <div className="flex flex-col items-center justify-center min-h-[400px]">
             <AlertTriangle size={48} className="text-red-500 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Assessments</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Failed to Load Assessments
+            </h3>
             <p className="text-gray-500 text-center max-w-md mb-4">{error}</p>
             <button
               onClick={() => window.location.reload()}
@@ -207,7 +275,9 @@ const TeacherCourseAssessment = () => {
             <div className="text-gray-400 mb-4">
               <ClipboardList size={48} className="mx-auto" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900">No Assessments Available</h3>
+            <h3 className="text-lg font-medium text-gray-900">
+              No Assessments Available
+            </h3>
             <p className="text-gray-500 mt-2 mb-6">
               There are no assessments for this course yet.
             </p>
@@ -230,63 +300,86 @@ const TeacherCourseAssessment = () => {
                   className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg cursor-pointer"
                   onClick={() => handleAssessmentClick(assessment)}
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          assessment.type === 'quiz' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                        }`}>
-                          {assessment.type?.toUpperCase() || 'QUIZ'}
-                        </span>
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          In Progress
-                        </span>
+                  <div
+                    className="absolute top-4 right-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={() =>
+                        setShowMenu(
+                          showMenu === assessment.id ? null : assessment.id
+                        )
+                      }
+                      className="p-1 hover:bg-gray-100 rounded-full"
+                    >
+                      <MoreVertical size={20} className="text-gray-500" />
+                    </button>
+
+                    {showMenu === assessment.id && (
+                      <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-xl z-20 border">
+                        <button
+                          onClick={(e) => handleEdit(e, assessment)}
+                          className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <Edit2 size={16} />
+                          Edit Assessment
+                        </button>
+                        <button
+                          onClick={(e) => handleDelete(e, assessment)}
+                          className="w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <Trash2 size={16} />
+                          Delete Assessment
+                        </button>
                       </div>
-                      <h3 className="font-bold text-lg text-gray-800">
-                        {assessment.title}
-                      </h3>
-                      <p className="text-sm text-gray-600">{assessment.description}</p>
-                      
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-2">
-                        <div className="flex items-center gap-1">
-                          <Clock size={16} />
-                          {assessment.duration_minutes || 0} minutes
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              assessment.type === "quiz"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-purple-100 text-purple-800"
+                            }`}
+                          >
+                            {assessment.type?.toUpperCase() || "QUIZ"}
+                          </span>
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            In Progress
+                          </span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Award size={16} />
-                          Score: {assessment.passing_score || 0}/{assessment.max_score || 100}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar size={16} />
-                          Due: {assessment.due_date ? formatDate(assessment.due_date) : 'Not set'}
+                        <h3 className="font-bold text-lg text-gray-800">
+                          {assessment.title}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {assessment.description}
+                        </p>
+
+                        <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-2">
+                          <div className="flex items-center gap-1">
+                            <Clock size={16} />
+                            {assessment.duration_minutes || 0} minutes
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Award size={16} />
+                            Score: {assessment.passing_score || 0}/
+                            {assessment.max_score || 100}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Calendar size={16} />
+                            Due:{" "}
+                            {assessment.due_date
+                              ? formatDate(assessment.due_date)
+                              : "Not set"}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-
-                  {/* Add submissions preview if needed */}
-                  {assessment.submissions?.length > 0 && (
-                    <div className="mt-4 pt-4 border-t">
-                      <p className="text-sm font-medium text-gray-700 mb-2">
-                        Recent Submissions ({assessment.submissions.length})
-                      </p>
-                      <div className="space-y-2">
-                        {assessment.submissions.slice(0, 3).map((submission) => (
-                          <div
-                            key={submission.id}
-                            onClick={(e) => {
-                              e.stopPropagation(); // Prevent triggering parent click
-                              handleSubmissionClick(submission, assessment);
-                            }}
-                            className="flex justify-between items-center p-2 bg-gray-50 rounded hover:bg-gray-100"
-                          >
-                            <span className="text-sm">{submission.studentName}</span>
-                            {renderSubmissionStatus(submission, assessment)}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
@@ -307,6 +400,26 @@ const TeacherCourseAssessment = () => {
           courseId={selectedCourse?.id}
           onSuccess={handleAssessmentCreated}
         />
+
+        {editingAssessment && (
+          <EditAssessmentModal
+            isOpen={!!editingAssessment}
+            assessment={editingAssessment}
+            onClose={() => setEditingAssessment(null)}
+            onSubmit={handleEditSubmit}
+          />
+        )}
+
+        {assessmentToDelete && ( // Only show when assessmentToDelete exists
+          <DeleteModal
+            onClose={() => {
+              setIsDeleteModalOpen(false);
+              setAssessmentToDelete(null);
+            }}
+            onConfirm={handleDeleteConfirm}
+            message={`Are you sure you want to delete "${assessmentToDelete.title}"? This action cannot be undone.`}
+          />
+        )}
       </div>
     </div>
   );
