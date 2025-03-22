@@ -47,7 +47,7 @@ describe('GroupDetailsModal Component', () => {
     expect(screen.getByText(/group list/i)).toBeInTheDocument();
 
     // Check if the tabs are rendered
-    expect(screen.getByText(/existing groups/i)).toBeInTheDocument();
+    expect(screen.getByText(/^existing groups$/i)).toBeInTheDocument();
     expect(screen.getByText(/available members/i)).toBeInTheDocument();
   });
 
@@ -90,7 +90,7 @@ describe('GroupDetailsModal Component', () => {
     renderComponent();
 
     // Select a group
-    fireEvent.click(screen.getByLabelText(/select group a/i));
+    fireEvent.click(screen.getByLabelText(/^select group a$/i));
 
     // Click the delete button
     fireEvent.click(screen.getByRole('button', { name: /delete selected/i }));
