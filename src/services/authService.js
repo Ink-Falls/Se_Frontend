@@ -209,14 +209,14 @@ const verifyResetCode = async (email, code) => {
  * @returns {Promise<object>} - A response message or error.
  * @throws {Error} - If the password reset fails.
  */
-const resetPassword = async (email, password) => {
+const resetPassword = async (email, newPassword, confirmPassword) => {
   try {
     const response = await fetch(`${API_BASE_URL}/users/reset-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, newPassword, confirmPassword }),
     });
 
     const responseData = await response.json();

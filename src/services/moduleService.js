@@ -37,6 +37,17 @@ export const getModulesByCourseId = async (courseId, page = 1) => {
  */
 export const createModule = async (courseId, moduleData) => {
   try {
+    if (!courseId) {
+      throw new Error('Course ID is required');
+    }
+
+    // Format the request body
+    const formattedData = {
+      course_id: parseInt(courseId),
+      name: moduleData.name || moduleData.title,
+      description: moduleData.description || ''
+    };
+
     const response = await fetchWithInterceptor(
       `${API_BASE_URL}/modules/course/${courseId}`,
       {
@@ -44,12 +55,21 @@ export const createModule = async (courseId, moduleData) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(moduleData),
+        body: JSON.stringify(formattedData),
       }
     );
-    return await response.json();
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Failed to create module (${response.status})`);
+    }
+
+    const data = await response.json();
+    
+    // If the response has a nested module object, return that, otherwise return the whole response
+    return data.module || data;
   } catch (error) {
-    console.error('Error creating module:', error);
+    console.error('Error in createModule:', error);
     throw error;
   }
 };

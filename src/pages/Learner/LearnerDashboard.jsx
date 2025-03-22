@@ -7,12 +7,14 @@ import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import { getLearnerCourses } from "../../services/courseService"; // Add this import
 import EmptyState from "../../components/common/states/EmptyState";
 import LoadingSpinner from "../../components/common/LoadingSpinner"; // Add this import
+import { useCourse } from "../../contexts/CourseContext";
 
 const LearnerDashboard = () => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { setSelectedCourse } = useCourse();
 
   const navItems = [
     { text: "Courses", icon: <Book size={20} />, route: "/Learner/Dashboard" },
@@ -42,18 +44,13 @@ const LearnerDashboard = () => {
   }, []);
 
   const handleCourseClick = (course) => {
-    // Debug log the course data
-    console.log("Clicking course:", course);
-
-    navigate("/Learner/CourseModules", {
-      state: {
-        course: {
-          id: course.id || course.course_id, // Handle both possible ID fields
-          name: course.name,
-          code: course.code,
-        },
-      },
+    setSelectedCourse({
+      id: course.id || course.course_id,
+      name: course.name,
+      code: course.code || "No Code",
+      description: course.description
     });
+    navigate("/Learner/CourseModules");
   };
 
   return (

@@ -74,7 +74,6 @@ const TeacherCourseModules = () => {
   const [editingModule, setEditingModule] = useState(null);
   const [moduleToDelete, setModuleToDelete] = useState(null);
   const [isAddModuleOpen, setIsAddModuleOpen] = useState(false);
-  const [newModule, setNewModule] = useState({ title: "", description: "" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isCreateModuleOpen, setIsCreateModuleOpen] = useState(false);
@@ -105,6 +104,70 @@ const TeacherCourseModules = () => {
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
+
+  const fetchModules = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      if (!selectedCourse?.id) {
+        setError('No course selected. Please select a course from the dashboard.');
+        setLoading(false);
+        return;
+      }
+      
+      // Get base module data
+      const response = await getModulesByCourseId(selectedCourse.id);
+      let modulesArray = response?.modules || [];
+      
+      if (modulesArray.length === 0 && response.length > 0) {
+        modulesArray = response;
+      }
+
+      // Fetch contents for each module
+      const modulesWithContents = await Promise.all(
+        modulesArray.map(async (module) => {
+          try {
+            const moduleId = module.module_id || module.id;
+            const contentsResponse = await getModuleContents(moduleId);
+            const contents = contentsResponse?.contents || [];
+            
+            return {
+              id: moduleId,
+              title: module.name,
+              description: module.description,
+              resources: contents.map(content => ({
+                id: content.content_id || content.id,
+                title: content.name,
+                link: content.link,
+                content: content.link,
+                type: content.type || 'link'
+              })),
+              createdAt: module.createdAt,
+              updatedAt: module.updatedAt
+            };
+          } catch (error) {
+            console.error(`Error fetching contents for module ${module.id}:`, error);
+            return {
+              id: module.module_id || module.id,
+              title: module.name,
+              description: module.description,
+              resources: [],
+              createdAt: module.createdAt,
+              updatedAt: module.updatedAt
+            };
+          }
+        })
+      );
+
+      setModules(modulesWithContents);
+    } catch (error) {
+      console.error('Error fetching modules:', error);
+      setError('Failed to connect to server. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!selectedCourse?.id) {
@@ -187,13 +250,34 @@ const TeacherCourseModules = () => {
 
   const handleCreateModule = async (moduleData) => {
     try {
-      await createModule(selectedCourse.id, moduleData);
-      // After creating module, refresh the modules list
+      if (!selectedCourse?.id) {
+        throw new Error('No course selected');
+      }
+
+      // Format the data before sending
+      const formattedData = {
+        name: moduleData.name || moduleData.title,
+        description: moduleData.description,
+        course_id: parseInt(selectedCourse.id)
+      };
+
+      const newModule = await createModule(selectedCourse.id, formattedData);
+      
+      if (!newModule) {
+        throw new Error('Failed to create module');
+      }
+
+      // Explicitly wait for fetchModules to complete
       await fetchModules();
+      
+      // Close modals after successful creation and refresh
       setIsCreateModuleOpen(false);
+      setIsAddModuleOpen(false);
+      
+      return newModule;
     } catch (error) {
-      console.error("Error creating module:", error);
-      // Keep the modal open if there's an error
+      console.error('Error creating module:', error);
+      throw error;
     }
   };
 
@@ -556,20 +640,22 @@ const TeacherCourseModules = () => {
           >
             <h2 className="text-xl font-semibold mb-4">Add New Module</h2>
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                handleAddModule();
+                const formData = {
+                  name: e.target.title.value,
+                  description: e.target.description.value
+                };
+                await handleCreateModule(formData);
+                setIsAddModuleOpen(false);
               }}
             >
               <div className="mb-4">
                 <label className="block font-medium text-gray-700">Title</label>
                 <input
                   type="text"
+                  name="title"
                   placeholder="Enter title"
-                  value={newModule.title}
-                  onChange={(e) =>
-                    setNewModule({ ...newModule, title: e.target.value })
-                  }
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500"
                   required
                 />
@@ -579,11 +665,8 @@ const TeacherCourseModules = () => {
                   Description
                 </label>
                 <textarea
-                  value={newModule.description}
-                  placeholder="Enter desciption"
-                  onChange={(e) =>
-                    setNewModule({ ...newModule, description: e.target.value })
-                  }
+                  name="description"
+                  placeholder="Enter description"
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500"
                   required
                 />

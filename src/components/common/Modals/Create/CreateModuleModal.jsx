@@ -54,39 +54,37 @@ const CreateModuleModal = ({ onClose, onSubmit, courseId }) => {
         throw new Error('Module title is required');
       }
 
-      // Create the module first
+      // Format module data
       const moduleData = {
         name: formData.title.trim(),
-        description: formData.description.trim()
+        description: formData.description.trim(),
+        course_id: parseInt(courseId)
       };
 
-      const newModule = await createModule(courseId, moduleData);
+      const newModule = await onSubmit(moduleData);
 
-      // If there are resources, add them after module creation
-      if (formData.resources.length > 0) {
+      // Only handle resources if module creation was successful
+      if (newModule && formData.resources.length > 0) {
         const validResources = formData.resources.filter(r => r.title && r.link);
         
-        // Add resources one by one
-        await Promise.all(validResources.map(resource => 
-          addModuleContent(newModule.id, {
-            title: resource.title,
-            type: 'link',
-            content: resource.link
-          })
-        ));
+        for (const resource of validResources) {
+          try {
+            await addModuleContent(newModule.id || newModule.module_id, {
+              title: resource.title.trim(),
+              type: 'link',
+              content: resource.link.trim()
+            });
+          } catch (resourceError) {
+            console.error('Error adding resource:', resourceError);
+            // Continue with other resources even if one fails
+          }
+        }
       }
 
-      // Call the parent's onSubmit with the complete module data
-      if (onSubmit) {
-        await onSubmit({
-          ...newModule,
-          resources: formData.resources
-        });
-      }
-
+      // Close modal on success
       onClose();
     } catch (err) {
-      console.error('Error creating module:', err);
+      console.error('Error in module creation:', err);
       setError(err.message || 'Failed to create module');
     } finally {
       setIsLoading(false);
