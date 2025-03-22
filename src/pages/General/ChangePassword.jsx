@@ -30,7 +30,7 @@ function ChangePassword() {
     }
 
     try {
-      await resetPassword(email, password);
+      await resetPassword(email, password, confirmPassword);
       setMessage("Password reset successfully! Redirecting...");
       navigate("/PasswordConfirm", { state: { passwordReset: true }, replace: true });
     } catch (error) {
