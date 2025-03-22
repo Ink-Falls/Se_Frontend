@@ -95,10 +95,11 @@ function EditUserModal({ user, onClose, onSave }) {
         <div className="p-6 overflow-y-auto">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
                 First Name:
               </label>
               <input
+                id="first_name"
                 type="text"
                 name="first_name"
                 value={editedUser.first_name || ""}
@@ -108,10 +109,11 @@ function EditUserModal({ user, onClose, onSave }) {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="last_name"className="block text-sm font-medium text-gray-700">
                 Last Name:
               </label>
               <input
+                id="last_name"
                 type="text"
                 name="last_name"
                 value={editedUser.last_name || ""}
@@ -121,10 +123,11 @@ function EditUserModal({ user, onClose, onSave }) {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="middle_initial" className="block text-sm font-medium text-gray-700">
                 Middle Initial:
               </label>
               <input
+                id="middle_initial"
                 type="text"
                 name="middle_initial"
                 value={editedUser.middle_initial || ""}
@@ -134,10 +137,11 @@ function EditUserModal({ user, onClose, onSave }) {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email:
               </label>
               <input
+                id="email"
                 type="email"
                 name="email"
                 value={editedUser.email || ""}
@@ -147,10 +151,11 @@ function EditUserModal({ user, onClose, onSave }) {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="contact_no" className="block text-sm font-medium text-gray-700">
                 Contact No:
               </label>
               <input
+                id="contact_no"
                 type="text"
                 name="contact_no"
                 value={editedUser.contact_no || ""}
@@ -160,10 +165,11 @@ function EditUserModal({ user, onClose, onSave }) {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="birthdate" className="block text-sm font-medium text-gray-700">
                 Birthdate:
               </label>
               <input
+                id="birthdate"
                 type="date"
                 name="birth_date"
                 value={
@@ -179,10 +185,11 @@ function EditUserModal({ user, onClose, onSave }) {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="scool"className="block text-sm font-medium text-gray-700">
                 School:
               </label>
               <select
+                id="school"
                 name="school_id"
                 value={editedUser.school_id || ""}
                 onChange={handleInputChange}
@@ -198,10 +205,11 @@ function EditUserModal({ user, onClose, onSave }) {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="role"className="block text-sm font-medium text-gray-700">
                 Role:
               </label>
               <select
+                id="role"
                 name="role"
                 value={editedUser.role || ""}
                 onChange={handleInputChange}

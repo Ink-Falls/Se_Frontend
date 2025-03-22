@@ -1,178 +1,90 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { RoleBasedRoute } from '../../src/routes/RoleBasedRoute';
-import { isAuthenticated } from '../../src/utils/auth';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { describe, it, expect, vi } from 'vitest';
+import { RoleBasedRoute } from 'Se_Frontend/src/routes/RoleBasedRoute.jsx';
+import { useAuth } from 'Se_Frontend/src/contexts/AuthContext';
 
-// Mock auth utility
-vi.mock('../../src/utils/auth', () => ({
-    isAuthenticated: vi.fn(),
-}));
+vi.mock('Se_Frontend/src/contexts/AuthContext');
 
 describe('RoleBasedRoute', () => {
-    // Mock localStorage
-    const mockLocalStorage = {
-        getItem: vi.fn(),
-        setItem: vi.fn(),
-        clear: vi.fn(),
-    };
+  it('renders loading state', () => {
+    useAuth.mockReturnValue({ isAuthenticated: false, user: null, loading: true });
 
-    beforeEach(() => {
-        // Setup localStorage mock
-        global.localStorage = mockLocalStorage;
-        vi.clearAllMocks();
-    });
+    render(
+      <MemoryRouter>
+        <RoleBasedRoute allowedRoles={['admin']}>
+          <div>Protected Content</div>
+        </RoleBasedRoute>
+      </MemoryRouter>
+    );
 
-    describe('Authentication Tests', () => {
-        it('redirects to login when user is not authenticated', () => {
-            vi.mocked(isAuthenticated).mockReturnValue(false);
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+  });
 
-            render(
-                <MemoryRouter initialEntries={['/protected']}>
-                    <Routes>
-                        <Route path="/login" element={<div>Login Page</div>} />
-                        <Route
-                            path="/protected"
-                            element={
-                                <RoleBasedRoute allowedRoles={['teacher']}>
-                                    <div>Protected Content</div>
-                                </RoleBasedRoute>
-                            }
-                        />
-                    </Routes>
-                </MemoryRouter>
-            );
+  it('redirects to login if not authenticated', () => {
+    useAuth.mockReturnValue({ isAuthenticated: false, user: null, loading: false });
 
-            expect(screen.getByText('Login Page')).toBeInTheDocument();
-        });
-    });
+    render(
+      <MemoryRouter initialEntries={['/protected']}>
+        <Routes>
+          <Route
+            path="/protected"
+            element={
+              <RoleBasedRoute allowedRoles={['admin']}>
+                <div>Protected Content</div>
+              </RoleBasedRoute>
+            }
+          />
+          <Route path="/login" element={<div>Login Page</div>} />
+        </Routes>
+      </MemoryRouter>
+    );
 
-    describe('Authorization Tests', () => {
-        it('allows access for user with correct role', () => {
-            vi.mocked(isAuthenticated).mockReturnValue(true);
-            const mockToken = `header.${btoa(
-                JSON.stringify({ role: 'teacher' })
-            )}.signature`;
-            mockLocalStorage.getItem.mockReturnValue(mockToken);
+    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+    expect(screen.getByText('Login Page')).toBeInTheDocument();
+  });
 
-            render(
-                <MemoryRouter>
-                    <RoleBasedRoute allowedRoles={['teacher']}>
-                        <div>Protected Content</div>
-                    </RoleBasedRoute>
-                </MemoryRouter>
-            );
+  it('redirects to unauthorized if user role is not allowed', () => {
+    useAuth.mockReturnValue({ isAuthenticated: true, user: { role: 'learner' }, loading: false });
 
-            expect(screen.getByText('Protected Content')).toBeInTheDocument();
-        });
+    render(
+      <MemoryRouter initialEntries={['/protected']}>
+        <Routes>
+          <Route
+            path="/protected"
+            element={
+              <RoleBasedRoute allowedRoles={['admin']}>
+                <div>Protected Content</div>
+              </RoleBasedRoute>
+            }
+          />
+          <Route path="/unauthorized" element={<div>Unauthorized Page</div>} />
+        </Routes>
+      </MemoryRouter>
+    );
 
-        it('redirects to unauthorized for invalid role', () => {
-            vi.mocked(isAuthenticated).mockReturnValue(true);
-            const mockToken = `header.${btoa(
-                JSON.stringify({ role: 'student' })
-            )}.signature`;
-            mockLocalStorage.getItem.mockReturnValue(mockToken);
+    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+    expect(screen.getByText('Unauthorized Page')).toBeInTheDocument();
+  });
 
-            render(
-                <MemoryRouter initialEntries={['/protected']}>
-                    <Routes>
-                        <Route
-                            path="/unauthorized"
-                            element={<div>Unauthorized Page</div>}
-                        />
-                        <Route
-                            path="/protected"
-                            element={
-                                <RoleBasedRoute allowedRoles={['teacher']}>
-                                    <div>Protected Content</div>
-                                </RoleBasedRoute>
-                            }
-                        />
-                    </Routes>
-                </MemoryRouter>
-            );
+  it('renders children if user role is allowed', () => {
+    useAuth.mockReturnValue({ isAuthenticated: true, user: { role: 'admin' }, loading: false });
 
-            expect(screen.getByText('Unauthorized Page')).toBeInTheDocument();
-        });
+    render(
+      <MemoryRouter initialEntries={['/protected']}>
+        <Routes>
+          <Route
+            path="/protected"
+            element={
+              <RoleBasedRoute allowedRoles={['admin']}>
+                <div>Protected Content</div>
+              </RoleBasedRoute>
+            }
+          />
+        </Routes>
+      </MemoryRouter>
+    );
 
-        it('handles missing token correctly', () => {
-            vi.mocked(isAuthenticated).mockReturnValue(true);
-            mockLocalStorage.getItem.mockReturnValue(null);
-
-            render(
-                <MemoryRouter initialEntries={['/protected']}>
-                    <Routes>
-                        <Route
-                            path="/unauthorized"
-                            element={<div>Unauthorized Page</div>}
-                        />
-                        <Route
-                            path="/protected"
-                            element={
-                                <RoleBasedRoute allowedRoles={['teacher']}>
-                                    <div>Protected Content</div>
-                                </RoleBasedRoute>
-                            }
-                        />
-                    </Routes>
-                </MemoryRouter>
-            );
-
-            expect(screen.getByText('Unauthorized Page')).toBeInTheDocument();
-        });
-
-        it('handles invalid token format', () => {
-            vi.mocked(isAuthenticated).mockReturnValue(true);
-            mockLocalStorage.getItem.mockReturnValue('invalid-token-format');
-
-            render(
-                <MemoryRouter initialEntries={['/protected']}>
-                    <Routes>
-                        <Route
-                            path="/unauthorized"
-                            element={<div>Unauthorized Page</div>}
-                        />
-                        <Route
-                            path="/protected"
-                            element={
-                                <RoleBasedRoute allowedRoles={['teacher']}>
-                                    <div>Protected Content</div>
-                                </RoleBasedRoute>
-                            }
-                        />
-                    </Routes>
-                </MemoryRouter>
-            );
-
-            expect(screen.getByText('Unauthorized Page')).toBeInTheDocument();
-        });
-    });
-
-    describe('Location State Tests', () => {
-        it('preserves location state on redirect', () => {
-            vi.mocked(isAuthenticated).mockReturnValue(false);
-
-            render(
-                <MemoryRouter
-                    initialEntries={[
-                        { pathname: '/protected', state: { from: '/origin' } },
-                    ]}
-                >
-                    <Routes>
-                        <Route path="/login" element={<div>Login Page</div>} />
-                        <Route
-                            path="/protected"
-                            element={
-                                <RoleBasedRoute allowedRoles={['teacher']}>
-                                    <div>Protected Content</div>
-                                </RoleBasedRoute>
-                            }
-                        />
-                    </Routes>
-                </MemoryRouter>
-            );
-
-            expect(screen.getByText('Login Page')).toBeInTheDocument();
-        });
-    });
+    expect(screen.getByText('Protected Content')).toBeInTheDocument();
+  });
 });

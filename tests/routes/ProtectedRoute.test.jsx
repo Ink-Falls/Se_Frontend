@@ -1,104 +1,60 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { ProtectedRoute } from '../../src/routes/ProtectedRoute';
-import { isAuthenticated } from '../../src/utils/auth';
+import { describe, it, expect, vi } from 'vitest';
+import { ProtectedRoute } from 'Se_Frontend/src/routes/ProtectedRoute.jsx';
+import { useAuth } from 'Se_Frontend/src/contexts/AuthContext';
 
-// Mock the auth utility
-vi.mock('../../src/utils/auth', () => ({
-    isAuthenticated: vi.fn(),
-}));
+vi.mock('Se_Frontend/src/contexts/AuthContext');
 
 describe('ProtectedRoute', () => {
-    beforeEach(() => {
-        // Clear all mocks before each test
-        vi.clearAllMocks();
-    });
+  it('renders loading state', () => {
+    useAuth.mockReturnValue({ isAuthenticated: false, loading: true });
 
-    afterEach(() => {
-        // Clean up after each test
-        vi.resetAllMocks();
-    });
+    render(
+      <MemoryRouter>
+        <ProtectedRoute>
+          <div>Protected Content</div>
+        </ProtectedRoute>
+      </MemoryRouter>
+    );
 
-    it('should redirect to login when user is not authenticated', () => {
-        // Setup
-        vi.mocked(isAuthenticated).mockReturnValue(false);
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+  });
 
-        // Render
-        render(
-            <MemoryRouter initialEntries={['/protected']}>
-                <Routes>
-                    <Route path="/login" element={<div>Login Page</div>} />
-                    <Route
-                        path="/protected"
-                        element={
-                            <ProtectedRoute>
-                                <div>Protected Content</div>
-                            </ProtectedRoute>
-                        }
-                    />
-                </Routes>
-            </MemoryRouter>
-        );
+  it('redirects to login if not authenticated', () => {
+    useAuth.mockReturnValue({ isAuthenticated: false, loading: false });
 
-        // Assert
-        expect(screen.getByText('Login Page')).toBeInTheDocument();
-        expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
-        expect(isAuthenticated).toHaveBeenCalledTimes(1);
-    });
+    render(
+      <MemoryRouter initialEntries={['/protected']}>
+        <Routes>
+          <Route
+            path="/protected"
+            element={
+              <ProtectedRoute>
+                <div>Protected Content</div>
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/login" element={<div>Login Page</div>} />
+        </Routes>
+      </MemoryRouter>
+    );
 
-    it('should render children when user is authenticated', () => {
-        // Setup
-        vi.mocked(isAuthenticated).mockReturnValue(true);
+    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+    expect(screen.getByText('Login Page')).toBeInTheDocument();
+  });
 
-        // Render
-        render(
-            <MemoryRouter initialEntries={['/protected']}>
-                <Routes>
-                    <Route path="/login" element={<div>Login Page</div>} />
-                    <Route
-                        path="/protected"
-                        element={
-                            <ProtectedRoute>
-                                <div>Protected Content</div>
-                            </ProtectedRoute>
-                        }
-                    />
-                </Routes>
-            </MemoryRouter>
-        );
+  it('renders children if authenticated', () => {
+    useAuth.mockReturnValue({ isAuthenticated: true, loading: false });
 
-        // Assert
-        expect(screen.getByText('Protected Content')).toBeInTheDocument();
-        expect(screen.queryByText('Login Page')).not.toBeInTheDocument();
-        expect(isAuthenticated).toHaveBeenCalledTimes(1);
-    });
+    render(
+      <MemoryRouter>
+        <ProtectedRoute>
+          <div>Protected Content</div>
+        </ProtectedRoute>
+      </MemoryRouter>
+    );
 
-    it('should pass location state when redirecting to login', () => {
-        // Setup
-        vi.mocked(isAuthenticated).mockReturnValue(false);
-
-        // Render
-        render(
-            <MemoryRouter initialEntries={['/protected']}>
-                <Routes>
-                    <Route
-                        path="/login"
-                        element={<div data-testid="login">Login Page</div>}
-                    />
-                    <Route
-                        path="/protected"
-                        element={
-                            <ProtectedRoute>
-                                <div>Protected Content</div>
-                            </ProtectedRoute>
-                        }
-                    />
-                </Routes>
-            </MemoryRouter>
-        );
-
-        // Assert
-        expect(screen.getByTestId('login')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Protected Content')).toBeInTheDocument();
+  });
 });

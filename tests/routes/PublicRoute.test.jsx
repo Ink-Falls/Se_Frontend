@@ -1,185 +1,88 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, useLocation } from 'react-router-dom';
-import { PublicRoute } from '../../src/routes/PublicRoute';
-import { validateAuth, getUserRole } from '../../src/utils/auth';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { describe, it, expect, vi } from 'vitest';
+import { PublicRoute } from 'Se_Frontend/src/routes/PublicRoute.jsx';
+import { useAuth } from 'Se_Frontend/src/contexts/AuthContext';
 
-// Mock dependencies
-vi.mock('react-router-dom', async () => {
-    const actual = await vi.importActual('react-router-dom');
-    return {
-        ...actual,
-        useLocation: vi.fn(),
-    };
-});
-
-vi.mock('../../src/utils/auth', () => ({
-    validateAuth: vi.fn(),
-    getUserRole: vi.fn(),
-}));
+vi.mock('Se_Frontend/src/contexts/AuthContext');
 
 describe('PublicRoute', () => {
-    const mockLocation = { pathname: '/', state: {} };
-    const mockChild = <div data-testid="test-child">Test Child</div>;
+  it('renders children for public routes', () => {
+    useAuth.mockReturnValue({ isAuthenticated: false, user: null, loading: false });
 
-    beforeEach(() => {
-        vi.clearAllMocks();
-        useLocation.mockReturnValue(mockLocation);
-    });
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <div>Public Content</div>
+              </PublicRoute>
+            }
+          />
+        </Routes>
+      </MemoryRouter>
+    );
 
-    describe('Public Route Matching', () => {
-        it.each([
-            ['/login'],
-            ['/Enrollment'],
-            ['/Enrollment/New'],
-            ['/ForgotPassword'],
-            ['/EnrollConfirm'],
-            ['/VerifyCode'],
-            ['/ChangePassword'],
-            ['/PasswordConfirm'],
-        ])('allows access to public route %s', async (path) => {
-            useLocation.mockReturnValue({ pathname: path, state: {} });
+    expect(screen.getByText('Public Content')).toBeInTheDocument();
+  });
 
-            render(
-                <MemoryRouter>
-                    <PublicRoute>{mockChild}</PublicRoute>
-                </MemoryRouter>
-            );
+  it('renders loading state', () => {
+    useAuth.mockReturnValue({ isAuthenticated: false, user: null, loading: true });
 
-            await waitFor(() => {
-                expect(screen.getByTestId('test-child')).toBeInTheDocument();
-            });
-        });
+    render(
+      <MemoryRouter>
+        <PublicRoute>
+          <div>Public Content</div>
+        </PublicRoute>
+      </MemoryRouter>
+    );
 
-        it('handles case-insensitive route matching', async () => {
-            useLocation.mockReturnValue({ pathname: '/LOGIN', state: {} });
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+  });
 
-            render(
-                <MemoryRouter>
-                    <PublicRoute>{mockChild}</PublicRoute>
-                </MemoryRouter>
-            );
+  it('redirects to dashboard if authenticated', () => {
+    useAuth.mockReturnValue({ isAuthenticated: true, user: { role: 'learner' }, loading: false });
 
-            await waitFor(() => {
-                expect(screen.getByTestId('test-child')).toBeInTheDocument();
-            });
-        });
-    });
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <div>Public Content</div>
+              </PublicRoute>
+            }
+          />
+          <Route path="/Learner/Dashboard" element={<div>Learner Dashboard</div>} />
+        </Routes>
+      </MemoryRouter>
+    );
 
-    describe('Authentication Flow', () => {
-        it('shows loading state initially', () => {
-            render(
-                <MemoryRouter>
-                    <PublicRoute>{mockChild}</PublicRoute>
-                </MemoryRouter>
-            );
+    expect(screen.queryByText('Public Content')).not.toBeInTheDocument();
+    expect(screen.getByText('Learner Dashboard')).toBeInTheDocument();
+  });
 
-            expect(screen.getByText('Loading...')).toBeInTheDocument();
-        });
+  it('renders children for non-public routes when not authenticated', () => {
+    useAuth.mockReturnValue({ isAuthenticated: false, user: null, loading: false });
 
-        it('redirects authenticated users to appropriate dashboard', async () => {
-            validateAuth.mockResolvedValue({ valid: true });
-            getUserRole.mockReturnValue('teacher');
-            useLocation.mockReturnValue({ pathname: '/protected', state: {} });
+    render(
+      <MemoryRouter initialEntries={['/non-public']}>
+        <Routes>
+          <Route
+            path="/non-public"
+            element={
+              <PublicRoute>
+                <div>Non-Public Content</div>
+              </PublicRoute>
+            }
+          />
+        </Routes>
+      </MemoryRouter>
+    );
 
-            render(
-                <MemoryRouter>
-                    <PublicRoute>{mockChild}</PublicRoute>
-                </MemoryRouter>
-            );
-
-            await waitFor(() => {
-                expect(
-                    screen.queryByTestId('test-child')
-                ).not.toBeInTheDocument();
-            });
-        });
-
-        it.each([
-            ['teacher', '/Teacher/Dashboard'],
-            ['student_teacher', '/Teacher/Dashboard'],
-            ['learner', '/Learner/Dashboard'],
-            ['admin', '/Admin/Dashboard'],
-        ])('redirects %s to correct dashboard', async (role, expectedPath) => {
-            validateAuth.mockResolvedValue({ valid: true });
-            getUserRole.mockReturnValue(role);
-            useLocation.mockReturnValue({ pathname: '/protected', state: {} });
-
-            render(
-                <MemoryRouter>
-                    <PublicRoute>{mockChild}</PublicRoute>
-                </MemoryRouter>
-            );
-
-            await waitFor(() => {
-                const navigate = screen.queryByTestId('test-child');
-                expect(navigate).not.toBeInTheDocument();
-            });
-        });
-    });
-
-    describe('Error Handling', () => {
-        it('handles authentication errors gracefully', async () => {
-            validateAuth.mockRejectedValue(new Error('Auth Error'));
-            useLocation.mockReturnValue({ pathname: '/protected', state: {} });
-
-            render(
-                <MemoryRouter>
-                    <PublicRoute>{mockChild}</PublicRoute>
-                </MemoryRouter>
-            );
-
-            await waitFor(() => {
-                expect(screen.getByTestId('test-child')).toBeInTheDocument();
-            });
-        });
-
-        it('handles invalid roles', async () => {
-            validateAuth.mockResolvedValue({ valid: true });
-            getUserRole.mockReturnValue(null);
-            useLocation.mockReturnValue({ pathname: '/protected', state: {} });
-
-            render(
-                <MemoryRouter>
-                    <PublicRoute>{mockChild}</PublicRoute>
-                </MemoryRouter>
-            );
-
-            await waitFor(() => {
-                expect(
-                    screen.queryByTestId('test-child')
-                ).not.toBeInTheDocument();
-            });
-        });
-    });
-
-    describe('Route Protection', () => {
-        it('allows access to child component for public routes', async () => {
-            useLocation.mockReturnValue({ pathname: '/login', state: {} });
-
-            render(
-                <MemoryRouter>
-                    <PublicRoute>{mockChild}</PublicRoute>
-                </MemoryRouter>
-            );
-
-            await waitFor(() => {
-                expect(screen.getByTestId('test-child')).toBeInTheDocument();
-            });
-        });
-
-        it('skips auth check for public routes', async () => {
-            useLocation.mockReturnValue({ pathname: '/login', state: {} });
-
-            render(
-                <MemoryRouter>
-                    <PublicRoute>{mockChild}</PublicRoute>
-                </MemoryRouter>
-            );
-
-            await waitFor(() => {
-                expect(validateAuth).not.toHaveBeenCalled();
-            });
-        });
-    });
+    expect(screen.getByText('Non-Public Content')).toBeInTheDocument();
+  });
 });
