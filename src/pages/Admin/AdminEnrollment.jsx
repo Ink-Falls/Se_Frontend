@@ -33,6 +33,7 @@ function AdminEnrollment() {
   const [pendingCount, setPendingCount] = useState(0);
   const [rejectedCount, setRejectedCount] = useState(0);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const navItems = [
     { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
@@ -127,6 +128,15 @@ function AdminEnrollment() {
     fetchEnrollments();
   }, [currentPage]);
 
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage("");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
   };
@@ -136,6 +146,7 @@ function AdminEnrollment() {
       console.log("Attempting to approve enrollee:", enrolleeId);
 
       await approveEnrollment(enrolleeId);
+      setSuccessMessage("Enrollment successfully approved!");
 
       // After successful approval, refresh the data
       const updatedData = await getAllEnrollments();
@@ -176,18 +187,20 @@ function AdminEnrollment() {
       setRejectedCount(rejected);
     } catch (error) {
       console.error("Approval error:", error);
-      alert("Failed to approve enrollment. Please try again.");
+      setError(error.message || "Failed to approve enrollment");
     }
   };
 
   const handleReject = async (enrolleeId) => {
     try {
       await rejectEnrollment(enrolleeId);
-      // Use the same pattern as in handleApprove
-      const updatedData = await getAllEnrollments(currentPage);
-      const enrollmentsData = updatedData?.data || updatedData || [];
-      const enrollmentsList = enrollmentsData.enrollments || [];
+      setSuccessMessage("Enrollment rejected successfully");
 
+      // Refresh data after rejection
+      const updatedData = await getAllEnrollments(currentPage);
+      const enrollmentsList = Array.isArray(updatedData) ? updatedData : [];
+
+      // Transform the refreshed data
       const transformedEnrollees = enrollmentsList.map((enrollment) => ({
         id: enrollment.enrollment_id,
         fullName: `${enrollment.first_name} ${
@@ -204,9 +217,27 @@ function AdminEnrollment() {
         yearLevel: enrollment.year_level,
       }));
 
+      // Update all relevant state
       setEnrollees(transformedEnrollees);
+      setTotalItems(enrollmentsList.length);
+
+      // Update counts
+      const approved = enrollmentsList.filter(
+        (e) => e.status === "approved"
+      ).length;
+      const pending = enrollmentsList.filter(
+        (e) => e.status === "pending"
+      ).length;
+      const rejected = enrollmentsList.filter(
+        (e) => e.status === "rejected"
+      ).length;
+
+      setApprovedCount(approved);
+      setPendingCount(pending);
+      setRejectedCount(rejected);
     } catch (error) {
       console.error("Error rejecting enrollment:", error);
+      setError(error.message || "Failed to reject enrollment");
     }
   };
 
@@ -222,12 +253,17 @@ function AdminEnrollment() {
         await deleteEnrollment(id);
       }
 
-      // Refresh the enrollments data after deletion
-      const updatedData = await getAllEnrollments(currentPage);
-      const enrollmentsData = updatedData?.data || updatedData || [];
-      const enrollmentsList = enrollmentsData.enrollments || [];
+      setSuccessMessage(
+        `Successfully deleted ${selectedIds.length} enrollment${
+          selectedIds.length > 1 ? "s" : ""
+        }`
+      );
 
-      // Transform and update state
+      // Refresh data after deletion
+      const updatedData = await getAllEnrollments(currentPage);
+      const enrollmentsList = Array.isArray(updatedData) ? updatedData : [];
+
+      // Transform the refreshed data
       const transformedEnrollees = enrollmentsList.map((enrollment) => ({
         id: enrollment.enrollment_id,
         fullName: `${enrollment.first_name} ${
@@ -244,14 +280,18 @@ function AdminEnrollment() {
         yearLevel: enrollment.year_level,
       }));
 
+      // Update all relevant state
       setEnrollees(transformedEnrollees);
+      setTotalItems(enrollmentsList.length);
 
-      // Update pagination and stats
-      setTotalItems(updatedData?.totalItems || enrollmentsList.length);
-      setTotalPages(
-        updatedData?.totalPages || Math.ceil(enrollmentsList.length / 10) || 1
-      );
+      // Update pagination if needed
+      const newTotalPages = Math.ceil(enrollmentsList.length / 10);
+      setTotalPages(newTotalPages);
+      if (currentPage > newTotalPages) {
+        setCurrentPage(newTotalPages || 1);
+      }
 
+      // Update counts
       const approved = enrollmentsList.filter(
         (e) => e.status === "approved"
       ).length;
@@ -266,7 +306,8 @@ function AdminEnrollment() {
       setPendingCount(pending);
       setRejectedCount(rejected);
     } catch (error) {
-      console.error("Error deleting enrollment:", error);
+      console.error("Error deleting enrollments:", error);
+      setError(error.message || "Failed to delete selected enrollments");
     }
   };
 
@@ -315,6 +356,19 @@ function AdminEnrollment() {
 
         <div className="flex-1 p-[1vw] overflow-auto">
           <Header title="Manage Enrollments" />
+
+          {/* Add success/error message display */}
+          {successMessage && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+              {successMessage}
+            </div>
+          )}
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+              {error}
+            </div>
+          )}
+
           <div className="mt-4">
             <EnrolleeStats
               totalEnrollees={totalItems}

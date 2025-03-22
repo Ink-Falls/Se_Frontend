@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { X, Users, Loader, PencilIcon, Trash2 } from "lucide-react";
-import { getAllGroups, getAvailableMembers, updateGroup, deleteGroups, getGroupMembers, assignUsersToGroup, removeMember } from "../../../../services/groupService";
+import {
+  getAllGroups,
+  getAvailableMembers,
+  updateGroup,
+  deleteGroups,
+  getGroupMembers,
+  assignUsersToGroup,
+  removeMember,
+} from "../../../../services/groupService";
 import GroupMembersModal from "./GroupMembersModal";
-import EditGroupModal from '../Edit/EditGroupModal';
+import EditGroupModal from "../Edit/EditGroupModal";
 
 const GroupDetailsModal = ({ onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +29,8 @@ const GroupDetailsModal = ({ onClose }) => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedAvailableMembers, setSelectedAvailableMembers] = useState([]);
   const [assigningMembers, setAssigningMembers] = useState(false);
-  const [selectedGroupForAssignment, setSelectedGroupForAssignment] = useState(null);
+  const [selectedGroupForAssignment, setSelectedGroupForAssignment] =
+    useState(null);
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
@@ -35,7 +44,7 @@ const GroupDetailsModal = ({ onClose }) => {
         const groupsData = await getAllGroups();
         setExistingGroups(groupsData || []);
       } catch (err) {
-        setError('Failed to load existing groups');
+        setError("Failed to load existing groups");
         setExistingGroups([]);
       } finally {
         setIsLoading(false);
@@ -48,15 +57,15 @@ const GroupDetailsModal = ({ onClose }) => {
     const fetchMembers = async () => {
       try {
         setIsLoading(true);
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         if (!token) {
-          throw new Error('No token found');
+          throw new Error("No token found");
         }
         const members = await getAvailableMembers(memberType);
         setAvailableMembers(members);
       } catch (err) {
-        console.error('Error fetching members:', err);
-        setError('Failed to load available members');
+        console.error("Error fetching members:", err);
+        setError("Failed to load available members");
         setAvailableMembers([]);
       } finally {
         setIsLoading(false);
@@ -69,9 +78,9 @@ const GroupDetailsModal = ({ onClose }) => {
   }, [activeTab, memberType]);
 
   const handleGroupSelect = (groupId) => {
-    setSelectedGroups(prev => 
-      prev.includes(groupId) 
-        ? prev.filter(id => id !== groupId) 
+    setSelectedGroups((prev) =>
+      prev.includes(groupId)
+        ? prev.filter((id) => id !== groupId)
         : [...prev, groupId]
     );
   };
@@ -79,13 +88,17 @@ const GroupDetailsModal = ({ onClose }) => {
   const handleDeleteSelected = async () => {
     try {
       setIsLoading(true);
-      await deleteGroups(selectedGroups);
+      setError("");
+
+      const result = await deleteGroups(selectedGroups);
       // Refresh groups list
       const updatedGroups = await getAllGroups();
       setExistingGroups(updatedGroups);
       setSelectedGroups([]);
+      setSuccessMessage(result.message || "Groups deleted successfully");
     } catch (err) {
-      setError('Failed to delete selected groups');
+      console.error("Error deleting groups:", err);
+      setError(err.message || "Failed to delete selected groups");
     } finally {
       setIsLoading(false);
     }
@@ -103,8 +116,10 @@ const GroupDetailsModal = ({ onClose }) => {
       setExistingGroups(updatedGroups);
       setEditingGroup(null);
       setShowEditModal(false);
+      // Add success message
+      setSuccessMessage("Group updated successfully");
     } catch (err) {
-      setError('Failed to refresh groups');
+      setError("Failed to refresh groups");
     } finally {
       setIsLoading(false);
     }
@@ -114,31 +129,31 @@ const GroupDetailsModal = ({ onClose }) => {
     try {
       setLoadingMembers(true);
       setSelectedGroup(group);
-      console.log('Viewing members for group:', group);
-      
+      console.log("Viewing members for group:", group);
+
       const groupId = group.group_id || group.id;
       const members = await getGroupMembers(groupId);
-      
+
       if (Array.isArray(members)) {
-        console.log('Setting members:', members);
+        console.log("Setting members:", members);
         setSelectedGroupMembers(members);
       } else {
-        console.error('Invalid members data received:', members);
-        setError('Invalid member data format received');
+        console.error("Invalid members data received:", members);
+        setError("Invalid member data format received");
       }
-      
+
       setShowMembersModal(true);
     } catch (err) {
-      console.error('Error loading members:', err);
-      setError('Failed to load group members: ' + err.message);
+      console.error("Error loading members:", err);
+      setError("Failed to load group members: " + err.message);
     } finally {
       setLoadingMembers(false);
     }
   };
 
   const getCompatibleGroups = (memberType) => {
-    return existingGroups.filter(group => 
-      group.groupType.toLowerCase() === memberType.toLowerCase()
+    return existingGroups.filter(
+      (group) => group.groupType.toLowerCase() === memberType.toLowerCase()
     );
   };
 
@@ -148,7 +163,7 @@ const GroupDetailsModal = ({ onClose }) => {
       const updatedGroups = await getAllGroups();
       setExistingGroups(updatedGroups || []);
     } catch (err) {
-      setError('Failed to refresh groups');
+      setError("Failed to refresh groups");
     } finally {
       setIsLoading(false);
     }
@@ -159,17 +174,17 @@ const GroupDetailsModal = ({ onClose }) => {
       const members = await getAvailableMembers(memberType);
       setAvailableMembers(members);
     } catch (err) {
-      console.error('Error refreshing members:', err);
-      setError('Failed to refresh member list');
+      console.error("Error refreshing members:", err);
+      setError("Failed to refresh member list");
     }
   };
 
   const handleAssignMembers = async () => {
     if (!selectedGroupForAssignment) {
-      setError('Please select a group to assign members to');
+      setError("Please select a group to assign members to");
       return;
     }
-    
+
     try {
       setAssigningMembers(true);
       await assignUsersToGroup(
@@ -177,31 +192,27 @@ const GroupDetailsModal = ({ onClose }) => {
         selectedAvailableMembers,
         selectedGroupForAssignment.groupType
       );
-      
+
       // Refresh both groups and available members
-      await Promise.all([
-        refreshGroups(),
-        refreshMembers()
-      ]);
-      
+      await Promise.all([refreshGroups(), refreshMembers()]);
+
       // Clear selections and show success message
       setSelectedAvailableMembers([]);
       setSelectedGroupForAssignment(null);
-      setError('');
-      setSuccessMessage('Members assigned successfully');
-      
+      setError("");
+      setSuccessMessage("Members assigned successfully");
     } catch (error) {
-      console.error('Assignment error:', error);
-      setError(error.message || 'Failed to assign members');
+      console.error("Assignment error:", error);
+      setError(error.message || "Failed to assign members");
     } finally {
       setAssigningMembers(false);
     }
   };
 
   const handleSelectAvailableMember = (memberId) => {
-    setSelectedAvailableMembers(prev => 
+    setSelectedAvailableMembers((prev) =>
       prev.includes(memberId)
-        ? prev.filter(id => id !== memberId)
+        ? prev.filter((id) => id !== memberId)
         : [...prev, memberId]
     );
   };
@@ -211,21 +222,23 @@ const GroupDetailsModal = ({ onClose }) => {
       // Refresh the members list for the group
       const updatedMembers = await getGroupMembers(groupId);
       setSelectedGroupMembers(updatedMembers);
-      
+
       // Also refresh the groups list to update member counts
       const updatedGroups = await getAllGroups();
       setExistingGroups(updatedGroups);
     } catch (error) {
-      console.error('Error refreshing after member removal:', error);
-      setError('Failed to refresh member list: ' + error.message);
+      console.error("Error refreshing after member removal:", error);
+      setError("Failed to refresh member list: " + error.message);
     }
   };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className={`bg-white rounded-2xl shadow-lg w-[700px] p-8 relative ${
-        animate ? "opacity-100 scale-100" : "opacity-0 scale-95"
-      }`}>
+      <div
+        className={`bg-white rounded-2xl shadow-lg w-[700px] p-8 relative ${
+          animate ? "opacity-100 scale-100" : "opacity-0 scale-95"
+        }`}
+      >
         <button
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
           onClick={onClose}
@@ -238,7 +251,9 @@ const GroupDetailsModal = ({ onClose }) => {
         <div className="flex space-x-4 mb-6">
           <button
             className={`px-4 py-2 rounded-lg ${
-              activeTab === "groups" ? "bg-[#F6BA18] text-white" : "bg-gray-100 text-gray-600"
+              activeTab === "groups"
+                ? "bg-[#F6BA18] text-white"
+                : "bg-gray-100 text-gray-600"
             }`}
             onClick={() => setActiveTab("groups")}
           >
@@ -246,7 +261,9 @@ const GroupDetailsModal = ({ onClose }) => {
           </button>
           <button
             className={`px-4 py-2 rounded-lg ${
-              activeTab === "members" ? "bg-[#F6BA18] text-white" : "bg-gray-100 text-gray-600"
+              activeTab === "members"
+                ? "bg-[#F6BA18] text-white"
+                : "bg-gray-100 text-gray-600"
             }`}
             onClick={() => setActiveTab("members")}
           >
@@ -285,10 +302,13 @@ const GroupDetailsModal = ({ onClose }) => {
                 </button>
               )}
             </div>
-            
+
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
               {existingGroups.map((group) => (
-                <div key={group.id} className="flex items-center space-x-4 bg-gray-50 p-3 rounded-lg">
+                <div
+                  key={group.id}
+                  className="flex items-center space-x-4 bg-gray-50 p-3 rounded-lg"
+                >
                   <input
                     type="checkbox"
                     checked={selectedGroups.includes(group.id)}
@@ -304,26 +324,37 @@ const GroupDetailsModal = ({ onClose }) => {
                         <span>ID: {group.id}</span>
                       </div>
                       {/* Add members list if this group's members are loaded */}
-                      {selectedGroupMembers.length > 0 && group.id === selectedGroupMembers[0]?.groupId && (
-                        <div className="mt-2 pl-4 border-l-2 border-gray-200">
-                          <p className="text-sm font-medium text-gray-600 mb-1">Members:</p>
-                          <div className="space-y-1">
-                            {selectedGroupMembers.map(member => (
-                              <div key={member.id} className="flex items-center justify-between text-sm text-gray-600 p-2 hover:bg-gray-100 rounded">
-                                <span>{member.first_name} {member.last_name} ({member.role})</span>
-                                <button
-                                  onClick={() => handleRemoveMember(group, member)}
-                                  className="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors"
-                                  disabled={loadingMembers}
-                                  title="Remove member"
+                      {selectedGroupMembers.length > 0 &&
+                        group.id === selectedGroupMembers[0]?.groupId && (
+                          <div className="mt-2 pl-4 border-l-2 border-gray-200">
+                            <p className="text-sm font-medium text-gray-600 mb-1">
+                              Members:
+                            </p>
+                            <div className="space-y-1">
+                              {selectedGroupMembers.map((member) => (
+                                <div
+                                  key={member.id}
+                                  className="flex items-center justify-between text-sm text-gray-600 p-2 hover:bg-gray-100 rounded"
                                 >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            ))}
+                                  <span>
+                                    {member.first_name} {member.last_name} (
+                                    {member.role})
+                                  </span>
+                                  <button
+                                    onClick={() =>
+                                      handleRemoveMember(group, member)
+                                    }
+                                    className="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors"
+                                    disabled={loadingMembers}
+                                    title="Remove member"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </div>
                     <div className="flex items-center gap-3">
                       <button
@@ -343,11 +374,13 @@ const GroupDetailsModal = ({ onClose }) => {
                       >
                         <PencilIcon size={16} />
                       </button>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        group.groupType === 'learner' 
-                          ? 'bg-blue-100 text-blue-800' 
-                          : 'bg-green-100 text-green-800'
-                      }`}>
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          group.groupType === "learner"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
                         {group.groupType}
                       </span>
                     </div>
@@ -377,15 +410,17 @@ const GroupDetailsModal = ({ onClose }) => {
 
             <div className="flex items-center justify-between mb-4">
               <select
-                value={selectedGroupForAssignment?.id || ''}
+                value={selectedGroupForAssignment?.id || ""}
                 onChange={(e) => {
-                  const group = existingGroups.find(g => g.id === parseInt(e.target.value));
+                  const group = existingGroups.find(
+                    (g) => g.id === parseInt(e.target.value)
+                  );
                   setSelectedGroupForAssignment(group);
                 }}
                 className="px-3 py-2 border border-gray-300 rounded-lg"
               >
                 <option value="">Select a group to assign to...</option>
-                {getCompatibleGroups(memberType).map(group => (
+                {getCompatibleGroups(memberType).map((group) => (
                   <option key={group.id} value={group.id}>
                     {group.name} ({group.groupType})
                   </option>
@@ -400,7 +435,10 @@ const GroupDetailsModal = ({ onClose }) => {
             ) : (
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
                 {availableMembers.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between bg-gray-50 p-3 rounded-lg"
+                  >
                     <div className="flex items-center space-x-3">
                       <input
                         type="checkbox"
@@ -409,7 +447,9 @@ const GroupDetailsModal = ({ onClose }) => {
                         className="h-4 w-4 rounded border-gray-300"
                       />
                       <div className="flex flex-col">
-                        <span className="font-medium">{member.first_name} {member.last_name}</span>
+                        <span className="font-medium">
+                          {member.first_name} {member.last_name}
+                        </span>
                         <div className="flex gap-4 text-sm text-gray-600">
                           <span>{member.email}</span>
                           <span>|</span>
@@ -425,16 +465,18 @@ const GroupDetailsModal = ({ onClose }) => {
             {selectedAvailableMembers.length > 0 && (
               <div className="flex justify-end mt-4 items-center gap-4">
                 <span className="text-sm text-gray-600">
-                  {selectedGroupForAssignment 
+                  {selectedGroupForAssignment
                     ? `Assigning to: ${selectedGroupForAssignment.name}`
-                    : 'Please select a group'}
+                    : "Please select a group"}
                 </span>
                 <button
                   onClick={handleAssignMembers}
                   disabled={assigningMembers || !selectedGroupForAssignment}
                   className="px-4 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#F6BA18] hover:text-black transition-colors disabled:opacity-50"
                 >
-                  {assigningMembers ? 'Assigning...' : `Assign Selected (${selectedAvailableMembers.length})`}
+                  {assigningMembers
+                    ? "Assigning..."
+                    : `Assign Selected (${selectedAvailableMembers.length})`}
                 </button>
               </div>
             )}

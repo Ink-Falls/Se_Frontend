@@ -179,6 +179,19 @@ function AdminCourses() {
     fetchEditData();
   }, [editingCourse]);
 
+  // Add success message state
+  const [successMessage, setSuccessMessage] = useState("");
+
+  // Add effect to auto-clear success messages
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
   if (loading) {
     return (
       <div className="flex h-screen bg-gray-100">
@@ -255,6 +268,7 @@ function AdminCourses() {
       const allCourses = await getAllCourses();
       setCourses(allCourses);
       setEditingCourse(null);
+      setSuccessMessage("Course updated successfully"); // Add success message
     } catch (error) {
       console.error("Error updating course:", error);
       // Handle error (you might want to show an error message to the user)
@@ -268,6 +282,7 @@ function AdminCourses() {
       const allCourses = await getAllCourses();
       setCourses(allCourses);
       setCourseToDelete(null);
+      setSuccessMessage("Course deleted successfully"); // Add success message
     } catch (error) {
       console.error("Error deleting course:", error);
       setError("Failed to delete course");
@@ -281,6 +296,7 @@ function AdminCourses() {
       const allCourses = await getAllCourses();
       setCourses(allCourses);
       setIsAddCourseOpen(false);
+      setSuccessMessage("Course added successfully"); // Add success message
     } catch (error) {
       console.error("Error refreshing courses:", error);
       // If the immediate refresh fails, at least add the new course
@@ -293,6 +309,13 @@ function AdminCourses() {
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto">
         <Header title="Courses" />
+
+        {/* Add success message display */}
+        {successMessage && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+            {successMessage}
+          </div>
+        )}
 
         {error ? (
           <div className="flex flex-col items-center justify-center py-16 px-4">
