@@ -17,12 +17,12 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
 
         setLoading(true);
         setError(null);
-        
+
         const data = await getEnrollmentById(enrolleeId);
         if (!data) {
           throw new Error("No enrollment data found");
         }
-        
+
         setEnrollee(data);
       } catch (err) {
         console.error("Error fetching enrollee data:", err);
@@ -38,7 +38,7 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
   const handleApprove = async () => {
     try {
       setApprovalError(null); // Clear any previous error
-      
+
       if (!enrollee.year_level) {
         setApprovalError("Cannot approve: Year level is missing");
         return;
@@ -93,14 +93,14 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'approved':
-        return 'text-green-600';
-      case 'rejected':
-        return 'text-red-600';
-      case 'pending':
-        return 'text-yellow-600';
+      case "approved":
+        return "text-green-600";
+      case "rejected":
+        return "text-red-600";
+      case "pending":
+        return "text-yellow-600";
       default:
-        return 'text-gray-600';
+        return "text-gray-600";
     }
   };
 
@@ -109,26 +109,26 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
       1001: {
         name: "Asuncion Consunji Elementary School (ACES)",
         contact: "not assigned yet",
-        address: "Brgy. Imelda, Samal, Bataan"
+        address: "Brgy. Imelda, Samal, Bataan",
       },
       1002: {
         name: "University of Santo Tomas (UST)",
         contact: "(02) 3406 1611",
-        address: "España Blvd, Sampaloc, Manila"
+        address: "España Blvd, Sampaloc, Manila",
       },
       1003: {
         name: "De lasalle University (DLSU)",
         contact: "(02) 8524 4611",
-        address: "Taft Ave, Malate, Manila"
-      }
+        address: "Taft Ave, Malate, Manila",
+      },
     };
-    return schools[schoolId] || { name: 'N/A', contact: 'N/A', address: 'N/A' };
+    return schools[schoolId] || { name: "N/A", contact: "N/A", address: "N/A" };
   };
 
   const schoolInfo = getSchoolInfo(enrollee.school_id);
 
   const renderActionButtons = () => {
-    if (enrollee.status.toLowerCase() === 'pending') {
+    if (enrollee.status.toLowerCase() === "pending") {
       return (
         <>
           <button
@@ -154,7 +154,9 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
       <div className="bg-white rounded-lg p-6 w-full max-w-4xl shadow-lg max-h-[90vh] overflow-y-auto">
         {/* Modal Header */}
         <div className="flex justify-between items-center mb-6 border-b pb-4">
-          <h2 className="text-2xl font-semibold text-gray-800">Enrollee Details</h2>
+          <h2 className="text-2xl font-semibold text-gray-800">
+            Enrollee Details
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 transition-colors"
@@ -168,10 +170,14 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
           <div className="grid grid-cols-3 gap-6">
             {/* Personal Information Section */}
             <div className="col-span-3">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4">Personal Information</h3>
+              <h3 className="text-lg font-semibold text-gray-700 mb-4">
+                Personal Information
+              </h3>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">First Name</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    First Name
+                  </p>
                   <p className="text-lg text-gray-900">{enrollee.first_name}</p>
                 </div>
                 <div>
@@ -179,15 +185,21 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
                   <p className="text-lg text-gray-900">{enrollee.last_name}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Middle Initial</p>
-                  <p className="text-lg text-gray-900">{enrollee.middle_initial || 'N/A'}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Middle Initial
+                  </p>
+                  <p className="text-lg text-gray-900">
+                    {enrollee.middle_initial || "N/A"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Email</p>
                   <p className="text-lg text-gray-900">{enrollee.email}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Contact No.</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Contact No.
+                  </p>
                   <p className="text-lg text-gray-900">{enrollee.contact_no}</p>
                 </div>
                 <div>
@@ -197,7 +209,9 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Year Level</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Year Level
+                  </p>
                   <p className="text-lg text-gray-900">{enrollee.year_level}</p>
                 </div>
               </div>
@@ -205,18 +219,26 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
 
             {/* School Information Section */}
             <div className="col-span-3">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4 mt-6">School Information</h3>
+              <h3 className="text-lg font-semibold text-gray-700 mb-4 mt-6">
+                School Information
+              </h3>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">School Name</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    School Name
+                  </p>
                   <p className="text-lg text-gray-900">{schoolInfo.name}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">School Contact</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    School Contact
+                  </p>
                   <p className="text-lg text-gray-900">{schoolInfo.contact}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-sm font-medium text-gray-600">School Address</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    School Address
+                  </p>
                   <p className="text-lg text-gray-900">{schoolInfo.address}</p>
                 </div>
               </div>
@@ -224,11 +246,20 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
 
             {/* Enrollment Status */}
             <div className="col-span-3">
-              <h3 className="text-lg font-semibold text-gray-700 mb-4 mt-6">Enrollment Status</h3>
+              <h3 className="text-lg font-semibold text-gray-700 mb-4 mt-6">
+                Enrollment Status
+              </h3>
               <div className="bg-white p-4 rounded-md border">
-                <p className="text-sm font-medium text-gray-600">Current Status</p>
-                <p className={`text-lg font-medium ${getStatusColor(enrollee.status)}`}>
-                  {enrollee.status.charAt(0).toUpperCase() + enrollee.status.slice(1)}
+                <p className="text-sm font-medium text-gray-600">
+                  Current Status
+                </p>
+                <p
+                  className={`text-lg font-medium ${getStatusColor(
+                    enrollee.status
+                  )}`}
+                >
+                  {enrollee.status.charAt(0).toUpperCase() +
+                    enrollee.status.slice(1)}
                 </p>
               </div>
             </div>

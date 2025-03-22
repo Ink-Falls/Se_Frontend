@@ -8,8 +8,8 @@ const DeleteModal = ({ onClose, onConfirm }) => {
           Confirm Deletion
         </h3>
         <p className="text-sm text-gray-600 mt-2">
-          Do you want to proceed with deleting this item? This action cannot be
-          undone.
+          Are you sure you want to delete the selected item/s? This action
+          cannot be undone.
         </p>
         <div className="mt-4 flex justify-end space-x-2">
           <button
