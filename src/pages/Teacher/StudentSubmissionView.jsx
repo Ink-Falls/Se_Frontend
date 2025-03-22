@@ -101,74 +101,85 @@ const StudentSubmissionView = () => {
 
   useEffect(() => {
     const fetchSubmissionDetails = async () => {
+      if (!location.state?.submission?.id) return;
+      
       try {
         setLoading(true);
         const response = await getSubmissionDetails(location.state.submission.id);
         
         if (response.success && response.submission) {
-          // Calculate total possible points from all questions
-          const totalPossiblePoints = calculateTotalPoints(response.submission.assessment.questions);
-          
-          // Process answers to include correct answer details and auto-grading
-          const processedAnswers = {};
-          let totalAutoGradedScore = 0;
-
-          response.submission.answers.forEach(answer => {
+          // Process each answer and auto-grade MC/TF questions
+          const processedAnswers = await Promise.all(response.submission.answers.map(async (answer) => {
             const question = response.submission.assessment.questions.find(
               q => q.id === answer.question_id
             );
+            
+            if (!question) return answer;
 
             // Auto-grade multiple choice and true/false questions
-            let isAutoGraded = false;
-            let autoGradedPoints = 0;
+            if ((question.question_type === 'multiple_choice' || question.question_type === 'true_false')) {
+              const selectedOption = question.options?.find(opt => opt.id === answer.selected_option_id);
+              const isCorrect = selectedOption?.is_correct || false;
+              const points = isCorrect ? question.points : 0;
 
-            if (question?.question_type === 'multiple_choice' || question?.question_type === 'true_false') {
-              const correctOption = question.options?.find(opt => opt.is_correct);
-              const isCorrect = answer.selected_option_id === correctOption?.id;
-              
-              if (!answer.points_awarded) { // Only auto-grade if not already graded
-                autoGradedPoints = isCorrect ? question.points : 0;
-                isAutoGraded = true;
-                totalAutoGradedScore += autoGradedPoints;
+              // Auto-save grade using gradeSubmission
+              try {
+                const gradeResponse = await gradeSubmission(response.submission.id, {
+                  grades: [{
+                    questionId: answer.question_id,
+                    points: points,
+                    feedback: isCorrect ? 'Correct answer' : 'Incorrect answer'
+                  }],
+                  feedback: ''
+                });
+
+                if (gradeResponse.success) {
+                  return {
+                    ...answer,
+                    points_awarded: points,
+                    is_auto_graded: true,
+                    feedback: isCorrect ? 'Correct answer' : 'Incorrect answer'
+                  };
+                }
+              } catch (err) {
+                console.error('Error auto-grading question:', err);
               }
             }
 
-            processedAnswers[answer.question_id] = {
-              questionText: question?.question_text || 'Question not available',
-              questionType: question?.question_type,
-              maxPoints: question?.points || 0,
-              selectedAnswer: answer.selected_option?.option_text || answer.text_response || 'No answer provided',
-              selectedOptionId: answer.selected_option_id,
-              isCorrect: answer.selected_option?.is_correct || false,
-              pointsAwarded: isAutoGraded ? autoGradedPoints : answer.points_awarded,
-              feedback: isAutoGraded ? (autoGradedPoints > 0 ? 'Correct' : 'Incorrect') : answer.feedback,
-              allOptions: question?.options || [],
-              correctOption: question?.options?.find(opt => opt.is_correct),
-              answerKey: question?.answer_key,
-              isAutoGraded
-            };
-          });
+            return answer;
+          }));
 
-          // Update submission with auto-graded scores
-          const updatedSubmission = {
-            ...response.submission,
-            answers: response.submission.answers.map(answer => {
-              const processed = processedAnswers[answer.question_id];
-              return {
-                ...answer,
-                points_awarded: processed.pointsAwarded,
-                feedback: processed.feedback,
-                is_auto_graded: processed.isAutoGraded
-              };
-            })
-          };
-
-          setAnswersWithDetails(processedAnswers);
+          // Update submission details with processed answers
           setSubmissionDetails({
             ...response.submission,
-            maxScore: totalPossiblePoints,
-            answers: response.submission.answers
+            answers: processedAnswers
           });
+
+          // Update answersWithDetails
+          const answersWithDetailsMap = {};
+          processedAnswers.forEach(answer => {
+            const question = response.submission.assessment.questions.find(
+              q => q.id === answer.question_id
+            );
+            
+            if (question) {
+              answersWithDetailsMap[answer.question_id] = {
+                ...answer,
+                questionText: question.question_text,
+                questionType: question.question_type,
+                maxPoints: question.points,
+                selectedAnswer: answer.selected_option?.option_text || answer.text_response || 'No answer provided',
+                isCorrect: answer.selected_option?.is_correct || false,
+                selectedOptionId: answer.selected_option_id,
+                allOptions: question.options || [],
+                answerKey: question.answer_key,
+                isAutoGraded: answer.is_auto_graded
+              };
+            }
+          });
+
+          setAnswersWithDetails(answersWithDetailsMap);
+          setQuestions(response.submission.assessment.questions || []);
         }
       } catch (err) {
         console.error('Error fetching submission:', err);
@@ -178,9 +189,7 @@ const StudentSubmissionView = () => {
       }
     };
 
-    if (location.state?.submission?.id) {
-      fetchSubmissionDetails();
-    }
+    fetchSubmissionDetails();
   }, [location.state?.submission?.id]);
 
   useEffect(() => {

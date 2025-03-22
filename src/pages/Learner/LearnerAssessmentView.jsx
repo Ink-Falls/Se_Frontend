@@ -812,25 +812,47 @@ const LearnerAssessmentView = () => {
         </p>
         {existingSubmission?.answers ? (
           <div className="mt-4 text-2xl font-bold">
-            {/* Calculate total score with updated logic */}
             {(() => {
               const totalPoints = calculateTotalPoints(questions);
+              console.log('Questions Array:', questions);
+              console.log('Total possible points:', totalPoints);
+              
               const score = existingSubmission.answers.reduce((sum, answer) => {
-                // First check points_awarded
-                if (answer.points_awarded !== null) {
-                  return sum + (parseInt(answer.points_awarded) || 0);
+                // Log the full question object for debugging
+                const question = questions.find(q => q.id === answer.question_id);
+                console.log('Full Question Object:', question);
+                
+                if (!question) return sum;
+
+                // For multiple choice and true/false questions
+                if (['multiple_choice', 'true_false'].includes(question.question_type)) {
+                  // If points were manually awarded, use them
+                  if (answer.points_awarded !== null) {
+                    console.log('Using manually awarded points:', answer.points_awarded);
+                    return sum + parseInt(answer.points_awarded);
+                  }
+
+                  // Get selected option from question's options array
+                  const selectedOption = question.options?.find(opt => opt.id === answer.selected_option_id);
+                  console.log('Selected option:', selectedOption);
+
+                  // Check if the selected option exists and is correct
+                  if (selectedOption && selectedOption.is_correct) {
+                    console.log('Correct answer, adding points:', question.points);
+                    return sum + parseInt(question.points);
+                  }
+                  
+                  console.log('Incorrect answer or no selection, no points added');
+                  return sum;
                 }
 
-                // If points_awarded is null, calculate based on is_correct for multiple choice/true false
-                if (answer.selected_option_id && answer.question?.question_type in ['multiple_choice', 'true_false']) {
-                  const isCorrect = answer.selected_option?.is_correct || false;
-                  return sum + (isCorrect ? (answer.question?.points || 0) : 0);
-                }
-
-                // For other question types without points_awarded, return 0
-                return sum;
+                // For other question types (essay, short_answer)
+                return sum + (parseInt(answer.points_awarded) || 0);
               }, 0);
 
+              console.log('Final score:', score);
+              console.log('Total points possible:', totalPoints);
+              
               return `Score: ${score}/${totalPoints}`;
             })()}
           </div>
