@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Users, Loader, PencilIcon, Trash2 } from "lucide-react";
-import { getAllGroups, getAvailableMembers, updateGroup, deleteGroups, getGroupMembers, assignUsersToGroup } from "../../../../services/groupService";
+import { getAllGroups, getAvailableMembers, updateGroup, deleteGroups, getGroupMembers, assignUsersToGroup, removeMember } from "../../../../services/groupService";
 import GroupMembersModal from "./GroupMembersModal";
 import EditGroupModal from '../Edit/EditGroupModal';
 
@@ -208,15 +208,16 @@ const GroupDetailsModal = ({ onClose }) => {
 
   const handleMemberRemoved = async (groupId) => {
     try {
-      // Refresh the members list for the current group
+      // Refresh the members list for the group
       const updatedMembers = await getGroupMembers(groupId);
       setSelectedGroupMembers(updatedMembers);
       
-      // Refresh available members list
-      const newAvailableMembers = await getAvailableMembers(memberType);
-      setAvailableMembers(newAvailableMembers);
+      // Also refresh the groups list to update member counts
+      const updatedGroups = await getAllGroups();
+      setExistingGroups(updatedGroups);
     } catch (error) {
-      setError('Failed to refresh members list');
+      console.error('Error refreshing after member removal:', error);
+      setError('Failed to refresh member list: ' + error.message);
     }
   };
 

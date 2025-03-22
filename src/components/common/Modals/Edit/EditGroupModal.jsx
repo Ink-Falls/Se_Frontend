@@ -1,55 +1,20 @@
-import React, { useState, useEffect } from "react";
-import { X, Plus, Trash2, Users, Loader } from "lucide-react";
-import { getAvailableMembers, updateGroup, getGroupMembers, updateGroupMembers } from "../../../../services/groupService";
+import React, { useState } from "react";
+import { X, Loader } from "lucide-react";
+import { updateGroup } from "../../../../services/groupService";
 
 const EditGroupModal = ({ group, isOpen, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
     name: group.name,
-    groupType: group.groupType
+    groupType: group.groupType  // Keep in state but don't show in UI
   });
-  const [availableMembers, setAvailableMembers] = useState([]);
-  const [currentMembers, setCurrentMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [membersToAdd, setMembersToAdd] = useState([]);
-  const [membersToRemove, setMembersToRemove] = useState([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const [members, currentGroupMembers] = await Promise.all([
-          getAvailableMembers(group.groupType),
-          getGroupMembers(group.id)
-        ]);
-        setAvailableMembers(members);
-        setCurrentMembers(currentGroupMembers);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, [group]);
 
   const handleInputChange = (e) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
     }));
-  };
-
-  const handleAddMember = (member) => {
-    setMembersToAdd(prev => [...prev, member.id]);
-    setAvailableMembers(prev => prev.filter(m => m.id !== member.id));
-    setCurrentMembers(prev => [...prev, member]);
-  };
-
-  const handleRemoveMember = (member) => {
-    setMembersToRemove(prev => [...prev, member.id]);
-    setCurrentMembers(prev => prev.filter(m => m.id !== member.id));
-    setAvailableMembers(prev => [...prev, member]);
   };
 
   const handleSubmit = async (e) => {
@@ -59,10 +24,8 @@ const EditGroupModal = ({ group, isOpen, onClose, onUpdate }) => {
       
       // Format update data according to API requirements
       const updateData = {
-        name: formData.name,
-        groupType: formData.groupType,
-        addUserIds: membersToAdd,
-        removeUserIds: membersToRemove
+        name: formData.name.trim(),
+        groupType: formData.groupType // Keep the original group type
       };
 
       await updateGroup(group.id, updateData);
@@ -79,7 +42,7 @@ const EditGroupModal = ({ group, isOpen, onClose, onUpdate }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Edit Group</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
@@ -94,76 +57,19 @@ const EditGroupModal = ({ group, isOpen, onClose, onUpdate }) => {
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">Group Name</label>
-              <input
-                id = "name"
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">Group Type</label>
-              <select
-                id="groupType"
-                name="groupType"
-                value={formData.groupType}
-                onChange={handleInputChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                required
-              >
-                <option value="learner">Learner</option>
-                <option value="student_teacher">Student Teacher</option>
-              </select>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-medium mb-2">Current Members</h3>
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                {currentMembers.map(member => (
-                  <div key={member.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                    <div>
-                      <p className="font-medium">{member.first_name} {member.last_name}</p>
-                      <p className="text-sm text-gray-600">{member.email}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveMember(member)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-medium mb-2">Available Members</h3>
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                {availableMembers.map(member => (
-                  <div key={member.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                    <div>
-                      <p className="font-medium">{member.first_name} {member.last_name}</p>
-                      <p className="text-sm text-gray-600">{member.email}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleAddMember(member)}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      <Plus size={18} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              Group Name
+            </label>
+            <input
+              id="name"
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+              required
+            />
           </div>
 
           <div className="mt-6 flex justify-end space-x-3">

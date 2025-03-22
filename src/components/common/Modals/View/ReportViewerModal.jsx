@@ -1,14 +1,14 @@
 import React from 'react';
 import { X, Printer, Trash2, AlertCircle } from 'lucide-react';
 
-const ReportViewerModal = ({ isOpen, onClose, pdfUrl, onPrint, onDelete, error }) => {
+const ReportViewerModal = ({ isOpen, onClose, pdfUrl, onPrint, onDelete, error, title = "Report" }) => {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-5xl h-[80vh] flex flex-col">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Users Report</h2>
+          <h2 className="text-xl font-semibold">{title}</h2>
           <div className="flex items-center gap-4">
             {!error && (
               <>
