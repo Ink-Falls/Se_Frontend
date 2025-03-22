@@ -31,6 +31,7 @@ const TeacherAssessmentView = () => {
   const [submissionsLoading, setSubmissionsLoading] = useState(true);
   const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
   const [submissionData, setSubmissionData] = useState(null);
+  const [submissionDetailsMap, setSubmissionDetailsMap] = useState({});
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -355,6 +356,29 @@ const TeacherAssessmentView = () => {
     fetchSubmissions();
   }, [assessment?.id]);
 
+  useEffect(() => {
+    const fetchSubmissionDetails = async () => {
+      if (!submissions.length) return;
+      
+      try {
+        const detailsMap = {};
+        await Promise.all(
+          submissions.map(async (submission) => {
+            const response = await getSubmissionDetails(submission.id);
+            if (response.success) {
+              detailsMap[submission.id] = response.submission;
+            }
+          })
+        );
+        setSubmissionDetailsMap(detailsMap);
+      } catch (error) {
+        console.error('Error fetching submission details:', error);
+      }
+    };
+
+    fetchSubmissionDetails();
+  }, [submissions]);
+
   const handleCreateQuestion = async (questionData) => {
     try {
       // Base question data that's common for all types
@@ -540,6 +564,16 @@ const TeacherAssessmentView = () => {
     );
   };
 
+  const formatDate = (date) => {
+    return new Date(date).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const renderSubmissionsSection = () => (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -620,9 +654,9 @@ const TeacherAssessmentView = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-600">
-                          {submission.submit_time // Changed from submission.submit_time
-                            ? new Date(submission.submit_time).toLocaleString()
-                            : "Not submitted"}
+                          {submissionDetailsMap[submission.id]?.submit_time ? 
+                            formatDate(submissionDetailsMap[submission.id].submit_time) : 
+                            'Not submitted'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

@@ -149,42 +149,37 @@ export const createSubmission = async (assessmentId) => {
  */
 export const getAssessmentSubmissions = async (assessmentId, page = 1, limit = 20) => {
   try {
-    const url = new URL(`${API_BASE_URL}/assessments/${assessmentId}/submissions`);
-    url.searchParams.append('page', page);
-    url.searchParams.append('limit', limit);
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/assessments/${assessmentId}/submissions?page=${page}&limit=${limit}`,
+      { method: 'GET' }
+    );
 
-    const response = await fetchWithInterceptor(url.toString());
     const data = await response.json();
-
-    if (data.success) {
-      // Transform the submissions data
-      const transformedSubmissions = (data.submissions || []).map(submission => ({
-        ...submission,
-        studentName: `${submission.user?.first_name || ''} ${submission.user?.last_name || ''}`.trim() || 'Unknown',
-        studentId: submission.user?.id || 'N/A', // Updated to use user.id
-        submissionDate: submission.submit_time,
-        start_time: submission.start_time ? new Date(submission.start_time) : null,
-        submit_time: submission.submit_time ? new Date(submission.submit_time) : null
-      }));
-
-      return {
-        success: true,
-        submissions: transformedSubmissions,
-        pagination: {
-          total: data.pagination?.total || 0,
-          pages: data.pagination?.pages || 1,
-          page: data.pagination?.page || 1,
-          limit: data.pagination?.limit || limit
-        }
-      };
+    
+    // Transform submission data to include auto-graded points
+    if (data.success && data.submissions) {
+      data.submissions = data.submissions.map(submission => {
+        let totalPoints = 0;
+        
+        submission.answers?.forEach(answer => {
+          if (answer.question?.question_type === 'multiple_choice' || 
+              answer.question?.question_type === 'true_false') {
+            const isCorrect = answer.selected_option?.is_correct;
+            answer.points_awarded = isCorrect ? answer.question.points : 0;
+            totalPoints += answer.points_awarded;
+          } else if (answer.points_awarded) {
+            totalPoints += answer.points_awarded;
+          }
+        });
+        
+        return {
+          ...submission,
+          total_score: totalPoints
+        };
+      });
     }
 
-    return {
-      success: false,
-      message: data.message || 'Failed to fetch submissions',
-      submissions: [],
-      pagination: { total: 0, pages: 1, page: 1, limit }
-    };
+    return data;
   } catch (error) {
     console.error('Error fetching submissions:', error);
     throw error;
@@ -262,6 +257,7 @@ export const submitAssessment = async (submissionId) => {
     // If there are manual grading questions, force status to 'submitted'
     // even if multiple choice questions are auto-graded
     const status = hasManualQuestions ? 'submitted' : 'graded';
+    const submit_time = new Date().toISOString(); // Add this line
 
     const response = await fetchWithInterceptor(
       `${API_BASE_URL}/assessments/submissions/${submissionId}/submit`,
@@ -272,7 +268,7 @@ export const submitAssessment = async (submissionId) => {
         },
         body: JSON.stringify({
           status,
-          submit_time: new Date().toISOString()
+          submit_time // Include submit_time in payload
         })
       }
     );
@@ -322,8 +318,17 @@ export const getUserSubmission = async (assessmentId, includeAnswers = false, pa
             ...answer.selected_option,
             option_text: answer.selected_option.option_text || answer.selected_option.text || ''
           } : null,
-          text_response: answer.text_response || ''
-        }))
+          text_response: answer.text_response || '',
+          // Include both auto-graded and manual grades
+          points_awarded: answer.points_awarded || 0,
+          is_auto_graded: answer.is_auto_graded || false,
+          manual_grade: answer.manual_grade || null,
+          feedback: answer.feedback || ''
+        })),
+        // Calculate total score combining both auto and manual grades
+        total_score: data.submission.answers?.reduce((sum, answer) => 
+          sum + (parseInt(answer.points_awarded) || 0), 0
+        ) || 0
       };
 
       return {
@@ -331,7 +336,6 @@ export const getUserSubmission = async (assessmentId, includeAnswers = false, pa
         submission
       };
     }
-
     return data;
   } catch (error) {
     console.error('Error fetching user submission:', error);
@@ -380,8 +384,43 @@ export const getSubmissionDetails = async (submissionId) => {
     });
 
     if (!response.ok) throw new Error('Failed to fetch submission details');
-    return await response.json();
+    const data = await response.json();
+
+    if (data.success && data.submission) {
+      // Process auto-grading for multiple choice and true/false questions
+      const processedSubmission = {
+        ...data.submission,
+        answers: data.submission.answers.map(answer => {
+          const question = data.submission.assessment.questions.find(q => q.id === answer.question_id);
+          
+          if (question?.question_type === 'multiple_choice' || question?.question_type === 'true_false') {
+            // Find the selected option
+            const selectedOption = question.options.find(opt => opt.id === answer.selected_option_id);
+            
+            // Auto-grade based on correctness
+            if (!answer.points_awarded) { // Only auto-grade if not already graded
+              return {
+                ...answer,
+                points_awarded: selectedOption?.is_correct ? question.points : 0,
+                is_auto_graded: true,
+                feedback: selectedOption?.is_correct ? 'Correct answer' : 'Incorrect answer'
+              };
+            }
+          }
+          
+          return answer;
+        })
+      };
+
+      return {
+        success: true,
+        submission: processedSubmission
+      };
+    }
+
+    return data;
   } catch (error) {
+    console.error('Error in getSubmissionDetails:', error);
     throw error;
   }
 };
