@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import EnrolleeStatusModal from "/src/components/common/Modals/Edit/EnrolleeStatusModal.jsx";
 import ReportViewerModal from "../../common/Modals/View/ReportViewerModal";
-import { generateEnrollmentReport } from "../../../services/enrollmentReportService";
+import { generateEnrollmentReport } from "../../../services/reportService";
+import { getAllEnrollments } from '../../../services/enrollmentService';
 
 function EnrolleeTable({
   enrollees,
@@ -24,6 +25,7 @@ function EnrolleeTable({
   const [selectedIds, setSelectedIds] = useState([]);
   const [filterStatus, setFilterStatus] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [error, setError] = useState(null); // Add this line
 
   // State for modals
   const [selectedEnrollee, setSelectedEnrollee] = useState(null);
@@ -32,6 +34,7 @@ function EnrolleeTable({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportUrl, setReportUrl] = useState(null);
+  const [reportError, setReportError] = useState(null);
 
   // Handle checkbox selection
   const handleCheckboxChange = (id) => {
@@ -93,14 +96,38 @@ function EnrolleeTable({
 
   const handleGenerateReport = async () => {
     try {
-      const doc = await generateEnrollmentReport(filteredEnrollees);
+      setError(null);
+      setReportError(null);
+      
+      // Format enrollments data for report
+      const formattedEnrollments = enrollees.map(enrollee => ({
+        id: enrollee.id,
+        fullName: enrollee.fullName,
+        status: enrollee.status,
+        enrollmentDate: enrollee.enrollmentDate
+      }));
+
+      const doc = await generateEnrollmentReport(formattedEnrollments);
       const pdfBlob = doc.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
+      
       setReportUrl(pdfUrl);
       setShowReportModal(true);
     } catch (error) {
       console.error('Error generating report:', error);
+      setError('Failed to generate enrollment report');
+      setReportError('Failed to generate enrollment report');
+      setShowReportModal(true);
     }
+  };
+
+  const handleCloseReport = () => {
+    if (reportUrl) {
+      URL.revokeObjectURL(reportUrl);
+    }
+    setReportUrl(null);
+    setReportError(null);
+    setShowReportModal(false);
   };
 
   const handlePrintReport = () => {
@@ -360,10 +387,12 @@ function EnrolleeTable({
 
       <ReportViewerModal
         isOpen={showReportModal}
-        onClose={() => setShowReportModal(false)}
+        onClose={handleCloseReport}
         pdfUrl={reportUrl}
         onPrint={handlePrintReport}
         onDelete={handleDeleteReport}
+        error={reportError}
+        title="Enrollment Report"
       />
     </div>
   );

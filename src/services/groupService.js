@@ -540,3 +540,57 @@ export const assignUsersToGroup = async (groupId, userIds, groupType) => {
     throw error;
   }
 };
+
+/**
+ * Removes a member from a group
+ * @param {number} groupId - The group ID
+ * @param {number} userId - The user ID to remove
+ * @returns {Promise<boolean>} True if successful
+ */
+export const removeMember = async (groupId, userId) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    // Parse and validate IDs
+    const parsedGroupId = parseInt(groupId);
+    const parsedUserId = parseInt(userId);
+
+    if (isNaN(parsedGroupId) || isNaN(parsedUserId)) {
+      throw new Error('Invalid group ID or user ID');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/groups/${parsedGroupId}/members/${parsedUserId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'remove',
+        userId: parsedUserId
+      })
+    });
+
+    // Handle non-OK responses before trying to parse JSON
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({
+        message: `Server returned ${response.status}`
+      }));
+      throw new Error(errorData.message || 'Failed to remove member');
+    }
+
+    // Try to parse successful response
+    const data = await response.json().catch(() => ({
+      success: true,
+      message: 'Member removed successfully'
+    }));
+
+    return data;
+  } catch (error) {
+    console.error('Error removing member:', error);
+    throw error;
+  }
+};

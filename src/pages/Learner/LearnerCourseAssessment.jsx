@@ -1,116 +1,28 @@
 import React, { useState, useEffect } from "react";
-import Sidebar, { SidebarItem } from "../../components/common/layout/Sidebar";
+import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
-import { Book, Bell } from "lucide-react";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import {
-  MoreVertical,
-  Plus,
-  ChevronDown,
-  Edit,
-  Trash2,
   Home,
   Megaphone,
   BookOpen,
   ClipboardList,
-  User,
-  LineChart,
+  Clock,
+  Calendar,
+  Award,
+  AlertTriangle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCourse } from "../../contexts/CourseContext";
+import { getCourseAssessments, getUserSubmission } from "../../services/assessmentService";
 
 const LearnerCourseAssessment = () => {
   const { selectedCourse } = useCourse();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!selectedCourse?.id) {
-      navigate('/Learner/Dashboard');
-    }
-  }, [selectedCourse, navigate]);
-
-  const [assessments, setAssessments] = useState([
-    {
-      id: 1,
-      title: "Midterm Exam",
-      status: "Not Started",
-    },
-    {
-      id: 2,
-      title: "Final Project",
-      status: "In Progress",
-    },
-    {
-      id: 3,
-      title: "Quiz 1",
-      status: "Completed",
-    },
-  ]);
-
-  const [expandedAssessments, setExpandedAssessments] = useState([]);
-  const [dropdownOpen, setDropdownOpen] = useState(null);
-  const [editingAssessment, setEditingAssessment] = useState(null);
-  const [assessmentToDelete, setAssessmentToDelete] = useState(null);
-  const [isAddAssessmentOpen, setIsAddAssessmentOpen] = useState(false);
-  const [newAssessment, setNewAssessment] = useState({
-    title: "",
-    description: "",
-    dueDate: "",
-    status: "Not Started",
-  });
-
-  const toggleAssessment = (id) => {
-    setExpandedAssessments((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
-    );
-  };
-
-  const toggleDropdown = (id, event) => {
-    event.stopPropagation();
-    setDropdownOpen(dropdownOpen === id ? null : id);
-  };
-
-  const handleEdit = (assessment) => {
-    setEditingAssessment(assessment);
-    setDropdownOpen(null);
-  };
-
-  const saveAssessmentChanges = (updatedAssessment) => {
-    setAssessments((prev) =>
-      prev.map((a) => (a.id === updatedAssessment.id ? updatedAssessment : a))
-    );
-    setEditingAssessment(null);
-  };
-
-  const confirmDelete = () => {
-    setAssessments((prev) =>
-      prev.filter((a) => a.id !== assessmentToDelete.id)
-    );
-    setAssessmentToDelete(null);
-  };
-
-  const handleAddAssessment = () => {
-    if (
-      newAssessment.title.trim() &&
-      newAssessment.description.trim() &&
-      newAssessment.dueDate.trim()
-    ) {
-      const newId = assessments.length + 1;
-      setAssessments([...assessments, { id: newId, ...newAssessment }]);
-      setIsAddAssessmentOpen(false);
-      setNewAssessment({
-        title: "",
-        description: "",
-        dueDate: "",
-        status: "Not Started",
-      });
-    }
-  };
-
-  const handleAssessmentClick = (assessment) => {
-    navigate(`/Learner/Assessment/View/${assessment.id}`, {
-      state: { assessment },
-    });
-  };
+  const [assessments, setAssessments] = useState([]);
+  const [submissions, setSubmissions] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const navItems = [
     { text: "Home", icon: <Home size={20} />, route: "/Learner/Dashboard" },
@@ -131,6 +43,116 @@ const LearnerCourseAssessment = () => {
     },
   ];
 
+  useEffect(() => {
+    if (!selectedCourse?.id) {
+      navigate('/Learner/Dashboard');
+      return;
+    }
+
+    const fetchAssessmentsAndSubmissions = async () => {
+      try {
+        setLoading(true);
+        const assessmentsData = await getCourseAssessments(selectedCourse.id, true); // Add true to include questions
+        const courseAssessments = assessmentsData.assessments || [];
+
+        // Fetch user's submission for each assessment with full details
+        const submissionsMap = {};
+        await Promise.all(courseAssessments.map(async (assessment) => {
+          try {
+            const submissionData = await getUserSubmission(assessment.id, true); // Add true to include answers
+            if (submissionData.success && submissionData.submission) {
+              submissionsMap[assessment.id] = {
+                ...submissionData.submission,
+                assessment: assessment // Include assessment details with questions
+              };
+            }
+          } catch (err) {
+            console.error(`Error fetching submission for assessment ${assessment.id}:`, err);
+          }
+        }));
+
+        setAssessments(courseAssessments);
+        setSubmissions(submissionsMap);
+      } catch (err) {
+        setError(err.message || 'Failed to fetch assessments');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssessmentsAndSubmissions();
+  }, [selectedCourse, navigate]);
+
+  const getStatus = (submission) => {
+    if (!submission) return 'Not Started';
+    if (submission.is_late) return 'Late';
+    if (!submission.status || submission.status === 'null') return 'Not Started';
+  
+    // Check if assessment has any manual grading questions (essay or short_answer)
+    const hasManualGradingQuestions = submission.assessment?.questions?.some(
+      q => q.question_type === 'essay' || q.question_type === 'short_answer'
+    );
+  
+    // If there are manual grading questions, always show as "Submitted" until fully graded
+    if (hasManualGradingQuestions && submission.status !== 'graded') {
+      return 'Submitted';
+    }
+  
+    return submission.status;
+  };
+
+  const getStatusColor = (status, isLate = false) => {
+    if (isLate) return "bg-red-100 text-red-800";
+    switch (status?.toLowerCase()) {
+      case 'graded': return "bg-green-100 text-green-800";
+      case 'submitted': return "bg-yellow-100 text-yellow-800";
+      case 'in_progress': return "bg-blue-100 text-blue-800";
+      case 'not started': return "bg-gray-100 text-gray-600";
+      default: return "bg-gray-100 text-gray-600";
+    }
+  };
+
+  const formatDate = (date) => {
+    return new Date(date).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const handleAssessmentClick = (assessment) => {
+    navigate(`/Learner/Assessment/View/${assessment.id}`, {
+      state: { assessment }
+    });
+  };
+
+  const calculateTotalPoints = (submission) => {
+    if (!submission?.assessment?.questions) return 0;
+    return submission.assessment.questions.reduce(
+      (sum, question) => sum + (parseInt(question.points) || 0), 
+      0
+    );
+  };
+
+  const renderSubmissionScore = (submission, assessment) => {
+    if (!submission || !submission.status || submission.status === 'null') {
+      return <div className="text-sm text-gray-600">Not Started</div>;
+    }
+    if (submission.status === 'submitted' && submission.score === null) {
+      return <div className="text-sm text-gray-600">Not yet graded</div>;
+    }
+    
+    const totalPoints = calculateTotalPoints(submission);
+    
+    return submission.score !== undefined && submission.score !== null ? (
+      <div className="text-2xl font-bold text-gray-900">
+        {submission.score}/{totalPoints}
+      </div>
+    ) : null;
+  };
+
   return (
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar navItems={navItems} />
@@ -140,43 +162,91 @@ const LearnerCourseAssessment = () => {
           subtitle={selectedCourse?.code} 
         />
 
-        {/* Assessment List */}
-        <div className="flex flex-col gap-4 mt-4">
-          {assessments.map((assessment) => (
-            <div
-              key={assessment.id}
-              className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg cursor-pointer"
-              onClick={() => handleAssessmentClick(assessment)}
+        {loading && (
+          <div className="flex items-center justify-center min-h-[400px]">
+            <LoadingSpinner />
+          </div>
+        )}
+
+        {error && (
+          <div className="flex flex-col items-center justify-center min-h-[400px]">
+            <AlertTriangle size={48} className="text-red-500 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Assessments</h3>
+            <p className="text-gray-500 text-center max-w-md mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
             >
-              {/* Assessment Header */}
-              <div className="flex justify-between items-center cursor-pointer">
-                <div
-                  className="w-full"
-                  onClick={() => toggleAssessment(assessment.id)}
-                >
-                  <p className="text-xs text-gray-500">ASSESSMENT</p>
-                  <h3 className="font-bold text-lg text-gray-800">
-                    {assessment.title}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Status:{" "}
-                    <span
-                      className={`font-semibold ${
-                        assessment.status === "Completed"
-                          ? "text-green-600"
-                          : assessment.status === "In Progress"
-                          ? "text-yellow-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {assessment.status}
-                    </span>
-                  </p>
+              Try Again
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && (
+          <div className="flex flex-col gap-4 mt-4">
+            {assessments.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+                <div className="text-gray-400 mb-4">
+                  <ClipboardList size={48} className="mx-auto" />
                 </div>
+                <h3 className="text-lg font-medium text-gray-900">No Assessments Available</h3>
+                <p className="text-gray-500 mt-2">
+                  There are no assessments for this course yet.
+                </p>
               </div>
-            </div>
-          ))}
-        </div>
+            ) : (
+              assessments.map((assessment) => (
+                <div
+                  key={assessment.id}
+                  className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg cursor-pointer"
+                  onClick={() => handleAssessmentClick(assessment)}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          assessment.type === 'quiz' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                        }`}>
+                          {assessment.type?.toUpperCase() || 'QUIZ'}
+                        </span>
+                        {submissions[assessment.id] && (
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            getStatusColor(
+                              getStatus(submissions[assessment.id]),
+                              submissions[assessment.id].is_late
+                            )
+                          }`}>
+                            {getStatus(submissions[assessment.id])}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="font-bold text-lg text-gray-800">{assessment.title}</h3>
+                      <p className="text-sm text-gray-600">{assessment.description}</p>
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <Clock size={16} />
+                          {assessment.duration_minutes} minutes
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Award size={16} />
+                          Passing: {assessment.passing_score}%
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar size={16} />
+                          Due: {formatDate(assessment.due_date)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      {renderSubmissionScore(submissions[assessment.id], assessment)}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

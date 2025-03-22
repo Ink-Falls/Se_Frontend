@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Users, Loader, Trash2 } from 'lucide-react';
-import { removeUserFromGroup } from '../../../../services/userService';
+import { removeMember } from '../../../../services/groupService';
 
 const GroupMembersModal = ({ isOpen, onClose, group, members, isLoading, onMemberRemoved }) => {
   const [removingMember, setRemovingMember] = useState(false);
@@ -11,14 +11,33 @@ const GroupMembersModal = ({ isOpen, onClose, group, members, isLoading, onMembe
     try {
       setRemovingMember(true);
       setError('');
-      await removeUserFromGroup(group.id, member.user_id);
+      
+      const groupId = parseInt(group.id || group.group_id);
+      const userId = parseInt(member.user_id || member.id);
+
+      if (!groupId || !userId) {
+        throw new Error('Invalid group or member ID');
+      }
+
+      const result = await removeMember(groupId, userId);
+      
+      // Update the local state to remove the member
+      const updatedMembers = members.filter(m => 
+        (m.user_id || m.id) !== (member.user_id || member.id)
+      );
       
       setSuccessMessage(`Successfully removed ${member.first_name} ${member.last_name}`);
       
       // Notify parent component to refresh the members list
       if (onMemberRemoved) {
-        onMemberRemoved(group.id);
+        try {
+          await onMemberRemoved(groupId);
+        } catch (err) {
+          console.error('Error in parent refresh:', err);
+        }
       }
+
+      return result;
     } catch (error) {
       console.error('Error removing member:', error);
       setError('Failed to remove member: ' + error.message);
@@ -103,7 +122,7 @@ const GroupMembersModal = ({ isOpen, onClose, group, members, isLoading, onMembe
                       className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors flex-shrink-0"
                       title="Remove member"
                     >
-                      <Trash2 size={16} />
+                      {removingMember ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
                     </button>
                   </div>
                 </div>

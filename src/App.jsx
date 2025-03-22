@@ -73,7 +73,7 @@ const LearnerCourseAssessment = lazy(() =>
 const Error404 = lazy(() => import("./pages/Errors/Error404"));
 const Error403 = lazy(() => import("./pages/Errors/Error403"));
 const TestComponents = lazy(() => import("./components/test/TestComponents"));
-const AssessmentView = lazy(() => import("./pages/Learner/AssessmentView"));
+const LearnerAssessmentView = lazy(() => import("./pages/Learner/LearnerAssessmentView"));
 const StudentSubmissionView = lazy(() =>
   import("./pages/Teacher/StudentSubmissionView")
 );
@@ -294,7 +294,7 @@ function App() {
                         />
                         <Route
                           path="Assessment/View/:id"
-                          element={<AssessmentView />}
+                          element={<LearnerAssessmentView />}
                         />
                         <Route
                           path="Assessment/Submission/:id"
