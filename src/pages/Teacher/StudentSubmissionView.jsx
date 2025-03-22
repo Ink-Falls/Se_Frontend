@@ -41,6 +41,64 @@ const StudentSubmissionView = () => {
     return questions?.reduce((total, question) => total + (parseInt(question.points) || 0), 0) || 0;
   };
 
+  const calculateAutoGradedScore = (submission) => {
+    if (!submission?.answers) return { total: 0, possible: 0 };
+    
+    const scores = submission.answers.reduce((acc, answer) => {
+      const question = submission.assessment?.questions?.find(q => q.id === answer.question_id);
+      
+      if (!question) return acc;
+
+      // Auto-grade multiple choice and true/false questions
+      if (question.question_type === 'multiple_choice' || question.question_type === 'true_false') {
+        const correctOption = question.options?.find(opt => opt.is_correct);
+        const isCorrect = answer.selected_option_id === correctOption?.id;
+        
+        return {
+          total: acc.total + (isCorrect ? question.points : 0),
+          possible: acc.possible + question.points
+        };
+      }
+      
+      // For manual grading questions, use points_awarded if available
+      return {
+        total: acc.total + (parseInt(answer.points_awarded) || 0),
+        possible: acc.possible + question.points
+      };
+    }, { total: 0, possible: 0 });
+
+    return scores;
+  };
+
+  const processSubmissionAnswers = (submissionData) => {
+    if (!submissionData?.answers) return submissionData;
+
+    const processedAnswers = submissionData.answers.map(answer => {
+      const question = submissionData.assessment?.questions?.find(q => q.id === answer.question_id);
+      
+      // Auto-grade multiple choice and true/false questions if not already graded
+      if ((question?.question_type === 'multiple_choice' || question?.question_type === 'true_false') 
+          && answer.points_awarded === null) {
+        const correctOption = question.options?.find(opt => opt.is_correct);
+        const isCorrect = answer.selected_option_id === correctOption?.id;
+        
+        return {
+          ...answer,
+          points_awarded: isCorrect ? question.points : 0,
+          is_auto_graded: true,
+          feedback: isCorrect ? 'Correct' : 'Incorrect'
+        };
+      }
+      
+      return answer;
+    });
+
+    return {
+      ...submissionData,
+      answers: processedAnswers
+    };
+  };
+
   useEffect(() => {
     const fetchSubmissionDetails = async () => {
       try {
@@ -398,20 +456,36 @@ const StudentSubmissionView = () => {
     if (submissionError) return <div className="text-red-600">{submissionError}</div>;
     if (!submissionDetails?.answers) return <div>No submission found.</div>;
 
+    // Format the submission date consistently
+    const formattedSubmitTime = submissionDetails.submit_time ? 
+      new Date(submissionDetails.submit_time).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : 'Not submitted';
+
     // Calculate total awarded points and total possible points
     const totalAwarded = submissionDetails.answers.reduce((sum, answer) => 
       sum + (parseInt(answer.points_awarded) || 0), 0);
     const totalPossible = submissionDetails.assessment.questions.reduce((sum, question) => 
       sum + (parseInt(question.points) || 0), 0);
 
+    // Check if all questions have been answered
+    const allQuestionsAnswered = submissionDetails.answers.every(answer => {
+      return answer.selected_option_id !== null || answer.text_response !== null;
+    });
+
     // Check if all questions have been graded
     const allQuestionsGraded = submissionDetails.answers.every(answer => 
-      answer.points_awarded !== null && 
-      answer.points_awarded !== undefined
+      answer.points_awarded !== null && answer.points_awarded !== undefined
     );
 
-    // Determine submission status
-    const submissionStatus = allQuestionsGraded ? 'Graded' : 'Not Graded';
+    // Determine submission status based on answer completion and grading status
+    const submissionStatus = !allQuestionsAnswered ? 'Not Submitted' :
+                           allQuestionsGraded ? 'Graded' : 
+                           'Submitted';
 
     return (
       <div className="bg-gray-50 rounded-lg p-4">
@@ -421,7 +495,7 @@ const StudentSubmissionView = () => {
 
         {/* Updated submission meta data section with total score */}
         <div className="mt-6 p-6 bg-white rounded-lg border">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-3 gap-6">
             <div>
               <p className="text-sm text-gray-600">Submission Status:</p>
               <p className="font-medium capitalize">{submissionStatus}</p>
@@ -429,9 +503,7 @@ const StudentSubmissionView = () => {
             <div>
               <p className="text-sm text-gray-600">Submitted:</p>
               <p className="font-medium">
-                {submissionDetails.submit_time ? 
-                  new Date(submissionDetails.submit_time).toLocaleString() : 
-                  'Not submitted'}
+                {formattedSubmitTime}
               </p>
             </div>
             <div className="col-span-2">

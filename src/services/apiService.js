@@ -6,9 +6,19 @@
 import tokenService from './tokenService';
 
 const RATE_LIMIT = {
-  MAX_REQUESTS: 50,
-  TIME_WINDOW: 60000, // 1 minute
-  RETRY_AFTER: 5000
+  MAX_REQUESTS: 200,          // Maximum requests per window
+  BURST_LIMIT: 50,           // Burst capacity
+  TIME_WINDOW: 60000,        // 1 minute window
+  COOLDOWN_PERIOD: 2000,     // Cooldown between requests
+  REQUEST_DELAY: 100,        // Delay between requests
+  BATCH_SIZE: 10,            // Number of requests to process at once
+  QUEUED_REQUESTS: new Map() // Use Map for better request tracking
+};
+
+const BACKOFF_STRATEGY = {
+  INITIAL_DELAY: 1000,       // Start with 1 second
+  MAX_DELAY: 32000,         // Maximum delay of 32 seconds
+  JITTER: 300               // Random jitter to prevent thundering herd
 };
 
 const CIRCUIT_BREAKER = {
@@ -41,7 +51,99 @@ const showAlert = (message, retryAfter) => {
   setTimeout(() => div.remove(), retryAfter);
 };
 
-const fetchWithInterceptor = async (url, options = {}) => {
+// Add request queue with priorities
+const REQUEST_PRIORITIES = {
+  HIGH: 0,    // Auth requests
+  MEDIUM: 1,  // User data
+  LOW: 2      // Non-critical requests
+};
+
+// Add request batching and prioritization
+const queueRequest = (url, options, priority = REQUEST_PRIORITIES.LOW) => {
+  const requestId = Math.random().toString(36).substring(7);
+  
+  return new Promise((resolve, reject) => {
+    RATE_LIMIT.QUEUED_REQUESTS.set(requestId, {
+      url,
+      options,
+      priority,
+      resolve,
+      reject,
+      timestamp: Date.now()
+    });
+  });
+};
+
+// Process queued requests in batches
+const processQueue = async () => {
+  if (RATE_LIMIT.QUEUED_REQUESTS.size === 0) return;
+
+  // Sort requests by priority and timestamp
+  const sortedRequests = Array.from(RATE_LIMIT.QUEUED_REQUESTS.entries())
+    .sort(([, a], [, b]) => {
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      return a.timestamp - b.timestamp;
+    });
+
+  // Process requests in batches
+  for (let i = 0; i < Math.min(RATE_LIMIT.BATCH_SIZE, sortedRequests.length); i++) {
+    const [requestId, request] = sortedRequests[i];
+    
+    try {
+      // Add delay between requests
+      await new Promise(resolve => setTimeout(resolve, RATE_LIMIT.REQUEST_DELAY * i));
+      
+      const response = await fetch(request.url, request.options);
+      request.resolve(response);
+    } catch (error) {
+      request.reject(error);
+    } finally {
+      RATE_LIMIT.QUEUED_REQUESTS.delete(requestId);
+    }
+  }
+
+  // Schedule next batch if there are remaining requests
+  if (RATE_LIMIT.QUEUED_REQUESTS.size > 0) {
+    setTimeout(processQueue, RATE_LIMIT.COOLDOWN_PERIOD);
+  }
+};
+
+// Add exponential backoff calculation
+const calculateBackoff = (retryCount) => {
+  const delay = Math.min(
+    BACKOFF_STRATEGY.INITIAL_DELAY * Math.pow(2, retryCount),
+    BACKOFF_STRATEGY.MAX_DELAY
+  );
+  
+  // Add jitter to prevent thundering herd
+  return delay + Math.random() * BACKOFF_STRATEGY.JITTER;
+};
+
+// Update rate limiting check
+const checkRateLimit = async (url, options) => {
+  const now = Date.now();
+  
+  // Reset counters if time window has passed
+  if (now - requestTimestamp > RATE_LIMIT.TIME_WINDOW) {
+    requestCount = 0;
+    requestTimestamp = now;
+    return true;
+  }
+
+  // Handle burst and regular requests
+  if (requestCount >= RATE_LIMIT.MAX_REQUESTS) {
+    if (RATE_LIMIT.QUEUED_REQUESTS.size < RATE_LIMIT.BURST_LIMIT) {
+      // Queue the request instead of rejecting
+      return await queueRequest(url, options);
+    }
+    return false;
+  }
+
+  requestCount++;
+  return true;
+};
+
+const fetchWithInterceptor = async (url, options = {}, retryCount = 0) => {
   // Add token to headers
   const token = tokenService.getAccessToken();
   options.headers = {
@@ -55,20 +157,30 @@ const fetchWithInterceptor = async (url, options = {}) => {
       throw new Error('Circuit breaker is open. Too many failed requests.');
     }
 
-    // Rate limiting check
-    const now = Date.now();
-    if (now - requestTimestamp > RATE_LIMIT.TIME_WINDOW) {
-      resetRequestCount();
+    // Determine request priority
+    const priority = url.includes('/auth/') 
+      ? REQUEST_PRIORITIES.HIGH 
+      : url.includes('/user/') 
+        ? REQUEST_PRIORITIES.MEDIUM 
+        : REQUEST_PRIORITIES.LOW;
+
+    // Queue the request if we're near the limit
+    if (requestCount >= RATE_LIMIT.MAX_REQUESTS * 0.8) {
+      return await queueRequest(url, options, priority);
     }
-    
-    if (requestCount >= RATE_LIMIT.MAX_REQUESTS) {
-      window.dispatchEvent(new CustomEvent('rateLimitExceeded', {
-        detail: { message: `Rate limit exceeded. Try again in ${RATE_LIMIT.RETRY_AFTER/1000}s` }
-      }));
-      throw new Error('Rate limit exceeded');
-    }
-    
+
     requestCount++;
+    
+    // Add small delay between requests
+    await new Promise(resolve => setTimeout(resolve, RATE_LIMIT.REQUEST_DELAY));
+
+    // Check rate limit and possibly queue request
+    const canProceed = await checkRateLimit(url, options);
+    if (!canProceed) {
+      const backoff = calculateBackoff(retryCount);
+      await new Promise(resolve => setTimeout(resolve, backoff));
+      return fetchWithInterceptor(url, options, retryCount + 1);
+    }
 
     // Add credentials for cookie handling
     options.credentials = 'include';
@@ -126,7 +238,13 @@ const fetchWithInterceptor = async (url, options = {}) => {
           }));
           throw new Error('Resource not found');
         case 429:
-          const retryAfter = parseInt(response.headers.get('Retry-After')) * 1000 || RATE_LIMIT.RETRY_AFTER;
+          const retryAfter = parseInt(response.headers.get('Retry-After')) * 1000 || 
+                            calculateBackoff(retryCount);
+          
+          if (retryCount < RATE_LIMIT.MAX_RETRIES) {
+            await new Promise(resolve => setTimeout(resolve, retryAfter));
+            return fetchWithInterceptor(url, options, retryCount + 1);
+          }
           showAlert(
             errorData.message || 'Too many requests. Please wait before trying again.',
             retryAfter
@@ -148,8 +266,26 @@ const fetchWithInterceptor = async (url, options = {}) => {
 
     // Reset failure count on success
     failureCount = 0;
+
+    // Process queued requests when successful
+    if (response.ok && RATE_LIMIT.QUEUED_REQUESTS.size > 0) {
+      setTimeout(() => {
+        const nextRequest = RATE_LIMIT.QUEUED_REQUESTS.values().next().value;
+        if (nextRequest) {
+          fetchWithInterceptor(nextRequest.url, nextRequest.options)
+            .then(nextRequest.resolve)
+            .catch(nextRequest.reject);
+        }
+      }, RATE_LIMIT.COOLDOWN_PERIOD);
+    }
+
     return response;
   } catch (error) {
+    if (error.status === 429 && retryCount < RATE_LIMIT.MAX_RETRIES) {
+      const backoff = calculateBackoff(retryCount);
+      await new Promise(resolve => setTimeout(resolve, backoff));
+      return fetchWithInterceptor(url, options, retryCount + 1);
+    }
     if (error.status === 429) {
       const retryAfter = parseInt(error.response?.headers?.get('Retry-After')) * 1000 || RATE_LIMIT.RETRY_AFTER;
       showAlert(error.message || 'Rate limit exceeded', retryAfter);
@@ -200,5 +336,8 @@ const debounce = (func, wait) => {
 
 // Export debounced version for non-critical requests
 export const debouncedFetch = debounce(fetchWithInterceptor, 300);
+
+// Start queue processor
+setInterval(processQueue, RATE_LIMIT.COOLDOWN_PERIOD);
 
 export default fetchWithInterceptor;

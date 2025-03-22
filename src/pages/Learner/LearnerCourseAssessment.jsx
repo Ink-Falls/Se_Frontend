@@ -73,6 +73,7 @@ const LearnerCourseAssessment = () => {
               if (submissionData.success && submissionData.submission) {
                 submissionsMap[assessment.id] = {
                   ...submissionData.submission,
+                  total_score: submissionData.submission.total_score,
                   assessment: assessment, // Include assessment details with questions
                 };
               }
@@ -160,17 +161,31 @@ const LearnerCourseAssessment = () => {
     if (!submission || !submission.status || submission.status === "null") {
       return <div className="text-sm text-gray-600">Not Started</div>;
     }
-    if (submission.status === "submitted" && submission.score === null) {
-      return <div className="text-sm text-gray-600">Not yet graded</div>;
-    }
 
+    // Calculate total score considering both auto-graded and manual grades
     const totalPoints = calculateTotalPoints(submission);
+    const score = submission.answers?.reduce((sum, answer) => {
+      // For multiple choice and true/false
+      if (answer.is_auto_graded && answer.selected_option_id) {
+        const question = assessment.questions?.find(q => q.id === answer.question_id);
+        const selectedOption = question?.options?.find(opt => opt.id === answer.selected_option_id);
+        return sum + (selectedOption?.is_correct ? (question?.points || 0) : 0);
+      }
+      // For manual graded questions (short_answer and essay)
+      return sum + (parseInt(answer.points_awarded) || 0);
+    }, 0) || 0;
 
-    return submission.score !== undefined && submission.score !== null ? (
+    // Show score if available
+    return (
       <div className="text-2xl font-bold text-gray-900">
-        {submission.score}/{totalPoints}
+        {score}/{totalPoints}
+        {submission.status === "graded" && (
+          <div className="text-sm text-gray-500 mt-1">
+            Final Grade
+          </div>
+        )}
       </div>
-    ) : null;
+    );
   };
 
   return (

@@ -810,9 +810,29 @@ const LearnerAssessmentView = () => {
         <p className="mt-1 text-sm text-gray-500">
           You have already completed this assessment.
         </p>
-        {existingSubmission?.score !== null && existingSubmission?.score !== undefined ? (
+        {existingSubmission?.answers ? (
           <div className="mt-4 text-2xl font-bold">
-            Score: {existingSubmission.score}/{calculateTotalPoints(questions)}
+            {/* Calculate total score with updated logic */}
+            {(() => {
+              const totalPoints = calculateTotalPoints(questions);
+              const score = existingSubmission.answers.reduce((sum, answer) => {
+                // First check points_awarded
+                if (answer.points_awarded !== null) {
+                  return sum + (parseInt(answer.points_awarded) || 0);
+                }
+
+                // If points_awarded is null, calculate based on is_correct for multiple choice/true false
+                if (answer.selected_option_id && answer.question?.question_type in ['multiple_choice', 'true_false']) {
+                  const isCorrect = answer.selected_option?.is_correct || false;
+                  return sum + (isCorrect ? (answer.question?.points || 0) : 0);
+                }
+
+                // For other question types without points_awarded, return 0
+                return sum;
+              }, 0);
+
+              return `Score: ${score}/${totalPoints}`;
+            })()}
           </div>
         ) : (
           <div className="mt-4 text-lg text-gray-600">
@@ -1093,6 +1113,63 @@ const LearnerAssessmentView = () => {
       </div>
     </div>
   );
+
+  const calculateAutoGradedScore = (submission) => {
+    if (!submission?.answers) return { total: 0, possible: 0 };
+    
+    const scores = submission.answers.reduce((acc, answer) => {
+      const question = submission.assessment?.questions?.find(q => q.id === answer.question_id);
+      
+      if (!question) return acc;
+  
+      // Auto-grade multiple choice and true/false questions
+      if ((question.question_type === 'multiple_choice' || question.question_type === 'true_false') 
+          && answer.selected_option_id) {
+        const selectedOption = question.options?.find(opt => opt.id === answer.selected_option_id);
+        const isCorrect = selectedOption?.is_correct || false;
+        
+        return {
+          total: acc.total + (isCorrect ? (question.points || 0) : 0),
+          possible: acc.possible + (question.points || 0)
+        };
+      }
+      
+      // For manual grading questions, use points_awarded if available
+      if (answer.points_awarded !== null && answer.points_awarded !== undefined) {
+        return {
+          total: acc.total + (parseInt(answer.points_awarded) || 0),
+          possible: acc.possible + (question.points || 0)
+        };
+      }
+  
+      return {
+        total: acc.total,
+        possible: acc.possible + (question.points || 0)
+      };
+    }, { total: 0, possible: 0 });
+  
+    return scores;
+  };
+  
+  // Update the renderSubmissionScore function
+  const renderSubmissionScore = (submission, assessment) => {
+    if (!submission || !submission.status || submission.status === "null") {
+      return <div className="text-sm text-gray-600">Not Started</div>;
+    }
+  
+    const scores = calculateAutoGradedScore(submission);
+    
+    return (
+      <div className="text-2xl font-bold text-gray-900">
+        {scores.total}/{scores.possible}
+        {submission.status === "graded" && (
+          <div className="text-sm text-gray-500 mt-1">
+            Final Grade
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
