@@ -19,6 +19,7 @@ import {
 import { getCourseAssessments } from "../../services/assessmentService";
 import { useCourse } from "../../contexts/CourseContext";
 import { useNavigate } from "react-router-dom";
+import CreateAssessmentModal from "../../components/common/Modals/Create/CreateAssessmentModal";
 
 const TeacherCourseAssessment = () => {
   const { selectedCourse } = useCourse();

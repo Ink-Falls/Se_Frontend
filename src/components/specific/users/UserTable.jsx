@@ -1,15 +1,21 @@
-import React, { useState } from 'react';
-import { SquarePen, Plus, Search, Users, FileText, Filter, Trash2 } from 'lucide-react';
-import { generateUsersReport } from '../../../services/reportService';
-import ReportViewerModal from '../../common/Modals/View/ReportViewerModal';
+import React, { useState } from "react";
+import {
+  SquarePen,
+  Plus,
+  Search,
+  Users,
+  FileText,
+  Filter,
+  Trash2,
+} from "lucide-react";
 
-const UserTable = ({ 
-  users, 
-  onEdit, 
-  onDelete, 
-  onAddUser, 
-  selectedIds, 
-  setSelectedIds, 
+const UserTable = ({
+  users,
+  onEdit,
+  onDelete,
+  onAddUser,
+  selectedIds,
+  setSelectedIds,
   onCreateGroup,
   onShowGroupList, // Add new prop
   onSearch, // Add onSearch prop
@@ -17,28 +23,33 @@ const UserTable = ({
   currentFilter, // Add this prop
   currentPage, // Add this prop
   totalPages, // Add this prop
-  onPageChange // Add this prop
+  onPageChange, // Add this prop
 }) => {
   // Remove local selectedIds state since it's now passed as prop
-  
+
   const ROWS_PER_PAGE = 10;
 
-  const [sortOption, setSortOption] = useState('none'); // Add this state
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [reportUrl, setReportUrl] = useState(null);
-  const [reportError, setReportError] = useState(null);
+  const [sortOption, setSortOption] = useState("none"); // Add this state
 
   // Add sorting function
   const getSortedUsers = (users) => {
     const sortedUsers = [...users];
     switch (sortOption) {
-      case 'name-asc':
-        return sortedUsers.sort((a, b) => `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`));
-      case 'name-desc':
-        return sortedUsers.sort((a, b) => `${b.first_name} ${b.last_name}`.localeCompare(`${a.first_name} ${a.last_name}`));
-      case 'id-asc':
+      case "name-asc":
+        return sortedUsers.sort((a, b) =>
+          `${a.first_name} ${a.last_name}`.localeCompare(
+            `${b.first_name} ${b.last_name}`
+          )
+        );
+      case "name-desc":
+        return sortedUsers.sort((a, b) =>
+          `${b.first_name} ${b.last_name}`.localeCompare(
+            `${a.first_name} ${a.last_name}`
+          )
+        );
+      case "id-asc":
         return sortedUsers.sort((a, b) => a.school_id - b.school_id);
-      case 'id-desc':
+      case "id-desc":
         return sortedUsers.sort((a, b) => b.school_id - a.school_id);
       default:
         return sortedUsers;
@@ -53,8 +64,8 @@ const UserTable = ({
   };
 
   const handleCheckboxChange = (id) => {
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
 
@@ -63,42 +74,16 @@ const UserTable = ({
 
   // Update handleSelectAll to use usersList
   const handleSelectAll = () => {
-    setSelectedIds(selectedIds.length === usersList.length ? [] : usersList.map(user => user.id));
+    setSelectedIds(
+      selectedIds.length === usersList.length
+        ? []
+        : usersList.map((user) => user.id)
+    );
   };
 
   const handleSearchChange = (e) => {
     const query = e.target.value;
     onSearch(query); // Call the search handler from parent
-  };
-
-  const handleGenerateReport = async () => {
-    try {
-      const currentUser = JSON.parse(localStorage.getItem('user')); // Get current user from localStorage
-      setReportError(null);
-      const doc = await generateUsersReport(currentUser);
-      const pdfBlob = doc.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      setReportUrl(pdfUrl);
-      setShowReportModal(true);
-    } catch (error) {
-      console.error('Error generating report:', error);
-      setReportError(error.message || 'Failed to generate report');
-      setShowReportModal(true);
-    }
-  };
-
-  const handlePrintReport = () => {
-    if (reportUrl) {
-      window.open(reportUrl, '_blank');
-    }
-  };
-
-  const handleDeleteReport = () => {
-    if (reportUrl) {
-      URL.revokeObjectURL(reportUrl);
-      setReportUrl(null);
-      setShowReportModal(false);
-    }
   };
 
   return (
@@ -115,7 +100,7 @@ const UserTable = ({
             <span>Delete Selected ({selectedIds.length})</span>
           </button>
         )}
-        
+
         {/* Replace Filter button with Filter dropdown */}
         <div className="relative">
           <select
@@ -165,10 +150,7 @@ const UserTable = ({
 
         {/* Buttons on the right side */}
         <div className="flex items-center gap-4 ml-auto">
-          <button
-            onClick={onAddUser}
-            className="text-white p-2 rounded-full"
-          >
+          <button onClick={onAddUser} className="text-white p-2 rounded-full">
             <Plus size={20} className="text-[#475569]" />
           </button>
           <button
@@ -186,7 +168,7 @@ const UserTable = ({
             <span>Group List</span>
           </button>
           <button
-            onClick={handleGenerateReport}
+            onClick={() => console.log("Generate Report")}
             className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black"
           >
             <FileText size={16} />
@@ -208,16 +190,36 @@ const UserTable = ({
                   className="form-checkbox h-4 w-4 text-[#212529] rounded"
                 />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">First Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Middle Initial</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Birth Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact No</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">School ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                #
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                First Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Middle Initial
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Last Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Email
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Birth Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Contact No
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                School ID
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Role
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -231,17 +233,33 @@ const UserTable = ({
                     className="form-checkbox h-4 w-4 text-[#212529] rounded"
                   />
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.first_name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.middle_initial}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.last_name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.email}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {index + 1}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {user.first_name}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {user.middle_initial}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {user.last_name}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {user.email}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {new Date(user.birth_date).toLocaleDateString()}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.contact_no}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.school_id}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.role}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {user.contact_no}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {user.school_id}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {user.role}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
                     onClick={() => onEdit(user)}
@@ -283,22 +301,6 @@ const UserTable = ({
           </div>
         </div>
       </div>
-
-      <ReportViewerModal
-        isOpen={showReportModal}
-        onClose={() => {
-          setShowReportModal(false);
-          setReportError(null);
-          if (reportUrl) {
-            URL.revokeObjectURL(reportUrl);
-            setReportUrl(null);
-          }
-        }}
-        pdfUrl={reportUrl}
-        onPrint={handlePrintReport}
-        onDelete={handleDeleteReport}
-        error={reportError}
-      />
     </div>
   );
 };
