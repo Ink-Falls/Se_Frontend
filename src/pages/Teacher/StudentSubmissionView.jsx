@@ -13,6 +13,7 @@ import {
   FileText,
   Clock,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import { getUserSubmission, getAssessmentById, gradeSubmission, getSubmissionDetails } from "../../services/assessmentService";
 import EditGradeModal from '../../components/common/Modals/Edit/EditGradeModal';
@@ -36,6 +37,9 @@ const StudentSubmissionView = () => {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [isEditGradeModalOpen, setIsEditGradeModalOpen] = useState(false);
   const [answersWithDetails, setAnswersWithDetails] = useState({});
+  const [isConfirmAutoGradeModalOpen, setIsConfirmAutoGradeModalOpen] = useState(false);
+  const [autoGradeLoading, setAutoGradeLoading] = useState(false);
+  const [autoGradeStats, setAutoGradeStats] = useState({ total: 0, processed: 0 });
 
   const calculateTotalPoints = (questions) => {
     return questions?.reduce((total, question) => total + (parseInt(question.points) || 0), 0) || 0;
@@ -342,6 +346,70 @@ const StudentSubmissionView = () => {
     }
   };
 
+  const handleAutoGrade = async () => {
+    try {
+      setAutoGradeLoading(true);
+      
+      // Filter only multiple choice and true/false questions that need grading
+      const autoGradeableAnswers = submissionDetails.answers.filter(answer => {
+        const question = submissionDetails.assessment.questions.find(q => q.id === answer.question_id);
+        return (question?.question_type === 'multiple_choice' || question?.question_type === 'true_false');
+      });
+      
+      setAutoGradeStats({
+        total: autoGradeableAnswers.length,
+        processed: 0
+      });
+      
+      // Create grading data structure for submission
+      const gradingData = {
+        grades: [],
+        feedback: 'Auto-graded multiple choice and true/false questions'
+      };
+      
+      // Process each auto-gradeable answer
+      for (const answer of autoGradeableAnswers) {
+        const question = submissionDetails.assessment.questions.find(q => q.id === answer.question_id);
+        
+        if (!question) continue;
+        
+        // Find the correct option
+        const correctOption = question.options?.find(opt => opt.is_correct);
+        const isCorrect = answer.selected_option_id === correctOption?.id;
+        const points = isCorrect ? question.points : 0;
+        
+        // Add to grading data
+        gradingData.grades.push({
+          questionId: answer.question_id,
+          points: points,
+          feedback: isCorrect ? 'Correct answer' : 'Incorrect answer'
+        });
+        
+        setAutoGradeStats(prev => ({...prev, processed: prev.processed + 1}));
+      }
+      
+      // Submit the grades if we have any
+      if (gradingData.grades.length > 0) {
+        const response = await gradeSubmission(submissionDetails.id, gradingData);
+        
+        if (response.success) {
+          // Refresh the submission data
+          await handleGradeUpdate(response.submission);
+          alert('Auto-grading completed successfully!');
+        }
+      } else {
+        alert('No auto-gradeable questions found.');
+      }
+      
+    } catch (err) {
+      console.error('Error auto-grading submission:', err);
+      alert('Failed to auto-grade submission. Please try again.');
+    } finally {
+      setAutoGradeLoading(false);
+      setIsConfirmAutoGradeModalOpen(false);
+    }
+  };
+
   const renderQuestionAnswer = (answer, index) => {
     const details = answersWithDetails[answer.question_id];
     if (!details) return null;
@@ -624,6 +692,55 @@ const StudentSubmissionView = () => {
     </div>
   );
 
+  const renderAutoGradeConfirmModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-6 w-full max-w-md">
+        <div className="flex items-center mb-4 text-amber-600">
+          <AlertTriangle size={24} className="mr-2" />
+          <h3 className="text-xl font-semibold">Confirm Auto-Grading</h3>
+        </div>
+        
+        <p className="text-gray-600 mb-4">
+          This will automatically grade all multiple-choice and true/false questions in this submission.
+          Existing grades for these questions will be overwritten.
+        </p>
+        
+        <p className="text-gray-600 mb-6">
+          Do you want to continue?
+        </p>
+        
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={() => setIsConfirmAutoGradeModalOpen(false)}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+            disabled={autoGradeLoading}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAutoGrade}
+            className="px-6 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#F6BA18] hover:text-[#212529]"
+            disabled={autoGradeLoading}
+          >
+            {autoGradeLoading ? 'Processing...' : 'Proceed'}
+          </button>
+        </div>
+        
+        {autoGradeLoading && (
+          <div className="mt-4">
+            <p className="text-sm text-gray-600">Processing questions: {autoGradeStats.processed}/{autoGradeStats.total}</p>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+              <div 
+                className="bg-[#F6BA18] h-2.5 rounded-full" 
+                style={{width: `${(autoGradeStats.processed / Math.max(1, autoGradeStats.total)) * 100}%`}}
+              ></div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
@@ -696,10 +813,10 @@ const StudentSubmissionView = () => {
                     Student's Submission
                   </h3>
                   <button
-                    onClick={() => setIsGradingModalOpen(true)}
+                    onClick={() => setIsConfirmAutoGradeModalOpen(true)}
                     className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
                   >
-                    {submissionDetails?.score ? "Edit Grade" : "Grade Submission"}
+                    Auto Grade MCQs & T/F
                   </button>
                 </div>
 
@@ -711,6 +828,7 @@ const StudentSubmissionView = () => {
       </div>
 
       {isGradingModalOpen && renderGradingModal()}
+      {isConfirmAutoGradeModalOpen && renderAutoGradeConfirmModal()}
       <EditGradeModal
         isOpen={isEditGradeModalOpen}
         onClose={() => setIsEditGradeModalOpen(false)}

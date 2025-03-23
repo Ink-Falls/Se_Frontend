@@ -22,7 +22,7 @@ import { useCourse } from "../../contexts/CourseContext";
 import { useNavigate } from "react-router-dom";
 import CreateAssessmentModal from "../../components/common/Modals/Create/CreateAssessmentModal";
 import EditAssessmentModal from "../../components/common/Modals/Edit/EditAssessmentModal";
-import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // Change this import
+import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // Update this import
 import { getCourseAssessments } from "../../services/assessmentService";
 
 const TeacherCourseAssessment = () => {
@@ -410,14 +410,13 @@ const TeacherCourseAssessment = () => {
           />
         )}
 
-        {assessmentToDelete && ( // Only show when assessmentToDelete exists
+        {assessmentToDelete && (
           <DeleteModal
-            onClose={() => {
-              setIsDeleteModalOpen(false);
-              setAssessmentToDelete(null);
-            }}
+            title="Delete Assessment"
+            message={`Are you sure you want to delete "${assessmentToDelete?.title}"? This will also delete all questions and submissions associated with this assessment. This action cannot be undone.`}
+            onClose={() => setAssessmentToDelete(null)}
             onConfirm={handleDeleteConfirm}
-            message={`Are you sure you want to delete "${assessmentToDelete.title}"? This action cannot be undone.`}
+            isLoading={loading}
           />
         )}
       </div>
