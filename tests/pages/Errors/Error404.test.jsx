@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, useNavigate, useLocation } from 'react-router-dom';
 import Error404 from '../../../src/pages/Errors/Error404';
-import { isAuthenticated, getUserRole } from '../../../src/utils/auth';
+import { useAuth } from '../../../src/contexts/AuthContext';
 
 // Mock the router hooks
 vi.mock('react-router-dom', async () => {
@@ -14,67 +14,49 @@ vi.mock('react-router-dom', async () => {
     };
 });
 
-// Mock auth utilities
-vi.mock('../../../src/utils/auth', () => ({
-    isAuthenticated: vi.fn(),
-    getUserRole: vi.fn(),
+// Mock the useAuth hook
+vi.mock('../../../src/contexts/AuthContext', () => ({
+    useAuth: vi.fn(),
 }));
 
 describe('Error404', () => {
     const mockNavigate = vi.fn();
+    const mockLocation = { pathname: '' };
 
     beforeEach(() => {
         vi.clearAllMocks();
         useNavigate.mockReturnValue(mockNavigate);
+        useLocation.mockReturnValue(mockLocation);
     });
 
-    describe('Page Content Tests', () => {
-        it.each([
-            [
-                'default route',
-                '/',
-                'Page Not Found',
-                "The page you are looking for doesn't exist or has been moved.",
-                'Back to Home',
-            ],
-            [
-                'learner route',
-                '/Learner/test',
-                'Learner Page Not Available',
-                'This learning resource or feature is currently under development. Please return to your dashboard.',
-                'Back to Learner Dashboard',
-            ],
-            [
-                'teacher route',
-                '/Teacher/test',
-                'Teacher Page Not Available',
-                'This teaching resource or feature is currently under development. Please return to your dashboard.',
-                'Back to Teacher Dashboard',
-            ],
-            [
-                'admin route',
-                '/Admin/test',
-                'Admin Page Not Available',
-                'This administrative feature is currently under development. Please return to your dashboard.',
-                'Back to Admin Dashboard',
-            ],
-        ])(
-            'displays correct content for %s',
-            (_, path, expectedTitle, expectedMessage, expectedButton) => {
-                useLocation.mockReturnValue({ pathname: path });
+    describe('Content Tests', () => {
+        it('renders error page elements correctly', () => {
+            useAuth.mockReturnValue({ isAuthenticated: false, user: null });
 
-                render(
-                    <MemoryRouter>
-                        <Error404 />
-                    </MemoryRouter>
-                );
+            render(
+                <MemoryRouter>
+                    <Error404 />
+                </MemoryRouter>
+            );
 
-                expect(screen.getByText('404')).toBeInTheDocument();
-                expect(screen.getByText(expectedTitle)).toBeInTheDocument();
-                expect(screen.getByText(expectedMessage)).toBeInTheDocument();
-                expect(screen.getByText(expectedButton)).toBeInTheDocument();
-            }
-        );
+            // Check for main elements
+            expect(screen.getByText('404')).toBeInTheDocument();
+            expect(screen.getByText('Page Not Found')).toBeInTheDocument();
+            expect(
+                screen.getByText(
+                    "The page you are looking for doesn't exist or has been moved."
+                )
+            ).toBeInTheDocument();
+            expect(screen.getByText('Back to Home')).toBeInTheDocument();
+
+            // Check for logo
+            const logo = screen.getByAltText('ARALKADEMY Logo');
+            expect(logo).toBeInTheDocument();
+            expect(logo).toHaveAttribute(
+                'src',
+                '/src/assets/images/ARALKADEMYLOGO.png'
+            );
+        });
     });
 
     describe('Navigation Tests', () => {
@@ -86,9 +68,7 @@ describe('Error404', () => {
         ])(
             'redirects authenticated %s to correct dashboard',
             (role, expectedPath) => {
-                useLocation.mockReturnValue({ pathname: '/' });
-                isAuthenticated.mockReturnValue(true);
-                getUserRole.mockReturnValue(role);
+                useAuth.mockReturnValue({ isAuthenticated: true, user: { role } });
 
                 render(
                     <MemoryRouter>
@@ -105,8 +85,7 @@ describe('Error404', () => {
         );
 
         it('redirects unauthenticated users to login', () => {
-            useLocation.mockReturnValue({ pathname: '/' });
-            isAuthenticated.mockReturnValue(false);
+            useAuth.mockReturnValue({ isAuthenticated: false, user: null });
 
             render(
                 <MemoryRouter>
@@ -122,9 +101,7 @@ describe('Error404', () => {
         });
 
         it('handles null or invalid user role', () => {
-            useLocation.mockReturnValue({ pathname: '/' });
-            isAuthenticated.mockReturnValue(true);
-            getUserRole.mockReturnValue(null);
+            useAuth.mockReturnValue({ isAuthenticated: true, user: { role: null } });
 
             render(
                 <MemoryRouter>
@@ -140,41 +117,9 @@ describe('Error404', () => {
         });
     });
 
-    describe('Route Type Detection Tests', () => {
-        it.each([
-            ['teacher route', '/Teacher/', true, false, false],
-            ['admin route', '/Admin/', false, true, false],
-            ['learner route', '/Learner/', false, false, true],
-            ['other route', '/other/', false, false, false],
-        ])(
-            'correctly identifies %s',
-            (_, path, isTeacher, isAdmin, isLearner) => {
-                useLocation.mockReturnValue({ pathname: path });
-
-                render(
-                    <MemoryRouter>
-                        <Error404 />
-                    </MemoryRouter>
-                );
-
-                const content = screen.getByText(/Page Not|Available/);
-
-                if (isTeacher) {
-                    expect(content).toHaveTextContent(/Teacher Page/);
-                } else if (isAdmin) {
-                    expect(content).toHaveTextContent(/Admin Page/);
-                } else if (isLearner) {
-                    expect(content).toHaveTextContent(/Learner Page/);
-                } else {
-                    expect(content).toHaveTextContent(/Page Not Found/);
-                }
-            }
-        );
-    });
-
     describe('UI Elements Tests', () => {
-        it('renders the logo with correct attributes', () => {
-            useLocation.mockReturnValue({ pathname: '/' });
+        it('applies correct styling classes', () => {
+            useAuth.mockReturnValue({ isAuthenticated: false, user: null });
 
             render(
                 <MemoryRouter>
@@ -182,32 +127,77 @@ describe('Error404', () => {
                 </MemoryRouter>
             );
 
-            const logo = screen.getByAltText('ARALKADEMY Logo');
-            expect(logo).toBeInTheDocument();
-            expect(logo).toHaveAttribute(
-                'src',
-                '/src/assets/images/ARALKADEMYLOGO.png'
-            );
-            expect(logo).toHaveAttribute('alt', 'ARALKADEMY Logo');
-        });
-
-        it('applies correct styling classes to elements', () => {
-            useLocation.mockReturnValue({ pathname: '/' });
-
-            render(
-                <MemoryRouter>
-                    <Error404 />
-                </MemoryRouter>
+            // Check container styling
+            const container = screen.getByRole('banner').parentElement;
+            expect(container).toHaveClass(
+                'min-h-screen',
+                'bg-cover',
+                'bg-center'
             );
 
+            // Check header styling
+            const header = screen.getByRole('banner');
+            expect(header).toHaveClass(
+                'py-[3vw]',
+                'px-[4vw]',
+                'lg:py-[1.5vw]',
+                'lg:px-[2vw]',
+                'bg-[#121212]',
+                'text-[#F6BA18]',
+                'flex',
+                'justify-between',
+                'items-center',
+                'shadow-xl'
+            );
+
+            // Check button styling
             const button = screen.getByRole('button');
             expect(button).toHaveClass(
                 'bg-[#212529]',
                 'text-[#FFFFFF]',
-                'hover:bg-[#F6BA18]'
+                'hover:bg-[#F6BA18]',
+                'hover:text-[#212529]',
+                'transition-colors',
+                'duration-300',
+                'ease-in-out'
+            );
+        });
+
+        it('renders background image correctly', () => {
+            useAuth.mockReturnValue({ isAuthenticated: false, user: null });
+
+            render(
+                <MemoryRouter>
+                    <Error404 />
+                </MemoryRouter>
             );
 
-            const container = button.closest('div');
+            const container = screen.getByRole('banner').parentElement;
+            expect(container).toHaveStyle({
+                backgroundImage:
+                    'url(https://upload.wikimedia.org/wikipedia/commons/7/7b/400_Year_old_Beauty.jpg)',
+            });
+        });
+
+        it('has responsive text sizes', () => {
+            useAuth.mockReturnValue({ isAuthenticated: false, user: null });
+
+            render(
+                <MemoryRouter>
+                    <Error404 />
+                </MemoryRouter>
+            );
+
+            const errorCode = screen.getByText('404');
+            expect(errorCode).toHaveClass('text-[15vw]', 'lg:text-[8vw]');
+
+            const errorTitle = screen.getByText('Page Not Found');
+            expect(errorTitle).toHaveClass('text-[4vw]', 'lg:text-[2vw]');
+
+            const errorMessage = screen.getByText(
+                "The page you are looking for doesn't exist or has been moved."
+            );
+            expect(errorMessage).toHaveClass('text-[2.5vw]', 'lg:text-[1vw]');
         });
     });
 });
