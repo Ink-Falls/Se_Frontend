@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Loader } from "lucide-react";
+import { editAssessment } from "../../../../services/assessmentService";
 
 const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -10,24 +11,84 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
     passing_score: 60,
     duration_minutes: 60,
     due_date: "",
-    instructions: "", // Add instructions field
+    instructions: "",
+    is_published: false,
   });
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (assessment) {
-      setFormData({
-        ...assessment,
-        due_date: assessment.due_date
-          ? new Date(assessment.due_date).toISOString().split("T")[0]
-          : "",
-      });
+      try {
+        // Format the date correctly for the input - handle both Date objects and ISO strings
+        let formattedDate = "";
+        if (assessment.due_date) {
+          // Make sure we have a Date object to work with
+          const dueDate =
+            assessment.due_date instanceof Date
+              ? assessment.due_date
+              : new Date(assessment.due_date);
+
+          if (!isNaN(dueDate.getTime())) {
+            // Format as YYYY-MM-DDTHH:MM (datetime-local format)
+            formattedDate = dueDate.toISOString().substring(0, 16);
+          } else {
+            console.warn("Invalid date:", assessment.due_date);
+          }
+        }
+
+        setFormData({
+          ...assessment,
+          due_date: formattedDate,
+          // Make sure all required fields are present with appropriate defaults
+          is_published: assessment.is_published || false,
+          instructions: assessment.instructions || "",
+          type: assessment.type || "quiz",
+          max_score: assessment.max_score || 100,
+          passing_score: assessment.passing_score || 60,
+          duration_minutes: assessment.duration_minutes || 60,
+        });
+      } catch (err) {
+        console.error("Error formatting assessment data:", err);
+        setError("Error preparing form data. Please try again.");
+      }
     }
   }, [assessment]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Just pass the form data to parent
-    onSubmit({ ...formData, id: assessment.id });
+    setIsLoading(true);
+    setError("");
+
+    try {
+      // Format data to match API requirements exactly
+      const assessmentData = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        type: formData.type,
+        max_score: parseInt(formData.max_score),
+        passing_score: parseInt(formData.passing_score),
+        duration_minutes: parseInt(formData.duration_minutes),
+        due_date: new Date(formData.due_date).toISOString(),
+        is_published: Boolean(formData.is_published),
+        instructions: formData.instructions?.trim() || "",
+      };
+
+      // Call the API
+      const response = await editAssessment(assessment.id, assessmentData);
+
+      if (response.success) {
+        onSubmit(response.assessment);
+        onClose();
+      } else {
+        throw new Error(response.message || "Failed to update assessment");
+      }
+    } catch (err) {
+      console.error("Error updating assessment:", err);
+      setError(err.message || "Failed to update assessment");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -47,6 +108,12 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6">
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -92,6 +159,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                 >
                   <option value="quiz">Quiz</option>
                   <option value="exam">Exam</option>
+                  <option value="assignment">Assignment</option>
                 </select>
               </div>
 
@@ -146,19 +214,39 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Due Date
-              </label>
-              <input
-                type="date"
-                value={formData.due_date}
-                onChange={(e) =>
-                  setFormData({ ...formData, due_date: e.target.value })
-                }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                required
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Due Date
+                </label>
+                <input
+                  type="datetime-local"
+                  value={formData.due_date}
+                  onChange={(e) =>
+                    setFormData({ ...formData, due_date: e.target.value })
+                  }
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center mt-6">
+                <input
+                  type="checkbox"
+                  id="is_published"
+                  checked={formData.is_published}
+                  onChange={(e) =>
+                    setFormData({ ...formData, is_published: e.target.checked })
+                  }
+                  className="h-4 w-4 text-yellow-600 rounded border-gray-300"
+                />
+                <label
+                  htmlFor="is_published"
+                  className="ml-2 text-sm text-gray-700"
+                >
+                  Published
+                </label>
+              </div>
             </div>
 
             <div>
@@ -185,15 +273,24 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
               type="button"
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              disabled={isLoading}
             >
               Cancel
             </button>
             <button
               type="submit"
               onClick={handleSubmit}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#212529] rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
+              className="px-4 py-2 text-sm font-medium text-white bg-[#212529] rounded-md hover:bg-[#F6BA18] hover:text-[#212529] flex items-center"
+              disabled={isLoading}
             >
-              Save Changes
+              {isLoading ? (
+                <>
+                  <Loader className="animate-spin -ml-1 mr-2 h-4 w-4" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
             </button>
           </div>
         </div>

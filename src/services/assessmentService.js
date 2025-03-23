@@ -133,6 +133,17 @@ export const createSubmission = async (assessmentId) => {
     if (!response.ok) {
       throw new Error(data.message || 'Failed to start submission');
     }
+    
+    // Store the assessment ID with the submission ID for later use
+    try {
+      localStorage.setItem(`submission_${data.submission.id}`, JSON.stringify({
+        assessmentId: assessmentId,
+        startTime: new Date().toISOString()
+      }));
+    } catch (e) {
+      console.warn('Could not store submission data in localStorage:', e);
+    }
+    
     return data;
   } catch (error) {
     console.error('Error creating submission:', error);
@@ -149,42 +160,37 @@ export const createSubmission = async (assessmentId) => {
  */
 export const getAssessmentSubmissions = async (assessmentId, page = 1, limit = 20) => {
   try {
-    const url = new URL(`${API_BASE_URL}/assessments/${assessmentId}/submissions`);
-    url.searchParams.append('page', page);
-    url.searchParams.append('limit', limit);
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/assessments/${assessmentId}/submissions?page=${page}&limit=${limit}`,
+      { method: 'GET' }
+    );
 
-    const response = await fetchWithInterceptor(url.toString());
     const data = await response.json();
-
-    if (data.success) {
-      // Transform the submissions data
-      const transformedSubmissions = (data.submissions || []).map(submission => ({
-        ...submission,
-        studentName: `${submission.user?.first_name || ''} ${submission.user?.last_name || ''}`.trim() || 'Unknown',
-        studentId: submission.user?.id || 'N/A', // Updated to use user.id
-        submissionDate: submission.submit_time,
-        start_time: submission.start_time ? new Date(submission.start_time) : null,
-        submit_time: submission.submit_time ? new Date(submission.submit_time) : null
-      }));
-
-      return {
-        success: true,
-        submissions: transformedSubmissions,
-        pagination: {
-          total: data.pagination?.total || 0,
-          pages: data.pagination?.pages || 1,
-          page: data.pagination?.page || 1,
-          limit: data.pagination?.limit || limit
-        }
-      };
+    
+    // Transform submission data to include auto-graded points
+    if (data.success && data.submissions) {
+      data.submissions = data.submissions.map(submission => {
+        let totalPoints = 0;
+        
+        submission.answers?.forEach(answer => {
+          if (answer.question?.question_type === 'multiple_choice' || 
+              answer.question?.question_type === 'true_false') {
+            const isCorrect = answer.selected_option?.is_correct;
+            answer.points_awarded = isCorrect ? answer.question.points : 0;
+            totalPoints += answer.points_awarded;
+          } else if (answer.points_awarded) {
+            totalPoints += answer.points_awarded;
+          }
+        });
+        
+        return {
+          ...submission,
+          total_score: totalPoints
+        };
+      });
     }
 
-    return {
-      success: false,
-      message: data.message || 'Failed to fetch submissions',
-      submissions: [],
-      pagination: { total: 0, pages: 1, page: 1, limit }
-    };
+    return data;
   } catch (error) {
     console.error('Error fetching submissions:', error);
     throw error;
@@ -238,31 +244,73 @@ export const saveQuestionAnswer = async (submissionId, questionId, answerData) =
 /**
  * Submits a completed assessment
  * @param {number} submissionId - The submission ID
+ * @param {number} assessmentId - The assessment ID (optional, will try to find from localStorage if not provided)
  * @returns {Promise<Object>} Submission result
  */
 const hasManualGradingQuestions = (questions = []) => {
+  // Add null/undefined check to prevent TypeError
+  if (!questions || !Array.isArray(questions)) return false;
+  
   return questions.some(q => 
     q.question_type === 'short_answer' || 
     q.question_type === 'essay'
   );
 };
 
-export const submitAssessment = async (submissionId) => {
+export const submitAssessment = async (submissionId, assessmentId = null) => {
   try {
-    // Get submission and assessment details first
-    const submissionDetails = await getSubmissionDetails(submissionId);
+    // First try to get the assessment ID from the provided parameter
+    let assessmentIdToUse = assessmentId;
     
-    if (!submissionDetails.success) {
-      throw new Error('Failed to get submission details');
+    // If not provided, try to get it from localStorage
+    if (!assessmentIdToUse) {
+      try {
+        const storedSubmissionData = localStorage.getItem(`submission_${submissionId}`);
+        if (storedSubmissionData) {
+          const parsedData = JSON.parse(storedSubmissionData);
+          assessmentIdToUse = parsedData.assessmentId;
+        }
+      } catch (e) {
+        console.error('Error retrieving stored submission data:', e);
+      }
     }
+    
+    if (!assessmentIdToUse) {
+      throw new Error('Assessment ID not found for submission');
+    }
+    
+    // Ensure current timestamp is always set for the submission
+    const submit_time = new Date().toISOString();
+    
+    // Set default status to 'graded' initially
+    let status = 'graded';
+    
+    // Try to determine if we need manual grading by checking the submission details
+    try {
+      const submissionDetails = await getUserSubmission(assessmentIdToUse, true);
+      
+      // If we successfully got submission details, check for manual grading questions
+      if (submissionDetails.success && submissionDetails.submission?.assessment?.questions) {
+        const hasManualQuestions = hasManualGradingQuestions(submissionDetails.submission.assessment.questions);
+        
+        // If there are manual grading questions, force status to 'submitted'
+        if (hasManualQuestions) {
+          status = 'submitted';
+        }
+      }
+    } catch (err) {
+      // If we can't get the submission details, proceed with default 'graded' status
+      console.warn('Could not determine question types, using default status:', err);
+    }
+    
+    console.log('Submitting assessment with payload:', {
+      status,
+      submit_time,
+      assessmentId: assessmentIdToUse,
+      submissionId
+    });
 
-    const { submission } = submissionDetails;
-    const hasManualQuestions = hasManualGradingQuestions(submission.assessment.questions);
-
-    // If there are manual grading questions, force status to 'submitted'
-    // even if multiple choice questions are auto-graded
-    const status = hasManualQuestions ? 'submitted' : 'graded';
-
+    // Send the submission request
     const response = await fetchWithInterceptor(
       `${API_BASE_URL}/assessments/submissions/${submissionId}/submit`,
       {
@@ -272,7 +320,7 @@ export const submitAssessment = async (submissionId) => {
         },
         body: JSON.stringify({
           status,
-          submit_time: new Date().toISOString()
+          submit_time  // Always include submit_time in payload
         })
       }
     );
@@ -282,12 +330,32 @@ export const submitAssessment = async (submissionId) => {
       throw new Error(data.message || 'Failed to submit assessment');
     }
 
-    // Override the status in the response if needed
-    if (hasManualQuestions && data.submission) {
-      data.submission.status = 'submitted';
+    // Store the submission time in localStorage for reference
+    try {
+      localStorage.setItem(`submission_${submissionId}_time`, submit_time);
+    } catch (e) {
+      console.warn('Could not store submission time in localStorage:', e);
+    }
+    
+    // Try to get the latest submission data
+    try {
+      const latestSubmissionData = await getUserSubmission(assessmentIdToUse, true);
+      if (latestSubmissionData.success) {
+        return {
+          ...data,
+          submission: latestSubmissionData.submission,
+          submit_time  // Ensure submit_time is included in the return value
+        };
+      }
+    } catch (err) {
+      console.warn('Error fetching updated submission:', err);
     }
 
-    return data;
+    // If we couldn't get updated data, just return the original response with submit_time
+    return {
+      ...data,
+      submit_time  // Ensure submit_time is included in the return value
+    };
   } catch (error) {
     console.error('Error submitting assessment:', error);
     throw error;
@@ -322,8 +390,17 @@ export const getUserSubmission = async (assessmentId, includeAnswers = false, pa
             ...answer.selected_option,
             option_text: answer.selected_option.option_text || answer.selected_option.text || ''
           } : null,
-          text_response: answer.text_response || ''
-        }))
+          text_response: answer.text_response || '',
+          // Include both auto-graded and manual grades
+          points_awarded: answer.points_awarded || 0,
+          is_auto_graded: answer.is_auto_graded || false,
+          manual_grade: answer.manual_grade || null,
+          feedback: answer.feedback || ''
+        })),
+        // Calculate total score combining both auto and manual grades
+        total_score: data.submission.answers?.reduce((sum, answer) => 
+          sum + (parseInt(answer.points_awarded) || 0), 0
+        ) || 0
       };
 
       return {
@@ -331,7 +408,6 @@ export const getUserSubmission = async (assessmentId, includeAnswers = false, pa
         submission
       };
     }
-
     return data;
   } catch (error) {
     console.error('Error fetching user submission:', error);
@@ -380,8 +456,176 @@ export const getSubmissionDetails = async (submissionId) => {
     });
 
     if (!response.ok) throw new Error('Failed to fetch submission details');
-    return await response.json();
+    const data = await response.json();
+
+    if (data.success && data.submission) {
+      // Process auto-grading for multiple choice and true/false questions
+      const processedSubmission = {
+        ...data.submission,
+        answers: data.submission.answers.map(answer => {
+          const question = data.submission.assessment.questions.find(q => q.id === answer.question_id);
+          
+          if (question?.question_type === 'multiple_choice' || question?.question_type === 'true_false') {
+            // Find the selected option
+            const selectedOption = question.options.find(opt => opt.id === answer.selected_option_id);
+            
+            // Auto-grade based on correctness
+            if (!answer.points_awarded) { // Only auto-grade if not already graded
+              return {
+                ...answer,
+                points_awarded: selectedOption?.is_correct ? question.points : 0,
+                is_auto_graded: true,
+                feedback: selectedOption?.is_correct ? 'Correct answer' : 'Incorrect answer'
+              };
+            }
+          }
+          
+          return answer;
+        })
+      };
+
+      return {
+        success: true,
+        submission: processedSubmission
+      };
+    }
+
+    return data;
   } catch (error) {
+    console.error('Error in getSubmissionDetails:', error);
+    throw error;
+  }
+};
+
+/**
+ * Updates an existing assessment
+ * @param {number} assessmentId - The assessment ID to update
+ * @param {Object} assessmentData - The updated assessment data
+ * @returns {Promise<Object>} Updated assessment object
+ */
+export const editAssessment = async (assessmentId, assessmentData) => {
+  try {
+    // Validate assessmentId
+    if (!assessmentId) throw new Error('Assessment ID is required');
+
+    // Format request body to match API requirements exactly
+    const requestBody = {
+      title: assessmentData.title,
+      description: assessmentData.description,
+      type: assessmentData.type,
+      max_score: assessmentData.max_score,
+      passing_score: assessmentData.passing_score,
+      duration_minutes: assessmentData.duration_minutes,
+      due_date: assessmentData.due_date,
+      is_published: assessmentData.is_published,
+      instructions: assessmentData.instructions
+    };
+
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/assessments/${assessmentId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update assessment');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error updating assessment:', error);
+    throw error;
+  }
+};
+
+/**
+ * Deletes an assessment and all its questions
+ * @param {number} assessmentId - The assessment ID to delete
+ * @returns {Promise<Object>} Response object
+ */
+export const deleteAssessment = async (assessmentId) => {
+  try {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/assessments/${assessmentId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json',
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to delete assessment');
+    }
+
+    return {
+      success: true,
+      message: data.message || 'Assessment deleted successfully'
+    };
+  } catch (error) {
+    console.error('Error in deleteAssessment:', error);
+    throw error;
+  }
+};
+
+/**
+ * Updates an existing question
+ * @param {number} assessmentId - The assessment ID
+ * @param {number} questionId - The question ID
+ * @param {Object} questionData - Updated question data
+ * @returns {Promise<Object>} Updated question object
+ */
+export const editQuestion = async (assessmentId, questionId, questionData) => {
+  try {
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/assessments/${assessmentId}/questions/${questionId}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(questionData),
+      }
+    );
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update question');
+    }
+    return data;
+  } catch (error) {
+    console.error('Error updating question:', error);
+    throw error;
+  }
+};
+
+/**
+ * Deletes a question
+ * @param {number} assessmentId - The assessment ID
+ * @param {number} questionId - The question ID to delete
+ * @returns {Promise<Object>} Response object
+ */
+export const deleteQuestion = async (assessmentId, questionId) => {
+  try {
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/assessments/${assessmentId}/questions/${questionId}`,
+      {
+        method: 'DELETE',
+      }
+    );
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to delete question');
+    }
+    return data;
+  } catch (error) {
+    console.error('Error deleting question:', error);
     throw error;
   }
 };

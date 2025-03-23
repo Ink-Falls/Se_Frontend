@@ -59,16 +59,16 @@ const approveEnrollment = async (enrollmentId) => {
       throw new Error("Not authenticated");
     }
 
-    const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+    const tokenPayload = JSON.parse(atob(token.split(".")[1]));
     const adminId = tokenPayload.id;
 
     const url = `${API_BASE_URL}/enrollments/${enrollmentId}/approve`;
-    console.log('Making PATCH request to:', url);
+    console.log("Making PATCH request to:", url);
 
     // First get the enrollment details
-    console.log('Fetching enrollment details for ID:', enrollmentId);
+    console.log("Fetching enrollment details for ID:", enrollmentId);
     const enrollment = await getEnrollmentById(enrollmentId);
-    
+
     if (!enrollment) {
       throw new Error("Enrollment not found");
     }
@@ -81,10 +81,10 @@ const approveEnrollment = async (enrollmentId) => {
       enrollment_id: enrollmentId, // Using snake_case to match backend
       admin_id: adminId,
       year_level: enrollment.year_level,
-      status: 'approved'
+      status: "approved",
     };
 
-    console.log('Request body:', JSON.stringify(requestBody, null, 2));
+    console.log("Request body:", JSON.stringify(requestBody, null, 2));
 
     const response = await fetch(url, {
       method: "PATCH",
@@ -92,7 +92,7 @@ const approveEnrollment = async (enrollmentId) => {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -104,7 +104,6 @@ const approveEnrollment = async (enrollmentId) => {
     const data = await response.json();
     console.log("Server response:", JSON.stringify(data, null, 2));
     return data;
-
   } catch (error) {
     console.error("Error in approveEnrollment:", error);
     throw error;
@@ -131,22 +130,22 @@ const rejectEnrollment = async (enrollmentId) => {
     }
 
     // Get admin ID from the JWT token
-    const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+    const tokenPayload = JSON.parse(atob(token.split(".")[1]));
     const adminId = tokenPayload.id;
 
     const url = `${API_BASE_URL}/enrollments/${enrollmentId}/reject`;
-    console.log('Making PATCH request to:', url);
+    console.log("Making PATCH request to:", url);
 
     const requestBody = {
       enrollmentId,
-      adminId
+      adminId,
     };
 
-    console.log('Request headers:', {
+    console.log("Request headers:", {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     });
-    console.log('Request body:', JSON.stringify(requestBody, null, 2));
+    console.log("Request body:", JSON.stringify(requestBody, null, 2));
 
     const response = await fetch(url, {
       method: "PATCH",
@@ -154,7 +153,7 @@ const rejectEnrollment = async (enrollmentId) => {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -166,7 +165,6 @@ const rejectEnrollment = async (enrollmentId) => {
     const data = await response.json();
     console.log("Server response:", JSON.stringify(data, null, 2));
     return data;
-
   } catch (error) {
     console.error("Error in rejectEnrollment:", error);
     throw error;
@@ -231,10 +229,12 @@ const getEnrollmentById = async (enrollmentId) => {
     }
 
     // Ensure enrollmentId is a number and properly formatted in the URL
-    const url = `${API_BASE_URL}/enrollments/${encodeURIComponent(enrollmentId)}`;
-    
+    const url = `${API_BASE_URL}/enrollments/${encodeURIComponent(
+      enrollmentId
+    )}`;
+
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -244,7 +244,10 @@ const getEnrollmentById = async (enrollmentId) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || `Failed to fetch enrollment (Status: ${response.status})`);
+      throw new Error(
+        errorData.message ||
+          `Failed to fetch enrollment (Status: ${response.status})`
+      );
     }
 
     const data = await response.json();
@@ -270,9 +273,9 @@ const getEnrollmentById = async (enrollmentId) => {
 const createEnrollment = async (enrollmentData) => {
   try {
     const response = await fetch(`${API_BASE_URL}/enrollments`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(enrollmentData),
     });
@@ -281,14 +284,14 @@ const createEnrollment = async (enrollmentData) => {
 
     if (!response.ok) {
       if (response.status === 409) {
-        throw new Error('Email already exists');
+        throw new Error("Email already exists");
       }
-      throw new Error(data.message || 'Failed to create enrollment');
+      throw new Error(data.message || "Failed to create enrollment");
     }
 
     return data;
   } catch (error) {
-    console.error('Error creating enrollment:', error);
+    console.error("Error creating enrollment:", error);
     throw error;
   }
 };

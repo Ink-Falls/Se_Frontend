@@ -13,6 +13,7 @@ import {
   FileText,
   Clock,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import { getUserSubmission, getAssessmentById, gradeSubmission, getSubmissionDetails } from "../../services/assessmentService";
 import EditGradeModal from '../../components/common/Modals/Edit/EditGradeModal';
@@ -36,81 +37,153 @@ const StudentSubmissionView = () => {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [isEditGradeModalOpen, setIsEditGradeModalOpen] = useState(false);
   const [answersWithDetails, setAnswersWithDetails] = useState({});
+  const [isConfirmAutoGradeModalOpen, setIsConfirmAutoGradeModalOpen] = useState(false);
+  const [autoGradeLoading, setAutoGradeLoading] = useState(false);
+  const [autoGradeStats, setAutoGradeStats] = useState({ total: 0, processed: 0 });
 
   const calculateTotalPoints = (questions) => {
     return questions?.reduce((total, question) => total + (parseInt(question.points) || 0), 0) || 0;
   };
 
+  const calculateAutoGradedScore = (submission) => {
+    if (!submission?.answers) return { total: 0, possible: 0 };
+    
+    const scores = submission.answers.reduce((acc, answer) => {
+      const question = submission.assessment?.questions?.find(q => q.id === answer.question_id);
+      
+      if (!question) return acc;
+
+      // Auto-grade multiple choice and true/false questions
+      if (question.question_type === 'multiple_choice' || question.question_type === 'true_false') {
+        const correctOption = question.options?.find(opt => opt.is_correct);
+        const isCorrect = answer.selected_option_id === correctOption?.id;
+        
+        return {
+          total: acc.total + (isCorrect ? question.points : 0),
+          possible: acc.possible + question.points
+        };
+      }
+      
+      // For manual grading questions, use points_awarded if available
+      return {
+        total: acc.total + (parseInt(answer.points_awarded) || 0),
+        possible: acc.possible + question.points
+      };
+    }, { total: 0, possible: 0 });
+
+    return scores;
+  };
+
+  const processSubmissionAnswers = (submissionData) => {
+    if (!submissionData?.answers) return submissionData;
+
+    const processedAnswers = submissionData.answers.map(answer => {
+      const question = submissionData.assessment?.questions?.find(q => q.id === answer.question_id);
+      
+      // Auto-grade multiple choice and true/false questions if not already graded
+      if ((question?.question_type === 'multiple_choice' || question?.question_type === 'true_false') 
+          && answer.points_awarded === null) {
+        const correctOption = question.options?.find(opt => opt.is_correct);
+        const isCorrect = answer.selected_option_id === correctOption?.id;
+        
+        return {
+          ...answer,
+          points_awarded: isCorrect ? question.points : 0,
+          is_auto_graded: true,
+          feedback: isCorrect ? 'Correct' : 'Incorrect'
+        };
+      }
+      
+      return answer;
+    });
+
+    return {
+      ...submissionData,
+      answers: processedAnswers
+    };
+  };
+
   useEffect(() => {
     const fetchSubmissionDetails = async () => {
+      if (!location.state?.submission?.id) return;
+      
       try {
         setLoading(true);
         const response = await getSubmissionDetails(location.state.submission.id);
         
         if (response.success && response.submission) {
-          // Calculate total possible points from all questions
-          const totalPossiblePoints = calculateTotalPoints(response.submission.assessment.questions);
-          
-          // Process answers to include correct answer details and auto-grading
-          const processedAnswers = {};
-          let totalAutoGradedScore = 0;
-
-          response.submission.answers.forEach(answer => {
+          // Process each answer and auto-grade MC/TF questions
+          const processedAnswers = await Promise.all(response.submission.answers.map(async (answer) => {
             const question = response.submission.assessment.questions.find(
               q => q.id === answer.question_id
             );
+            
+            if (!question) return answer;
 
             // Auto-grade multiple choice and true/false questions
-            let isAutoGraded = false;
-            let autoGradedPoints = 0;
+            if ((question.question_type === 'multiple_choice' || question.question_type === 'true_false')) {
+              const selectedOption = question.options?.find(opt => opt.id === answer.selected_option_id);
+              const isCorrect = selectedOption?.is_correct || false;
+              const points = isCorrect ? question.points : 0;
 
-            if (question?.question_type === 'multiple_choice' || question?.question_type === 'true_false') {
-              const correctOption = question.options?.find(opt => opt.is_correct);
-              const isCorrect = answer.selected_option_id === correctOption?.id;
-              
-              if (!answer.points_awarded) { // Only auto-grade if not already graded
-                autoGradedPoints = isCorrect ? question.points : 0;
-                isAutoGraded = true;
-                totalAutoGradedScore += autoGradedPoints;
+              // Auto-save grade using gradeSubmission
+              try {
+                const gradeResponse = await gradeSubmission(response.submission.id, {
+                  grades: [{
+                    questionId: answer.question_id,
+                    points: points,
+                    feedback: isCorrect ? 'Correct answer' : 'Incorrect answer'
+                  }],
+                  feedback: ''
+                });
+
+                if (gradeResponse.success) {
+                  return {
+                    ...answer,
+                    points_awarded: points,
+                    is_auto_graded: true,
+                    feedback: isCorrect ? 'Correct answer' : 'Incorrect answer'
+                  };
+                }
+              } catch (err) {
+                console.error('Error auto-grading question:', err);
               }
             }
 
-            processedAnswers[answer.question_id] = {
-              questionText: question?.question_text || 'Question not available',
-              questionType: question?.question_type,
-              maxPoints: question?.points || 0,
-              selectedAnswer: answer.selected_option?.option_text || answer.text_response || 'No answer provided',
-              selectedOptionId: answer.selected_option_id,
-              isCorrect: answer.selected_option?.is_correct || false,
-              pointsAwarded: isAutoGraded ? autoGradedPoints : answer.points_awarded,
-              feedback: isAutoGraded ? (autoGradedPoints > 0 ? 'Correct' : 'Incorrect') : answer.feedback,
-              allOptions: question?.options || [],
-              correctOption: question?.options?.find(opt => opt.is_correct),
-              answerKey: question?.answer_key,
-              isAutoGraded
-            };
-          });
+            return answer;
+          }));
 
-          // Update submission with auto-graded scores
-          const updatedSubmission = {
-            ...response.submission,
-            answers: response.submission.answers.map(answer => {
-              const processed = processedAnswers[answer.question_id];
-              return {
-                ...answer,
-                points_awarded: processed.pointsAwarded,
-                feedback: processed.feedback,
-                is_auto_graded: processed.isAutoGraded
-              };
-            })
-          };
-
-          setAnswersWithDetails(processedAnswers);
+          // Update submission details with processed answers
           setSubmissionDetails({
             ...response.submission,
-            maxScore: totalPossiblePoints,
-            answers: response.submission.answers
+            answers: processedAnswers
           });
+
+          // Update answersWithDetails
+          const answersWithDetailsMap = {};
+          processedAnswers.forEach(answer => {
+            const question = response.submission.assessment.questions.find(
+              q => q.id === answer.question_id
+            );
+            
+            if (question) {
+              answersWithDetailsMap[answer.question_id] = {
+                ...answer,
+                questionText: question.question_text,
+                questionType: question.question_type,
+                maxPoints: question.points,
+                selectedAnswer: answer.selected_option?.option_text || answer.text_response || 'No answer provided',
+                isCorrect: answer.selected_option?.is_correct || false,
+                selectedOptionId: answer.selected_option_id,
+                allOptions: question.options || [],
+                answerKey: question.answer_key,
+                isAutoGraded: answer.is_auto_graded
+              };
+            }
+          });
+
+          setAnswersWithDetails(answersWithDetailsMap);
+          setQuestions(response.submission.assessment.questions || []);
         }
       } catch (err) {
         console.error('Error fetching submission:', err);
@@ -120,9 +193,7 @@ const StudentSubmissionView = () => {
       }
     };
 
-    if (location.state?.submission?.id) {
-      fetchSubmissionDetails();
-    }
+    fetchSubmissionDetails();
   }, [location.state?.submission?.id]);
 
   useEffect(() => {
@@ -275,6 +346,70 @@ const StudentSubmissionView = () => {
     }
   };
 
+  const handleAutoGrade = async () => {
+    try {
+      setAutoGradeLoading(true);
+      
+      // Filter only multiple choice and true/false questions that need grading
+      const autoGradeableAnswers = submissionDetails.answers.filter(answer => {
+        const question = submissionDetails.assessment.questions.find(q => q.id === answer.question_id);
+        return (question?.question_type === 'multiple_choice' || question?.question_type === 'true_false');
+      });
+      
+      setAutoGradeStats({
+        total: autoGradeableAnswers.length,
+        processed: 0
+      });
+      
+      // Create grading data structure for submission
+      const gradingData = {
+        grades: [],
+        feedback: 'Auto-graded multiple choice and true/false questions'
+      };
+      
+      // Process each auto-gradeable answer
+      for (const answer of autoGradeableAnswers) {
+        const question = submissionDetails.assessment.questions.find(q => q.id === answer.question_id);
+        
+        if (!question) continue;
+        
+        // Find the correct option
+        const correctOption = question.options?.find(opt => opt.is_correct);
+        const isCorrect = answer.selected_option_id === correctOption?.id;
+        const points = isCorrect ? question.points : 0;
+        
+        // Add to grading data
+        gradingData.grades.push({
+          questionId: answer.question_id,
+          points: points,
+          feedback: isCorrect ? 'Correct answer' : 'Incorrect answer'
+        });
+        
+        setAutoGradeStats(prev => ({...prev, processed: prev.processed + 1}));
+      }
+      
+      // Submit the grades if we have any
+      if (gradingData.grades.length > 0) {
+        const response = await gradeSubmission(submissionDetails.id, gradingData);
+        
+        if (response.success) {
+          // Refresh the submission data
+          await handleGradeUpdate(response.submission);
+          alert('Auto-grading completed successfully!');
+        }
+      } else {
+        alert('No auto-gradeable questions found.');
+      }
+      
+    } catch (err) {
+      console.error('Error auto-grading submission:', err);
+      alert('Failed to auto-grade submission. Please try again.');
+    } finally {
+      setAutoGradeLoading(false);
+      setIsConfirmAutoGradeModalOpen(false);
+    }
+  };
+
   const renderQuestionAnswer = (answer, index) => {
     const details = answersWithDetails[answer.question_id];
     if (!details) return null;
@@ -398,20 +533,36 @@ const StudentSubmissionView = () => {
     if (submissionError) return <div className="text-red-600">{submissionError}</div>;
     if (!submissionDetails?.answers) return <div>No submission found.</div>;
 
+    // Format the submission date consistently
+    const formattedSubmitTime = submissionDetails.submit_time ? 
+      new Date(submissionDetails.submit_time).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : 'Not submitted';
+
     // Calculate total awarded points and total possible points
     const totalAwarded = submissionDetails.answers.reduce((sum, answer) => 
       sum + (parseInt(answer.points_awarded) || 0), 0);
     const totalPossible = submissionDetails.assessment.questions.reduce((sum, question) => 
       sum + (parseInt(question.points) || 0), 0);
 
+    // Check if all questions have been answered
+    const allQuestionsAnswered = submissionDetails.answers.every(answer => {
+      return answer.selected_option_id !== null || answer.text_response !== null;
+    });
+
     // Check if all questions have been graded
     const allQuestionsGraded = submissionDetails.answers.every(answer => 
-      answer.points_awarded !== null && 
-      answer.points_awarded !== undefined
+      answer.points_awarded !== null && answer.points_awarded !== undefined
     );
 
-    // Determine submission status
-    const submissionStatus = allQuestionsGraded ? 'Graded' : 'Not Graded';
+    // Determine submission status based on answer completion and grading status
+    const submissionStatus = !allQuestionsAnswered ? 'Not Submitted' :
+                           allQuestionsGraded ? 'Graded' : 
+                           'Submitted';
 
     return (
       <div className="bg-gray-50 rounded-lg p-4">
@@ -421,7 +572,7 @@ const StudentSubmissionView = () => {
 
         {/* Updated submission meta data section with total score */}
         <div className="mt-6 p-6 bg-white rounded-lg border">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-3 gap-6">
             <div>
               <p className="text-sm text-gray-600">Submission Status:</p>
               <p className="font-medium capitalize">{submissionStatus}</p>
@@ -429,9 +580,7 @@ const StudentSubmissionView = () => {
             <div>
               <p className="text-sm text-gray-600">Submitted:</p>
               <p className="font-medium">
-                {submissionDetails.submit_time ? 
-                  new Date(submissionDetails.submit_time).toLocaleString() : 
-                  'Not submitted'}
+                {formattedSubmitTime}
               </p>
             </div>
             <div className="col-span-2">
@@ -543,6 +692,55 @@ const StudentSubmissionView = () => {
     </div>
   );
 
+  const renderAutoGradeConfirmModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-6 w-full max-w-md">
+        <div className="flex items-center mb-4 text-amber-600">
+          <AlertTriangle size={24} className="mr-2" />
+          <h3 className="text-xl font-semibold">Confirm Auto-Grading</h3>
+        </div>
+        
+        <p className="text-gray-600 mb-4">
+          This will automatically grade all multiple-choice and true/false questions in this submission.
+          Existing grades for these questions will be overwritten.
+        </p>
+        
+        <p className="text-gray-600 mb-6">
+          Do you want to continue?
+        </p>
+        
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={() => setIsConfirmAutoGradeModalOpen(false)}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+            disabled={autoGradeLoading}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAutoGrade}
+            className="px-6 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#F6BA18] hover:text-[#212529]"
+            disabled={autoGradeLoading}
+          >
+            {autoGradeLoading ? 'Processing...' : 'Proceed'}
+          </button>
+        </div>
+        
+        {autoGradeLoading && (
+          <div className="mt-4">
+            <p className="text-sm text-gray-600">Processing questions: {autoGradeStats.processed}/{autoGradeStats.total}</p>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+              <div 
+                className="bg-[#F6BA18] h-2.5 rounded-full" 
+                style={{width: `${(autoGradeStats.processed / Math.max(1, autoGradeStats.total)) * 100}%`}}
+              ></div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
@@ -615,10 +813,10 @@ const StudentSubmissionView = () => {
                     Student's Submission
                   </h3>
                   <button
-                    onClick={() => setIsGradingModalOpen(true)}
+                    onClick={() => setIsConfirmAutoGradeModalOpen(true)}
                     className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
                   >
-                    {submissionDetails?.score ? "Edit Grade" : "Grade Submission"}
+                    Auto Grade MCQs & T/F
                   </button>
                 </div>
 
@@ -630,6 +828,7 @@ const StudentSubmissionView = () => {
       </div>
 
       {isGradingModalOpen && renderGradingModal()}
+      {isConfirmAutoGradeModalOpen && renderAutoGradeConfirmModal()}
       <EditGradeModal
         isOpen={isEditGradeModalOpen}
         onClose={() => setIsEditGradeModalOpen(false)}
