@@ -70,7 +70,7 @@ class TokenService {
         throw new Error('Token storage verification failed');
       }
 
-      console.log('✅ Tokens saved successfully');
+      // console.log('✅ Tokens saved successfully');
       return true;
     } catch (error) {
       console.error('❌ Token storage error:', error);
@@ -130,7 +130,7 @@ class TokenService {
    * Manual token refresh - used when token is explicitly detected as expired
    */
   async refreshToken() {
-    console.log('🔄 Attempting token refresh');
+    // console.log('🔄 Attempting token refresh');
     try {
       await this.#checkRateLimit();
 
@@ -171,7 +171,7 @@ class TokenService {
 
       // Save the new tokens
       await this.saveTokens(data.accessToken, data.refreshToken || refreshToken);
-      console.log('✅ Token refresh successful');
+      // console.log('✅ Token refresh successful');
       return data.accessToken;
 
     } catch (error) {
@@ -191,7 +191,7 @@ class TokenService {
    */
   setupAutoRefresh() {
     const REFRESH_INTERVAL = 4 * 60 * 1000; // Check every 4 minutes
-    console.log('🔄 Setting up auto refresh every 4 minutes');
+    // console.log('🔄 Setting up auto refresh every 4 minutes');
     
     // Clear any existing refresh interval
     if (this._refreshInterval) {
@@ -202,12 +202,12 @@ class TokenService {
     this._refreshInterval = setInterval(async () => {
       try {
         const currentTime = new Date().toLocaleTimeString();
-        console.log(`⏰ Auto refresh check at ${currentTime}`);
+        // console.log(`⏰ Auto refresh check at ${currentTime}`);
         
         // Only proceed if there's a valid refresh token
         const refreshToken = this.getRefreshToken();
         if (!refreshToken) {
-          console.log('⚠️ No refresh token found, clearing auto refresh');
+          // console.log('⚠️ No refresh token found, clearing auto refresh');
           this.clearAutoRefresh();
           return;
         }
@@ -215,11 +215,11 @@ class TokenService {
         // Use validateAuth to check token validity
         const validationResult = await this.validateAuth();
         if (!validationResult.valid) {
-          console.log('🔑 Token invalid, initiating refresh...');
+          // console.log('🔑 Token invalid, initiating refresh...');
           await this.refreshToken();
-          console.log('✅ Auto refresh completed successfully');
+          // console.log('✅ Auto refresh completed successfully');
         } else {
-          console.log('✨ Token is still valid, no refresh needed');
+          // console.log('✨ Token is still valid, no refresh needed');
         }
       } catch (error) {
         console.error('❌ Auto refresh failed:', error);
@@ -232,7 +232,7 @@ class TokenService {
     // Initial validation check
     this.validateAuth().then(({ valid }) => {
       if (!valid) {
-        console.log('🚀 Performing initial token refresh');
+        // console.log('🚀 Performing initial token refresh');
         this.refreshToken().catch(error => {
           console.error('Initial refresh failed:', error);
           if (error.message.includes('token')) {
@@ -256,11 +256,11 @@ class TokenService {
    * @returns {Promise<{valid: boolean, user: object|null}>}
    */
   async validateAuth() {
-    console.log('🔍 Validating authentication');
+    // console.log('🔍 Validating authentication');
     try {
       const token = this.getAccessToken();
       if (!token) {
-        console.log('No token found during validation');
+        // console.log('No token found during validation');
         return { valid: false, user: null };
       }
 
@@ -277,7 +277,7 @@ class TokenService {
       }
 
       const data = await response.json();
-      console.log('Validation response:', data);
+      // console.log('Validation response:', data);
 
       return {
         valid: data.isValid || false,

@@ -12,7 +12,6 @@ function Enrollment() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Email:", email);
     setErrorMessage(""); // Clear any previous error message
 
     try {

@@ -13,13 +13,11 @@ export const getModulesByCourseId = async (courseId, page = 1) => {
   }
 
   try {
-    console.log('🔍 Fetching modules for course:', courseId);
     const response = await fetchWithInterceptor(
       `${API_BASE_URL}/modules/course/${courseId}?page=${page}`
     );
 
     const data = await response.json();
-    console.log('📦 Raw API response:', data);
 
     // Return the modules array directly if it exists, otherwise return the whole response
     return data.modules || data;
@@ -127,13 +125,12 @@ export const deleteModule = async (moduleId) => {
  */
 export const getModuleContents = async (moduleId, page = 1) => {
   try {
-    console.log('Fetching contents for module:', moduleId);
+    
     const response = await fetchWithInterceptor(
       `${API_BASE_URL}/modules/${moduleId}/contents?page=${page}`
     );
     
     const data = await response.json();
-    console.log('Module contents response:', data);
     
     // Return the contents array directly if it exists, otherwise return the whole response
     return {
@@ -160,8 +157,6 @@ export const addModuleContent = async (moduleId, contentData) => {
       name: contentData.title,
       link: contentData.content // Changed from content to link
     };
-
-    console.log('Sending content data:', formattedData);
 
     const response = await fetchWithInterceptor(
       `${API_BASE_URL}/modules/${moduleId}/content`,

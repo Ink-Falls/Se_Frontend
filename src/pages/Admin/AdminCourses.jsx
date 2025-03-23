@@ -122,13 +122,11 @@ function AdminCourses() {
       try {
         const cachedCourses = checkCache("courses");
         if (cachedCourses) {
-          console.log("Using cached course data");
           setCourses(cachedCourses);
           setLoading(false);
           return;
         }
 
-        console.log("Fetching fresh course data");
         setLoading(true);
         const coursesData = await getAllCourses();
 
@@ -151,9 +149,9 @@ function AdminCourses() {
   }, []);
 
   useEffect(() => {
-    console.log("Current courses:", courses);
-    console.log("Loading state:", loading);
-    console.log("Error state:", error);
+    // console.log("Current courses:", courses);
+    // console.log("Loading state:", loading);
+    // console.log("Error state:", error);
   }, [courses, loading, error]);
 
   useEffect(() => {
@@ -237,17 +235,12 @@ function AdminCourses() {
   }
 
   const handleEdit = (course) => {
-    // Log the course data being edited
-    console.log("Course being edited:", course);
-
     const editData = {
       ...course,
       user_id: course.user_id || course.teacher_id || "", // Try both possible fields
       learner_group_id: course.learner_group_id || "",
       student_teacher_group_id: course.student_teacher_group_id || "",
     };
-
-    console.log("Formatted edit data:", editData); // For debugging
     setEditingCourse(editData);
     setDropdownOpen(null);
   };

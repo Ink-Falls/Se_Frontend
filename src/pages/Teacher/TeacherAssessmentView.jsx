@@ -29,6 +29,21 @@ import CreateQuestionModal from "../../components/common/Modals/Create/CreateQue
 import EditQuestionModal from "../../components/common/Modals/Edit/EditQuestionModal";
 import DeleteModal from "../../components/common/Modals/Delete/DeleteModal";
 
+// Add this new component after the imports
+const SortButton = ({ field, currentSort, onSort, children }) => (
+  <button
+    onClick={() => onSort(field)}
+    className="flex items-center gap-1 hover:bg-gray-200 px-2 py-1 rounded transition-colors"
+  >
+    {children}
+    {currentSort.field === field && (
+      <span className="text-xs">
+        {currentSort.direction === 'asc' ? '↑' : '↓'}
+      </span>
+    )}
+  </button>
+);
+
 const TeacherAssessmentView = () => {
   const [questions, setQuestions] = useState([]);
   const [isCreateQuestionOpen, setIsCreateQuestionOpen] = useState(false);
@@ -44,6 +59,12 @@ const TeacherAssessmentView = () => {
   const [submissionDetailsMap, setSubmissionDetailsMap] = useState({});
   const [isDeletingAssessment, setIsDeletingAssessment] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null); // Add this line
+  const [sortField, setSortField] = useState('submissionDate'); // Changed from 'studentName'
+  const [sortDirection, setSortDirection] = useState('desc'); // Changed from 'asc'
+  const [sortConfig, setSortConfig] = useState({ 
+    field: 'submissionDate',  // Changed from 'studentName'
+    direction: 'desc'  // Changed from 'asc'
+  });
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -706,12 +727,68 @@ const TeacherAssessmentView = () => {
     });
   };
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortedSubmissions = () => {
+    if (!submissions) return [];
+    
+    return [...submissions].sort((a, b) => {
+      let compareA, compareB;
+      
+      switch (sortField) {
+        case 'studentName':
+          // Add fallback empty string if studentName is undefined
+          compareA = (a?.studentName || '').toLowerCase();
+          compareB = (b?.studentName || '').toLowerCase();
+          break;
+        case 'submissionDate':
+          // Get timestamps, using 0 for missing dates to handle them consistently
+          compareA = new Date(submissionDetailsMap[a?.id]?.submit_time || 0).getTime();
+          compareB = new Date(submissionDetailsMap[b?.id]?.submit_time || 0).getTime();
+          break;
+        default:
+          return 0;
+      }
+
+      if (compareA < compareB) return sortDirection === 'asc' ? -1 : 1;
+      if (compareA > compareB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
   const renderSubmissionsSection = () => (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-semibold text-gray-800">
           Student Submissions
         </h3>
+        <div className="flex gap-4">
+          <button
+            onClick={() => handleSort('studentName')}
+            className="flex items-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50"
+          >
+            Sort by Name
+            {sortField === 'studentName' && (
+              <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
+            )}
+          </button>
+          <button
+            onClick={() => handleSort('submissionDate')}
+            className="flex items-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50"
+          >
+            Sort by Date
+            {sortField === 'submissionDate' && (
+              <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
+            )}
+          </button>
+        </div>
       </div>
 
       {submissionsLoading ? (
@@ -740,7 +817,7 @@ const TeacherAssessmentView = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {submissions.map((submission) => {
+                {getSortedSubmissions().map((submission) => {
                   const submissionStatus = submission.is_late
                     ? "Late"
                     : !areAllQuestionsGraded(submission)
@@ -886,7 +963,7 @@ const TeacherAssessmentView = () => {
                   Instructions
                 </h3>
                 <div className="prose max-w-none text-gray-600">
-                  {assessmentData?.description || "No instructions provided."}
+                  {assessmentData?.instructions || "No instructions provided."}
                 </div>
               </div>
             </div>

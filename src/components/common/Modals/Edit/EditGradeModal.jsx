@@ -116,11 +116,21 @@ const EditGradeModal = ({ isOpen, onClose, submission, question, onSave }) => {
   };
 
   const handlePointsChange = (value) => {
+    // Allow empty string for input clearing
+    if (value === '') {
+      setGradingData(prev => ({
+        ...prev,
+        points: 0
+      }));
+      return;
+    }
+
+    // Parse value and clamp between 0 and max points
     const points = Math.min(
-      submissionDetails?.answer.maxPoints || 0, 
+      submissionDetails?.answer.maxPoints || 0,
       Math.max(0, parseInt(value) || 0)
     );
-    
+
     setGradingData(prev => ({
       ...prev,
       points
@@ -232,8 +242,7 @@ const EditGradeModal = ({ isOpen, onClose, submission, question, onSave }) => {
                   type="number"
                   min="0"
                   max={submissionDetails?.answer.maxPoints || 0}
-                  value={gradingData.points || ''}
-                  placeholder="0"
+                  value={gradingData.points}
                   onChange={(e) => handlePointsChange(e.target.value)}
                   className="w-full p-2 border rounded-md"
                   required

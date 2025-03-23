@@ -392,7 +392,7 @@ export const getUserSubmission = async (assessmentId, includeAnswers = false, pa
           } : null,
           text_response: answer.text_response || '',
           // Include both auto-graded and manual grades
-          points_awarded: answer.points_awarded || 0,
+          points_awarded: answer.points_awarded,
           is_auto_graded: answer.is_auto_graded || false,
           manual_grade: answer.manual_grade || null,
           feedback: answer.feedback || ''

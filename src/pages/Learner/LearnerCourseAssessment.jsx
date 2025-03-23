@@ -99,37 +99,41 @@ const LearnerCourseAssessment = () => {
   }, [selectedCourse, navigate]);
 
   const getStatus = (submission) => {
-    if (!submission) return "Not Started";
+    // First check if submission exists and has submit_time
+    if (!submission || !submission.submit_time) return "Not Started";
     if (submission.is_late) return "Late";
-    if (!submission.status || submission.status === "null")
-      return "Not Started";
 
-    // Check if assessment has any manual grading questions (essay or short_answer)
-    const hasManualGradingQuestions = submission.assessment?.questions?.some(
-      (q) => q.question_type === "essay" || q.question_type === "short_answer"
-    );
+    // Check if submission has answers
+    if (!submission.answers || submission.answers.length === 0) return "Not Started";
 
-    // If there are manual grading questions, always show as "Submitted" until fully graded
-    if (hasManualGradingQuestions && submission.status !== "graded") {
-      return "Submitted";
-    }
+    // Count questions with points_awarded and total questions
+    const totalQuestions = submission.answers.length;
+    const gradedQuestions = submission.answers.filter(answer => 
+      answer.points_awarded !== null && answer.points_awarded !== undefined
+    ).length;
 
-    return submission.status;
+    // Determine status based on graded questions count
+    if (gradedQuestions === 0) return "Submitted";
+    if (gradedQuestions < totalQuestions) return "Partially Graded";
+    if (gradedQuestions === totalQuestions) return "Graded";
+
+    return "Submitted"; // Default fallback
   };
 
-  const getStatusColor = (status, isLate = false) => {
-    if (isLate) return "bg-red-100 text-red-800";
+  const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case "graded":
-        return "bg-green-100 text-green-800";
-      case "submitted":
-        return "bg-yellow-100 text-yellow-800";
-      case "in_progress":
-        return "bg-blue-100 text-blue-800";
-      case "not started":
-        return "bg-gray-100 text-gray-600";
+      case 'graded':
+        return 'bg-green-100 text-green-800';
+      case 'partially graded':
+        return 'bg-orange-100 text-orange-800';
+      case 'submitted':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'late':
+        return 'bg-red-100 text-red-800';
+      case 'not started':
+        return 'bg-gray-100 text-gray-600';
       default:
-        return "bg-gray-100 text-gray-600";
+        return 'bg-gray-100 text-gray-600';
     }
   };
 

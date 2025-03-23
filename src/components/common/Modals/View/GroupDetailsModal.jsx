@@ -129,13 +129,11 @@ const GroupDetailsModal = ({ onClose }) => {
     try {
       setLoadingMembers(true);
       setSelectedGroup(group);
-      console.log("Viewing members for group:", group);
 
       const groupId = group.group_id || group.id;
       const members = await getGroupMembers(groupId);
 
       if (Array.isArray(members)) {
-        console.log("Setting members:", members);
         setSelectedGroupMembers(members);
       } else {
         console.error("Invalid members data received:", members);

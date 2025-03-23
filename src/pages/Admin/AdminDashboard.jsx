@@ -167,7 +167,7 @@ function AdminDashboard() {
           );
           setTeachers(filteredTeachers);
         } else {
-          console.error("teachersData.rows is not an array:", teachersData);
+          // console.error("teachersData.rows is not an array:", teachersData);
           setTeachers([]);
         }
 
@@ -254,7 +254,6 @@ function AdminDashboard() {
         const cachedData = checkCache(cacheKey);
 
         if (cachedData) {
-          console.log("Using cached user data for page", currentPage);
           setUsers(cachedData.users);
           setFilteredUsers(cachedData.users);
           setTotalPages(cachedData.totalPages);
@@ -263,7 +262,6 @@ function AdminDashboard() {
           return;
         }
 
-        console.log("Fetching fresh user data for page", currentPage);
         setIsLoading(true);
 
         const result = await getAllUsers({
@@ -358,7 +356,6 @@ function AdminDashboard() {
   };
 
   const handleCreateGroup = (groupData) => {
-    console.log("Creating group:", groupData);
     setIsCreateGroupModalOpen(false);
   };
 
@@ -439,7 +436,6 @@ function AdminDashboard() {
   };
 
   const handlePageChange = async (newPage) => {
-    console.log("Changing to page:", newPage);
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
       window.scrollTo(0, 0);

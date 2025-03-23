@@ -333,8 +333,6 @@ export const getGroupMembers = async (groupId) => {
       throw new Error("Authentication token not found");
     }
 
-    console.log("Fetching members for group:", groupId);
-
     const response = await fetch(`${API_BASE_URL}/groups/${groupId}/members`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -347,7 +345,6 @@ export const getGroupMembers = async (groupId) => {
     }
 
     const membersData = await response.json();
-    console.log("Raw members data:", membersData);
 
     // Fetch user details for each member
     const membersWithDetails = await Promise.all(
@@ -375,7 +372,6 @@ export const getGroupMembers = async (groupId) => {
       })
     );
 
-    console.log("Members with details:", membersWithDetails);
     return membersWithDetails;
   } catch (error) {
     console.error("Error fetching group members:", error);
@@ -476,7 +472,6 @@ export const getUserGroupIds = async (userId) => {
       try {
         await new Promise((resolve) => setTimeout(resolve, DELAY));
 
-        console.log(`Checking group ${currentGroupId} for user ${userId}`);
         const response = await fetch(
           `${API_BASE_URL}/groups/${currentGroupId}/members`,
           {
@@ -492,7 +487,6 @@ export const getUserGroupIds = async (userId) => {
           const isMember = members.some((member) => member.user_id === userId);
 
           if (isMember) {
-            console.log(`User ${userId} is member of group ${currentGroupId}`);
             // Check if this is a valid group based on user role
             const group = await getGroupById(currentGroupId);
             if (group) {
@@ -503,9 +497,6 @@ export const getUserGroupIds = async (userId) => {
 
               if (isValidGroup) {
                 userGroups.push(currentGroupId);
-                console.log(
-                  `Found valid ${group.group_type} group for ${userRole}`
-                );
                 return userGroups; // Return once we find a valid group
               }
             }
@@ -522,9 +513,6 @@ export const getUserGroupIds = async (userId) => {
         currentGroupId++;
 
         if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-          console.log(
-            "Reached maximum consecutive errors. No more groups to check."
-          );
           break;
         }
       }
@@ -549,11 +537,6 @@ export const getUserGroupIds = async (userId) => {
  */
 export const assignUsersToGroup = async (groupId, userIds, groupType) => {
   try {
-    console.log("🎯 Assigning users to group:", {
-      groupId,
-      userIds,
-      groupType,
-    });
     const token = localStorage.getItem("token");
     if (!token) {
       throw new Error("Authentication token not found");
@@ -583,7 +566,7 @@ export const assignUsersToGroup = async (groupId, userIds, groupType) => {
     }
 
     const result = await response.json();
-    console.log("✅ Users successfully assigned to group:", result);
+    // console.log("✅ Users successfully assigned to group:", result);
     return result;
   } catch (error) {
     console.error("❌ Error assigning users to group:", error);

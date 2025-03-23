@@ -29,7 +29,6 @@ const LearnerDashboard = () => {
     setLoading(true);
     try {
       const coursesData = await getLearnerCourses();
-      console.log("Fetched courses:", coursesData); // For debugging
       setCourses(coursesData);
     } catch (error) {
       setError(error.message || "Failed to fetch courses");

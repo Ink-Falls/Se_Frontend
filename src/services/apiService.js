@@ -6,13 +6,13 @@
 import tokenService from './tokenService';
 
 const RATE_LIMIT = {
-  MAX_REQUESTS: 200,          // Maximum requests per window
-  BURST_LIMIT: 50,           // Burst capacity
-  TIME_WINDOW: 60000,        // 1 minute window
-  COOLDOWN_PERIOD: 2000,     // Cooldown between requests
-  REQUEST_DELAY: 100,        // Delay between requests
-  BATCH_SIZE: 10,            // Number of requests to process at once
-  QUEUED_REQUESTS: new Map() // Use Map for better request tracking
+  WINDOW: 900000, // 15 minutes in milliseconds
+  MAX_REQUESTS: 5000, // Maximum requests per window
+  AUTH_MAX_REQUESTS: 50, // Maximum auth requests per window
+  COOLDOWN_PERIOD: 2000, // Keep existing cooldown
+  REQUEST_DELAY: 100, // Keep existing delay
+  BATCH_SIZE: 10, // Keep existing batch size
+  QUEUED_REQUESTS: new Map() // Keep existing queue
 };
 
 const BACKOFF_STRATEGY = {
@@ -53,9 +53,9 @@ const showAlert = (message, retryAfter) => {
 
 // Add request queue with priorities
 const REQUEST_PRIORITIES = {
-  HIGH: 0,    // Auth requests
-  MEDIUM: 1,  // User data
-  LOW: 2      // Non-critical requests
+  HIGH: 0,    // Auth requests - highest priority
+  MEDIUM: 1,  // User data - medium priority
+  LOW: 2      // Non-critical requests - lowest priority
 };
 
 // Add request batching and prioritization
@@ -119,22 +119,26 @@ const calculateBackoff = (retryCount) => {
   return delay + Math.random() * BACKOFF_STRATEGY.JITTER;
 };
 
-// Update rate limiting check
+// Update rate limiting check with separate auth limit
 const checkRateLimit = async (url, options) => {
   const now = Date.now();
+  const isAuthRequest = url.includes('/auth/');
   
   // Reset counters if time window has passed
-  if (now - requestTimestamp > RATE_LIMIT.TIME_WINDOW) {
+  if (now - requestTimestamp > RATE_LIMIT.WINDOW) {
     requestCount = 0;
     requestTimestamp = now;
     return true;
   }
 
+  // Check against appropriate limit
+  const maxRequests = isAuthRequest ? RATE_LIMIT.AUTH_MAX_REQUESTS : RATE_LIMIT.MAX_REQUESTS;
+
   // Handle burst and regular requests
-  if (requestCount >= RATE_LIMIT.MAX_REQUESTS) {
+  if (requestCount >= maxRequests) {
     if (RATE_LIMIT.QUEUED_REQUESTS.size < RATE_LIMIT.BURST_LIMIT) {
       // Queue the request instead of rejecting
-      return await queueRequest(url, options);
+      return await queueRequest(url, options, isAuthRequest ? REQUEST_PRIORITIES.HIGH : REQUEST_PRIORITIES.LOW);
     }
     return false;
   }
@@ -164,8 +168,9 @@ const fetchWithInterceptor = async (url, options = {}, retryCount = 0) => {
         ? REQUEST_PRIORITIES.MEDIUM 
         : REQUEST_PRIORITIES.LOW;
 
-    // Queue the request if we're near the limit
-    if (requestCount >= RATE_LIMIT.MAX_REQUESTS * 0.8) {
+    // Queue the request if we're near the limit based on request type
+    const maxRequests = url.includes('/auth/') ? RATE_LIMIT.AUTH_MAX_REQUESTS : RATE_LIMIT.MAX_REQUESTS;
+    if (requestCount >= maxRequests * 0.8) {
       return await queueRequest(url, options, priority);
     }
 

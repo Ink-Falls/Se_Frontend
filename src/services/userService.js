@@ -17,7 +17,6 @@ import { API_BASE_URL } from "../utils/constants";
  */
 export const getAllUsers = async (options = {}) => {
   try {
-    console.log("🚀 Starting getAllUsers fetch request with options:", options);
     const token = localStorage.getItem("token");
     if (!token) {
       console.error("❌ No authentication token found");
@@ -29,8 +28,6 @@ export const getAllUsers = async (options = {}) => {
       page: Number(options.page) || 1,
       limit: Number(options.limit) || 10,
     }).toString();
-
-    console.log("Request URL:", `${API_BASE_URL}/users?${params}`);
 
     const response = await fetch(`${API_BASE_URL}/users?${params}`, {
       headers: {
@@ -44,7 +41,6 @@ export const getAllUsers = async (options = {}) => {
     }
 
     const data = await response.json();
-    console.log("📥 Raw API response:", data);
 
     // Handle response structure
     const result = {
@@ -56,7 +52,6 @@ export const getAllUsers = async (options = {}) => {
       currentPage: Number(options.page) || 1,
     };
 
-    console.log("📤 Processed response:", result);
     return result;
   } catch (error) {
     console.error("❌ Error in getAllUsers:", error);
@@ -92,7 +87,6 @@ export const getTeachers = async () => {
     const data = await response.json();
     // Handle the new response structure
     const usersList = data.users || [];
-    console.log("user List:", usersList);
     return usersList.filter((user) => user.role === "teacher");
   } catch (error) {
     console.error("Error fetching teachers:", error);
@@ -136,9 +130,6 @@ export const createUser = async (userData) => {
       section: userData.role === "student_teacher" ? userData.section : null,
       group_id: null, // Optional, can be added later if needed
     };
-
-    // Log formatted data for debugging
-    console.log("Creating user with formatted data:", formattedData);
 
     const response = await fetch(`${API_BASE_URL}/users`, {
       method: "POST",
@@ -270,7 +261,6 @@ export const deleteUser = async (userId) => {
  */
 export const removeUserFromGroup = async (groupId, userId) => {
   try {
-    console.log("🗑️ Removing user from group:", { groupId, userId });
     const token = localStorage.getItem("token");
     if (!token) {
       throw new Error("Not authenticated");
@@ -291,8 +281,6 @@ export const removeUserFromGroup = async (groupId, userId) => {
       const error = await response.json();
       throw new Error(error.message || "Failed to remove user from group");
     }
-
-    console.log("✅ User successfully removed from group");
     return true;
   } catch (error) {
     console.error("❌ Error removing user from group:", error);
