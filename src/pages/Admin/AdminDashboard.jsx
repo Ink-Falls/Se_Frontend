@@ -33,6 +33,8 @@ import {
   updateUser,
   deleteUser,
 } from "/src/services/userService.js";
+import { generateUsersReport } from "../../services/reportService";
+import ReportViewerModal from "../../components/common/Modals/View/ReportViewerModal";
 
 function AdminDashboard() {
   const [courses, setCourses] = useState([]);
@@ -76,6 +78,9 @@ function AdminDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportUrl, setReportUrl] = useState(null);
+  const [reportError, setReportError] = useState(null);
 
   const toggleDropdown = (id, event) => {
     event.stopPropagation();
@@ -441,6 +446,51 @@ function AdminDashboard() {
     }
   };
 
+  const handleGenerateReport = async () => {
+    try {
+      setError(null);
+      setReportError(null);
+      
+      // Get current user from localStorage
+      const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+      
+      const doc = await generateUsersReport(currentUser);
+      const pdfBlob = doc.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      
+      setReportUrl(pdfUrl);
+      setShowReportModal(true);
+    } catch (error) {
+      console.error('Error generating report:', error);
+      setError('Failed to generate users report');
+      setReportError('Failed to generate users report');
+      setShowReportModal(true);
+    }
+  };
+
+  const handleCloseReport = () => {
+    if (reportUrl) {
+      URL.revokeObjectURL(reportUrl);
+    }
+    setReportUrl(null);
+    setReportError(null);
+    setShowReportModal(false);
+  };
+
+  const handlePrintReport = () => {
+    if (reportUrl) {
+      window.open(reportUrl, '_blank');
+    }
+  };
+
+  const handleDeleteReport = () => {
+    if (reportUrl) {
+      URL.revokeObjectURL(reportUrl);
+      setReportUrl(null);
+      setShowReportModal(false);
+    }
+  };
+
   const EmptyState = () => (
     <div className="flex flex-col items-center justify-center py-16 px-4">
       <InboxIcon size={64} className="text-gray-300 mb-4" />
@@ -561,6 +611,7 @@ function AdminDashboard() {
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={handlePageChange}
+                onGenerateReport={handleGenerateReport}
               />
             )}
           </div>
@@ -605,6 +656,16 @@ function AdminDashboard() {
       {isGroupListModalOpen && (
         <GroupDetailsModal onClose={() => setIsGroupListModalOpen(false)} />
       )}
+
+      <ReportViewerModal
+        isOpen={showReportModal}
+        onClose={handleCloseReport}
+        pdfUrl={reportUrl}
+        onPrint={handlePrintReport}
+        onDelete={handleDeleteReport}
+        error={reportError}
+        title="Users Report"
+      />
     </>
   );
 }
