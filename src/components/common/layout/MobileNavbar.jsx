@@ -1,43 +1,34 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Book, Bell, User } from "lucide-react";
+import { LogOut } from "lucide-react";
 
-const MobileNavBar = () => {
-  const location = useLocation(); // Get current route
+const MobileNavBar = ({ navItems, onLogout }) => {
+  const location = useLocation();
 
-  // Define active link styles
   const getActiveStyle = (path) =>
     location.pathname === path
-      ? "text-[#F6BA18]" // Active page color (highlight)
-      : "text-white hover:text-[#F6BA18]"; // Default color
+      ? "text-[#F6BA18]"
+      : "text-white hover:text-[#F6BA18]";
 
   return (
     <div className="fixed bottom-0 left-0 w-full bg-[#212529] shadow-lg border-t flex justify-around py-3 lg:hidden">
-      <Link
-        to="/Dashboard"
-        className={`flex flex-col items-center ${getActiveStyle("/Dashboard")}`}
+      {navItems?.map((item, index) => (
+        <Link
+          key={index}
+          to={item.route}
+          className={`flex flex-col items-center ${getActiveStyle(item.route)}`}
+        >
+          {item.icon}
+          <span className="text-xs">{item.text}</span>
+        </Link>
+      ))}
+      <button
+        onClick={onLogout}
+        className="flex flex-col items-center text-white hover:text-[#F6BA18]"
       >
-        <Book size={24} />
-        <span className="text-xs">Courses</span>
-      </Link>
-
-      <Link
-        to="/Notifications"
-        className={`flex flex-col items-center ${getActiveStyle(
-          "/Notifications"
-        )}`}
-      >
-        <Bell size={24} />
-        <span className="text-xs">Notifications</span>
-      </Link>
-
-      <Link
-        to="/Profile"
-        className={`flex flex-col items-center ${getActiveStyle("/Profile")}`}
-      >
-        <User size={24} />
-        <span className="text-xs">Account</span>
-      </Link>
+        <LogOut size={20} />
+        <span className="text-xs">Logout</span>
+      </button>
     </div>
   );
 };

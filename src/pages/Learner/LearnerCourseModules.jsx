@@ -147,6 +147,7 @@ const LearnerCourseModules = () => {
             title={selectedCourse?.name || "Course Modules"}
             subtitle={selectedCourse?.code}
           />
+      <MobileNavBar navItems={navItems} />
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className="text-red-500 mb-4">⚠️</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -174,6 +175,7 @@ const LearnerCourseModules = () => {
             title={selectedCourse?.name || "Course Modules"}
             subtitle={selectedCourse?.code}
           />
+      <MobileNavBar navItems={navItems} />
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className="w-full max-w-md text-center">
               <div className="mx-auto w-24 h-24 bg-yellow-50 rounded-full flex items-center justify-center mb-6">
@@ -208,6 +210,7 @@ const LearnerCourseModules = () => {
           title={selectedCourse?.name || "Course Modules"}
           subtitle={selectedCourse?.code}
         />
+      <MobileNavBar navItems={navItems} />
 
         <div className="flex flex-col gap-4 mt-4">
           {modules.map((module) => (

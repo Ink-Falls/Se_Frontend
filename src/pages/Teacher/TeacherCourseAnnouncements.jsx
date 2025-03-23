@@ -4,6 +4,7 @@ import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import BlackHeader from "../../components/common/layout/BlackHeader";
 import AnnouncementsComponent from "./AnnouncementsComponent";
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import Modal from "../../components/common/Button/Modal";
 import {
   Home,
@@ -87,49 +88,44 @@ const TeacherCourseAnnouncements = () => {
     setAnnouncementToDelete(null);
   };
 
+  const navItems = [
+    { text: "Home", icon: <Home size={20} />, route: "/Teacher/Dashboard" },
+    {
+      text: "Announcements",
+      icon: <Megaphone size={20} />,
+      route: "/Teacher/CourseAnnouncements",
+    },
+    {
+      text: "Modules",
+      icon: <BookOpen size={20} />,
+      route: "/Teacher/CourseModules",
+    },
+    {
+      text: "Assessments",
+      icon: <ClipboardList size={20} />,
+      route: "/Teacher/Assessment",
+    },
+    {
+      text: "Attendance",
+      icon: <User size={20} />,
+      route: "/TeacherAttendance",
+    },
+    {
+      text: "Progress Tracker",
+      icon: <LineChart size={20} />,
+      route: "/TeacherProgress",
+    },
+  ];
+
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar
-        navItems={[
-          {
-            text: "Home",
-            icon: <Home size={20} />,
-            route: "/Teacher/Dashboard",
-          },
-          {
-            text: "Announcements",
-            icon: <Megaphone size={20} />,
-            route: "/Teacher/CourseAnnouncements", // Updated to match current route
-          },
-          {
-            text: "Modules",
-            icon: <BookOpen size={20} />,
-            route: "/Teacher/CourseModules", // Update route path
-          },
-          {
-            text: "Assessments",
-            icon: <ClipboardList size={20} />,
-            route: "/Teacher/Assessment",
-          },
-          {
-            text: "Attendance",
-            icon: <User size={20} />,
-            route: "/TeacherAttendance",
-          },
-          {
-            text: "Progress Tracker",
-            icon: <LineChart size={20} />,
-            route: "/TeacherProgress",
-          },
-        ]}
-      />
-
+      <Sidebar navItems={navItems} />
       <div className="flex-1 p-6">
         <Header
           title={selectedCourse?.name || "Course"}
           subtitle={selectedCourse?.code}
         />
-
+        <MobileNavBar navItems={navItems} />
         {/* Announcements Section */}
         <div className="bg-white rounded-lg shadow-md">
           <BlackHeader title="Announcements" count={announcements.length}>

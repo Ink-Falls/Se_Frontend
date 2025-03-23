@@ -168,7 +168,7 @@ const LearnerDashboard = () => {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <MobileNavBar />
+      <MobileNavBar navItems={navItems} />
     </div>
   );
 };

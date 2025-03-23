@@ -200,6 +200,7 @@ const LearnerCourseAssessment = () => {
           title={selectedCourse?.name || "Course"}
           subtitle={selectedCourse?.code}
         />
+      <MobileNavBar navItems={navItems} />
 
         {loading && (
           <div className="flex items-center justify-center min-h-[400px]">

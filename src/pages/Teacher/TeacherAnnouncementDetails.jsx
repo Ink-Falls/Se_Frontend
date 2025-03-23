@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import BlackHeader from "../../components/common/layout/BlackHeader";
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import {
   ArrowLeft,
   Trash2,
@@ -147,6 +148,7 @@ const AnnouncementDetails = () => {
           title={selectedCourse?.name || 'Announcement Details'} 
           subtitle={selectedCourse?.code} 
         />
+      <MobileNavBar navItems={navItems} />
 
         {/* BlackHeader with Back Button before Title */}
         <BlackHeader

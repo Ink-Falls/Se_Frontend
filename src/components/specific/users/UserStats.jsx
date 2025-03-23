@@ -3,7 +3,7 @@ import { Users } from 'lucide-react';
 
 const UserStats = ({ totalUsers, totalLearners, totalTeachers, totalAdmins }) => {
   return (
-    <div className="grid grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
       <div className="bg-white p-6 rounded-lg shadow">
         <div className="flex items-center gap-4">
           <div className="p-2 bg-green-100 rounded-full">

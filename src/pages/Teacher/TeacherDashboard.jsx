@@ -204,7 +204,7 @@ const Dashboard = () => {
           )}
         </div>
 
-        <MobileNavBar />
+        <MobileNavBar navItems={navItems} />
       </div>
     </div>
   );

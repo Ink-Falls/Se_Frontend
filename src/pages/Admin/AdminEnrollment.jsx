@@ -22,6 +22,7 @@ import {
   rejectEnrollment,
   deleteEnrollment,
 } from "/src/services/enrollmentService.js";
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
 
 function AdminEnrollment() {
   const [enrollees, setEnrollees] = useState([]);
@@ -347,58 +348,56 @@ function AdminEnrollment() {
   );
 
   return (
-    <>
-      <div className="flex h-screen bg-gray-100">
-        <Sidebar navItems={navItems} />
+    <div className="flex h-screen bg-gray-100 relative pb-16"> {/* Added pb-16 */}
+      <Sidebar navItems={navItems} />
+      <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto pb-16"> {/* Added pb-16 */}
+        <Header title="Manage Enrollments" />
 
-        <div className="flex-1 p-[1vw] overflow-auto">
-          <Header title="Manage Enrollments" />
+        {/* Add success/error message display */}
+        {successMessage && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+            {successMessage}
+          </div>
+        )}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
 
-          {/* Add success/error message display */}
-          {successMessage && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
-              {successMessage}
+        <div className="mt-4">
+          <EnrolleeStats
+            totalEnrollees={totalItems}
+            approvedEnrollees={approvedCount}
+            pendingEnrollees={pendingCount}
+            rejectedEnrollees={rejectedCount}
+          />
+        </div>
+        <div className="bg-white shadow rounded-lg overflow-hidden mt-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#212529]"></div>
             </div>
-          )}
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          <div className="mt-4">
-            <EnrolleeStats
-              totalEnrollees={totalItems}
-              approvedEnrollees={approvedCount}
-              pendingEnrollees={pendingCount}
-              rejectedEnrollees={rejectedCount}
+          ) : error ? (
+            <ErrorState />
+          ) : enrollees.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <EnrolleeTable
+              enrollees={enrollees}
+              onEdit={handleEdit}
+              onApprove={handleApprove}
+              onReject={handleReject}
+              onDeleteSelected={handleDeleteSelected}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
             />
-          </div>
-          <div className="bg-white shadow rounded-lg overflow-hidden mt-4">
-            {loading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#212529]"></div>
-              </div>
-            ) : error ? (
-              <ErrorState />
-            ) : enrollees.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <EnrolleeTable
-                enrollees={enrollees}
-                onEdit={handleEdit}
-                onApprove={handleApprove}
-                onReject={handleReject}
-                onDeleteSelected={handleDeleteSelected}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
-            )}
-          </div>
+          )}
         </div>
       </div>
-    </>
+      <MobileNavBar navItems={navItems} />
+    </div>
   );
 }
 
