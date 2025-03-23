@@ -17,11 +17,17 @@ import {
   Plus, // Add this import
   Trash2,
 } from "lucide-react";
-import { getAssessmentById, createAssessmentQuestion, getAssessmentSubmissions, getSubmissionDetails, deleteQuestion, deleteAssessment } from "../../services/assessmentService";
+import {
+  getAssessmentById,
+  createAssessmentQuestion,
+  getAssessmentSubmissions,
+  getSubmissionDetails,
+  deleteQuestion,
+  deleteAssessment,
+} from "../../services/assessmentService";
 import CreateQuestionModal from "../../components/common/Modals/Create/CreateQuestionModal";
-import EditQuestionModal from '../../components/common/Modals/Edit/EditQuestionModal';
-import DeleteModal from '../../components/common/Modals/Delete/DeleteModal';
-import DeleteAssessmentModal from "../../components/common/Modals/Delete/DeleteAssessmentModal";
+import EditQuestionModal from "../../components/common/Modals/Edit/EditQuestionModal";
+import DeleteModal from "../../components/common/Modals/Delete/DeleteModal";
 
 const TeacherAssessmentView = () => {
   const [questions, setQuestions] = useState([]);
@@ -37,7 +43,8 @@ const TeacherAssessmentView = () => {
   const [submissionData, setSubmissionData] = useState(null);
   const [submissionDetailsMap, setSubmissionDetailsMap] = useState({});
   const [isDeletingAssessment, setIsDeletingAssessment] = useState(false);
-  
+  const [successMessage, setSuccessMessage] = useState(null); // Add this line
+
   const location = useLocation();
   const navigate = useNavigate();
   const { assessment } = location.state || {};
@@ -190,30 +197,34 @@ const TeacherAssessmentView = () => {
 
   const getStatusColor = (status, score) => {
     switch (status?.toLowerCase()) {
-      case 'not graded':
-        return 'bg-orange-100 text-orange-800';
-      case 'graded':
-        return 'bg-green-100 text-green-800';
-      case 'late':
-        return 'bg-red-100 text-red-800';
-      case 'submitted':
-        return 'bg-yellow-100 text-yellow-800';
+      case "not graded":
+        return "bg-orange-100 text-orange-800";
+      case "graded":
+        return "bg-green-100 text-green-800";
+      case "late":
+        return "bg-red-100 text-red-800";
+      case "submitted":
+        return "bg-yellow-100 text-yellow-800";
       default:
-        return 'bg-gray-100 text-gray-600';
+        return "bg-gray-100 text-gray-600";
     }
   };
 
   // Add this helper function to check if all questions are graded
   const areAllQuestionsGraded = (submission) => {
     if (!submission?.answers) return false;
-    
-    return submission.answers.every(answer => {
-      const hasPoints = answer.points_awarded !== null && answer.points_awarded !== undefined;
-      const isAutoGraded = (
-        submission.assessment?.questions?.find(q => q.id === answer.question_id)?.question_type === 'multiple_choice' ||
-        submission.assessment?.questions?.find(q => q.id === answer.question_id)?.question_type === 'true_false'
-      );
-      
+
+    return submission.answers.every((answer) => {
+      const hasPoints =
+        answer.points_awarded !== null && answer.points_awarded !== undefined;
+      const isAutoGraded =
+        submission.assessment?.questions?.find(
+          (q) => q.id === answer.question_id
+        )?.question_type === "multiple_choice" ||
+        submission.assessment?.questions?.find(
+          (q) => q.id === answer.question_id
+        )?.question_type === "true_false";
+
       // Consider the question graded if it has points or is auto-graded with selected answer
       return hasPoints || (isAutoGraded && answer.is_auto_graded);
     });
@@ -221,13 +232,17 @@ const TeacherAssessmentView = () => {
 
   const calculateSubmissionScore = (submission) => {
     if (!submission?.answers) return { total: 0, possible: 0 };
-    
-    const totalAwarded = submission.answers.reduce((sum, answer) => 
-      sum + (parseInt(answer.points_awarded) || 0), 0);
-    
-    const totalPossible = submission.assessment.questions.reduce((sum, question) => 
-      sum + (parseInt(question.points) || 0), 0);
-  
+
+    const totalAwarded = submission.answers.reduce(
+      (sum, answer) => sum + (parseInt(answer.points_awarded) || 0),
+      0
+    );
+
+    const totalPossible = submission.assessment.questions.reduce(
+      (sum, question) => sum + (parseInt(question.points) || 0),
+      0
+    );
+
     return { total: totalAwarded, possible: totalPossible };
   };
 
@@ -245,34 +260,34 @@ const TeacherAssessmentView = () => {
       try {
         setLoading(true);
         const response = await getAssessmentById(assessment.id, true, true);
-        
+
         if (response.success && response.assessment) {
           const assessmentData = response.assessment;
           setAssessmentData(assessmentData);
           setQuestions(assessmentData.questions || []);
-          
+
           // Format due date
           if (assessmentData.due_date) {
             const dueDate = new Date(assessmentData.due_date);
-            const formattedDueDate = dueDate.toLocaleString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
+            const formattedDueDate = dueDate.toLocaleString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
             });
-            
-            setAssessmentData(prev => ({
+
+            setAssessmentData((prev) => ({
               ...prev,
-              formattedDueDate
+              formattedDueDate,
             }));
           }
         } else {
-          throw new Error(response.message || 'Failed to fetch assessment');
+          throw new Error(response.message || "Failed to fetch assessment");
         }
       } catch (err) {
-        console.error('Error fetching assessment:', err);
-        setError(err.message || 'Failed to load assessment details');
+        console.error("Error fetching assessment:", err);
+        setError(err.message || "Failed to load assessment details");
         setQuestions([]); // Initialize with empty array on error
       } finally {
         setLoading(false);
@@ -288,17 +303,20 @@ const TeacherAssessmentView = () => {
     const fetchSubmissions = async () => {
       try {
         setSubmissionsLoading(true);
-        const response = await getAssessmentSubmissions(assessment.id, currentPage);
-        
+        const response = await getAssessmentSubmissions(
+          assessment.id,
+          currentPage
+        );
+
         if (response.success) {
           setSubmissions(response.submissions || []);
           // Add null check for pagination and provide default value
           setTotalPages(response.pagination?.pages || 1);
         } else {
-          throw new Error(response.message || 'Failed to fetch submissions');
+          throw new Error(response.message || "Failed to fetch submissions");
         }
       } catch (err) {
-        console.error('Error fetching submissions:', err);
+        console.error("Error fetching submissions:", err);
         setError(err.message);
         // Set default values on error
         setSubmissions([]);
@@ -316,31 +334,39 @@ const TeacherAssessmentView = () => {
   useEffect(() => {
     const fetchSubmissions = async () => {
       if (!assessment?.id) return;
-      
+
       try {
         setIsLoadingSubmissions(true);
-        const submissionsResponse = await getAssessmentSubmissions(assessment.id);
-        
+        const submissionsResponse = await getAssessmentSubmissions(
+          assessment.id
+        );
+
         if (submissionsResponse.success) {
           const detailedSubmissions = await Promise.all(
             submissionsResponse.submissions.map(async (sub) => {
               const detailsResponse = await getSubmissionDetails(sub.id);
-              
+
               if (detailsResponse.success) {
-                const scores = calculateSubmissionScore(detailsResponse.submission);
-                const allGraded = areAllQuestionsGraded(detailsResponse.submission);
-                
+                const scores = calculateSubmissionScore(
+                  detailsResponse.submission
+                );
+                const allGraded = areAllQuestionsGraded(
+                  detailsResponse.submission
+                );
+
                 return {
                   id: sub.id,
-                  studentName: `${detailsResponse.submission.user?.first_name || ''} ${detailsResponse.submission.user?.last_name || ''}`.trim(),
-                  studentId: detailsResponse.submission.user?.id || 'N/A',
-                  status: allGraded ? 'graded' : 'Not Graded',
+                  studentName: `${
+                    detailsResponse.submission.user?.first_name || ""
+                  } ${detailsResponse.submission.user?.last_name || ""}`.trim(),
+                  studentId: detailsResponse.submission.user?.id || "N/A",
+                  status: allGraded ? "graded" : "Not Graded",
                   score: scores.total,
                   maxScore: scores.possible,
                   submit_time: detailsResponse.submit_time,
                   isLate: detailsResponse.submission.is_late,
                   answers: detailsResponse.submission.answers,
-                  assessment: detailsResponse.submission.assessment
+                  assessment: detailsResponse.submission.assessment,
                 };
               }
               return null;
@@ -349,11 +375,13 @@ const TeacherAssessmentView = () => {
 
           setSubmissions(detailedSubmissions.filter(Boolean));
         } else {
-          throw new Error(submissionsResponse.message || 'Failed to fetch submissions');
+          throw new Error(
+            submissionsResponse.message || "Failed to fetch submissions"
+          );
         }
       } catch (error) {
-        console.error('Error fetching submissions:', error);
-        setError('Failed to fetch submissions');
+        console.error("Error fetching submissions:", error);
+        setError("Failed to fetch submissions");
         setSubmissions([]);
       } finally {
         setIsLoadingSubmissions(false);
@@ -366,7 +394,7 @@ const TeacherAssessmentView = () => {
   useEffect(() => {
     const fetchSubmissionDetails = async () => {
       if (!submissions.length) return;
-      
+
       try {
         const detailsMap = {};
         await Promise.all(
@@ -379,12 +407,21 @@ const TeacherAssessmentView = () => {
         );
         setSubmissionDetailsMap(detailsMap);
       } catch (error) {
-        console.error('Error fetching submission details:', error);
+        console.error("Error fetching submission details:", error);
       }
     };
 
     fetchSubmissionDetails();
   }, [submissions]);
+
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
   const handleCreateQuestion = async (questionData) => {
     try {
@@ -394,21 +431,24 @@ const TeacherAssessmentView = () => {
         question_type: questionData.question_type,
         points: parseInt(questionData.points),
         order_index: (questions?.length || 0) + 1,
-        media_url: questionData.media_url || ''
+        media_url: questionData.media_url || "",
       };
 
       // Add options only for multiple_choice questions
-      if (questionData.question_type === 'multiple_choice') {
-        formattedData.options = questionData.options.map(opt => ({
+      if (questionData.question_type === "multiple_choice") {
+        formattedData.options = questionData.options.map((opt) => ({
           text: opt.text,
-          is_correct: opt.is_correct
+          is_correct: opt.is_correct,
         }));
-      } 
+      }
       // Add special handling for true/false questions
-      else if (questionData.question_type === 'true_false') {
+      else if (questionData.question_type === "true_false") {
         formattedData.options = [
-          { text: 'True', is_correct: questionData.correct_answer === 'true' },
-          { text: 'False', is_correct: questionData.correct_answer === 'false' }
+          { text: "True", is_correct: questionData.correct_answer === "true" },
+          {
+            text: "False",
+            is_correct: questionData.correct_answer === "false",
+          },
         ];
       }
       // For short_answer and essay, include answer_key if provided
@@ -416,20 +456,28 @@ const TeacherAssessmentView = () => {
         formattedData.answer_key = questionData.correct_answer;
       }
 
-      const response = await createAssessmentQuestion(assessment.id, formattedData);
-      
+      const response = await createAssessmentQuestion(
+        assessment.id,
+        formattedData
+      );
+
       if (response.success) {
-        const updatedAssessment = await getAssessmentById(assessment.id, true, true);
+        const updatedAssessment = await getAssessmentById(
+          assessment.id,
+          true,
+          true
+        );
         if (updatedAssessment.success) {
           setQuestions(updatedAssessment.assessment.questions || []);
           setIsCreateQuestionOpen(false);
+          setSuccessMessage("Question added successfully"); // Add this line
         }
       } else {
-        throw new Error(response.message || 'Failed to create question');
+        throw new Error(response.message || "Failed to create question");
       }
     } catch (err) {
-      console.error('Error creating question:', err);
-      setError(err.message || 'Failed to create question');
+      console.error("Error creating question:", err);
+      setError(err.message || "Failed to create question");
     }
   };
 
@@ -439,22 +487,26 @@ const TeacherAssessmentView = () => {
       return "No submission data available";
     }
 
-    const answer = submissionData.answers.find(a => a.question_id === question.id);
-    
+    const answer = submissionData.answers.find(
+      (a) => a.question_id === question.id
+    );
+
     if (!answer) return "Not answered";
 
     switch (question.question_type) {
-      case 'multiple_choice':
-        const selectedOption = question.options?.find(opt => opt.id === answer.selected_option_id);
+      case "multiple_choice":
+        const selectedOption = question.options?.find(
+          (opt) => opt.id === answer.selected_option_id
+        );
         return selectedOption ? selectedOption.option_text : "Invalid option";
-        
-      case 'true_false':
+
+      case "true_false":
         return answer.selected_option_id ? "True" : "False";
-        
-      case 'short_answer':
-      case 'essay':
+
+      case "short_answer":
+      case "essay":
         return answer.text_response || "No response";
-        
+
       default:
         return "Unknown question type";
     }
@@ -469,7 +521,7 @@ const TeacherAssessmentView = () => {
           setSubmissionData(response.submission);
         }
       } catch (error) {
-        console.error('Error fetching submission details:', error);
+        console.error("Error fetching submission details:", error);
       }
     };
 
@@ -483,14 +535,16 @@ const TeacherAssessmentView = () => {
     try {
       const response = await deleteQuestion(assessment.id, deletingQuestion.id);
       if (response.success) {
-        setQuestions(prev => prev.filter(q => q.id !== deletingQuestion.id));
+        setQuestions((prev) =>
+          prev.filter((q) => q.id !== deletingQuestion.id)
+        );
         setDeletingQuestion(null);
-        // Show success message
-        alert('Question deleted successfully');
+        setSuccessMessage("Question deleted successfully"); // Updated this line
+      } else {
+        throw new Error(response.message || "Failed to delete question");
       }
     } catch (err) {
-      setError(err.message || 'Failed to delete question');
-      alert('Failed to delete question: ' + err.message);
+      setError(err.message || "Failed to delete question");
     }
   };
 
@@ -498,16 +552,16 @@ const TeacherAssessmentView = () => {
     try {
       setLoading(true);
       const response = await deleteAssessment(assessment.id);
-      
+
       if (response.success) {
-        alert(response.message || 'Assessment deleted successfully');
-        navigate('/Teacher/Assessment');
+        alert(response.message || "Assessment deleted successfully");
+        navigate("/Teacher/Assessment");
       } else {
-        throw new Error('Failed to delete assessment');
+        throw new Error("Failed to delete assessment");
       }
     } catch (err) {
-      console.error('Error deleting assessment:', err);
-      alert('Failed to delete assessment: ' + (err.message || 'Unknown error'));
+      console.error("Error deleting assessment:", err);
+      alert("Failed to delete assessment: " + (err.message || "Unknown error"));
     } finally {
       setLoading(false);
       setIsDeletingAssessment(false);
@@ -515,46 +569,65 @@ const TeacherAssessmentView = () => {
   };
 
   const renderQuestionItem = (question, index) => (
-    <div key={question.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+    <div
+      key={question.id}
+      className="p-4 border rounded-lg hover:shadow-md transition-shadow"
+    >
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <span className="text-sm text-gray-500">Question {index + 1}</span>
           <p className="font-medium mt-1">{question.question_text}</p>
-          
+
           {/* Show student's answer */}
           <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm font-medium text-gray-700">Student's Answer:</p>
+            <p className="text-sm font-medium text-gray-700">
+              Student's Answer:
+            </p>
             <p className="mt-1 text-gray-600">{renderAnswer(question)}</p>
           </div>
 
           {/* Show correct answer based on question type */}
-          {question.question_type === 'multiple_choice' && (
+          {question.question_type === "multiple_choice" && (
             <div className="mt-3 p-3 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-green-700">Correct Answer:</p>
+              <p className="text-sm font-medium text-green-700">
+                Correct Answer:
+              </p>
               <div className="mt-1 space-y-1">
                 {question.options?.map((option) => (
-                  <div 
+                  <div
                     key={option.id}
-                    className={`${option.is_correct ? 'text-green-600 font-medium' : 'text-gray-600'}`}
+                    className={`${
+                      option.is_correct
+                        ? "text-green-600 font-medium"
+                        : "text-gray-600"
+                    }`}
                   >
-                    {option.is_correct && '✓ '}{option.option_text}
+                    {option.is_correct && "✓ "}
+                    {option.option_text}
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {question.question_type === 'true_false' && (
+          {question.question_type === "true_false" && (
             <div className="mt-3 p-3 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-green-700">Correct Answer:</p>
+              <p className="text-sm font-medium text-green-700">
+                Correct Answer:
+              </p>
               <div className="bg-white p-3 rounded-lg">
                 {question.options?.length > 0 ? (
-                  question.options.map(option => (
-                    <div 
+                  question.options.map((option) => (
+                    <div
                       key={option.id}
-                      className={`${option.is_correct ? 'text-green-600 font-medium' : 'text-gray-600'}`}
+                      className={`${
+                        option.is_correct
+                          ? "text-green-600 font-medium"
+                          : "text-gray-600"
+                      }`}
                     >
-                      {option.is_correct && '✓ '}{option.text || option.option_text}
+                      {option.is_correct && "✓ "}
+                      {option.text || option.option_text}
                     </div>
                   ))
                 ) : (
@@ -564,14 +637,19 @@ const TeacherAssessmentView = () => {
             </div>
           )}
 
-          {(question.question_type === 'short_answer' || question.question_type === 'essay') && (
+          {(question.question_type === "short_answer" ||
+            question.question_type === "essay") && (
             <div className="mt-3 p-3 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-green-700">Correct Answer / Guidelines:</p>
-              <p className="mt-1 text-green-600">{question.answer_key || 'No answer key provided'}</p>
+              <p className="text-sm font-medium text-green-700">
+                Correct Answer / Guidelines:
+              </p>
+              <p className="mt-1 text-green-600">
+                {question.answer_key || "No answer key provided"}
+              </p>
             </div>
           )}
         </div>
-        
+
         <div className="flex gap-2">
           <button
             onClick={(e) => {
@@ -607,8 +685,8 @@ const TeacherAssessmentView = () => {
             onClick={() => setCurrentPage(i + 1)}
             className={`px-3 py-1 rounded ${
               currentPage === i + 1
-                ? 'bg-[#212529] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? "bg-[#212529] text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
             {i + 1}
@@ -619,12 +697,12 @@ const TeacherAssessmentView = () => {
   };
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(date).toLocaleString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -663,23 +741,25 @@ const TeacherAssessmentView = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {submissions.map((submission) => {
-                  const submissionStatus = submission.is_late 
-                    ? 'Late'
+                  const submissionStatus = submission.is_late
+                    ? "Late"
                     : !areAllQuestionsGraded(submission)
-                      ? 'Not Graded'
-                      : submission.status;
+                    ? "Not Graded"
+                    : submission.status;
 
                   // Calculate percentage for score coloring
-                  const scorePercentage = submission.score !== null 
-                    ? (submission.score / submission.maxScore) * 100 
-                    : null;
-                  
+                  const scorePercentage =
+                    submission.score !== null
+                      ? (submission.score / submission.maxScore) * 100
+                      : null;
+
                   // Determine score text color based on status and percentage
-                  const scoreColorClass = submissionStatus === 'Not Graded' 
-                    ? "text-gray-400"  // Grey for not graded
-                    : scorePercentage >= (assessmentData?.passing_score || 0)
-                      ? "text-green-600"  // Green if meets/exceeds passing score
-                      : "text-red-600";   // Red if below passing score
+                  const scoreColorClass =
+                    submissionStatus === "Not Graded"
+                      ? "text-gray-400" // Grey for not graded
+                      : scorePercentage >= (assessmentData?.passing_score || 0)
+                      ? "text-green-600" // Green if meets/exceeds passing score
+                      : "text-red-600"; // Red if below passing score
 
                   return (
                     <tr
@@ -699,18 +779,22 @@ const TeacherAssessmentView = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                            getStatusColor(submissionStatus)
-                          }`}
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                            submissionStatus
+                          )}`}
                         >
-                          {submissionStatus === 'graded' ? 'GRADED' : submissionStatus.toUpperCase()}
+                          {submissionStatus === "graded"
+                            ? "GRADED"
+                            : submissionStatus.toUpperCase()}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-600">
-                          {submissionDetailsMap[submission.id]?.submit_time ? 
-                            formatDate(submissionDetailsMap[submission.id].submit_time) : 
-                            'Not submitted'}
+                          {submissionDetailsMap[submission.id]?.submit_time
+                            ? formatDate(
+                                submissionDetailsMap[submission.id].submit_time
+                              )
+                            : "Not submitted"}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -738,7 +822,7 @@ const TeacherAssessmentView = () => {
 
   // Add this helper function to format passing score
   const formatPassingScore = (passingScore) => {
-    if (!passingScore) return '0%';
+    if (!passingScore) return "0%";
     return `${passingScore}%`;
   };
 
@@ -755,22 +839,12 @@ const TeacherAssessmentView = () => {
           />
           <span>Back to Assessments</span>
         </button>
-        
-        <button
-          onClick={() => setIsDeletingAssessment(true)}
-          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center gap-2"
-        >
-          <Trash2 size={16} />
-          Delete Assessment
-        </button>
       </div>
 
       {/* Rest of the header content */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold mb-2">
-            {assessmentData?.title}
-          </h1>
+          <h1 className="text-3xl font-bold mb-2">{assessmentData?.title}</h1>
           <p className="text-gray-200 flex items-center gap-2">
             <Clock size={16} />
             Due: {assessmentData?.formattedDueDate}
@@ -789,8 +863,8 @@ const TeacherAssessmentView = () => {
   );
 
   const handleDeleteSuccess = (message) => {
-    alert(message || 'Assessment deleted successfully');
-    navigate('/Teacher/Assessment');
+    alert(message || "Assessment deleted successfully");
+    navigate("/Teacher/Assessment");
   };
 
   return (
@@ -833,21 +907,35 @@ const TeacherAssessmentView = () => {
                 </button>
               </div>
 
+              {/* Add success message display */}
+              {successMessage && (
+                <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+                  {successMessage}
+                </div>
+              )}
+
               {loading ? (
                 <LoadingSpinner />
               ) : error ? (
                 <div className="text-center text-red-600 py-4">{error}</div>
               ) : questions.length === 0 ? (
                 <div className="text-center py-8">
-                  <ClipboardList size={48} className="mx-auto text-gray-400 mb-4" />
-                  <h4 className="text-lg font-medium text-gray-900">No Questions Added Yet</h4>
+                  <ClipboardList
+                    size={48}
+                    className="mx-auto text-gray-400 mb-4"
+                  />
+                  <h4 className="text-lg font-medium text-gray-900">
+                    No Questions Added Yet
+                  </h4>
                   <p className="text-gray-500 mt-2">
                     Start adding questions to your assessment.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {questions.map((question, index) => renderQuestionItem(question, index))}
+                  {questions.map((question, index) =>
+                    renderQuestionItem(question, index)
+                  )}
                 </div>
               )}
             </div>
@@ -869,10 +957,13 @@ const TeacherAssessmentView = () => {
           question={editingQuestion}
           assessmentId={assessment.id}
           onSuccess={(updatedQuestion) => {
-            setQuestions(prev => 
-              prev.map(q => q.id === updatedQuestion.id ? updatedQuestion : q)
+            setQuestions((prev) =>
+              prev.map((q) =>
+                q.id === updatedQuestion.id ? updatedQuestion : q
+              )
             );
             setEditingQuestion(null);
+            setSuccessMessage("Question updated successfully"); // Add this line
           }}
         />
       )}
@@ -886,11 +977,10 @@ const TeacherAssessmentView = () => {
       )}
 
       {isDeletingAssessment && (
-        <DeleteAssessmentModal
-          isOpen={isDeletingAssessment}
+        <DeleteModal
           onClose={() => setIsDeletingAssessment(false)}
-          assessment={assessment}
-          onSuccess={handleDeleteSuccess}
+          onConfirm={handleDeleteAssessment}
+          message={`Are you sure you want to delete "${assessment?.title}"? This will also delete all questions and submissions. This action cannot be undone.`}
         />
       )}
     </div>

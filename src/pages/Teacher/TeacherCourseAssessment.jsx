@@ -23,7 +23,10 @@ import { useNavigate } from "react-router-dom";
 import CreateAssessmentModal from "../../components/common/Modals/Create/CreateAssessmentModal";
 import EditAssessmentModal from "../../components/common/Modals/Edit/EditAssessmentModal";
 import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // Update this import
-import { getCourseAssessments } from "../../services/assessmentService";
+import {
+  getCourseAssessments,
+  deleteAssessment,
+} from "../../services/assessmentService";
 
 const TeacherCourseAssessment = () => {
   const { selectedCourse } = useCourse();
@@ -36,7 +39,7 @@ const TeacherCourseAssessment = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [assessmentToDelete, setAssessmentToDelete] = useState(null);
   const [showMenu, setShowMenu] = useState(null);
-
+  const [successMessage, setSuccessMessage] = useState(null);
   const navItems = [
     {
       text: "Home",
@@ -96,17 +99,28 @@ const TeacherCourseAssessment = () => {
     fetchAssessments();
   }, [selectedCourse, navigate]);
 
+  // Add this effect to auto-clear success messages
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
   const handleAssessmentCreated = async (newAssessment) => {
     try {
       // Add the new assessment to the list immediately
       setAssessments((prev) => [newAssessment, ...prev]);
       setIsCreateModalOpen(false);
+      setSuccessMessage("Assessment created successfully"); // Add success message
 
       // Optionally refresh the full list
       await fetchAssessments();
     } catch (err) {
       console.error("Error handling new assessment:", err);
-      // Optionally show an error message to user
+      setError("Failed to create assessment"); // Add error handling
     }
   };
 
@@ -210,32 +224,41 @@ const TeacherCourseAssessment = () => {
   const handleDelete = (e, assessment) => {
     e.stopPropagation();
     setAssessmentToDelete(assessment);
-    setIsDeleteModalOpen(true);
     setShowMenu(null);
-  };
-
-  const handleEditSubmit = async (updatedAssessment) => {
-    try {
-      // Mock update - just update local state
-      setAssessments((prev) =>
-        prev.map((a) => (a.id === updatedAssessment.id ? updatedAssessment : a))
-      );
-      setEditingAssessment(null);
-    } catch (err) {
-      console.error("Error updating assessment:", err);
-    }
   };
 
   const handleDeleteConfirm = async () => {
     try {
-      // Mock delete - just remove from local state
+      const response = await deleteAssessment(assessmentToDelete.id);
+
+      if (response.success) {
+        // Remove assessment from local state
+        setAssessments((prev) =>
+          prev.filter((a) => a.id !== assessmentToDelete.id)
+        );
+        setSuccessMessage("Assessment deleted successfully");
+      } else {
+        throw new Error(response.message || "Failed to delete assessment");
+      }
+    } catch (error) {
+      console.error("Error deleting assessment:", error);
+      setError(error.message || "Failed to delete assessment");
+    } finally {
+      setAssessmentToDelete(null); // Clear assessment to delete
+    }
+  };
+
+  const handleEditSubmit = async (updatedAssessment) => {
+    try {
+      // Update local state
       setAssessments((prev) =>
-        prev.filter((a) => a.id !== assessmentToDelete.id)
+        prev.map((a) => (a.id === updatedAssessment.id ? updatedAssessment : a))
       );
-      setIsDeleteModalOpen(false);
-      setAssessmentToDelete(null);
+      setEditingAssessment(null);
+      setSuccessMessage("Assessment updated successfully"); // Add success message
     } catch (err) {
-      console.error("Error deleting assessment:", err);
+      console.error("Error updating assessment:", err);
+      setError("Failed to update assessment"); // Add error handling
     }
   };
 
@@ -247,6 +270,20 @@ const TeacherCourseAssessment = () => {
           title={selectedCourse?.name || "Course Assessment"}
           subtitle={selectedCourse?.code}
         />
+
+        {/* Add success message display */}
+        {successMessage && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+            {successMessage}
+          </div>
+        )}
+
+        {/* Keep existing error display */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
 
         {loading && (
           <div className="flex items-center justify-center min-h-[400px]">
@@ -314,7 +351,6 @@ const TeacherCourseAssessment = () => {
                     >
                       <MoreVertical size={20} className="text-gray-500" />
                     </button>
-
                     {showMenu === assessment.id && (
                       <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-xl z-20 border">
                         <button
@@ -335,47 +371,44 @@ const TeacherCourseAssessment = () => {
                     )}
                   </div>
 
-                  <div>
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              assessment.type === "quiz"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-purple-100 text-purple-800"
-                            }`}
-                          >
-                            {assessment.type?.toUpperCase() || "QUIZ"}
-                          </span>
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            In Progress
-                          </span>
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            assessment.type === "quiz"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-purple-100 text-purple-800"
+                          }`}
+                        >
+                          {assessment.type?.toUpperCase() || "QUIZ"}
+                        </span>
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          In Progress
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-lg text-gray-800">
+                        {assessment.title}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {assessment.description}
+                      </p>
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-2">
+                        <div className="flex items-center gap-1">
+                          <Clock size={16} />
+                          {assessment.duration_minutes || 0} minutes
                         </div>
-                        <h3 className="font-bold text-lg text-gray-800">
-                          {assessment.title}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {assessment.description}
-                        </p>
-
-                        <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-2">
-                          <div className="flex items-center gap-1">
-                            <Clock size={16} />
-                            {assessment.duration_minutes || 0} minutes
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Award size={16} />
-                            Score: {assessment.passing_score || 0}/
-                            {assessment.max_score || 100}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Calendar size={16} />
-                            Due:{" "}
-                            {assessment.due_date
-                              ? formatDate(assessment.due_date)
-                              : "Not set"}
-                          </div>
+                        <div className="flex items-center gap-1">
+                          <Award size={16} />
+                          Score: {assessment.passing_score || 0}/
+                          {assessment.max_score || 100}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar size={16} />
+                          Due:{" "}
+                          {assessment.due_date
+                            ? formatDate(assessment.due_date)
+                            : "Not set"}
                         </div>
                       </div>
                     </div>
@@ -400,7 +433,6 @@ const TeacherCourseAssessment = () => {
           courseId={selectedCourse?.id}
           onSuccess={handleAssessmentCreated}
         />
-
         {editingAssessment && (
           <EditAssessmentModal
             isOpen={!!editingAssessment}
@@ -409,14 +441,12 @@ const TeacherCourseAssessment = () => {
             onSubmit={handleEditSubmit}
           />
         )}
-
         {assessmentToDelete && (
           <DeleteModal
             title="Delete Assessment"
             message={`Are you sure you want to delete "${assessmentToDelete?.title}"? This will also delete all questions and submissions associated with this assessment. This action cannot be undone.`}
             onClose={() => setAssessmentToDelete(null)}
             onConfirm={handleDeleteConfirm}
-            isLoading={loading}
           />
         )}
       </div>
