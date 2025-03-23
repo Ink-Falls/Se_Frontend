@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import Error403 from '../../../src/pages/Errors/Error403';
-import { isAuthenticated, getUserRole } from '../../../src/utils/auth';
+import { useAuth } from '../../../src/contexts/AuthContext';
 
 // Mock the router hooks
 vi.mock('react-router-dom', async () => {
@@ -13,10 +13,9 @@ vi.mock('react-router-dom', async () => {
     };
 });
 
-// Mock auth utilities
-vi.mock('../../../src/utils/auth', () => ({
-    isAuthenticated: vi.fn(),
-    getUserRole: vi.fn(),
+// Mock the useAuth hook
+vi.mock('../../../src/contexts/AuthContext', () => ({
+    useAuth: vi.fn(),
 }));
 
 describe('Error403', () => {
@@ -29,6 +28,8 @@ describe('Error403', () => {
 
     describe('Content Tests', () => {
         it('renders error page elements correctly', () => {
+            useAuth.mockReturnValue({ isAuthenticated: false, user: null });
+
             render(
                 <MemoryRouter>
                     <Error403 />
@@ -64,8 +65,7 @@ describe('Error403', () => {
         ])(
             'redirects authenticated %s to correct dashboard',
             (role, expectedPath) => {
-                isAuthenticated.mockReturnValue(true);
-                getUserRole.mockReturnValue(role);
+                useAuth.mockReturnValue({ isAuthenticated: true, user: { role } });
 
                 render(
                     <MemoryRouter>
@@ -82,7 +82,7 @@ describe('Error403', () => {
         );
 
         it('redirects unauthenticated users to login', () => {
-            isAuthenticated.mockReturnValue(false);
+            useAuth.mockReturnValue({ isAuthenticated: false, user: null });
 
             render(
                 <MemoryRouter>
@@ -98,8 +98,7 @@ describe('Error403', () => {
         });
 
         it('handles null or invalid user role', () => {
-            isAuthenticated.mockReturnValue(true);
-            getUserRole.mockReturnValue(null);
+            useAuth.mockReturnValue({ isAuthenticated: true, user: { role: null } });
 
             render(
                 <MemoryRouter>
@@ -117,6 +116,8 @@ describe('Error403', () => {
 
     describe('UI Elements Tests', () => {
         it('applies correct styling classes', () => {
+            useAuth.mockReturnValue({ isAuthenticated: false, user: null });
+
             render(
                 <MemoryRouter>
                     <Error403 />
@@ -160,6 +161,8 @@ describe('Error403', () => {
         });
 
         it('renders background image correctly', () => {
+            useAuth.mockReturnValue({ isAuthenticated: false, user: null });
+
             render(
                 <MemoryRouter>
                     <Error403 />
@@ -174,6 +177,8 @@ describe('Error403', () => {
         });
 
         it('has responsive text sizes', () => {
+            useAuth.mockReturnValue({ isAuthenticated: false, user: null });
+
             render(
                 <MemoryRouter>
                     <Error403 />

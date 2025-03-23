@@ -102,10 +102,11 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
     return (
       <>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="media_url" className="block text-sm font-medium text-gray-700 mb-1">
             Media URL (Optional)
           </label>
           <input
+            id="media_url"
             type="url"
             name="media_url"
             value={questionData.media_url}
@@ -133,13 +134,14 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
         {questionData.question_type === 'multiple_choice' && (
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="block text-sm font-medium text-gray-700">Options</label>
+              <label htmlFor="select_ans"className="block text-sm font-medium text-gray-700">Options</label>
               <span className="text-sm text-gray-500">Select the correct answer</span>
             </div>
             {questionData.options.map((option, index) => (
               <div key={index} className="flex gap-2 items-center">
                 <div className="flex items-center h-5">
                   <input
+                    id="select_ans"
                     type="radio"
                     name="correct_option"
                     checked={option.is_correct}
@@ -274,10 +276,11 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label  htmlFor="question_text" className="block text-sm font-medium text-gray-700 mb-1">
               Question Text
             </label>
             <textarea
+              id="question_text"
               name="question_text"
               value={questionData.question_text}
               onChange={handleInputChange}
@@ -288,10 +291,11 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label  htmlFor="question_type" className="block text-sm font-medium text-gray-700 mb-1">
                 Question Type
               </label>
               <select
+                id="question_type"
                 name="question_type"
                 value={questionData.question_type}
                 onChange={handleInputChange}
@@ -305,10 +309,11 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label  htmlFor="points" className="block text-sm font-medium text-gray-700 mb-1">
                 Points
               </label>
               <input
+                id="points"
                 type="number"
                 name="points"
                 value={questionData.points}

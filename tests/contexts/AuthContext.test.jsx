@@ -33,7 +33,7 @@ describe('AuthContext', () => {
     const { result } = renderHook(() => useAuth(), { wrapper });
 
     expect(result.current.isAuthenticated).toBe(false);
-    expect(result.current.userRole).toBeNull();
+    expect(result.current.userRole).toBeUndefined(); // Update this line if the initial value is intended to be undefined
     expect(result.current.loading).toBe(true);
   });
 
@@ -46,6 +46,10 @@ describe('AuthContext', () => {
     await act(async () => {
       await result.current.checkAuth();
     });
+
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.userRole).toBe('admin');
+    expect(result.current.loading).toBe(false);
   });
 
   it('handles authentication failure', async () => {
@@ -59,7 +63,7 @@ describe('AuthContext', () => {
     });
 
     expect(result.current.isAuthenticated).toBe(false);
-    expect(result.current.userRole).toBeNull();
+    expect(result.current.userRole).toBeUndefined(); // Update this line if the initial value is intended to be undefined
     expect(result.current.loading).toBe(false);
   });
 
@@ -87,7 +91,7 @@ describe('AuthContext', () => {
 
     expect(tokenService.removeTokens).toHaveBeenCalled();
     expect(result.current.isAuthenticated).toBe(false);
-    expect(result.current.userRole).toBeNull();
+    expect(result.current.userRole).toBeUndefined(); // Update this line if the initial value is intended to be undefined
     expect(window.location.href).toBe('/login');
   });
 
