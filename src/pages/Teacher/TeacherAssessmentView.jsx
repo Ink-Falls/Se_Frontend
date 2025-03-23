@@ -15,9 +15,13 @@ import {
   Edit2,
   Clock,
   Plus, // Add this import
+  Trash2,
 } from "lucide-react";
-import { getAssessmentById, createAssessmentQuestion, getAssessmentSubmissions, getSubmissionDetails } from "../../services/assessmentService";
+import { getAssessmentById, createAssessmentQuestion, getAssessmentSubmissions, getSubmissionDetails, deleteQuestion, deleteAssessment } from "../../services/assessmentService";
 import CreateQuestionModal from "../../components/common/Modals/Create/CreateQuestionModal";
+import EditQuestionModal from '../../components/common/Modals/Edit/EditQuestionModal';
+import DeleteModal from '../../components/common/Modals/Delete/DeleteModal';
+import DeleteAssessmentModal from "../../components/common/Modals/Delete/DeleteAssessmentModal";
 
 const TeacherAssessmentView = () => {
   const [questions, setQuestions] = useState([]);
@@ -32,6 +36,7 @@ const TeacherAssessmentView = () => {
   const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
   const [submissionData, setSubmissionData] = useState(null);
   const [submissionDetailsMap, setSubmissionDetailsMap] = useState({});
+  const [isDeletingAssessment, setIsDeletingAssessment] = useState(false);
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -39,6 +44,8 @@ const TeacherAssessmentView = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isGrading, setIsGrading] = useState(false);
   const [grade, setGrade] = useState(0);
+  const [editingQuestion, setEditingQuestion] = useState(null);
+  const [deletingQuestion, setDeletingQuestion] = useState(null);
 
   // Mock data - replace with actual API calls
   const [students] = useState([
@@ -472,6 +479,41 @@ const TeacherAssessmentView = () => {
     }
   }, [location.state?.submission?.id]);
 
+  const handleQuestionDelete = async () => {
+    try {
+      const response = await deleteQuestion(assessment.id, deletingQuestion.id);
+      if (response.success) {
+        setQuestions(prev => prev.filter(q => q.id !== deletingQuestion.id));
+        setDeletingQuestion(null);
+        // Show success message
+        alert('Question deleted successfully');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to delete question');
+      alert('Failed to delete question: ' + err.message);
+    }
+  };
+
+  const handleDeleteAssessment = async () => {
+    try {
+      setLoading(true);
+      const response = await deleteAssessment(assessment.id);
+      
+      if (response.success) {
+        alert(response.message || 'Assessment deleted successfully');
+        navigate('/Teacher/Assessment');
+      } else {
+        throw new Error('Failed to delete assessment');
+      }
+    } catch (err) {
+      console.error('Error deleting assessment:', err);
+      alert('Failed to delete assessment: ' + (err.message || 'Unknown error'));
+    } finally {
+      setLoading(false);
+      setIsDeletingAssessment(false);
+    }
+  };
+
   const renderQuestionItem = (question, index) => (
     <div key={question.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start">
@@ -530,13 +572,25 @@ const TeacherAssessmentView = () => {
           )}
         </div>
         
-        <div className="ml-4">
-          <span className="text-sm font-medium text-gray-600">
-            {question.points} points
-          </span>
-          <div className="text-xs text-gray-500 mt-1">
-            {question.question_type}
-          </div>
+        <div className="flex gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingQuestion(question);
+            }}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <Edit2 size={16} className="text-gray-600" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeletingQuestion(question);
+            }}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <Trash2 size={16} className="text-red-500" />
+          </button>
         </div>
       </div>
     </div>
@@ -688,6 +742,57 @@ const TeacherAssessmentView = () => {
     return `${passingScore}%`;
   };
 
+  const renderHeader = () => (
+    <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 p-8 text-white">
+      <div className="flex justify-between items-start mb-4">
+        <button
+          onClick={() => navigate("/Teacher/Assessment")}
+          className="flex items-center gap-2 text-gray-100 hover:text-[#F6BA18] transition-colors group"
+        >
+          <ArrowLeft
+            size={20}
+            className="group-hover:-translate-x-1 transition-transform"
+          />
+          <span>Back to Assessments</span>
+        </button>
+        
+        <button
+          onClick={() => setIsDeletingAssessment(true)}
+          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center gap-2"
+        >
+          <Trash2 size={16} />
+          Delete Assessment
+        </button>
+      </div>
+
+      {/* Rest of the header content */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">
+            {assessmentData?.title}
+          </h1>
+          <p className="text-gray-200 flex items-center gap-2">
+            <Clock size={16} />
+            Due: {assessmentData?.formattedDueDate}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="mt-3 text-lg font-semibold">
+            Passing Score: {formatPassingScore(assessmentData?.passing_score)}
+          </p>
+          <p className="text-sm text-gray-300">
+            Duration: {assessmentData?.duration_minutes} minutes
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const handleDeleteSuccess = (message) => {
+    alert(message || 'Assessment deleted successfully');
+    navigate('/Teacher/Assessment');
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
@@ -697,38 +802,7 @@ const TeacherAssessmentView = () => {
 
           <div className="mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
             {/* Header Section */}
-            <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 p-8 text-white">
-              <button
-                onClick={() => navigate("/Teacher/Assessment")}
-                className="flex items-center gap-2 text-gray-100 hover:text-[#F6BA18] transition-colors mb-4 group"
-              >
-                <ArrowLeft
-                  size={20}
-                  className="group-hover:-translate-x-1 transition-transform"
-                />
-                <span>Back to Assessments</span>
-              </button>
-
-              <div className="flex justify-between items-start">
-                <div>
-                  <h1 className="text-3xl font-bold mb-2">
-                    {assessmentData?.title}
-                  </h1>
-                  <p className="text-gray-200 flex items-center gap-2">
-                    <Clock size={16} />
-                    Due: {assessmentData?.formattedDueDate}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="mt-3 text-lg font-semibold">
-                    Passing Score: {formatPassingScore(assessmentData?.passing_score)}
-                  </p>
-                  <p className="text-sm text-gray-300">
-                    Duration: {assessmentData?.duration_minutes} minutes
-                  </p>
-                </div>
-              </div>
-            </div>
+            {renderHeader()}
 
             {/* Instructions Section */}
             <div className="p-6 border-b border-gray-200">
@@ -787,6 +861,38 @@ const TeacherAssessmentView = () => {
         onClose={() => setIsCreateQuestionOpen(false)}
         onSubmit={handleCreateQuestion}
       />
+
+      {editingQuestion && (
+        <EditQuestionModal
+          isOpen={!!editingQuestion}
+          onClose={() => setEditingQuestion(null)}
+          question={editingQuestion}
+          assessmentId={assessment.id}
+          onSuccess={(updatedQuestion) => {
+            setQuestions(prev => 
+              prev.map(q => q.id === updatedQuestion.id ? updatedQuestion : q)
+            );
+            setEditingQuestion(null);
+          }}
+        />
+      )}
+
+      {deletingQuestion && (
+        <DeleteModal
+          onClose={() => setDeletingQuestion(null)}
+          onConfirm={handleQuestionDelete} // Fixed: Remove the arrow function
+          message={`Are you sure you want to delete this question? This action cannot be undone.`}
+        />
+      )}
+
+      {isDeletingAssessment && (
+        <DeleteAssessmentModal
+          isOpen={isDeletingAssessment}
+          onClose={() => setIsDeletingAssessment(false)}
+          assessment={assessment}
+          onSuccess={handleDeleteSuccess}
+        />
+      )}
     </div>
   );
 };
