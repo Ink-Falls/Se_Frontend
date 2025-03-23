@@ -39,9 +39,5 @@
       },
       "dest": "/index.html"
     }
-  ],
-  "env": {
-    "VITE_REACT_APP_API_URL": "@api_url",
-    "VITE_REACT_APP_RECAPTCHA_SITE_KEY": "@recaptcha_key"
-  }
+  ]
 }
