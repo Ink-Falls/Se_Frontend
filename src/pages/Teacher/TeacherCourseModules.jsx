@@ -30,6 +30,7 @@ import {
   deleteModule,
   getModuleContents,
   addModuleContent,
+  deleteModuleContent, // Add this import
 } from "../../services/moduleService";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCourse } from "../../contexts/CourseContext";
@@ -80,6 +81,18 @@ const TeacherCourseModules = () => {
   const [isCreateContentOpen, setIsCreateContentOpen] = useState(false);
   const [selectedModuleId, setSelectedModuleId] = useState(null);
   const [selectedModule, setSelectedModule] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(""); // Add this line
+  const [resourceToDelete, setResourceToDelete] = useState(null);
+
+  // Add this effect to auto-clear success messages
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage("");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
   const toggleModule = (id) => {
     setExpandedModules((prev) =>
@@ -109,17 +122,19 @@ const TeacherCourseModules = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       if (!selectedCourse?.id) {
-        setError('No course selected. Please select a course from the dashboard.');
+        setError(
+          "No course selected. Please select a course from the dashboard."
+        );
         setLoading(false);
         return;
       }
-      
+
       // Get base module data
       const response = await getModulesByCourseId(selectedCourse.id);
       let modulesArray = response?.modules || [];
-      
+
       if (modulesArray.length === 0 && response.length > 0) {
         modulesArray = response;
       }
@@ -131,30 +146,33 @@ const TeacherCourseModules = () => {
             const moduleId = module.module_id || module.id;
             const contentsResponse = await getModuleContents(moduleId);
             const contents = contentsResponse?.contents || [];
-            
+
             return {
               id: moduleId,
               title: module.name,
               description: module.description,
-              resources: contents.map(content => ({
+              resources: contents.map((content) => ({
                 id: content.content_id || content.id,
                 title: content.name,
                 link: content.link,
                 content: content.link,
-                type: content.type || 'link'
+                type: content.type || "link",
               })),
               createdAt: module.createdAt,
-              updatedAt: module.updatedAt
+              updatedAt: module.updatedAt,
             };
           } catch (error) {
-            console.error(`Error fetching contents for module ${module.id}:`, error);
+            console.error(
+              `Error fetching contents for module ${module.id}:`,
+              error
+            );
             return {
               id: module.module_id || module.id,
               title: module.name,
               description: module.description,
               resources: [],
               createdAt: module.createdAt,
-              updatedAt: module.updatedAt
+              updatedAt: module.updatedAt,
             };
           }
         })
@@ -162,8 +180,8 @@ const TeacherCourseModules = () => {
 
       setModules(modulesWithContents);
     } catch (error) {
-      console.error('Error fetching modules:', error);
-      setError('Failed to connect to server. Please try again later.');
+      console.error("Error fetching modules:", error);
+      setError("Failed to connect to server. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -251,32 +269,33 @@ const TeacherCourseModules = () => {
   const handleCreateModule = async (moduleData) => {
     try {
       if (!selectedCourse?.id) {
-        throw new Error('No course selected');
+        throw new Error("No course selected");
       }
 
       // Format the data before sending
       const formattedData = {
         name: moduleData.name || moduleData.title,
         description: moduleData.description,
-        course_id: parseInt(selectedCourse.id)
+        course_id: parseInt(selectedCourse.id),
       };
 
       const newModule = await createModule(selectedCourse.id, formattedData);
-      
+
       if (!newModule) {
-        throw new Error('Failed to create module');
+        throw new Error("Failed to create module");
       }
 
       // Explicitly wait for fetchModules to complete
       await fetchModules();
-      
+
       // Close modals after successful creation and refresh
       setIsCreateModuleOpen(false);
       setIsAddModuleOpen(false);
-      
+      setSuccessMessage("Module created successfully"); // Add this line
+
       return newModule;
     } catch (error) {
-      console.error('Error creating module:', error);
+      console.error("Error creating module:", error);
       throw error;
     }
   };
@@ -302,9 +321,10 @@ const TeacherCourseModules = () => {
         prev.map((m) => (m.id === updatedModule.id ? updatedModule : m))
       );
       setEditingModule(null);
+      setSuccessMessage("Module updated successfully"); // Add this line
     } catch (error) {
       console.error("Error updating module:", error);
-      // TODO: Show error message to user
+      setError("Failed to update module"); // Add error message
     }
   };
 
@@ -313,9 +333,10 @@ const TeacherCourseModules = () => {
       await deleteModule(moduleToDelete.id);
       await fetchModules(); // Refresh modules after deletion
       setModuleToDelete(null);
+      setSuccessMessage("Module deleted successfully"); // Add this line
     } catch (error) {
       console.error("Error deleting module:", error);
-      // TODO: Show error message to user
+      setError("Failed to delete module"); // Add error message
     }
   };
 
@@ -352,9 +373,10 @@ const TeacherCourseModules = () => {
       );
 
       setIsCreateContentOpen(false);
+      setSuccessMessage("Learning resource added successfully"); // Add success message
     } catch (error) {
       console.error("Error creating content:", error);
-      alert(error.message || "Failed to add content");
+      setError("Failed to add learning resource"); // Update error message
     }
   };
 
@@ -362,6 +384,25 @@ const TeacherCourseModules = () => {
     setSelectedModuleId(module.id);
     setSelectedModule(module);
     setIsCreateContentOpen(true);
+  };
+
+  const handleDeleteContent = async (resourceId) => {
+    try {
+      await deleteModuleContent(resourceId);
+      setModules((currentModules) =>
+        currentModules.map((module) => ({
+          ...module,
+          resources: module.resources.filter(
+            (resource) => resource.id !== resourceId
+          ),
+        }))
+      );
+      setSuccessMessage("Resource deleted successfully");
+      setResourceToDelete(null); // Clear the resource to delete
+    } catch (error) {
+      console.error("Error deleting resource:", error);
+      setError("Failed to delete resource");
+    }
   };
 
   const renderModulesList = () => (
@@ -374,60 +415,79 @@ const TeacherCourseModules = () => {
           {/* Module Header */}
           <div className="flex justify-between items-center cursor-pointer">
             <div className="w-full" onClick={() => toggleModule(module.id)}>
-              <p className="text-xs text-gray-500">MODULE {module.id}</p>
-              <h3 className="font-bold text-lg text-gray-800">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-full">
+                  MODULE {module.id}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {new Date(module.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              <h3 className="font-bold text-xl text-gray-800 mb-1 group-hover:text-yellow-600 transition-colors">
                 {module.title}
               </h3>
-              <p className="text-sm text-gray-600">{module.description}</p>
+              <p className="text-gray-600 text-sm leading-relaxed">
+                {module.description}
+              </p>
             </div>
 
             {/* Actions Menu */}
-            <div className="relative flex items-center space-x-2">
+            <div className="relative flex items-center gap-1">
               <button
                 onClick={() => handleAddContent(module)}
-                className="p-2 text-gray-600 hover:text-yellow-600"
+                className="p-2 text-gray-600 hover:text-yellow-600 transition-colors"
                 title="Add Content"
               >
                 <Plus size={20} />
               </button>
-              <ChevronDown
-                size={20}
-                className={`cursor-pointer transition-transform ${
-                  expandedModules.includes(module.id) ? "rotate-180" : ""
-                }`}
-                onClick={() => toggleModule(module.id)}
-              />
               <button
-                onClick={(e) => toggleDropdown(module.id, e)}
-                className="menu-btn relative z-20"
+                className="p-2 text-gray-600 hover:text-yellow-600 transition-colors"
+                onClick={() => toggleModule(module.id)}
               >
-                <MoreVertical size={20} className="cursor-pointer" />
+                <ChevronDown
+                  size={20}
+                  className={`transform transition-transform duration-200 ${
+                    expandedModules.includes(module.id) ? "rotate-180" : ""
+                  }`}
+                />
               </button>
-              {dropdownOpen === module.id && (
-                <div className="absolute right-0 top-8 bg-white border rounded-lg shadow-lg w-28 z-30 dropdown-menu">
-                  <button
-                    className="flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full"
-                    onClick={() => handleEdit(module)}
-                  >
-                    <Edit size={16} className="mr-2" /> Edit
-                  </button>
-                  <button
-                    className="flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full text-red-600"
-                    onClick={() => setModuleToDelete(module)}
-                  >
-                    <Trash2 size={16} className="mr-2" /> Delete
-                  </button>
-                </div>
-              )}
+              <div className="relative">
+                <button
+                  onClick={(e) => toggleDropdown(module.id, e)}
+                  className="menu-btn p-2 text-gray-600 hover:text-yellow-600 transition-colors"
+                >
+                  <MoreVertical size={20} />
+                </button>
+                {dropdownOpen === module.id && (
+                  <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg w-28 z-30 dropdown-menu">
+                    <button
+                      className="flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full"
+                      onClick={() => handleEdit(module)}
+                    >
+                      <Edit size={16} className="mr-2" /> Edit
+                    </button>
+                    <button
+                      className="flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full text-red-600"
+                      onClick={() => setModuleToDelete(module)}
+                    >
+                      <Trash2 size={16} className="mr-2" /> Delete
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Content List */}
           {expandedModules.includes(module.id) && (
-            <div className="mt-4 border-t pt-4">
-              <div className="flex justify-between items-center mb-2">
-                <h4 className="font-semibold text-gray-700">
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="flex items-center gap-2 text-gray-700 font-semibold">
+                  <FileText size={18} className="text-yellow-500" />
                   Learning Resources
+                  <span className="text-xs text-gray-500 font-normal">
+                    ({module.resources?.length || 0} items)
+                  </span>
                 </h4>
               </div>
               <div className="space-y-3">
@@ -435,24 +495,61 @@ const TeacherCourseModules = () => {
                   module.resources.map((resource, index) => (
                     <div
                       key={index}
-                      className="flex items-center bg-gray-100 p-3 rounded-lg shadow-sm"
+                      className="flex items-center bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-all duration-200 group"
                     >
-                      <FileText size={18} className="text-gray-700 mr-2" />
-                      <a
-                        href={resource.link || resource.content}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline flex-1"
-                      >
-                        {resource.title}
-                      </a>
-                      <ExternalLink size={18} className="text-gray-500" />
+                      <div className="p-2 bg-yellow-100 rounded-lg mr-3">
+                        <FileText size={18} className="text-yellow-600" />
+                      </div>
+                      <div className="flex-1">
+                        <a
+                          href={resource.link || resource.content}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block"
+                        >
+                          <h5 className="font-medium text-gray-800 mb-0.5 group-hover:text-yellow-600">
+                            {resource.title}
+                          </h5>
+                          <p className="text-sm text-gray-500 truncate">
+                            {resource.link}
+                          </p>
+                        </a>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={resource.link || resource.content}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 text-gray-400 hover:text-yellow-600 transition-colors"
+                        >
+                          <ExternalLink size={18} />
+                        </a>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setResourceToDelete(resource);
+                          }}
+                          className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                          title="Delete resource"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-sm">
-                    No resources available.
-                  </p>
+                  <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                    <p className="text-gray-500 mb-2">
+                      No resources available yet
+                    </p>
+                    <button
+                      onClick={() => handleAddContent(module)}
+                      className="text-yellow-600 hover:text-yellow-700 text-sm font-medium inline-flex items-center gap-1"
+                    >
+                      <Plus size={16} />
+                      Add your first resource
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -584,6 +681,21 @@ const TeacherCourseModules = () => {
           title={selectedCourse?.name || "Course Modules"}
           subtitle={selectedCourse?.code}
         />
+
+        {/* Add success message display */}
+        {successMessage && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+            {successMessage}
+          </div>
+        )}
+
+        {/* Keep existing error display */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
+
         {renderModulesList()}
 
         {/* Add Module Button */}
@@ -644,7 +756,7 @@ const TeacherCourseModules = () => {
                 e.preventDefault();
                 const formData = {
                   name: e.target.title.value,
-                  description: e.target.description.value
+                  description: e.target.description.value,
                 };
                 await handleCreateModule(formData);
                 setIsAddModuleOpen(false);
@@ -688,6 +800,14 @@ const TeacherCourseModules = () => {
               </div>
             </form>
           </Modal>
+        )}
+
+        {resourceToDelete && (
+          <DeleteModal
+            onClose={() => setResourceToDelete(null)}
+            onConfirm={() => handleDeleteContent(resourceToDelete.id)}
+            message={`Are you sure you want to delete "${resourceToDelete.title}"?`}
+          />
         )}
       </div>
     </div>
