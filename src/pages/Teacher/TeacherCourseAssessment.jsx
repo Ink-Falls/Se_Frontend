@@ -250,13 +250,15 @@ const TeacherCourseAssessment = () => {
 
   const handleEditSubmit = async (updatedAssessment) => {
     try {
-      // Mock update - just update local state
+      // Update local state
       setAssessments((prev) =>
         prev.map((a) => (a.id === updatedAssessment.id ? updatedAssessment : a))
       );
       setEditingAssessment(null);
+      setSuccessMessage("Assessment updated successfully"); // Add success message
     } catch (err) {
       console.error("Error updating assessment:", err);
+      setError("Failed to update assessment"); // Add error handling
     }
   };
 

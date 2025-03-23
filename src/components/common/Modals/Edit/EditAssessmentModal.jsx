@@ -24,10 +24,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
         let formattedDate = "";
         if (assessment.due_date) {
           // Make sure we have a Date object to work with
-          const dueDate = assessment.due_date instanceof Date 
-            ? assessment.due_date 
-            : new Date(assessment.due_date);
-          
+          const dueDate =
+            assessment.due_date instanceof Date
+              ? assessment.due_date
+              : new Date(assessment.due_date);
+
           if (!isNaN(dueDate.getTime())) {
             // Format as YYYY-MM-DDTHH:MM (datetime-local format)
             formattedDate = dueDate.toISOString().substring(0, 16);
@@ -35,7 +36,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
             console.warn("Invalid date:", assessment.due_date);
           }
         }
-        
+
         setFormData({
           ...assessment,
           due_date: formattedDate,
@@ -45,7 +46,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
           type: assessment.type || "quiz",
           max_score: assessment.max_score || 100,
           passing_score: assessment.passing_score || 60,
-          duration_minutes: assessment.duration_minutes || 60
+          duration_minutes: assessment.duration_minutes || 60,
         });
       } catch (err) {
         console.error("Error formatting assessment data:", err);
@@ -70,17 +71,17 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
         duration_minutes: parseInt(formData.duration_minutes),
         due_date: new Date(formData.due_date).toISOString(),
         is_published: Boolean(formData.is_published),
-        instructions: formData.instructions?.trim() || ""
+        instructions: formData.instructions?.trim() || "",
       };
 
       // Call the API
       const response = await editAssessment(assessment.id, assessmentData);
-      
+
       if (response.success) {
         onSubmit(response.assessment);
         onClose();
       } else {
-        throw new Error(response.message || 'Failed to update assessment');
+        throw new Error(response.message || "Failed to update assessment");
       }
     } catch (err) {
       console.error("Error updating assessment:", err);
@@ -158,6 +159,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                 >
                   <option value="quiz">Quiz</option>
                   <option value="exam">Exam</option>
+                  <option value="assignment">Assignment</option>
                 </select>
               </div>
 
@@ -227,7 +229,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                   required
                 />
               </div>
-              
+
               <div className="flex items-center mt-6">
                 <input
                   type="checkbox"
@@ -238,7 +240,10 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                   }
                   className="h-4 w-4 text-yellow-600 rounded border-gray-300"
                 />
-                <label htmlFor="is_published" className="ml-2 text-sm text-gray-700">
+                <label
+                  htmlFor="is_published"
+                  className="ml-2 text-sm text-gray-700"
+                >
                   Published
                 </label>
               </div>
