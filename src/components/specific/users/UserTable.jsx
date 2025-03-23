@@ -24,6 +24,7 @@ const UserTable = ({
   currentPage, // Add this prop
   totalPages, // Add this prop
   onPageChange, // Add this prop
+  onGenerateReport, // Add this prop
 }) => {
   // Remove local selectedIds state since it's now passed as prop
 
@@ -168,7 +169,7 @@ const UserTable = ({
             <span>Group List</span>
           </button>
           <button
-            onClick={() => console.log("Generate Report")}
+            onClick={onGenerateReport}
             className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black"
           >
             <FileText size={16} />
