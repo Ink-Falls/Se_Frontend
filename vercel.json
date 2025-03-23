@@ -41,7 +41,7 @@
     }
   ],
   "env": {
-    "VITE_REACT_APP_API_URL": "https://aralkademy-backend.onrender.com/api",
-    "VITE_REACT_APP_RECAPTCHA_SITE_KEY": "6Ldv39cqAAAAAML6O41KNyqN_sXx7sIOA245Hc1N"
+    "VITE_REACT_APP_API_URL": "@api_url",
+    "VITE_REACT_APP_RECAPTCHA_SITE_KEY": "@recaptcha_key"
   }
 }
