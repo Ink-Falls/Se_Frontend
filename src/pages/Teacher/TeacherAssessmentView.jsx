@@ -75,28 +75,6 @@ const TeacherAssessmentView = () => {
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [deletingQuestion, setDeletingQuestion] = useState(null);
 
-  // Mock data - replace with actual API calls
-  const [students] = useState([
-    {
-      id: 1,
-      name: "John Doe",
-      submitted: true,
-      submissionDate: "2023-12-10T10:30:00",
-      grade: 85,
-      submission: {
-        textAnswer: "This is my submission...",
-        fileName: "assignment.pdf",
-        submittedAt: "2023-12-10T10:30:00",
-      },
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      submitted: false,
-      grade: null,
-    },
-  ]);
-
   const navItems = [
     { text: "Home", icon: <Home size={20} />, route: "/Teacher/Dashboard" },
     {
