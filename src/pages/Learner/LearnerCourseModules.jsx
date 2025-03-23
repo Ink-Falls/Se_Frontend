@@ -56,12 +56,6 @@ const LearnerCourseModules = () => {
         setLoading(true);
         setError(null);
 
-        // Debug selectedCourse
-        console.log(
-          "Attempting to fetch modules with selectedCourse:",
-          selectedCourse
-        );
-
         if (!selectedCourse?.id) {
           console.error("Missing course data:", selectedCourse);
           setError(
@@ -73,7 +67,6 @@ const LearnerCourseModules = () => {
 
         // Fetch modules for the course
         const response = await getModulesByCourseId(selectedCourse.id);
-        console.log("API Response:", response);
 
         let modulesArray = Array.isArray(response)
           ? response
@@ -85,7 +78,6 @@ const LearnerCourseModules = () => {
             try {
               const moduleId = module.module_id || module.id;
               const contentsResponse = await getModuleContents(moduleId);
-              console.log(`Contents for module ${moduleId}:`, contentsResponse);
 
               return {
                 id: moduleId,
@@ -115,7 +107,6 @@ const LearnerCourseModules = () => {
           })
         );
 
-        console.log("Final formatted modules:", modulesWithContents);
         setModules(modulesWithContents);
       } catch (error) {
         console.error("Error fetching modules:", error);

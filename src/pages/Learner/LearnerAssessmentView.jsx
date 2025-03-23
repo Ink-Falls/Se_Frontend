@@ -53,8 +53,6 @@ const LearnerAssessmentView = () => {
   const [timer, setTimer] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [submissions, setSubmissions] = useState([]);
-  const [selectedSubmission, setSelectedSubmission] = useState(null);
-  const [showSubmissionHistory, setShowSubmissionHistory] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -150,11 +148,6 @@ const LearnerAssessmentView = () => {
             };
             setAssessmentData(assessmentData);
             setQuestions(assessmentData.questions || []);
-          }
-          
-          // Handle answers if available
-          if (showAnswers && submissionResponse.submission?.answers) {
-            // ... existing answers handling code ...
           }
         }
       } catch (err) {
@@ -337,7 +330,7 @@ const LearnerAssessmentView = () => {
     }
   };
 
-  // Add timer effect
+  // Add timer effect - Combined both timer effects into one
   useEffect(() => {
     if (hasStarted && timeRemaining !== null) {
       const timerInterval = setInterval(() => {
@@ -357,7 +350,7 @@ const LearnerAssessmentView = () => {
     }
   }, [hasStarted, timeRemaining]);
 
-  // Format time remaining - Keep this definition and remove the duplicate below
+  // Format time remaining - Single source of truth
   const formatTimeRemaining = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -366,7 +359,6 @@ const LearnerAssessmentView = () => {
 
   const handleAnswerChange = async (questionId, answer, questionType) => {
     try {
-      console.log("Answer change:", { questionId, answer, questionType });
       
       // Update the local state first for immediate feedback
       if (questionType === 'multiple_choice' || questionType === 'true_false') {
@@ -451,44 +443,37 @@ const LearnerAssessmentView = () => {
       
       const endTime = new Date();
       const timeTaken = Math.floor((endTime - startTime) / 1000);
-      
-      // Store submit time directly
-      const submitTime = new Date().toISOString();
-      
-      console.log('Submitting assessment:', {
-        submissionId,
-        assessmentId: assessment.id,
-        submitTime
-      });
 
-      // Pass the assessment ID directly to the submitAssessment function
       const response = await submitAssessment(submissionId, assessment.id);
       
       if (response.success) {
-        // Log the response to see if submit_time is included
-        console.log('Submission successful:', response);
-        
         // Fetch the latest submission details after successful submission
         const submissionResponse = await getUserSubmission(assessment.id, true);
         
-        if (submissionResponse.success) {
-          // Store the submission with the submit time if it's not included
+        if (submissionResponse.success && submissionResponse.submission) {
+          const latestSubmission = submissionResponse.submission;
+          
+          // Ensure we have the latest submit_time
           const submissionWithTime = {
-            ...submissionResponse.submission,
-            submit_time: response.submit_time || submitTime
+            ...latestSubmission,
+            submit_time: latestSubmission.submit_time || response.submit_time || new Date().toISOString()
           };
           
           setExistingSubmission(submissionWithTime);
-          setHasStarted(false); // Reset assessment state
+          setHasStarted(false);
           setSubmitResult({
             success: true,
             message: 'Assessment submitted successfully',
             submission: submissionWithTime
           });
+          
+          // Update submissions list with the latest submission
+          setSubmissions(prev => [submissionWithTime, ...prev.filter(s => s.id !== submissionWithTime.id)]);
+          
           setShowSubmitModal(true);
           setTimeRemaining(0);
         } else {
-          throw new Error('Failed to fetch updated submission');
+          throw new Error('Failed to fetch updated submission details');
         }
       } else {
         throw new Error(response.message || 'Failed to submit assessment');
@@ -496,9 +481,8 @@ const LearnerAssessmentView = () => {
     } catch (err) {
       console.error('Error submitting assessment:', err);
       setError(err.message || 'Failed to submit assessment. Please try again.');
-      // Keep the assessment open if submission fails
       setIsSubmitting(false);
-      setShowSubmitModal(true); // Show modal with error
+      setShowSubmitModal(true);
       return;
     } finally {
       setIsSubmitting(false);
@@ -749,7 +733,10 @@ const LearnerAssessmentView = () => {
   };
 
   const calculateTotalPoints = (questions = []) => {
-    return questions.reduce((sum, question) => sum + (parseInt(question.points) || 0), 0);
+    const total = questions.reduce((sum, question) => {
+      return sum + (parseInt(question.points) || 0);
+    }, 0);
+    return total;
   };
 
   const renderAnswerFeedback = (question, answer) => {
@@ -793,11 +780,15 @@ const LearnerAssessmentView = () => {
   };
 
   const renderAnswerWithFeedback = (question, answer) => {
-    if (!answer) return <div className="text-gray-500">Not answered</div>;
+    if (!answer) {
+      return <div className="text-gray-500">Not answered</div>;
+    }
 
     const yourAnswer = answer.selected_option_id 
       ? (answer.selected_option?.option_text || answer.selected_option?.text || 'No answer text')
       : answer.text_response;
+
+    const isManualGradingType = question.question_type === 'essay' || question.question_type === 'short_answer'; // Removed extra parenthesis
 
     return (
       <div className="space-y-3">
@@ -809,57 +800,14 @@ const LearnerAssessmentView = () => {
           </div>
         </div>
 
-        {/* Show Options Section */}
-        {(question.question_type === 'multiple_choice' || question.question_type === 'true_false') && (
-          <div className="mt-2">
-            <p className="text-sm font-medium text-gray-600">Options:</p>
-            <div className="mt-1 space-y-2">
-              {question.options?.map(option => (
-                <div
-                  key={option.id}
-                  className={`p-2 rounded-lg border ${
-                    option.id === answer.selected_option_id
-                      ? 'bg-gray-50 border-gray-300'
-                      : 'border-gray-200'
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <span>{option.option_text || option.text}</span>
-                    {existingSubmission?.status === 'graded' && option.is_correct && (
-                      <span className="text-green-600 text-sm">✓ Correct Answer</span>
-                    )}
-                    {option.id === answer.selected_option_id && (
-                      <span className="text-gray-500 text-sm">Your Answer</span>
-                    )}
-                  </div>
-                </div>
-              ))}
+        {/* Points Section - modified to show "not graded" message */}
+        <div className="mt-2">
+          <p className="text-sm font-medium text-gray-600">Points:</p>
+          {(answer.points_awarded == null && isManualGradingType) ? (
+            <div className="mt-1 p-2 bg-yellow-50 text-yellow-700 rounded">
+              The teacher has not yet graded this question
             </div>
-            
-            {existingSubmission?.status !== 'graded' && (
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-600">
-                  Correct answer will be shown after the teacher grades your submission.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Feedback Section - only show if graded */}
-        {answer.feedback && existingSubmission?.status === 'graded' && (
-          <div className="mt-2">
-            <p className="text-sm font-medium text-blue-600">Feedback:</p>
-            <div className="mt-1 p-2 bg-blue-50 rounded text-blue-700">
-              {answer.feedback}
-            </div>
-          </div>
-        )}
-
-        {/* Points Section - only show if graded */}
-        {existingSubmission?.status === 'graded' && (
-          <div className="mt-2">
-            <p className="text-sm font-medium text-gray-600">Points:</p>
+          ) : (
             <div className={`mt-1 p-2 rounded ${
               answer.points_awarded === question.points
                 ? 'bg-green-50 text-green-700'
@@ -867,7 +815,17 @@ const LearnerAssessmentView = () => {
                   ? 'bg-red-50 text-red-700'
                   : 'bg-yellow-50 text-yellow-700'
             }`}>
-              {answer.points_awarded}/{question.points}
+              {answer.points_awarded === null ? '-' : `${answer.points_awarded}/${question.points}`}
+            </div>
+          )}
+        </div>
+        
+        {/* Feedback Section */}
+        {answer.feedback && (
+          <div className="mt-2">
+            <p className="text-sm font-medium text-blue-600">Feedback:</p>
+            <div className="mt-1 p-2 bg-blue-50 rounded text-blue-700">
+              {answer.feedback}
             </div>
           </div>
         )}
@@ -887,53 +845,44 @@ const LearnerAssessmentView = () => {
           <div className="mt-4 text-2xl font-bold">
             {(() => {
               const totalPoints = calculateTotalPoints(questions);
-              console.log('Questions Array:', questions);
-              console.log('Total possible points:', totalPoints);
+              
               
               const score = existingSubmission.answers.reduce((sum, answer) => {
-                // Log the full question object for debugging
                 const question = questions.find(q => q.id === answer.question_id);
-                console.log('Full Question Object:', question);
+                
                 
                 if (!question) return sum;
-
-                // For multiple choice and true/false questions
+        
+                // Check for manual grading types first
+                if (question.question_type === 'essay' || question.question_type === 'short_answer') {
+                  // If points_awarded is null, don't add anything to the sum
+                  if (answer.points_awarded === null) {
+                    return sum;
+                  }
+                  return sum + (parseInt(answer.points_awarded) || 0);
+                }
+        
+                // For multiple choice and true/false
                 if (['multiple_choice', 'true_false'].includes(question.question_type)) {
                   // If points were manually awarded, use them
                   if (answer.points_awarded !== null) {
-                    console.log('Using manually awarded points:', answer.points_awarded);
                     return sum + parseInt(answer.points_awarded);
                   }
-
-                  // Get selected option from question's options array
+        
+                  // Auto-grade based on correct answer
                   const selectedOption = question.options?.find(opt => opt.id === answer.selected_option_id);
-                  console.log('Selected option:', selectedOption);
-
-                  // Check if the selected option exists and is correct
-                  if (selectedOption && selectedOption.is_correct) {
-                    console.log('Correct answer, adding points:', question.points);
+                  if (selectedOption?.is_correct) {
                     return sum + parseInt(question.points);
                   }
-                  
-                  console.log('Incorrect answer or no selection, no points added');
-                  return sum;
                 }
-
-                // For other question types (essay, short_answer)
-                return sum + (parseInt(answer.points_awarded) || 0);
+                
+                return sum;
               }, 0);
-
-              console.log('Final score:', score);
-              console.log('Total points possible:', totalPoints);
-              
+        
               return `Score: ${score}/${totalPoints}`;
             })()}
           </div>
-        ) : (
-          <div className="mt-4 text-lg text-gray-600">
-            Not yet graded
-          </div>
-        )}
+        ) : null /* Remove the else block that showed "Not yet graded" */}
         
         <div className="mt-4 flex justify-center gap-4">
           <button
@@ -993,42 +942,6 @@ const LearnerAssessmentView = () => {
     </div>
   );
 
-  const SubmissionHistory = () => (
-    <div className="mt-6 bg-white rounded-lg p-6 shadow-sm">
-      <h3 className="text-lg font-medium mb-4">Submission History</h3>
-      <div className="space-y-4">
-        {submissions.map((sub, index) => (
-          <div 
-            key={sub.id}
-            className={`p-4 rounded-lg border ${
-              selectedSubmission?.id === sub.id ? 'border-yellow-500 bg-yellow-50' : 'border-gray-200'
-            }`}
-          >
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="font-medium">Attempt {submissions.length - index}</p>
-                <p className="text-sm text-gray-600">
-                  Submitted: {new Date(sub.submit_time).toLocaleString()}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="font-medium">
-                  Score: {sub.score !== null ? `${sub.score}/${assessmentData?.max_score}` : 'Not graded'}
-                </p>
-                <button
-                  onClick={() => setSelectedSubmission(sub)}
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                >
-                  View Details
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
   const renderSubmissionSection = () => (
     <div className="p-6">
       {loading ? (
@@ -1038,15 +951,6 @@ const LearnerAssessmentView = () => {
       ) : existingSubmission && !hasStarted ? (
         // Only show existing submission view when not starting a new attempt
         <div>
-          {/* Add the SubmissionHistoryDropdown at the top of the section */}
-          <div className="mb-6">
-            <SubmissionHistoryDropdown
-              assessmentId={assessment?.id}
-              currentSubmission={selectedSubmission}
-              onSelectSubmission={handleSubmissionSelect}
-              maxScore={assessmentData?.max_score || 0}
-            />
-          </div>
           {renderExistingSubmissionAnswers()}
         </div>
       ) : !hasStarted ? (
@@ -1220,17 +1124,6 @@ const LearnerAssessmentView = () => {
     );
   };
 
-  // Add a function to handle submission selection from the dropdown
-  const handleSubmissionSelect = (submission) => {
-    setSelectedSubmission(submission);
-    
-    // If the submission has answers, update the state to show those answers
-    if (submission?.answers) {
-      setExistingSubmission(submission);
-      setShowAnswers(true);
-    }
-  };
-
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
@@ -1250,7 +1143,7 @@ const LearnerAssessmentView = () => {
                   Instructions
                 </h3>
                 <div className="prose max-w-none text-gray-600">
-                  {assessmentData?.description || "No instructions provided."}
+                  {assessmentData?.instructions || "No instructions provided."}
                 </div>
               </div>
             </div>

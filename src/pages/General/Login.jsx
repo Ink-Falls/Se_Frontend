@@ -87,7 +87,6 @@ function Login() {
     try {
       // First attempt login
       const loginData = await loginUser(email, password, captchaResponse);
-      console.log('Login response:', loginData);
 
       if (!loginData.token || !loginData.user) {
         throw new Error('Invalid login response');
@@ -98,7 +97,6 @@ function Login() {
 
       // Update auth context
       const authResult = await checkAuth();
-      console.log('Auth validation result:', authResult);
 
       // Check if we have a valid user object
       if (!authResult.user) {
@@ -117,8 +115,6 @@ function Login() {
       if (!route) {
         throw new Error(`Invalid user role: ${userRole}`);
       }
-
-      console.log('Redirecting to:', route);
       navigate(route, { replace: true });
 
     } catch (err) {

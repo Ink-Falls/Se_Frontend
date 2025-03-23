@@ -32,7 +32,7 @@ const handleAuthErrors = (status, data) => {
  * @throws {Error} - If the login request fails.
  */
 const loginUser = async (email, password, captchaResponse) => {
-  console.log('🔑 Attempting login for:', email); 
+  // console.log('🔑 Attempting login for:', email); 
   try {
     if (!email || !password) {
       throw new Error('Email and password are required');
@@ -71,7 +71,7 @@ const loginUser = async (email, password, captchaResponse) => {
       throw new Error('Failed to save tokens to storage');
     }
 
-    console.log('✅ Login successful, tokens stored');
+    // console.log('✅ Login successful, tokens stored');
     return data;
   } catch (error) {
     console.error('❌ Login or token storage failed:', error);
@@ -91,7 +91,7 @@ const loginUser = async (email, password, captchaResponse) => {
  * @throws {Error} - If the logout request fails.
  */
 const logoutUser = async () => {
-  console.log('🚪 Attempting logout');
+  // console.log('🚪 Attempting logout');
   try {
     const token = tokenService.getAccessToken();
     if (!token) {
@@ -120,7 +120,7 @@ const logoutUser = async () => {
     localStorage.clear();
     sessionStorage.clear();
 
-    console.log('✅ Logout complete');
+    // console.log('✅ Logout complete');
     return { success: true, message: 'Logged out successfully' };
   } catch (error) {
     console.error('❌ Logout failed:', error);

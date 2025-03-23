@@ -72,7 +72,6 @@ const LearnerCourseAssessment = lazy(() =>
 );
 const Error404 = lazy(() => import("./pages/Errors/Error404"));
 const Error403 = lazy(() => import("./pages/Errors/Error403"));
-const TestComponents = lazy(() => import("./components/test/TestComponents"));
 const LearnerAssessmentView = lazy(() => import("./pages/Learner/LearnerAssessmentView"));
 const StudentSubmissionView = lazy(() =>
   import("./pages/Teacher/StudentSubmissionView")
@@ -93,8 +92,6 @@ function App() {
           <Router>
             <Suspense fallback={<LoadingSpinner />}>
               <Routes>
-                {/* Add this new route near the top of your routes */}
-                <Route path="/test" element={<TestComponents />} />
 
                 {/* Group routes logically */}
 

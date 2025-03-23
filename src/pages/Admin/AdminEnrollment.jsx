@@ -58,8 +58,6 @@ function AdminEnrollment() {
         setError(null);
         const response = await getAllEnrollments(currentPage);
 
-        console.log("API Response:", response);
-
         // Handle direct array response or object with enrollments property
         let enrollmentsList = [];
         if (Array.isArray(response)) {
@@ -143,7 +141,6 @@ function AdminEnrollment() {
 
   const handleApprove = async (enrolleeId) => {
     try {
-      console.log("Attempting to approve enrollee:", enrolleeId);
 
       await approveEnrollment(enrolleeId);
       setSuccessMessage("Enrollment successfully approved!");
@@ -243,7 +240,7 @@ function AdminEnrollment() {
 
   const handleEdit = (enrollee) => {
     // Handle edit logic here
-    console.log("Editing enrollee:", enrollee);
+    // console.log("Editing enrollee:", enrollee);
   };
 
   const handleDeleteSelected = async (selectedIds) => {

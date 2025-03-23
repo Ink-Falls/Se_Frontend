@@ -62,7 +62,6 @@ export const getLearnerCourses = async () => {
 
     // First get user's groups
     const userGroups = await getUserGroupIds(user.id);
-    console.log('User groups:', userGroups);
 
     // Then fetch all courses
     const response = await fetch(`${API_BASE_URL}/courses`, {
@@ -160,8 +159,6 @@ export const createCourse = async (courseData) => {
       student_teacher_group_id: parseInt(courseData.student_teacher_group_id)
     };
 
-    console.log('Sending formatted data:', formattedData);
-
     const response = await fetch(`${API_BASE_URL}/courses`, {
       method: 'POST',
       headers: {
@@ -188,7 +185,7 @@ export const createCourse = async (courseData) => {
         return completeCourse;
       }
     } catch (fetchError) {
-      console.log('Could not fetch complete course data, returning basic course data');
+      console.error('Could not fetch complete course data, returning basic course data');
     }
 
     // Fallback to basic course data if fetch fails

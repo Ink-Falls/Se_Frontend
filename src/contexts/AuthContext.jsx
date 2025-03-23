@@ -15,7 +15,7 @@ export function AuthProvider({ children }) {
   const checkAuth = async () => {
     try {
       const result = await tokenService.validateAuth();
-      console.log('Auth check result:', result); // Debug logging
+      // console.log('Auth check result:', result); // Debug logging
 
       // Handle both object and boolean responses
       const isValid = typeof result === 'object' ? result.valid : result;

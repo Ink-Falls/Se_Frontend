@@ -21,7 +21,6 @@ function Profile() {
                 
                 // Check authentication
                 if (!isAuthenticated) {
-                    console.log('Not authenticated, redirecting to login');
                     navigate('/login');
                     return;
                 }
@@ -33,8 +32,6 @@ function Profile() {
                     setError('User data not found');
                     return;
                 }
-
-                console.log('Fetching data for user:', storedUser.id, 'role:', storedUser.role);
 
                 if (storedUser.role === 'learner') {
                     // For learners, use stored data
