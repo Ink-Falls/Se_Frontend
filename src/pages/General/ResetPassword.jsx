@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import logo from "/src/assets/images/ARALKADEMYLOGO.png";
 import { resetPassword } from "../../services/authService"; // Import function
 
-function ChangePassword() {
+function ResetPassword() {
   const navigate = useNavigate();
   const location = useLocation();
   const [password, setPassword] = useState("");
@@ -21,6 +21,17 @@ function ChangePassword() {
   const handleConfirm = async () => {
     if (!email) {
       setMessage("Error: No email found. Please restart the process.");
+      return;
+    }
+
+    if (!password || !confirmPassword) {
+      setMessage('Please fill out all fields.');
+      return;
+    }
+
+    const passwordPattern = /^(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
+    if (!passwordPattern.test(password)) {
+      setMessage("Password must have at least 8 characters, one digit, and one symbol.");
       return;
     }
 
@@ -62,7 +73,7 @@ function ChangePassword() {
         <div className="p-[4vw] max-lg:p-[7vw] w-[80vw] lg:w-[40vw] bg-white rounded-lg shadow-2xl relative">
           <div className="top-0 left-0 h-[1.5vw] lg:h-[0.5vw] w-full bg-[#F6BA18] rounded-t-lg absolute"></div>
           <h2 className="text-[8vw] lg:text-[2.5vw] max-lg:text-[5vw] font-bold text-[#212529]">
-            Change password
+            Reset password
           </h2>
 
           {/* New Password Input */}
@@ -110,4 +121,4 @@ function ChangePassword() {
   );
 }
 
-export default ChangePassword;
+export default ResetPassword;

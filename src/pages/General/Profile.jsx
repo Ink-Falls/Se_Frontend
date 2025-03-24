@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/common/layout/Sidebar';
 import Header from '../../components/common/layout/Header';
 import { Book, Bell, FileText, Home } from 'lucide-react';
+import { changePassword } from "../../services/authService"; // Import function
 import profileImg from "/src/assets/images/profile2.jpeg"; // Add this import
 
 function Profile() {
@@ -12,7 +13,20 @@ function Profile() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const { isAuthenticated, loading: authLoading } = useAuth();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [oldPassword, setOldPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [message, setMessage] = useState("");
     const navigate = useNavigate();
+    const handleOpenModal = () => setIsModalOpen(true);
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setMessage('');
+    };
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -96,6 +110,35 @@ function Profile() {
         }
     };
 
+    const handleChangePassword = async () => {
+        if (!oldPassword || !newPassword || !confirmPassword) {
+            setMessage('Please fill out all fields.');
+            return;
+        }
+
+        const passwordPattern = /^(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
+        if (!passwordPattern.test(newPassword)) {
+            setMessage("Password must have at least 8 characters, one digit, and one symbol.");
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            setMessage('Passwords do not match. Please try again.');
+            return;
+        }
+
+        try {
+            await changePassword(user.id, oldPassword, newPassword, confirmPassword);
+            setMessage('Password changed successfully!');
+            setOldPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (err) {
+            console.error('Password change error:', err);
+            setMessage(err.message || 'Failed to change password. Please try again.');
+        }
+    };
+
     // Add null check for user in render
     if (!user || loading) {
         return <div>Loading...</div>;
@@ -129,8 +172,14 @@ function Profile() {
                         <p className="bg-[#F6BA18] px-3 py-1 rounded-md inline-block md:ml-8">
                             {user.role?.charAt(0).toUpperCase() + user.role?.slice(1)}
                         </p>
+                        <div className="mt-2 mx-2">
+                            <button className="mt-6 py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] lg:py-[0.4vw] lg:px-[3vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out" 
+                            onClick={handleOpenModal}
+                            >
+                                Change Password
+                            </button>
+                        </div>
                     </div>
-
                     <div className="p-[1vw]">
                         {/* Personal Information Section */}
                         <div className="mt-4 mx-6 mb-12">
@@ -173,6 +222,32 @@ function Profile() {
                     </div>
                 </div>
             </div>
+             {/* Change Password Modal */}
+             {isModalOpen && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white p-6 rounded-lg shadow-lg w-1/3 relative">
+                        <button
+                            className="absolute top-2 right-3 text-3xl font-semibold text-gray-500 hover:text-gray-800"
+                            onClick={handleCloseModal}
+                        >
+                            &times;
+                        </button>
+                        <h2 className="text-xl font-semibold mb-4">Change Password</h2>
+                        <input type="password" placeholder="Old Password" className="w-full p-2 border rounded mb-2" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} />
+                        <input type="password" placeholder="New Password" className="w-full p-2 border rounded mb-2" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                        <input type="password" placeholder="Confirm Password" className="w-full p-2 border rounded mb-2" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                        {message && (
+                            <p className={`mt-2 ${message.includes("successfully") ? "text-green-500" : "text-red-500"}`}>
+                            {message}
+                            </p>
+                        )}
+                        <div className="flex justify-end gap-2 mt-4">
+                            <button className="px-4 py-2 bg-gray-300 rounded-lg" onClick={handleCloseModal}>Cancel</button>
+                            <button className="px-4 py-2 bg-[#F6BA18] text-black rounded-lg" onClick={handleChangePassword}>Submit</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
