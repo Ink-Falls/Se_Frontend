@@ -76,30 +76,38 @@ const loginUser = async (email, password, captchaResponse) => {
  * @throws {Error} - If the logout request fails.
  */
 const logoutUser = async () => {
-  // console.log('🚪 Starting logout process...');
   try {
     // Clear auto refresh first
     tokenService.clearAutoRefresh();
-    // console.log('✅ Auto refresh cleared');
 
-    // Attempt server logout
+    // Get token before clearing storage
     const token = tokenService.getAccessToken();
-    if (token) {
-      await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      // console.log('✅ Server logout successful');
-    }
-  } catch (error) {
-    console.error('⚠️ Logout error:', error);
-  } finally {
-    // Always clear local storage
-    // console.log('🧹 Cleaning up local storage...');
-    await tokenService.removeTokens();
+    
+    // Clear all storage 
     localStorage.clear();
     sessionStorage.clear();
-    // console.log('✅ Logout complete');
+
+    // Only attempt server logout if token exists and appears valid
+    if (token && token.split('.').length === 3) {
+      try {
+        await fetch(`${API_BASE_URL}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+      } catch (serverError) {
+        // Ignore server errors during logout since local cleanup is done
+        console.warn('Server logout notification failed:', serverError);
+      }
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+    // Ensure storage is cleared even if there's an error
+    localStorage.clear();
+    sessionStorage.clear();
   }
 };
 
