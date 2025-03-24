@@ -49,7 +49,7 @@ const MaintenanceMode = () => {
             {/* Contact Information */}
             <div className="mt-8 text-sm text-gray-500">
               <p>Need assistance? Contact us at:</p>
-              <p className="font-medium">support@aralkademy.com</p>
+              <p className="font-medium">aralkademy.techsupp@gmail.com</p>
             </div>
           </div>
         </div>
