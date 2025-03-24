@@ -190,28 +190,31 @@ const fetchWithInterceptor = async (url, options = {}, retryCount = 0) => {
     // Add credentials for cookie handling
     options.credentials = 'include';
 
-    // Check token and refresh if needed
-    if (tokenService.isTokenExpired()) {
+    // Check if token refresh is needed before request
+    if (tokenService.isTokenExpired() && !url.includes('/auth/refresh')) {
       try {
-        await tokenService.refreshToken();
-        // Update header with new token
-        options.headers['Authorization'] = `Bearer ${tokenService.getAccessToken()}`;
-      } catch (error) {
-        window.location.href = '/login';
-        throw error;
+        const newToken = await tokenService.refreshToken();
+        options.headers['Authorization'] = `Bearer ${newToken}`;
+      } catch (refreshError) {
+        if (!url.includes('/auth/login')) {
+          window.location.href = '/login';
+          throw refreshError;
+        }
       }
     }
 
     const response = await fetch(url, options);
 
-    // Handle 401 (Unauthorized) by attempting token refresh
-    if (response.status === 401) {
+    // Handle 401 with proper queueing
+    if (response.status === 401 && !url.includes('/auth/refresh')) {
       try {
         const newToken = await tokenService.refreshToken();
         options.headers['Authorization'] = `Bearer ${newToken}`;
-        return fetchWithInterceptor(url, { ...options, _retry: true });
+        return fetchWithInterceptor(url, options);
       } catch (error) {
-        window.location.href = '/login';
+        if (!url.includes('/auth/login')) {
+          window.location.href = '/login';
+        }
         throw error;
       }
     }

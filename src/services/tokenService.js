@@ -28,6 +28,15 @@ class TokenService {
     this.#lastRequestTime = Date.now();
   }
 
+  // Add refresh lock mechanism
+  #isRefreshing = false;
+  #refreshSubscribers = [];
+
+  #onRefreshComplete(error, token) {
+    this.#refreshSubscribers.forEach(callback => callback(error, token));
+    this.#refreshSubscribers = [];
+  }
+
   /**
    * Gets the current access token from storage
    * @returns {string|null} The access token or null if not found
@@ -70,7 +79,7 @@ class TokenService {
         throw new Error('Token storage verification failed');
       }
 
-      // console.log('✅ Tokens saved successfully');
+      // console.log('🔑 Tokens saved successfully:', { accessToken: !!accessToken, refreshToken: !!refreshToken });
       return true;
     } catch (error) {
       console.error('❌ Token storage error:', error);
@@ -88,18 +97,21 @@ class TokenService {
   async removeTokens() {
     try {
       await this.#checkRateLimit();
+      // console.log('🗑️ Removing tokens and clearing storage...');
       
       // Clear server-side session
       await fetch(`${API_BASE_URL}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });
+      // console.log('✅ Server-side logout successful');
 
       // Clear client-side storage
       localStorage.clear();
       sessionStorage.clear();
+      // console.log('✅ Client-side storage cleared');
     } catch (error) {
-      console.error('Error removing tokens:', error);
+      console.error('❌ Error during logout:', error);
       // Still clear local storage even if server request fails
       localStorage.clear();
       sessionStorage.clear();
@@ -112,16 +124,25 @@ class TokenService {
    */
   isTokenExpired() {
     const token = this.getAccessToken();
-    if (!token) return true;
+    if (!token) {
+      // console.log('⚠️ No token found during expiration check');
+      return true;
+    }
 
     try {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const payload = JSON.parse(window.atob(base64));
+      const expiresIn = (payload.exp * 1000) - Date.now();
+      const expired = expiresIn < (5 * 60 * 1000);
       
-      // Check if token will expire within next 5 minutes
-      return payload.exp * 1000 < Date.now() + (5 * 60 * 1000);
+      if (expired) {
+        // console.log('🕒 Token will expire in', Math.round(expiresIn/1000), 'seconds');
+      }
+      
+      return expired;
     } catch (e) {
+      console.error('❌ Error checking token expiration:', e);
       return true;
     }
   }
@@ -130,58 +151,50 @@ class TokenService {
    * Manual token refresh - used when token is explicitly detected as expired
    */
   async refreshToken() {
-    // console.log('🔄 Attempting token refresh');
+    // console.log('🔄 Attempting token refresh...');
     try {
+      // If already refreshing, wait for completion
+      if (this.#isRefreshing) {
+        // console.log('⏳ Token refresh already in progress, waiting...');
+        return new Promise((resolve, reject) => {
+          this.#refreshSubscribers.push((error, token) => {
+            if (error) reject(error);
+            else resolve(token);
+          });
+        });
+      }
+
+      this.#isRefreshing = true;
       await this.#checkRateLimit();
 
       const refreshToken = this.getRefreshToken();
       if (!refreshToken) {
-        console.error('❌ No refresh token available');
-        await this.removeTokens();
-        window.location.href = '/login';
         throw new Error('No refresh token available');
       }
 
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.getAccessToken()}` // Add current access token
-        },
-        credentials: 'include', // Important for cookies
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken })
       });
 
       if (!response.ok) {
-        console.error('❌ Refresh failed with status:', response.status);
-        // Clear tokens and redirect to login on 401
-        if (response.status === 401) {
-          await this.removeTokens();
-          window.location.href = '/login';
-        }
         throw new Error('Failed to refresh token');
       }
 
       const data = await response.json();
-      
-      if (!data.accessToken) {
-        console.error('❌ Invalid refresh response - missing access token');
-        throw new Error('Invalid refresh response');
-      }
-
-      // Save the new tokens
       await this.saveTokens(data.accessToken, data.refreshToken || refreshToken);
+      
+      this.#onRefreshComplete(null, data.accessToken);
       // console.log('✅ Token refresh successful');
       return data.accessToken;
 
     } catch (error) {
+      this.#onRefreshComplete(error, null);
       console.error('❌ Token refresh failed:', error);
-      // Only redirect if it's an auth error
-      if (error.message.includes('token')) {
-        await this.removeTokens();
-        window.location.href = '/login';
-      }
       throw error;
+    } finally {
+      this.#isRefreshing = false;
     }
   }
 
@@ -190,6 +203,7 @@ class TokenService {
    * This runs periodically to prevent token expiration
    */
   setupAutoRefresh() {
+    // console.log('🎯 Setting up auto refresh');
     const REFRESH_INTERVAL = 4 * 60 * 1000; // Check every 4 minutes
     // console.log('🔄 Setting up auto refresh every 4 minutes');
     
@@ -256,35 +270,70 @@ class TokenService {
    * @returns {Promise<{valid: boolean, user: object|null}>}
    */
   async validateAuth() {
-    // console.log('🔍 Validating authentication');
+    // console.log('🔍 Validating authentication state...');
     try {
       const token = this.getAccessToken();
       if (!token) {
-        // console.log('No token found during validation');
+        // console.log('⚠️ No token found during validation');
         return { valid: false, user: null };
       }
 
+      await this.#checkRateLimit();
+      
       const response = await fetch(`${API_BASE_URL}/auth/validate`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        credentials: 'include' // Add credentials support
       });
+
+      if (response.status === 401) {
+        // Try to refresh the token if unauthorized
+        try {
+          await this.refreshToken();
+          // Retry validation with new token
+          const newToken = this.getAccessToken();
+          const retryResponse = await fetch(`${API_BASE_URL}/auth/validate`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${newToken}`,
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+          });
+          
+          if (!retryResponse.ok) {
+            throw new Error('Validation failed after token refresh');
+          }
+          
+          const retryData = await retryResponse.json();
+          return {
+            valid: retryData.isValid || false,
+            user: retryData.user || null
+          };
+        } catch (refreshError) {
+          await this.removeTokens();
+          return { valid: false, user: null };
+        }
+      }
 
       if (!response.ok) {
         throw new Error('Token validation failed');
       }
 
       const data = await response.json();
-      // console.log('Validation response:', data);
-
+      // console.log('✅ Auth validation successful');
       return {
         valid: data.isValid || false,
         user: data.user || null
       };
     } catch (error) {
       console.error('❌ Auth validation failed:', error);
+      if (error.message.includes('token')) {
+        await this.removeTokens();
+      }
       return { valid: false, user: null };
     }
   }
