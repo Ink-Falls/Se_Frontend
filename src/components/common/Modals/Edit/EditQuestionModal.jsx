@@ -97,8 +97,9 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Question Text</label>
+              <label htmlFor="question_text"className="block text-sm font-medium text-gray-700">Question Text</label>
               <textarea
+                id="question_text"
                 value={formData.question_text}
                 onChange={(e) => setFormData(prev => ({ ...prev, question_text: e.target.value }))}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
@@ -109,8 +110,9 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Question Type</label>
+                <label htmlFor="question_type" className="block text-sm font-medium text-gray-700">Question Type</label>
                 <select
+                  id="question_type"
                   value={formData.question_type}
                   onChange={(e) => setFormData(prev => ({ ...prev, question_type: e.target.value }))}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
@@ -123,8 +125,9 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Points</label>
+                <label htmlFor="points" className="block text-sm font-medium text-gray-700">Points</label>
                 <input
+                  id="points"
                   type="number"
                   value={formData.points}
                   onChange={(e) => setFormData(prev => ({ ...prev, points: parseInt(e.target.value) }))}
@@ -155,6 +158,7 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
                     <button
                       type="button"
                       onClick={() => removeOption(index)}
+                      aria-label="Remove Option"
                       className="p-2 text-red-500 hover:text-red-700"
                     >
                       <Trash2 size={16} />

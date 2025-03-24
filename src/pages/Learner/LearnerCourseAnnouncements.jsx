@@ -92,6 +92,7 @@ const LearnerCourseAnnouncements = () => {
         <div className="bg-white rounded-lg shadow-md">
           <BlackHeader title="Announcements" count={announcements.length}>
             <button
+             aria-label="Sort by newest first"
               onClick={handleSort}
               className="p-2 rounded hover:bg-gray-700"
             >
