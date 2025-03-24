@@ -1,31 +1,32 @@
-import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import tokenService from '../services/tokenService';
+import React from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import tokenService from "../services/tokenService";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 
 // Whitelist of public routes
 const PUBLIC_ROUTES = [
-  '/login',
-  '/Enrollment',
-  '/Enrollment/New', 
-  '/ForgotPassword',
-  '/EnrollConfirm',
-  '/VerifyCode',
-  '/ChangePassword',
-  '/PasswordConfirm'
+  "/login",
+  "/Enrollment",
+  "/Enrollment/New",
+  "/ForgotPassword",
+  "/EnrollConfirm",
+  "/VerifyCode",
+  "/ChangePassword",
+  "/PasswordConfirm",
 ];
 
 const getDashboardByRole = (role) => {
   switch (role?.toLowerCase()) {
-    case 'teacher':
-    case 'student_teacher':
-      return '/Teacher/Dashboard';
-    case 'learner':
-      return '/Learner/Dashboard';
-    case 'admin':
-      return '/Admin/Dashboard';
+    case "teacher":
+    case "student_teacher":
+      return "/Teacher/Dashboard";
+    case "learner":
+      return "/Learner/Dashboard";
+    case "admin":
+      return "/Admin/Dashboard";
     default:
-      return '/login';
+      return "/login";
   }
 };
 
@@ -34,7 +35,7 @@ export const PublicRoute = ({ children }) => {
   const { isAuthenticated, user, loading } = useAuth();
 
   // Skip auth check for public routes
-  const isPublicRoute = PUBLIC_ROUTES.some(route => 
+  const isPublicRoute = PUBLIC_ROUTES.some((route) =>
     location.pathname.toLowerCase().startsWith(route.toLowerCase())
   );
 
@@ -43,7 +44,7 @@ export const PublicRoute = ({ children }) => {
   }
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingSpinner />;
   }
 
   if (isAuthenticated && user) {

@@ -47,7 +47,7 @@ const LearnerDashboard = () => {
       id: course.id || course.course_id,
       name: course.name,
       code: course.code || "No Code",
-      description: course.description
+      description: course.description,
     });
     navigate("/Learner/CourseModules");
   };
