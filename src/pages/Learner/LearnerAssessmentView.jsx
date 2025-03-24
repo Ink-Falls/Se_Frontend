@@ -202,7 +202,7 @@ const LearnerAssessmentView = () => {
     {
       text: "Assessments",
       icon: <ClipboardList size={20} />,
-      route: "/Learner/Assessment",
+      route: `/Learner/Assessment/View/${assessment?.id}`, // Update this route to match current page
     },
   ];
 

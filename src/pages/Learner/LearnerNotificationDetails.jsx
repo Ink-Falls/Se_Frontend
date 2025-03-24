@@ -16,7 +16,7 @@ const NotificationDetails = () => {
     {
       text: "Notifications",
       icon: <Bell size={20} />,
-      route: "/Learner/Notifications",
+      route: "/Learner/Notifications", // Change this to match notifications
     },
   ];
 

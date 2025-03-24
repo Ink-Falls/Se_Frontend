@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, Clock, Check, AlertTriangle } from 'lucide-react';
 import { getUserSubmission } from '../../services/assessmentService';
 
-/**
+/** / DEPRECATED-----------------------------------------------------------------
  * A dropdown component that displays submission history for an assessment
  * Uses the existing getUserSubmission function to fetch the submission data
  * 

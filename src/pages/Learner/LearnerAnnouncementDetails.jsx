@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import BlackHeader from "../../components/common/layout/BlackHeader";
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
+import { useAuth } from "../../contexts/AuthContext";
 import {
   ArrowLeft,
   Home,
@@ -47,7 +49,31 @@ const announcements = [
 const LearnerAnnouncementDetails = () => {
   const { id } = useParams();
   const { selectedCourse } = useCourse();
+  const { logout } = useAuth();
   const navigate = useNavigate();
+
+  const navItems = [
+    {
+      text: "Home",
+      icon: <Home size={20} />,
+      route: "/Learner/Dashboard",
+    },
+    {
+      text: "Modules",
+      icon: <BookOpen size={20} />,
+      route: "/Learner/CourseModules",
+    },
+    {
+      text: "Announcements",
+      icon: <Megaphone size={20} />,
+      route: `/Learner/AnnouncementDetails/${id}`, // Update this route to match current page
+    },
+    {
+      text: "Assessments",
+      icon: <ClipboardList size={20} />,
+      route: "/Learner/Assessment",
+    },
+  ];
 
   useEffect(() => {
     if (!selectedCourse?.id) {
@@ -63,30 +89,7 @@ const LearnerAnnouncementDetails = () => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar
-        navItems={[
-          {
-            text: "Home",
-            icon: <Home size={20} />,
-            route: "/Learner/Dashboard",
-          },
-          {
-            text: "Modules",
-            icon: <BookOpen size={20} />,
-            route: "/Learner/CourseModules", // Fixed route
-          },
-          {
-            text: "Announcements",
-            icon: <Megaphone size={20} />,
-            route: "/Learner/CourseAnnouncements", // Fixed route
-          },
-          {
-            text: "Assessments",
-            icon: <ClipboardList size={20} />,
-            route: "/Learner/Assessment", // Fixed route
-          },
-        ]}
-      />
+      <Sidebar navItems={navItems} />
 
       <div className="flex-1 p-6">
         <Header 
@@ -107,7 +110,7 @@ const LearnerAnnouncementDetails = () => {
             </div>
           }
         />
-      <MobileNavBar navItems={navItems} />
+        <MobileNavBar navItems={navItems} />
 
         {/* Updated Announcement Details Box */}
         <div className="bg-white p-10 rounded-lg shadow-md">

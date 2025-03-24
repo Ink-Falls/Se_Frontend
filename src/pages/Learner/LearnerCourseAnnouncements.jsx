@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import BlackHeader from "../../components/common/layout/BlackHeader";
 import AnnouncementsComponent from "../Teacher/AnnouncementsComponent";
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import {
   Home,
   Megaphone,
@@ -14,10 +15,14 @@ import {
   Plus,
   ArrowUpDown,
 } from "lucide-react";
+import { useCourse } from "../../contexts/CourseContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 const LearnerCourseAnnouncements = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { selectedCourse } = useCourse();
+  const { logout } = useAuth();
   const courseTitle = location.state?.courseTitle || "Course Name";
   const courseCode = location.state?.courseCode || "COURSE 101";
 
@@ -82,7 +87,7 @@ const LearnerCourseAnnouncements = () => {
       <Sidebar navItems={navItems} />
 
       <div className="flex-1 p-6">
-        <Header title={courseTitle} subtitle={courseCode} />
+        <Header title={selectedCourse?.name || "Course"} subtitle={selectedCourse?.code} />
 
         <div className="bg-white rounded-lg shadow-md">
           <BlackHeader title="Announcements" count={announcements.length}>
