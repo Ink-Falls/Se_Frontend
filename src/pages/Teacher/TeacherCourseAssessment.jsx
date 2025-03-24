@@ -271,7 +271,7 @@ const TeacherCourseAssessment = () => {
           title={selectedCourse?.name || "Course Assessment"}
           subtitle={selectedCourse?.code}
         />
-      <MobileNavBar navItems={navItems} />
+        <MobileNavBar navItems={navItems} />
 
         {/* Add success message display */}
         {successMessage && (
@@ -336,8 +336,12 @@ const TeacherCourseAssessment = () => {
               {assessments.map((assessment) => (
                 <div
                   key={assessment.id}
-                  className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg cursor-pointer"
                   onClick={() => handleAssessmentClick(assessment)}
+                  className={`relative bg-white rounded-lg md:p-[1vw] p-[2vw] border-l-[2vw] md:border-l-[0.5vw] ${
+                    assessment.is_published
+                      ? "border-yellow-500"
+                      : "border-gray-300"
+                  } transition-all shadow-sm hover:shadow-lg cursor-pointer`}
                 >
                   <div
                     className="absolute top-4 right-4"
