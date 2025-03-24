@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/common/layout/Sidebar';
 import Header from '../../components/common/layout/Header';
 import { Book, Bell, FileText, Home } from 'lucide-react';
+import { Eye, EyeOff } from "lucide-react";
 import { changePassword } from "../../services/authService"; // Import function
 import profileImg from "/src/assets/images/profile2.jpeg"; // Add this import
 
@@ -18,6 +19,9 @@ function Profile() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [message, setMessage] = useState("");
+    const [oldPasswordVisible, setOldPasswordVisible] = useState(false);
+    const [newPasswordVisible, setNewPasswordVisible] = useState(false);
+    const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
     const navigate = useNavigate();
     const handleOpenModal = () => setIsModalOpen(true);
     const handleCloseModal = () => {
@@ -233,9 +237,66 @@ function Profile() {
                             &times;
                         </button>
                         <h2 className="text-xl font-semibold mb-4">Change Password</h2>
-                        <input type="password" placeholder="Old Password" className="w-full p-2 border rounded mb-2" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} />
-                        <input type="password" placeholder="New Password" className="w-full p-2 border rounded mb-2" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-                        <input type="password" placeholder="Confirm Password" className="w-full p-2 border rounded mb-2" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                        <div className="relative">
+                            <input 
+                                type={oldPasswordVisible ? "text" : "password"} 
+                                placeholder="Old Password" 
+                                className="w-full p-2 border rounded mb-2 pr-[6vw] lg:pr-[2.5vw]" 
+                                value={oldPassword} 
+                                onChange={(e) => setOldPassword(e.target.value)}
+                            />
+                            <button 
+                                type="button" 
+                                className="absolute right-3 top-3 text-gray-500"
+                                onClick={() => setOldPasswordVisible(!oldPasswordVisible)}
+                            >
+                                {oldPasswordVisible ? (
+                                                <EyeOff className="w-[4vw] h-[4vw] lg:w-[1.3vw] lg:h-[1.3vw]" />
+                                            ) : (
+                                                <Eye className="w-[4vw] h-[4vw] lg:w-[1.3vw] lg:h-[1.3vw]" />
+                                            )}
+                            </button>
+                        </div>
+                        <div className="relative">
+                            <input 
+                                type={newPasswordVisible ? "text" : "password"} 
+                                placeholder="New Password" 
+                                className="w-full p-2 border rounded mb-2 pr-[6vw] lg:pr-[2.5vw]" 
+                                value={newPassword} 
+                                onChange={(e) => setNewPassword(e.target.value)}
+                            />
+                            <button 
+                                type="button" 
+                                className="absolute right-3 top-3 text-gray-500"
+                                onClick={() => setNewPasswordVisible(!newPasswordVisible)}
+                            >
+                                {newPasswordVisible ? (
+                                                <EyeOff className="w-[4vw] h-[4vw] lg:w-[1.3vw] lg:h-[1.3vw]" />
+                                            ) : (
+                                                <Eye className="w-[4vw] h-[4vw] lg:w-[1.3vw] lg:h-[1.3vw]" />
+                                            )}
+                            </button>
+                        </div>
+                        <div className="relative">
+                            <input 
+                                type={confirmPasswordVisible ? "text" : "password"} 
+                                placeholder="Confirm Password" 
+                                className="w-full p-2 border rounded mb-2 pr-[6vw] lg:pr-[2.5vw]" 
+                                value={confirmPassword} 
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                            />
+                            <button 
+                                type="button" 
+                                className="absolute right-3 top-3 text-gray-500"
+                                onClick={() => setConfirmPasswordVisible(!confirmPasswordVisible)}
+                            >
+                                {confirmPasswordVisible ? (
+                                                <EyeOff className="w-[4vw] h-[4vw] lg:w-[1.3vw] lg:h-[1.3vw]" />
+                                            ) : (
+                                                <Eye className="w-[4vw] h-[4vw] lg:w-[1.3vw] lg:h-[1.3vw]" />
+                                            )}
+                            </button>
+                        </div>
                         {message && (
                             <p className={`mt-2 ${message.includes("successfully") ? "text-green-500" : "text-red-500"}`}>
                             {message}
