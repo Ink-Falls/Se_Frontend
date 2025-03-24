@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CreateAssessmentModal from 'Se_Frontend/src/components/common/Modals/Create/CreateAssessmentModal.jsx';
 import { createAssessment } from 'Se_Frontend/src/services/assessmentService';
 
-vi.mock('../../../../src/services/assessmentService', () => ({
+vi.mock('Se_Frontend/src/services/assessmentService', () => ({
   createAssessment: vi.fn(),
 }));
 

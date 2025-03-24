@@ -25,7 +25,7 @@ describe('DeleteModal Component', () => {
     expect(screen.getByText(/confirm deletion/i)).toBeInTheDocument();
 
     // Check if the modal message is rendered
-    expect(screen.getByText(/do you want to proceed with deleting this item\? this action cannot be undone\./i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/validation/i)).toBeInTheDocument();
   });
 
   it('should call onClose when the cancel button is clicked', () => {

@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import EditUserModal from 'Se_Frontend/src/components/common/Modals/Edit/EditUserModal.jsx';
 
 describe('EditUserModal', () => {

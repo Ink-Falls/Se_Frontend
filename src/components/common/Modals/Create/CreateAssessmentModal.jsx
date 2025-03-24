@@ -100,10 +100,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700">
                   Title
                 </label>
                 <input
+                  id="title"
                   type="text"
                   name="title"
                   value={formData.title}
@@ -114,10 +115,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
               </div>
 
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
                   Description
                 </label>
                 <textarea
+                  id="description"
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
@@ -128,10 +130,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="type" className="block text-sm font-medium text-gray-700">
                   Type
                 </label>
                 <select
+                  id="type"
                   name="type"
                   value={formData.type}
                   onChange={handleInputChange}
@@ -144,10 +147,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="duration" className="block text-sm font-medium text-gray-700">
                   Duration (minutes)
                 </label>
                 <input
+                  id="duration"
                   type="number"
                   name="duration_minutes"
                   value={formData.duration_minutes}
@@ -159,10 +163,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="max_score" className="block text-sm font-medium text-gray-700">
                   Maximum Score
                 </label>
                 <input
+                  id="max_score"
                   type="number"
                   name="max_score"
                   value={formData.max_score}
@@ -174,10 +179,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="pass_score"className="block text-sm font-medium text-gray-700">
                   Passing Score
                 </label>
                 <input
+                  id="pass_score"
                   type="number"
                   name="passing_score"
                   value={formData.passing_score}
@@ -190,10 +196,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="due_date" className="block text-sm font-medium text-gray-700">
                   Due Date
                 </label>
                 <input
+                  id="due_date"
                   type="datetime-local"
                   name="due_date"
                   value={formData.due_date}
@@ -205,22 +212,24 @@ const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
 
               <div className="flex items-center">
                 <input
+                  id="publish"
                   type="checkbox"
                   name="is_published"
                   checked={formData.is_published}
                   onChange={handleInputChange}
                   className="h-4 w-4 text-yellow-600 rounded border-gray-300"
                 />
-                <label className="ml-2 text-sm text-gray-700">
+                <label htmlFor="publish" className="ml-2 text-sm text-gray-700">
                   Publish immediately
                 </label>
               </div>
 
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="instruction" className="block text-sm font-medium text-gray-700">
                   Instructions
                 </label>
                 <textarea
+                  id="instruction"
                   name="instructions"
                   value={formData.instructions}
                   onChange={handleInputChange}
@@ -240,6 +249,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
               type="button"
               onClick={onClose}
               className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              aria-label="cancel"
             >
               Cancel
             </button>

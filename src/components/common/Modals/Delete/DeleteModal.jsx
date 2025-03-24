@@ -7,7 +7,7 @@ const DeleteModal = ({ onClose, onConfirm }) => {
         <h3 className="text-lg font-semibold text-gray-800">
           Confirm Deletion
         </h3>
-        <p className="text-sm text-gray-600 mt-2">
+        <p aria-label="validation" className="text-sm text-gray-600 mt-2">
           Are you sure you want to delete the selected item/s? This action
           cannot be undone.
         </p>

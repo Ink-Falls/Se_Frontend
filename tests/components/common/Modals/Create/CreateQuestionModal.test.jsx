@@ -26,7 +26,6 @@ describe('CreateQuestionModal Component', () => {
     // Check if the modal title is rendered
     expect(screen.getByRole('heading', { name: /add question/i })).toBeInTheDocument();
 
-
     // Check if the form fields are rendered
     expect(screen.getByLabelText('Question Text')).toBeInTheDocument();
     expect(screen.getByLabelText('Question Type')).toBeInTheDocument();
@@ -68,7 +67,8 @@ describe('CreateQuestionModal Component', () => {
     expect(screen.getAllByPlaceholderText('Option 2').length).toBe(1);
 
     // Remove an option
-    fireEvent.click(screen.getAllByRole('button', { name: /trash/i })[0]);
+    const removeButtons = screen.getAllByRole('button', { name: /trash/i });
+    fireEvent.click(removeButtons[0]);
     expect(screen.getAllByPlaceholderText('Option 1').length).toBe(1);
   });
 
@@ -100,7 +100,7 @@ describe('CreateQuestionModal Component', () => {
     fireEvent.change(screen.getByLabelText('Points'), { target: { value: '10' } });
 
     // Submit the form
-    fireEvent.click(screen.getByText('Add Question'));
+    fireEvent.click(screen.getByRole('button', { name: /add question/i }));
 
     // Wait for the onSubmit and onClose callbacks to be called
     await waitFor(() => {
