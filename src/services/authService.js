@@ -199,7 +199,49 @@ const resetPassword = async (email, newPassword, confirmPassword) => {
     const responseData = await response.json();
 
     if (!response.ok) {
-      throw new Error(responseData.message || "Failed to reset password.");
+      const errorMessage = responseData?.error?.message || "Failed to reset password.";
+      throw new Error(errorMessage);
+    }
+
+    return responseData;
+  } catch (error) {
+    throw new Error(error.message || "Network error. Please check your connection.");
+  }
+};
+
+/**
+ * Changes the user's password.
+ *
+ * @async
+ * @function changePassword
+ * @param {string} userId - The user's ID.
+ * @param {string} oldPassword - The current password.
+ * @param {string} newPassword - The new password.
+ * @param {string} confirmPassword - The new password confirmation.
+ * @returns {Promise<object>} - A response message or error.
+ * @throws {Error} - If the password change fails.
+ */
+const changePassword = async (userId, oldPassword, newPassword, confirmPassword) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/change-password`, {
+      method: 'PUT', // Use PUT since the route is defined as PUT
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ oldPassword, newPassword, confirmPassword }),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = responseData?.error?.message || "Failed to change password.";
+      throw new Error(errorMessage);
     }
 
     return responseData;
@@ -213,5 +255,6 @@ export {
   logoutUser, 
   forgotPassword, 
   verifyResetCode,
-  resetPassword
+  resetPassword,
+  changePassword,
 };

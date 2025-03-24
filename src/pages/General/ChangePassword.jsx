@@ -2,13 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "/src/assets/images/ARALKADEMYLOGO.png";
 import { resetPassword } from "../../services/authService"; // Import function
+import { Eye, EyeOff } from "lucide-react";
 
-function ChangePassword() {
+function ResetPassword() {
   const navigate = useNavigate();
   const location = useLocation();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const email = location.state?.email;
 
@@ -21,6 +24,17 @@ function ChangePassword() {
   const handleConfirm = async () => {
     if (!email) {
       setMessage("Error: No email found. Please restart the process.");
+      return;
+    }
+
+    if (!password || !confirmPassword) {
+      setMessage('Please fill out all fields.');
+      return;
+    }
+
+    const passwordPattern = /^(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
+    if (!passwordPattern.test(password)) {
+      setMessage("Password must have at least 8 characters, one digit, and one symbol.");
       return;
     }
 
@@ -62,35 +76,37 @@ function ChangePassword() {
         <div className="p-[4vw] max-lg:p-[7vw] w-[80vw] lg:w-[40vw] bg-white rounded-lg shadow-2xl relative">
           <div className="top-0 left-0 h-[1.5vw] lg:h-[0.5vw] w-full bg-[#F6BA18] rounded-t-lg absolute"></div>
           <h2 className="text-[8vw] lg:text-[2.5vw] max-lg:text-[5vw] font-bold text-[#212529]">
-            Change password
+            Reset password
           </h2>
 
           {/* New Password Input */}
-          <div className="mt-[3vw] lg:mt-[1.5vw]">
-            <label className="block text-[#64748B] text-[3vw] max-lg:text-[2.5vw] lg:text-[1vw] mb-[1vw]">
-              New password
-            </label>
-            <input
-              type="password"
-              placeholder="Enter new password"
-              className="w-full px-[3vw] py-[1.5vw] lg:py-[1vw] text-[3vw] max-lg:text-[2vw] lg:text-[1vw] border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+          <div className="mt-[3vw] lg:mt-[1.5vw] relative">
+            <label className="block text-[#64748B] text-[3vw] max-lg:text-[2.5vw] lg:text-[1vw] mb-[1vw]">New password</label>
+            <div className="relative">
+              <input type={showPassword ? "text" : "password"} placeholder="Enter new password" className="w-full px-[3vw] py-[1.5vw] lg:py-[1vw] text-[3vw] max-lg:text-[2vw] lg:text-[1vw] border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F6BA18] pr-[6vw] lg:pr-[4vw]" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <button type="button" className="absolute inset-y-0 right-6 flex items-center text-gray-500" onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? (
+                                        <EyeOff className="w-[4vw] h-[4vw] lg:w-[1.5vw] lg:h-[1.5vw]" />
+                                      ) : (
+                                        <Eye className="w-[4vw] h-[4vw] lg:w-[1.5vw] lg:h-[1.5vw]" />
+                                      )}
+              </button>
+            </div>
           </div>
 
           {/* Confirm Password Input */}
-          <div className="mt-[3vw] lg:mt-[1.5vw]">
-            <label className="block text-[#64748B] text-[3vw] max-lg:text-[2.5vw] lg:text-[1vw] mb-[1vw]">
-              Confirm password
-            </label>
-            <input
-              type="password"
-              placeholder="Confirm new password"
-              className="w-full px-[3vw] py-[1.5vw] lg:py-[1vw] text-[3vw] max-lg:text-[2vw] lg:text-[1vw] border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
+          <div className="mt-[3vw] lg:mt-[1.5vw] relative">
+            <label className="block text-[#64748B] text-[3vw] max-lg:text-[2.5vw] lg:text-[1vw] mb-[1vw]">Confirm password</label>
+            <div className="relative">
+              <input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm new password" className="w-full px-[3vw] py-[1.5vw] lg:py-[1vw] text-[3vw] max-lg:text-[2vw] lg:text-[1vw] border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F6BA18] pr-[6vw] lg:pr-[4vw]" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+              <button type="button" className="absolute inset-y-0 right-6 flex items-center text-gray-500" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                {showConfirmPassword ? (
+                                        <EyeOff className="w-[4vw] h-[4vw] lg:w-[1.5vw] lg:h-[1.5vw]" />
+                                      ) : (
+                                        <Eye className="w-[4vw] h-[4vw] lg:w-[1.5vw] lg:h-[1.5vw]" />
+                                      )}
+              </button>
+            </div>
           </div>
 
           {message && <p className="text-red-500 mt-2">{message}</p>}
@@ -110,4 +126,4 @@ function ChangePassword() {
   );
 }
 
-export default ChangePassword;
+export default ResetPassword;
