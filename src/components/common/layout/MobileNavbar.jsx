@@ -36,7 +36,6 @@ const MobileNavBar = ({ navItems }) => {
           className={`flex flex-col items-center ${getActiveStyle(item.route)}`}
         >
           {item.icon}
-          <span className="text-xs">{item.text}</span>
         </Link>
       ))}
       <button
@@ -47,12 +46,10 @@ const MobileNavBar = ({ navItems }) => {
         {isLoggingOut ? (
           <>
             <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-            <span className="text-xs">...</span>
           </>
         ) : (
           <>
             <LogOut size={20} />
-            <span className="text-xs">Logout</span>
           </>
         )}
       </button>
