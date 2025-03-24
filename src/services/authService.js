@@ -32,52 +32,37 @@ const handleAuthErrors = (status, data) => {
  * @throws {Error} - If the login request fails.
  */
 const loginUser = async (email, password, captchaResponse) => {
-  // console.log('🔑 Attempting login for:', email); 
+  // console.log('🔑 Attempting login for:', email);
   try {
-    if (!email || !password) {
-      throw new Error('Email and password are required');
-    }
-
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password, captchaResponse }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, captchaResponse })
     });
 
     const data = await response.json();
-
     if (!response.ok) {
-      const errorMessage = handleAuthErrors(response.status, data);
-      throw new Error(errorMessage);
+      throw new Error(handleAuthErrors(response.status, data));
     }
 
-    // Ensure we have both token and user data
     if (!data.token || !data.user) {
-      throw new Error('Invalid server response - missing token or user data');
+      throw new Error('Invalid server response');
     }
 
-    // Save tokens
+    // Save tokens first
     await tokenService.saveTokens(data.token, data.refreshToken);
-    tokenService.setupAutoRefresh();
     
-    // Save full user data
+    // Save user data only after tokens are saved
     localStorage.setItem('user', JSON.stringify(data.user));
+    
+    // Setup auto refresh only after successful login
+    tokenService.setupAutoRefresh();
 
-    // Verify token storage
-    const storedToken = localStorage.getItem('token');
-    if (!storedToken) {
-      throw new Error('Failed to save tokens to storage');
-    }
-
-    // console.log('✅ Login successful, tokens stored');
+    // console.log('✅ Login successful:', { hasToken: !!data.token, hasUser: !!data.user });
     return data;
   } catch (error) {
-    console.error('❌ Login or token storage failed:', error);
-    // Clean up any partial storage
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
+    console.error('❌ Login failed:', error);
+    await tokenService.removeTokens();
     throw error;
   }
 };
@@ -91,46 +76,30 @@ const loginUser = async (email, password, captchaResponse) => {
  * @throws {Error} - If the logout request fails.
  */
 const logoutUser = async () => {
-  // console.log('🚪 Attempting logout');
+  // console.log('🚪 Starting logout process...');
   try {
+    // Clear auto refresh first
+    tokenService.clearAutoRefresh();
+    // console.log('✅ Auto refresh cleared');
+
+    // Attempt server logout
     const token = tokenService.getAccessToken();
-    if (!token) {
-      console.warn('No active session token found');
-      return { success: true, message: 'No active session to logout' };
+    if (token) {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      // console.log('✅ Server logout successful');
     }
-
-    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-    });
-
-    // Still consider logout successful even if API call fails
-    const success = response.ok;
-    if (!success) {
-      console.warn('Backend logout failed but continuing with client cleanup');
-    }
-
-    // Clear all auth data regardless of API response
-    await tokenService.removeTokens();
-    tokenService.clearAutoRefresh();
-    localStorage.clear();
-    sessionStorage.clear();
-
-    // console.log('✅ Logout complete');
-    return { success: true, message: 'Logged out successfully' };
   } catch (error) {
-    console.error('❌ Logout failed:', error);
-    // Still clear everything on error
+    console.error('⚠️ Logout error:', error);
+  } finally {
+    // Always clear local storage
+    // console.log('🧹 Cleaning up local storage...');
     await tokenService.removeTokens();
-    tokenService.clearAutoRefresh();
     localStorage.clear();
     sessionStorage.clear();
-    
-    throw new Error('Logout failed, but session cleared');
+    // console.log('✅ Logout complete');
   }
 };
 
