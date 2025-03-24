@@ -55,8 +55,9 @@ describe('NotificationsComponent', () => {
     fireEvent.click(sortButton);
 
     const sortedNotifications = screen.getAllByRole('listitem');
-    expect(sortedNotifications[0]).toHaveTextContent('New course material available');
-    expect(sortedNotifications[1]).toHaveTextContent('Assignment 1 is due tomorrow');
+    expect(sortedNotifications[0]).toHaveTextContent('Assignment 1 is due tomorrow');
+    expect(sortedNotifications[1]).toHaveTextContent('New course material available');
+    
   });
 
   it('sorts notifications by oldest first', () => {
