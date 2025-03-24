@@ -97,22 +97,30 @@ class TokenService {
   async removeTokens() {
     try {
       await this.#checkRateLimit();
-      // console.log('🗑️ Removing tokens and clearing storage...');
       
-      // Clear server-side session
-      await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      // console.log('✅ Server-side logout successful');
+      const token = this.getAccessToken();
+      // Only attempt server logout if we have a valid token
+      if (token && token.split('.').length === 3) {
+        try {
+          await fetch(`${API_BASE_URL}/auth/logout`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'  
+            },
+            credentials: 'include'
+          });
+        } catch (error) {
+          console.warn('Server logout failed:', error);
+        }
+      }
 
-      // Clear client-side storage
+      // Always clear local storage
       localStorage.clear();
       sessionStorage.clear();
-      // console.log('✅ Client-side storage cleared');
     } catch (error) {
-      console.error('❌ Error during logout:', error);
-      // Still clear local storage even if server request fails
+      console.error('Logout error:', error);
+      // Still clear storage on error
       localStorage.clear();
       sessionStorage.clear();
     }

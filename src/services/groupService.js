@@ -163,31 +163,6 @@ export const createGroup = async (groupData) => {
   }
 };
 
-/**
- * Deletes a group.
- * @async
- * @function deleteGroup
- * @param {number|string} groupId - ID of the group to delete
- * @returns {Promise<void>}
- * @throws {Error} If the API request fails
- */
-export const deleteGroup = async (groupId) => {
-  try {
-    const token = localStorage.getItem("token");
-    const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) throw new Error("Failed to delete group");
-  } catch (error) {
-    throw error;
-  }
-};
-
 export const deleteGroups = async (groupIds) => {
   try {
     const token = localStorage.getItem("token");

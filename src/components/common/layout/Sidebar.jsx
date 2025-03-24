@@ -36,7 +36,7 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
       // Wait for logout to complete before navigating
       await logout();
       // Use window.location.href instead of navigate for full page refresh
-      window.location.href = "/login";
+      // window.location.href = "/login";
     } catch (error) {
       console.error("Logout failed:", error);
       // Show error message to user
