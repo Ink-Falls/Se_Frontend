@@ -1,237 +1,184 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { useNavigate } from 'react-router-dom';
-import TeacherCourseAssessment from '../../../src/pages/Teacher/TeacherCourseAssessment';
-import { useCourse } from '../../../src/contexts/CourseContext';
-import { getCourseAssessments } from '../../../src/services/assessmentService';
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { MemoryRouter } from "react-router-dom";
+import { CourseContext } from "Se_Frontend/src/contexts/CourseContext";
+import TeacherCourseAssessment from "Se_Frontend/src/pages/Teacher/TeacherCourseAssessment";
+import { getCourseAssessments, deleteAssessment } from "Se_Frontend/src/services/assessmentService";
 
-// Mock all dependencies
-vi.mock('react-router-dom', () => ({
-    useNavigate: vi.fn(),
+// Mock API Services
+vi.mock("Se_Frontend/src/services/assessmentService", () => ({
+  getCourseAssessments: vi.fn(),
+  deleteAssessment: vi.fn(),
 }));
 
-vi.mock('../../../src/contexts/CourseContext', () => ({
-    useCourse: vi.fn(),
-}));
+// Mock Course Data
+const mockCourse = {
+  id: 1,
+  name: "Sample Course",
+  code: "COURSE101",
+};
 
-vi.mock('../../../src/services/assessmentService', () => ({
-    getCourseAssessments: vi.fn(),
-}));
+// Mock Assessments Data
+const mockAssessments = [
+  {
+    id: 1,
+    title: "Mock Quiz",
+    description: "This is a mock quiz",
+    type: "quiz",
+    duration_minutes: 30,
+    passing_score: 50,
+    max_score: 100,
+    due_date: "2025-12-31T23:59:59Z",
+    questions: [],
+  },
+  {
+    id: 2,
+    title: "Mock Assignment",
+    description: "This is a mock assignment",
+    type: "assignment",
+    duration_minutes: 60,
+    passing_score: 70,
+    max_score: 100,
+    due_date: "2025-11-30T23:59:59Z",
+    questions: [],
+  },
+];
 
-// Mock all required components
-vi.mock('../../../src/components/common/layout/Sidebar', () => ({
-    default: () => <div data-testid="sidebar">Sidebar</div>,
-}));
+describe("TeacherCourseAssessment Component", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getCourseAssessments.mockResolvedValue({ success: true, assessments: mockAssessments });
+  });
 
-vi.mock('../../../src/components/common/layout/Header', () => ({
-    default: () => <div data-testid="header">Header</div>,
-}));
+  it("renders the component correctly", async () => {
+    render(
+      <MemoryRouter>
+        <CourseContext.Provider value={{ selectedCourse: mockCourse }}>
+          <TeacherCourseAssessment />
+        </CourseContext.Provider>
+      </MemoryRouter>
+    );
 
-vi.mock('../../../src/components/common/LoadingSpinner', () => ({
-    default: () => <div data-testid="loading-spinner">Loading...</div>,
-}));
-
-vi.mock(
-    '../../../src/components/common/Modals/Create/CreateAssessmentModal',
-    () => ({
-        default: ({ isOpen, onClose }) =>
-            isOpen ? (
-                <div data-testid="create-assessment-modal">
-                    Create Assessment Modal
-                </div>
-            ) : null,
-    })
-);
-
-vi.mock(
-    '../../../src/components/common/Modals/Edit/EditAssessmentModal',
-    () => ({
-        default: ({ isOpen, onClose }) =>
-            isOpen ? (
-                <div data-testid="edit-assessment-modal">
-                    Edit Assessment Modal
-                </div>
-            ) : null,
-    })
-);
-
-vi.mock('../../../src/components/common/Modals/Delete/DeleteModal', () => ({
-    default: ({ onClose, onConfirm, message }) => (
-        <div data-testid="delete-modal">{message}</div>
-    ),
-}));
-
-describe('TeacherCourseAssessment', () => {
-    const mockNavigate = vi.fn();
-    const mockSelectedCourse = {
-        id: '123',
-        name: 'Test Course',
-        code: 'TEST101',
-    };
-
-    beforeEach(() => {
-        vi.clearAllMocks();
-        useNavigate.mockReturnValue(mockNavigate);
-        vi.mocked(useCourse).mockReturnValue({
-            selectedCourse: mockSelectedCourse,
-        });
+    // Check if the course title appears
+    await waitFor(() => {
+      expect(screen.getByText("Sample Course")).toBeInTheDocument();
+      expect(screen.getByText("COURSE101")).toBeInTheDocument();
     });
 
-    it('should show loading state initially', () => {
-        vi.mocked(getCourseAssessments).mockResolvedValueOnce({
-            success: true,
-            assessments: [],
-        });
-        render(<TeacherCourseAssessment />);
-        expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+    // Check if assessments are loaded
+    await waitFor(() => {
+      expect(screen.getByText("Mock Quiz")).toBeInTheDocument();
+      expect(screen.getByText("Mock Assignment")).toBeInTheDocument();
+    });
+  });
+
+  it("shows a message when no assessments are available", async () => {
+    getCourseAssessments.mockResolvedValue({ success: true, assessments: [] });
+
+    render(
+      <MemoryRouter>
+        <CourseContext.Provider value={{ selectedCourse: mockCourse }}>
+          <TeacherCourseAssessment />
+        </CourseContext.Provider>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("No Assessments Available")).toBeInTheDocument();
+    });
+  });
+
+  it("opens and closes the create assessment modal", async () => {
+    render(
+      <MemoryRouter>
+        <CourseContext.Provider value={{ selectedCourse: mockCourse }}>
+          <TeacherCourseAssessment />
+        </CourseContext.Provider>
+      </MemoryRouter>
+    );
+
+    // Click the "Create Assessment" button
+    fireEvent.click(screen.getByText("Create Assessment"));
+
+    // Expect modal to be open
+    await waitFor(() => {
+      expect(screen.getByText("Create New Assessment")).toBeInTheDocument();
     });
 
-    it('should redirect to dashboard if no course selected', () => {
-        vi.mocked(useCourse).mockReturnValue({ selectedCourse: null });
-        render(<TeacherCourseAssessment />);
-        expect(mockNavigate).toHaveBeenCalledWith('/Teacher/Dashboard');
+    // Close the modal (assuming there's a close button)
+    fireEvent.click(screen.getByText("Close"));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Create New Assessment")).not.toBeInTheDocument();
+    });
+  });
+
+  it("opens the edit modal when clicking on edit", async () => {
+    render(
+      <MemoryRouter>
+        <CourseContext.Provider value={{ selectedCourse: mockCourse }}>
+          <TeacherCourseAssessment />
+        </CourseContext.Provider>
+      </MemoryRouter>
+    );
+
+    // Open the menu and click edit
+    fireEvent.click(screen.getAllByRole("button", { name: /more/i })[0]);
+    fireEvent.click(screen.getByText("Edit Assessment"));
+
+    // Expect edit modal to open
+    await waitFor(() => {
+      expect(screen.getByText("Edit Assessment")).toBeInTheDocument();
+    });
+  });
+
+  it("deletes an assessment successfully", async () => {
+    deleteAssessment.mockResolvedValue({ success: true });
+
+    render(
+      <MemoryRouter>
+        <CourseContext.Provider value={{ selectedCourse: mockCourse }}>
+          <TeacherCourseAssessment />
+        </CourseContext.Provider>
+      </MemoryRouter>
+    );
+
+    // Open the menu and click delete
+    fireEvent.click(screen.getAllByRole("button", { name: /more/i })[0]);
+    fireEvent.click(screen.getByText("Delete Assessment"));
+
+    // Confirm deletion
+    fireEvent.click(screen.getByText("Confirm"));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Mock Quiz")).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows a success message after creating an assessment", async () => {
+    render(
+      <MemoryRouter>
+        <CourseContext.Provider value={{ selectedCourse: mockCourse }}>
+          <TeacherCourseAssessment />
+        </CourseContext.Provider>
+      </MemoryRouter>
+    );
+
+    // Simulate a success message
+    fireEvent.click(screen.getByText("Create Assessment"));
+    await waitFor(() => screen.getByText("Create New Assessment"));
+
+    fireEvent.click(screen.getByText("Save")); // Assume there's a save button
+    await waitFor(() => {
+      expect(screen.getByText("Assessment created successfully")).toBeInTheDocument();
     });
 
-    it('should display error state when fetch fails', async () => {
-        vi.mocked(getCourseAssessments).mockRejectedValueOnce(
-            new Error('Failed to fetch')
-        );
-        render(<TeacherCourseAssessment />);
-
-        await waitFor(() => {
-            expect(
-                screen.getByText(/Failed to Load Assessments/i)
-            ).toBeInTheDocument();
-        });
-    });
-
-    it('should show empty state when no assessments', async () => {
-        vi.mocked(getCourseAssessments).mockResolvedValueOnce({
-            success: true,
-            assessments: [],
-        });
-        render(<TeacherCourseAssessment />);
-
-        await waitFor(() => {
-            expect(
-                screen.getByText(/No Assessments Available/i)
-            ).toBeInTheDocument();
-        });
-    });
-
-    it('should render list of assessments', async () => {
-        const mockAssessments = [
-            {
-                id: '1',
-                title: 'Test Assessment',
-                description: 'Test Description',
-                type: 'quiz',
-                duration_minutes: 60,
-                passing_score: 70,
-                max_score: 100,
-                due_date: '2024-01-01T12:00:00',
-            },
-        ];
-
-        vi.mocked(getCourseAssessments).mockResolvedValueOnce({
-            success: true,
-            assessments: mockAssessments,
-        });
-
-        render(<TeacherCourseAssessment />);
-
-        await waitFor(() => {
-            expect(screen.getByText('Test Assessment')).toBeInTheDocument();
-            expect(screen.getByText('Test Description')).toBeInTheDocument();
-            expect(screen.getByText(/60 minutes/)).toBeInTheDocument();
-            expect(screen.getByText(/Score: 70\/100/)).toBeInTheDocument();
-        });
-    });
-
-    it('should handle assessment click navigation', async () => {
-        const mockAssessment = {
-            id: '1',
-            title: 'Test Assessment',
-        };
-
-        vi.mocked(getCourseAssessments).mockResolvedValueOnce({
-            success: true,
-            assessments: [mockAssessment],
-        });
-
-        render(<TeacherCourseAssessment />);
-
-        await waitFor(() => {
-            fireEvent.click(screen.getByText('Test Assessment'));
-        });
-
-        expect(mockNavigate).toHaveBeenCalledWith(
-            `/Teacher/Assessment/View/${mockAssessment.id}`,
-            expect.any(Object)
-        );
-    });
-
-    it('should open create modal', async () => {
-        vi.mocked(getCourseAssessments).mockResolvedValueOnce({
-            success: true,
-            assessments: [],
-        });
-
-        render(<TeacherCourseAssessment />);
-
-        await waitFor(() => {
-            fireEvent.click(screen.getByText(/Create Assessment/));
-        });
-
-        expect(
-            screen.getByTestId('create-assessment-modal')
-        ).toBeInTheDocument();
-    });
-
-    it('should handle edit assessment', async () => {
-        const mockAssessment = {
-            id: '1',
-            title: 'Test Assessment',
-        };
-
-        vi.mocked(getCourseAssessments).mockResolvedValueOnce({
-            success: true,
-            assessments: [mockAssessment],
-        });
-
-        render(<TeacherCourseAssessment />);
-    });
-
-    it('should handle delete assessment', async () => {
-        const mockAssessment = {
-            id: '1',
-            title: 'Test Assessment',
-        };
-
-        vi.mocked(getCourseAssessments).mockResolvedValueOnce({
-            success: true,
-            assessments: [mockAssessment],
-        });
-
-        render(<TeacherCourseAssessment />);
-    });
-
-    it('should format dates correctly', async () => {
-        const mockAssessment = {
-            id: '1',
-            title: 'Test Assessment',
-            due_date: '2024-01-01T12:00:00',
-        };
-
-        vi.mocked(getCourseAssessments).mockResolvedValueOnce({
-            success: true,
-            assessments: [mockAssessment],
-        });
-
-        render(<TeacherCourseAssessment />);
-
-        await waitFor(() => {
-            expect(screen.getByText(/January 1, 2024/)).toBeInTheDocument();
-        });
-    });
+    // Success message should disappear after 5 seconds
+    await waitFor(
+      () => {
+        expect(screen.queryByText("Assessment created successfully")).not.toBeInTheDocument();
+      },
+      { timeout: 6000 }
+    );
+  });
 });

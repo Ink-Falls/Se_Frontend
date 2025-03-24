@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CreateGroupModal from 'Se_Frontend/src/components/common/Modals/Create/CreateGroupModal.jsx'; // Adjust the import according to your file structure
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getAvailableMembers, createGroup, getAllGroups } from 'Se_Frontend/src/services/groupService.js'; // Adjust the import according to your file structure
 
 vi.mock('Se_Frontend/src/services/groupService.js', () => ({
@@ -39,9 +39,8 @@ describe('CreateGroupModal Component', () => {
     expect(screen.getByText(/create new group/i)).toBeInTheDocument();
 
     // Check if the form fields are rendered
-    expect(screen.getByPlaceholderText(/Enter group name/i), { target: { value: 'Test Group' } });
-    expect(screen.getByLabelText(/Group type/i), { target: { value: 'learner' } });
-
+    expect(screen.getByPlaceholderText(/Enter group name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Group type/i)).toBeInTheDocument();
   });
 
   it('should call onClose when the cancel button is clicked', () => {
@@ -64,8 +63,8 @@ describe('CreateGroupModal Component', () => {
     fireEvent.change(screen.getByLabelText(/Group type/i), { target: { value: 'learner' } });
 
     // Add a member
-    const addButtons = screen.getAllByRole('button'); 
-    fireEvent.click(addButtons[0]); 
+    const addButtons = screen.getAllByRole('button', { name: /add member/i });
+    fireEvent.click(addButtons[0]);
 
     // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /create group/i }));
@@ -86,36 +85,35 @@ describe('CreateGroupModal Component', () => {
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
-  it('should display an error message on form submission failure', async () => {
-    createGroup.mockRejectedValueOnce(new Error('Failed to create group'));
+  it("should display an error message on form submission failure", async () => {
+    createGroup.mockRejectedValueOnce(new Error("Failed to create group"));
 
     renderComponent();
 
+    // ✅ Wait for the component to finish loading available members
+    await waitFor(() => {
+      expect(screen.getByText(/Available Learners/i)).toBeInTheDocument();
+    });
+
     // Fill out the form
-    fireEvent.change(screen.getByPlaceholderText(/Enter group name/i), { target: { value: 'Test Group' } });
-    fireEvent.change(screen.getByLabelText(/Group type/i), { target: { value: 'learner' } });
+    fireEvent.change(screen.getByPlaceholderText(/Enter group name/i), { target: { value: "Test Group" } });
+    fireEvent.change(screen.getByLabelText(/Group Type/i), { target: { value: "learner" } });
 
-    // Add a member
-    const addButtons = screen.getAllByRole('button'); 
-    fireEvent.click(addButtons[0]); // Click the first button
-
-
+    // ✅ Ensure the "Add Member" button is available before clicking
+    const addMemberButton = await screen.findByRole("button", { name: /add member/i });
+    fireEvent.click(addMemberButton);
 
     // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /create group/i }));
+    fireEvent.click(screen.getByRole("button", { name: /create group/i }));
 
-    // Check if the error message is displayed
+    // ✅ Wait for the error message to appear
     await waitFor(() => {
       expect(screen.getByText(/failed to create group/i)).toBeInTheDocument();
     });
 
-    // Check if the onSave function was not called
+    // Ensure `onSave` and `onClose` are not called
     expect(mockOnSave).not.toHaveBeenCalled();
-
-    // Check if the onClose function was not called
-    //expect(mockOnClose).not.toHaveBeenCalled();
-    
-
+    expect(mockOnClose).not.toHaveBeenCalled();
   });
 
   it('should display validation errors when form is invalid', async () => {

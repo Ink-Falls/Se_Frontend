@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import TeacherAssessmentView from '../../../src/pages/Teacher/TeacherAssessmentView';
-import * as assessmentService from '../../../src/services/assessmentService';
+import TeacherAssessmentView from 'Se_Frontend/src/pages/Teacher/TeacherAssessmentView';
+import { AuthProvider } from 'Se_Frontend/src/contexts/AuthContext';
+import { CourseProvider } from 'Se_Frontend/src/contexts/CourseContext';
+import * as assessmentService from 'Se_Frontend/src/services/assessmentService';
 
 // Mock the necessary dependencies
 vi.mock('react-router-dom', async () => {
@@ -25,43 +27,40 @@ vi.mock('react-router-dom', async () => {
     };
 });
 
-vi.mock('../../../src/services/assessmentService');
+vi.mock('Se_Frontend/src/services/assessmentService');
 
-vi.mock('../../../src/components/common/layout/Sidebar', () => ({
+vi.mock('Se_Frontend/src/components/common/layout/Sidebar', () => ({
     default: () => <div data-testid="sidebar">Sidebar</div>,
 }));
 
-vi.mock('../../../src/components/common/layout/Header', () => ({
+vi.mock('Se_Frontend/src/components/common/layout/Header', () => ({
     default: () => <div data-testid="header">Header</div>,
 }));
 
-vi.mock('../../../src/components/common/LoadingSpinner', () => ({
+vi.mock('Se_Frontend/src/components/common/LoadingSpinner', () => ({
     default: () => <div data-testid="loading-spinner">Loading...</div>,
 }));
 
-vi.mock(
-    '../../../src/components/common/Modals/Create/CreateQuestionModal',
-    () => ({
-        default: ({ isOpen, onClose, onSubmit }) =>
-            isOpen ? (
-                <div data-testid="create-question-modal">
-                    <button onClick={onClose}>Close</button>
-                    <button
-                        onClick={() =>
-                            onSubmit({
-                                question_text: 'Test Question',
-                                question_type: 'multiple_choice',
-                                points: 10,
-                                options: [],
-                            })
-                        }
-                    >
-                        Submit
-                    </button>
-                </div>
-            ) : null,
-    })
-);
+vi.mock('Se_Frontend/src/components/common/Modals/Create/CreateQuestionModal', () => ({
+    default: ({ isOpen, onClose, onSubmit }) =>
+        isOpen ? (
+            <div data-testid="create-question-modal">
+                <button onClick={onClose}>Close</button>
+                <button
+                    onClick={() =>
+                        onSubmit({
+                            question_text: 'Test Question',
+                            question_type: 'multiple_choice',
+                            points: 10,
+                            options: [],
+                        })
+                    }
+                >
+                    Submit
+                </button>
+            </div>
+        ) : null,
+}));
 
 const mockSubmissions = [
     {
@@ -86,7 +85,11 @@ const mockAssessmentData = {
 const renderComponent = () => {
     return render(
         <BrowserRouter>
-            <TeacherAssessmentView />
+            <AuthProvider>
+                <CourseProvider>
+                    <TeacherAssessmentView />
+                </CourseProvider>
+            </AuthProvider>
         </BrowserRouter>
     );
 };
@@ -119,18 +122,18 @@ describe('TeacherAssessmentView Component', () => {
             renderComponent();
 
             await waitFor(() => {
-                expect(
-                    assessmentService.getAssessmentById
-                ).toHaveBeenCalledWith('123', true, true);
+                expect(assessmentService.getAssessmentById).toHaveBeenCalledWith('123', true, true);
                 expect(screen.getByText('Test Assessment')).toBeInTheDocument();
             });
         });
 
         it('should handle assessment fetch error', async () => {
-            assessmentService.getAssessmentById.mockRejectedValue(
-                new Error('Failed to fetch')
-            );
+            assessmentService.getAssessmentById.mockRejectedValue(new Error('Failed to fetch'));
             renderComponent();
+
+            await waitFor(() => {
+                expect(screen.getByText((content, element) => content.includes('Failed to fetch'))).toBeInTheDocument();
+            });
         });
     });
 
@@ -140,9 +143,7 @@ describe('TeacherAssessmentView Component', () => {
 
             await waitFor(() => {
                 fireEvent.click(screen.getByText('Add Question'));
-                expect(
-                    screen.getByTestId('create-question-modal')
-                ).toBeInTheDocument();
+                expect(screen.getByTestId('create-question-modal')).toBeInTheDocument();
             });
         });
 
@@ -164,16 +165,12 @@ describe('TeacherAssessmentView Component', () => {
             fireEvent.click(screen.getByText('Submit'));
 
             await waitFor(() => {
-                expect(
-                    assessmentService.createAssessmentQuestion
-                ).toHaveBeenCalled();
+                expect(assessmentService.createAssessmentQuestion).toHaveBeenCalled();
             });
         });
 
         it('should handle question creation error', async () => {
-            assessmentService.createAssessmentQuestion.mockRejectedValue(
-                new Error('Creation failed')
-            );
+            assessmentService.createAssessmentQuestion.mockRejectedValue(new Error('Creation failed'));
             renderComponent();
 
             await waitFor(() => {
@@ -181,6 +178,10 @@ describe('TeacherAssessmentView Component', () => {
             });
 
             fireEvent.click(screen.getByText('Submit'));
+
+            await waitFor(() => {
+                expect(screen.getByText('Creation failed')).toBeInTheDocument();
+            });
         });
     });
 
@@ -212,9 +213,7 @@ describe('TeacherAssessmentView Component', () => {
             renderComponent();
 
             await waitFor(() => {
-                const paginationButtons = screen
-                    .getAllByRole('button')
-                    .filter((button) => !isNaN(button.textContent));
+                const paginationButtons = screen.getAllByRole('button').filter((button) => !isNaN(button.textContent));
                 expect(paginationButtons).toHaveLength(2);
             });
         });
@@ -233,9 +232,7 @@ describe('TeacherAssessmentView Component', () => {
             renderComponent();
 
             await waitFor(() => {
-                expect(
-                    screen.getByText('Passing Score: 70%')
-                ).toBeInTheDocument();
+                expect(screen.getByText('Passing Score: 70%')).toBeInTheDocument();
             });
         });
 
@@ -266,7 +263,10 @@ describe('TeacherAssessmentView Component', () => {
 
             renderComponent();
 
-            // Add a longer timeout and more specific error message
+            await waitFor(() => {
+                expect(screen.getByText('John Doe')).toBeInTheDocument();
+                expect(screen.getByText('80/100')).toBeInTheDocument();
+            });
         });
     });
 });

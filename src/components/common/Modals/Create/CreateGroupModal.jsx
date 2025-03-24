@@ -235,6 +235,7 @@ const CreateGroupModal = ({ onClose, onSave }) => {
                       <button
                         onClick={() => addMember(member)}
                         className="text-blue-500 hover:text-blue-700"
+                        aria-label="Add member"
                       >
                         <Plus size={18} />
                       </button>

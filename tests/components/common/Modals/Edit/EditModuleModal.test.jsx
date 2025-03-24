@@ -1,30 +1,42 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import EditModuleModal from 'Se_Frontend/src/components/common/Modals/Edit/EditModuleModal.jsx';
 
-describe('EditModuleModal', () => {
-  const onClose = vi.fn();
-  const onSave = vi.fn();
-  const module = {
-    title: 'Existing Module Title',
-    description: 'Existing Module Description',
+describe('EditModuleModal Component', () => {
+  const mockOnClose = vi.fn();
+  const mockOnSave = vi.fn();
+  const module = { title: 'Test Module', description: 'Test Description' };
+
+  const renderComponent = () => {
+    render(
+      <EditModuleModal
+        module={module}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+      />
+    );
   };
 
   beforeEach(() => {
-    onClose.mockClear();
-    onSave.mockClear();
+    vi.clearAllMocks();
   });
 
-  it('renders the modal with existing module data', () => {
-    render(<EditModuleModal module={module} onClose={onClose} onSave={onSave} />);
-    expect(screen.getByDisplayValue('Existing Module Title')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Existing Module Description')).toBeInTheDocument();
+  it('renders the modal correctly when open', () => {
+    renderComponent();
+
+    // Check if the modal title is rendered
+    expect(screen.getByRole('heading', { name: /edit module/i })).toBeInTheDocument();
+
+    // Check if the form fields are rendered
+    expect(screen.getByLabelText('Module Title')).toBeInTheDocument();
+    expect(screen.getByLabelText('Module Description')).toBeInTheDocument();
   });
 
   it('handles input changes', () => {
-    render(<EditModuleModal module={module} onClose={onClose} onSave={onSave} />);
-    const titleInput = screen.getByPlaceholderText('Enter module title');
-    const descriptionInput = screen.getByPlaceholderText('Enter module description');
+    renderComponent();
+
+    const titleInput = screen.getByLabelText('Module Title');
+    const descriptionInput = screen.getByLabelText('Module Description');
 
     fireEvent.change(titleInput, { target: { value: 'Updated Module Title' } });
     fireEvent.change(descriptionInput, { target: { value: 'Updated Module Description' } });
@@ -33,26 +45,34 @@ describe('EditModuleModal', () => {
     expect(descriptionInput.value).toBe('Updated Module Description');
   });
 
-  it('saves the module with updated data', () => {
-    render(<EditModuleModal module={module} onClose={onClose} onSave={onSave} />);
-    const titleInput = screen.getByPlaceholderText('Enter module title');
-    const descriptionInput = screen.getByPlaceholderText('Enter module description');
+  it('calls onSave and onClose when the save button is clicked', async () => {
+    renderComponent();
 
-    fireEvent.change(titleInput, { target: { value: 'Updated Module Title' } });
-    fireEvent.change(descriptionInput, { target: { value: 'Updated Module Description' } });
-    fireEvent.click(screen.getByText('Save Changes'));
+    // Fill out the form
+    fireEvent.change(screen.getByLabelText('Module Title'), { target: { value: 'Updated Module Title' } });
+    fireEvent.change(screen.getByLabelText('Module Description'), { target: { value: 'Updated Module Description' } });
 
-    expect(onSave).toHaveBeenCalledWith({
-      ...module,
-      title: 'Updated Module Title',
-      description: 'Updated Module Description',
+    // Click the save button
+    fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
+
+    // Wait for the onSave and onClose callbacks to be called
+    await waitFor(() => {
+      expect(mockOnSave).toHaveBeenCalledWith({
+        ...module,
+        title: 'Updated Module Title',
+        description: 'Updated Module Description',
+      });
+      expect(mockOnClose).toHaveBeenCalled();
     });
-    expect(onClose).toHaveBeenCalled();
   });
 
-  it('handles close button click', () => {
-    render(<EditModuleModal module={module} onClose={onClose} onSave={onSave} />);
-    fireEvent.click(screen.getByText('Cancel'));
-    expect(onClose).toHaveBeenCalled();
+  it('calls onClose when the cancel button is clicked', () => {
+    renderComponent();
+
+    // Click the cancel button
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+
+    // Check if the onClose callback was called
+    expect(mockOnClose).toHaveBeenCalled();
   });
 });

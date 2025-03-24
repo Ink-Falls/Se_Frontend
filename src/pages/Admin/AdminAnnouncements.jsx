@@ -225,12 +225,14 @@ function AdminAnnouncements() {
                   <button
                     onClick={() => setAnnouncementToDelete(announcement)}
                     className="text-gray-500 hover:text-red-500 transition-colors mr-[0.5vw]"
+                    aria-label={`delete-announcement-${announcement.id}`}
                   >
                     <Trash2 size={20} />
                   </button>
                   <button
                     onClick={() => handleEdit(announcement)}
                     className="text-gray-500 hover:text-yellow-500 transition-colors"
+                    aria-label={`edit-announcement-${announcement.id}`}
                   >
                     <Edit size={20} />
                   </button>

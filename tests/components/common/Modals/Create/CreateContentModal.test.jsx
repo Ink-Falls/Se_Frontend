@@ -37,13 +37,21 @@ describe('CreateContentModal', () => {
     });
   });
 
-  it('shows error message for empty URL', async () => {
-    render(<CreateContentModal moduleId="1" onClose={onClose} onSubmit={onSubmit} />);
-    fireEvent.change(screen.getByPlaceholderText('Enter resource title'), { target: { value: 'Test Title' } });
-    fireEvent.click(screen.getByText('Add Resource'));
+  it("shows error message for empty URL", async () => {
+    const onClose = vi.fn();
+    const onSubmit = vi.fn();
 
+    render(<CreateContentModal moduleId="1" onClose={onClose} onSubmit={onSubmit} />);
+
+    // Fill title but leave URL empty
+    fireEvent.change(screen.getByPlaceholderText("Enter resource title"), { target: { value: "Test Title" } });
+
+    // Click submit
+    fireEvent.click(screen.getByText("Add Resource"));
+
+    // ✅ Ensure the error message appears after re-render
     await waitFor(() => {
-      expect(screen.getByText('Resource URL is required')).toBeInTheDocument();
+      expect(screen.getByText("Resource URL is required")).toBeInTheDocument();
     });
   });
 
