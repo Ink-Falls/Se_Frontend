@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { X } from "lucide-react"; // Add this import
-import Modal from "../../Button/Modal"; // Your Modal component
+import { X } from "lucide-react";
+import { updateUser } from "../../../../services/userService";
 
 function EditUserModal({ user, onClose, onSave }) {
-  const [editedUser, setEditedUser] = useState({
-    ...user,
-    // Explicitly exclude password
-    password: undefined,
-  });
+  const [editedUser, setEditedUser] = useState({ ...user });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // IMPORTANT: Update local state if the 'user' prop changes
   useEffect(() => {
     setEditedUser(user);
   }, [user]);
@@ -18,18 +15,16 @@ function EditUserModal({ user, onClose, onSave }) {
     const { name, value } = e.target;
 
     if (name === "contact_no") {
-      // Remove non-digits first
+      // Clean and format contact number
       let cleanedValue = value.replace(/\D/g, "");
 
-      // Ensure it starts with "0" if not starting with +63
       if (!cleanedValue.startsWith("0") && !value.startsWith("+63")) {
         cleanedValue = "0" + cleanedValue;
       }
 
-      // Limit to 11 digits
       cleanedValue = cleanedValue.slice(0, 11);
 
-      // Format with hyphens for display
+      // Format with hyphens
       let formattedContactNo = cleanedValue;
       if (formattedContactNo.length > 4) {
         formattedContactNo = formattedContactNo.replace(/^(\d{4})/, "$1-");
@@ -52,13 +47,16 @@ function EditUserModal({ user, onClose, onSave }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+
     try {
       const { password, ...userWithoutPassword } = editedUser;
 
-      // Remove hyphens from contact_no before saving
+      // Remove hyphens from contact number
       const cleanedData = {
         ...userWithoutPassword,
-        contact_no: userWithoutPassword.contact_no.replace(/-/g, ""),
+        contact_no: userWithoutPassword.contact_no?.replace(/-/g, ""),
       };
 
       await onSave(cleanedData);
@@ -66,12 +64,12 @@ function EditUserModal({ user, onClose, onSave }) {
     } catch (err) {
       setError(err.message || "Failed to update user");
       console.error("Error updating user:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!user) {
-    return null; // Don't render anything if no user is provided
-  }
+  if (!user) return null;
 
   const schoolOptions = [
     { id: "1001", name: "Asuncion Consunji Elementary School (ACES)" },
@@ -97,7 +95,10 @@ function EditUserModal({ user, onClose, onSave }) {
         <div className="p-6 overflow-y-auto">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="mb-4">
-              <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="first_name"
+                className="block text-sm font-medium text-gray-700"
+              >
                 First Name:
               </label>
               <input
@@ -111,7 +112,10 @@ function EditUserModal({ user, onClose, onSave }) {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="last_name"className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="last_name"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Last Name:
               </label>
               <input
@@ -125,7 +129,10 @@ function EditUserModal({ user, onClose, onSave }) {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="middle_initial" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="middle_initial"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Middle Initial:
               </label>
               <input
@@ -139,7 +146,10 @@ function EditUserModal({ user, onClose, onSave }) {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Email:
               </label>
               <input
@@ -153,7 +163,10 @@ function EditUserModal({ user, onClose, onSave }) {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="contact_no" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="contact_no"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Contact No:
               </label>
               <input
@@ -167,7 +180,10 @@ function EditUserModal({ user, onClose, onSave }) {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="birthdate" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="birthdate"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Birthdate:
               </label>
               <input
@@ -187,7 +203,10 @@ function EditUserModal({ user, onClose, onSave }) {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="scool"className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="scool"
+                className="block text-sm font-medium text-gray-700"
+              >
                 School:
               </label>
               <select
@@ -207,7 +226,10 @@ function EditUserModal({ user, onClose, onSave }) {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="role"className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="role"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Role:
               </label>
               <select
