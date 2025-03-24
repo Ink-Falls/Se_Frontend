@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import {
   Home,
   Megaphone,
@@ -270,6 +271,7 @@ const TeacherCourseAssessment = () => {
           title={selectedCourse?.name || "Course Assessment"}
           subtitle={selectedCourse?.code}
         />
+      <MobileNavBar navItems={navItems} />
 
         {/* Add success message display */}
         {successMessage && (

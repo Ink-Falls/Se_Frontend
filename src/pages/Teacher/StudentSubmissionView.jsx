@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import {
   Home,
   Megaphone,
@@ -719,7 +720,7 @@ const StudentSubmissionView = () => {
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-6 overflow-auto">
         <Header title="Student Submission" />
-
+        <MobileNavBar navItems={navItems} />
         <div className="w-full">
           {" "}
           {/* Removed max-w-5xl and mx-auto */}

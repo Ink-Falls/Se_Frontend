@@ -48,7 +48,7 @@ const NotificationDetails = () => {
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-4 md:p-6">
         <Header title="Notification" />
-        <div className="max-w-3xl mx-auto mt-6">
+        <div className="max-w-full mt-6"> {/* Changed from max-w-3xl to max-w-full */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
             {/* Header */}
             <div className="bg-gray-50 py-4 px-6 flex items-center justify-between border-b">
@@ -92,7 +92,7 @@ const NotificationDetails = () => {
           </div>
         </div>
       </div>
-      <MobileNavBar />
+      <MobileNavBar navItems={navItems} />
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import LoadingSpinner from "../../components/common/LoadingSpinner"; // Add this import
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import {
   Home,
   Megaphone,
@@ -928,6 +929,7 @@ const TeacherAssessmentView = () => {
       <div className="flex-1 p-6 overflow-auto">
         <div className="max-w-7xl mx-auto">
           <Header title="Assessment" />
+          <MobileNavBar navItems={navItems} />
 
           <div className="mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
             {/* Header Section */}

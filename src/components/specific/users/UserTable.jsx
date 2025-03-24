@@ -90,8 +90,8 @@ const UserTable = ({
   return (
     <div>
       {/* Controls Section */}
-      <div className="flex items-center gap-4 mb-6">
-        {/* Show delete button when items are selected */}
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
+        {/* Delete Selected button */}
         {selectedIds.length > 0 && (
           <button
             onClick={onDelete}
@@ -102,79 +102,92 @@ const UserTable = ({
           </button>
         )}
 
-        {/* Replace Filter button with Filter dropdown */}
-        <div className="relative">
-          <select
-            value={currentFilter}
-            onChange={(e) => onFilterChange(e.target.value)}
-            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none"
-          >
-            <option value="all">Filter By: All</option>
-            <option value="learner">Filter By: Learner</option>
-            <option value="teacher">Filter By: Teacher</option>
-            <option value="student_teacher">Filter By: Student Teacher</option>
-            <option value="admin">Filter By: Admin</option>
-          </select>
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Filter size={16} className="text-gray-400" />
+        {/* Controls that stack on mobile */}
+        <div className="flex flex-col w-full md:flex-row gap-4">
+          {/* Left side controls */}
+          <div className="flex flex-col md:flex-row w-full md:w-auto gap-4 md:items-center">
+            {/* Filter dropdown */}
+            <div className="relative md:py-[2px]">
+              <select
+                value={currentFilter}
+                onChange={(e) => onFilterChange(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none w-full md:w-auto"
+              >
+                <option value="all">Filter By: All</option>
+                <option value="learner">Filter By: Learner</option>
+                <option value="teacher">Filter By: Teacher</option>
+                <option value="student_teacher">Filter By: Student Teacher</option>
+                <option value="admin">Filter By: Admin</option>
+              </select>
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Filter size={16} className="text-gray-400" />
+              </div>
+            </div>
+
+            {/* Sort dropdown */}
+            <div className="relative md:py-[2px]">
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none w-full md:w-auto"
+              >
+                <option value="none">Sort By</option>
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+                <option value="id-asc">ID Number (Ascending)</option>
+                <option value="id-desc">ID Number (Descending)</option>
+              </select>
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Filter size={16} className="text-gray-400" />
+              </div>
+            </div>
+
+            {/* Search input */}
+            <div className="relative w-full md:w-auto md:py-[2px]">
+              <input
+                type="text"
+                placeholder="Search users..."
+                onChange={handleSearchChange}
+                className="w-full md:w-auto pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#475569]" size={20} />
+            </div>
           </div>
-        </div>
 
-        {/* Sort Dropdown */}
-        <div className="relative">
-          <select
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none"
-          >
-            <option value="none">Sort By</option>
-            <option value="name-asc">Name (A-Z)</option>
-            <option value="name-desc">Name (Z-A)</option>
-            <option value="id-asc">ID Number (Ascending)</option>
-            <option value="id-desc">ID Number (Descending)</option>
-          </select>
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Filter size={16} className="text-gray-400" />
+          {/* Right side buttons */}
+          <div className="flex flex-col md:flex-row w-full md:w-auto gap-4 md:ml-auto">
+            <button 
+              onClick={onAddUser} 
+              className="flex items-center gap-2 md:p-2 md:bg-transparent px-4 py-2 bg-[#212529] text-white md:text-[#475569] rounded-lg md:rounded-full text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
+            >
+              <Plus size={20} />
+              <span className="md:hidden">Add User</span>
+            </button>
+
+            <button
+              onClick={onCreateGroup}
+              className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
+            >
+              <Users size={16} />
+              <span>Create Group</span>
+            </button>
+
+            <button
+              onClick={onShowGroupList}
+              className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
+            >
+              <Users size={16} />
+              <span>Group List</span>
+            </button>
+
+            <button
+              onClick={onGenerateReport}
+              className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
+            >
+              <FileText size={16} />
+              <span>Generate Report</span>
+            </button>
           </div>
-        </div>
-
-        {/* Search input */}
-        <div className="flex items-center relative">
-          <input
-            type="text"
-            placeholder="Search users..."
-            onChange={handleSearchChange}
-            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
-          />
-          <Search className="absolute left-3 text-[#475569]" size={20} />
-        </div>
-
-        {/* Buttons on the right side */}
-        <div className="flex items-center gap-4 ml-auto">
-          <button onClick={onAddUser} className="text-white p-2 rounded-full">
-            <Plus size={20} className="text-[#475569]" />
-          </button>
-          <button
-            onClick={onCreateGroup}
-            className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black"
-          >
-            <Users size={16} />
-            <span>Create Group</span>
-          </button>
-          <button
-            onClick={onShowGroupList}
-            className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black"
-          >
-            <Users size={16} />
-            <span>Group List</span>
-          </button>
-          <button
-            onClick={onGenerateReport}
-            className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black"
-          >
-            <FileText size={16} />
-            <span>Generate Report</span>
-          </button>
         </div>
       </div>
 

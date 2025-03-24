@@ -60,7 +60,7 @@ const Notifications = () => {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <MobileNavBar />
+      <MobileNavBar navItems={navItems} />
     </div>
   );
 };

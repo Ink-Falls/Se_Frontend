@@ -48,7 +48,7 @@ const Notifications = () => {
         <NotificationsComponent notifications={notificationsData} />
       </div>
 
-      <MobileNavBar />
+      <MobileNavBar navItems={navItems} />
     </div>
   );
 };

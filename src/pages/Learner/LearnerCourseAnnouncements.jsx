@@ -93,6 +93,7 @@ const LearnerCourseAnnouncements = () => {
               <ArrowUpDown size={20} />
             </button>
           </BlackHeader>
+          <MobileNavBar navItems={navItems} />
 
           <AnnouncementsComponent
             announcements={announcements}

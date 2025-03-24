@@ -107,6 +107,7 @@ const LearnerAnnouncementDetails = () => {
             </div>
           }
         />
+      <MobileNavBar navItems={navItems} />
 
         {/* Updated Announcement Details Box */}
         <div className="bg-white p-10 rounded-lg shadow-md">

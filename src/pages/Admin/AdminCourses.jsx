@@ -31,6 +31,7 @@ import {
 import { getTeachers } from "../../services/userService";
 import { getGroupsByType } from "../../services/groupService";
 import AddCourse from "../../components/common/Modals/Add/AddCourse";
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
 
 function AdminCourses() {
   const [courses, setCourses] = useState([]);
@@ -298,17 +299,37 @@ function AdminCourses() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100 relative">
+    <div className="flex h-screen bg-gray-100 relative pb-16"> {/* Added pb-16 for padding bottom */}
       <Sidebar navItems={navItems} />
-      <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto">
+      <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto pb-16"> {/* Added pb-16 here too */}
         <Header title="Courses" />
 
-        {/* Add success message display */}
         {successMessage && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
             {successMessage}
           </div>
         )}
+
+        {/* Black header bar */}
+        <div className="bg-[#212529] shadow rounded-lg mb-4">
+          <div className="flex items-center p-[0.5vw] pl-[1vw] pr-[1vw]">
+            <button className="flex text-md font-semibold items-center py-[2vw] md:py-[0.2vw] ml-[3vw] md:ml-[0vw] text-white rounded-lg">
+              <span>Courses ({courses.length})</span>
+            </button>
+
+            <div className="flex items-center gap-[3vw] md:gap-[1vw] ml-auto">
+              <button 
+                onClick={() => setIsAddCourseOpen(true)} 
+                className="flex items-center rounded-lg hover:text-[#F6BA18] transition-colors"
+              >
+                <Plus className="text-white" size={22} />
+              </button>
+              <button className="flex items-center rounded-lg mr-[3vw] md:mr-[0vw]">
+                <Search className="text-white" size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
 
         {error ? (
           <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -485,15 +506,11 @@ function AdminCourses() {
                 </div>
               </div>
             ))}
+      <MobileNavBar navItems={navItems} />
           </div>
         )}
 
-        <button
-          onClick={() => setIsAddCourseOpen(true)}
-          className="fixed bottom-8 right-8 bg-yellow-500 text-white rounded-full p-4 shadow-lg hover:bg-yellow-600 transition-colors z-50 flex items-center justify-center"
-        >
-          <Plus size={24} />
-        </button>
+        {/* Remove the floating plus button since we now have it in the header */}
 
         {editingCourse && (
           <Modal

@@ -35,6 +35,7 @@ import {
 } from "/src/services/userService.js";
 import { generateUsersReport } from "../../services/reportService";
 import ReportViewerModal from "../../components/common/Modals/View/ReportViewerModal";
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import { getAllCourses } from "/src/services/courseService.js";
 import { getGroupsByType } from "/src/services/groupService.js";
 
@@ -491,10 +492,9 @@ function AdminDashboard() {
 
   return (
     <>
-      <div className="flex h-screen bg-gray-100">
+      <div className="flex h-screen bg-gray-100 pb-16"> {/* Added pb-16 */}
         <Sidebar navItems={navItems} />
-
-        <div className="flex-1 p-6 overflow-auto">
+        <div className="flex-1 p-6 overflow-auto pb-16"> {/* Added pb-16 */}
           <Header title="Users" />
 
           {/* Add success message display */}
@@ -568,7 +568,7 @@ function AdminDashboard() {
           </div>
         </div>
       </div>
-
+      <MobileNavBar navItems={navItems} />
       {isAddModalOpen && (
         <AddUserModal
           onClose={() => setIsAddModalOpen(false)}

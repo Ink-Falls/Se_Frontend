@@ -20,6 +20,7 @@ import {
   Users,
   Search,
 } from "lucide-react";
+import MobileNavBar from "../../components/common/layout/MobileNavbar"; // Add this import
 
 function AdminAnnouncements() {
   // Hardcoded data for testing
@@ -91,6 +92,21 @@ function AdminAnnouncements() {
     {
       text: "Enrollments",
       icon: <Bell size={20} />,
+      route: "/Admin/Enrollments",
+    },
+    {
+      text: "Announcements",
+      icon: <FileText size={20} />,
+      route: "/Admin/Announcements",
+    },
+  ];
+
+  const mobileNavItems = [
+    { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
+    { text: "Courses", icon: <Book size={20} />, route: "/Admin/Courses" },
+    {
+      text: "Enrollments",
+      icon: <Bell size={20} />, 
       route: "/Admin/Enrollments",
     },
     {
@@ -233,6 +249,7 @@ function AdminAnnouncements() {
           ))}
         </div>
       </div>
+      <MobileNavBar navItems={navItems} /> {/* Pass the mobile nav items */}
     </div>
   );
 }

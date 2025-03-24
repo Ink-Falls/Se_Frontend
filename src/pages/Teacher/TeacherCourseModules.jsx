@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import Modal from "../../components/common/Button/Modal";
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import {
   MoreVertical,
   Plus,
@@ -566,6 +567,7 @@ const TeacherCourseModules = () => {
         <Sidebar navItems={navItems} />
         <div className="flex-1 p-6">
           <Header title="Course Modules" />
+          <MobileNavBar navItems={navItems} />
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <AlertTriangle size={64} className="text-red-500 mb-4" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">
@@ -596,6 +598,7 @@ const TeacherCourseModules = () => {
             title={selectedCourse?.name || "Course Modules"}
             subtitle={selectedCourse?.code}
           />
+          <MobileNavBar navItems={navItems} />
           <div className="flex items-center justify-center h-[calc(100vh-200px)]">
             <div className="w-16 h-16 border-4 border-[#F6BA18] border-t-[#212529] rounded-full animate-spin"></div>
           </div>
@@ -614,6 +617,7 @@ const TeacherCourseModules = () => {
             title={selectedCourse?.name || "Course Modules"}
             subtitle={selectedCourse?.code}
           />
+          <MobileNavBar navItems={navItems} />
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <AlertTriangle size={64} className="text-red-500 mb-4" />
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">
@@ -651,6 +655,7 @@ const TeacherCourseModules = () => {
             title={selectedCourse?.name || "Course Modules"}
             subtitle={selectedCourse?.code}
           />
+          <MobileNavBar navItems={navItems} />
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <InboxIcon size={64} className="text-gray-300 mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -681,7 +686,7 @@ const TeacherCourseModules = () => {
           title={selectedCourse?.name || "Course Modules"}
           subtitle={selectedCourse?.code}
         />
-
+          <MobileNavBar navItems={navItems} />
         {/* Add success message display */}
         {successMessage && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
