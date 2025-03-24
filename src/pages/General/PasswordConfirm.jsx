@@ -1,9 +1,10 @@
 import React, {useEffect} from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import logo from "/src/assets/images/ARALKADEMYLOGO.png";
 
 function PasswordConfirm() {
   const navigate = useNavigate();
+  const location = useLocation();
   const passwordReset = location.state?.passwordReset;
 
   useEffect(() => {
