@@ -36,6 +36,8 @@ import {
 import { generateUsersReport } from "../../services/reportService";
 import ReportViewerModal from "../../components/common/Modals/View/ReportViewerModal";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
+import { getAllCourses } from "/src/services/courseService.js";
+import { getGroupsByType } from "/src/services/groupService.js";
 
 function AdminDashboard() {
   const [courses, setCourses] = useState([]);
@@ -122,95 +124,48 @@ function AdminDashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("No token found. User might not be logged in.");
-        setIsLoading(false);
-        return;
-      }
-
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      };
-
       try {
+        setIsLoading(true);
+        setError(null);
+
         const [
-          coursesResponse,
-          teachersResponse,
-          learnerGroupsResponse,
-          studentTeacherGroupsResponse,
+          coursesData,
+          teachersData,
+          learnerGroupsData,
+          studentTeacherGroupsData,
         ] = await Promise.all([
-          fetch("http://localhost:4000/api/courses", { headers }),
-          fetch("http://localhost:4000/api/users", { headers }),
-          fetch("http://localhost:4000/api/groups?group_type=learner", {
-            headers,
-          }),
-          fetch("http://localhost:4000/api/groups?group_type=student_teacher", {
-            headers,
-          }),
+          getAllCourses(),
+          getAllUsers({ page: 1, limit: 1000 }), // Get all teachers
+          getGroupsByType('learner'),
+          getGroupsByType('student_teacher'),
         ]);
 
-        if (!coursesResponse.ok) {
-          throw new Error(`HTTP error! status: ${coursesResponse.status}`);
-        }
-        const coursesData = await coursesResponse.json();
         setCourses(coursesData);
 
-        if (!teachersResponse.ok) {
-          throw new Error(`HTTP error! status: ${teachersResponse.status}`);
-        }
-        const teachersData = await teachersResponse.json();
-        if (Array.isArray(teachersData.rows)) {
-          const filteredTeachers = teachersData.rows.filter(
+        // Filter teachers from users data
+        if (teachersData && Array.isArray(teachersData.users)) {
+          const filteredTeachers = teachersData.users.filter(
             (user) => user.role === "teacher"
           );
           setTeachers(filteredTeachers);
-        } else {
-          // console.error("teachersData.rows is not an array:", teachersData);
-          setTeachers([]);
         }
 
-        if (!learnerGroupsResponse.ok) {
-          throw new Error(
-            `HTTP error! status: ${learnerGroupsResponse.status}`
-          );
-        }
-        const learnerGroupsData = await learnerGroupsResponse.json();
+        // Set learner groups
         if (Array.isArray(learnerGroupsData)) {
           setLearnerGroups(learnerGroupsData);
-        } else if (learnerGroupsData && Array.isArray(learnerGroupsData.rows)) {
-          setLearnerGroups(learnerGroupsData.rows);
         } else {
-          console.error(
-            "Learner groups data is not an array:",
-            learnerGroupsData
-          );
+          console.error("Invalid learner groups data:", learnerGroupsData);
           setLearnerGroups([]);
         }
 
-        if (!studentTeacherGroupsResponse.ok) {
-          throw new Error(
-            `HTTP error! status: ${studentTeacherGroupsResponse.status}`
-          );
-        }
-        const studentTeacherGroupsData =
-          await studentTeacherGroupsResponse.json();
+        // Set student teacher groups
         if (Array.isArray(studentTeacherGroupsData)) {
           setStudentTeacherGroups(studentTeacherGroupsData);
-        } else if (
-          studentTeacherGroupsData &&
-          Array.isArray(studentTeacherGroupsData.rows)
-        ) {
-          setStudentTeacherGroups(studentTeacherGroupsData.rows);
         } else {
-          console.error(
-            "Student teacher groups data is not an array:",
-            studentTeacherGroupsData
-          );
+          console.error("Invalid student teacher groups data:", studentTeacherGroupsData);
           setStudentTeacherGroups([]);
         }
+
       } catch (error) {
         console.error("Error fetching data:", error);
         setError(true);
