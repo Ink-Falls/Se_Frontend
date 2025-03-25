@@ -125,11 +125,11 @@ const UserTable = ({
           {/* Left side controls */}
           <div className="flex flex-col md:flex-row w-full md:w-auto gap-4 md:items-center">
             {/* Filter dropdown */}
-            <div className="relative md:py-[2px]">
+            <div className="relative py-2 md:py-[0.2vw]">
               <select
                 value={currentFilter}
                 onChange={(e) => onFilterChange(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none w-full md:w-auto"
+                className="pl-10 md:pl-[2vw] pr-4 md:pr-[1vw] py-2 md:py-[0.5vw] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none w-full md:w-[12vw]"
               >
                 <option value="all">Filter By: All</option>
                 <option value="learner">Filter By: Learner</option>
@@ -139,17 +139,17 @@ const UserTable = ({
                 </option>
                 <option value="admin">Filter By: Admin</option>
               </select>
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Filter size={16} className="text-gray-400" />
+              <div className="absolute inset-y-0 left-0 pl-3 md:pl-[0.5vw] flex items-center pointer-events-none">
+                <Filter size={16} className="text-gray-400 md:w-[1vw] md:h-[1vw]" />
               </div>
             </div>
 
             {/* Sort dropdown */}
-            <div className="relative md:py-[2px]">
+            <div className="relative py-2 md:py-[0.2vw]">
               <select
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none w-full md:w-auto"
+                className="pl-10 md:pl-[2vw] pr-4 md:pr-[1vw] py-2 md:py-[0.5vw] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none w-full md:w-[12vw]"
               >
                 <option value="none">Sort By</option>
                 <option value="name-asc">Name (A-Z)</option>
@@ -157,57 +157,55 @@ const UserTable = ({
                 <option value="id-asc">User ID (Ascending)</option>
                 <option value="id-desc">User ID (Descending)</option>
               </select>
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Filter size={16} className="text-gray-400" />
+              <div className="absolute inset-y-0 left-0 pl-3 md:pl-[0.5vw] flex items-center pointer-events-none">
+                <Filter size={16} className="text-gray-400 md:w-[1vw] md:h-[1vw]" />
               </div>
             </div>
 
             {/* Search input */}
-            <div className="relative w-full md:w-auto md:py-[2px]">
+            <div className="relative w-full md:w-auto py-2 md:py-[0.2vw]">
               <input
                 type="text"
                 placeholder="Search users..."
                 onChange={handleSearchChange}
-                className="w-full md:w-auto pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
+                className="w-full md:w-[15vw] pl-10 md:pl-[2vw] pr-4 md:pr-[1vw] py-2 md:py-[0.5vw] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
               />
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#475569]"
-                size={20}
-              />
+              <Search className="absolute left-3 md:left-[0.5vw] top-1/2 -translate-y-1/2 text-[#475569] w-5 h-5 md:w-[1vw] md:h-[1vw]" />
             </div>
           </div>
 
           {/* Right side buttons */}
-          <div className="flex flex-col md:flex-row w-full md:w-auto gap-4 md:ml-auto">
-            <button
-              onClick={onAddUser}
-              className="flex items-center gap-2 md:p-2 md:bg-transparent px-4 py-2 bg-[#212529] text-white md:text-[#475569] rounded-lg md:rounded-full text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
+          <div className="flex flex-col md:flex-row w-full md:w-auto gap-2 md:ml-auto">
+            <button 
+              onClick={onAddUser} 
+              className="flex items-center gap-2 md:gap-[0.3vw] p-2 md:p-[0.4vw] bg-[#212529] md:bg-transparent text-white md:text-[#475569] rounded-lg md:rounded-full text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
+
             >
-              <Plus size={20} />
+              <Plus size={20} className="w-[10] h-[10]" />
               <span className="md:hidden">Add User</span>
             </button>
 
             <button
               onClick={onCreateGroup}
-              className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
+              className="flex items-center gap-2 md:gap-[0.3vw] px-4 md:px-[0.8vw] py-2 md:py-[0.4vw] bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
             >
-              <Users size={16} />
+              <Users size={16} className="md:w-[1vw] md:h-[1vw]" />
               <span>Create Group</span>
             </button>
 
             <button
               onClick={onShowGroupList}
-              className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
+              className="flex items-center gap-2 md:gap-[0.3vw] px-4 md:px-[0.8vw] py-2 md:py-[0.4vw] bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
             >
-              <Users size={16} />
+              <Users size={16} className="md:w-[1vw] md:h-[1vw]" />
               <span>Group List</span>
             </button>
 
             <button
               onClick={onGenerateReport}
-              className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
+              className="flex items-center gap-2 md:gap-[0.3vw] px-4 md:px-[0.8vw] py-2 md:py-[0.4vw] bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
             >
-              <FileText size={16} />
+              <FileText size={16} className="md:w-[1vw] md:h-[1vw]" />
               <span>Generate Report</span>
             </button>
           </div>
