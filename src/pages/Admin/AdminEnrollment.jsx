@@ -142,7 +142,6 @@ function AdminEnrollment() {
 
   const handleApprove = async (enrolleeId) => {
     try {
-
       await approveEnrollment(enrolleeId);
       setSuccessMessage("Enrollment successfully approved!");
 
@@ -348,11 +347,14 @@ function AdminEnrollment() {
   );
 
   return (
-    <div className="flex h-screen bg-gray-100 relative pb-16"> {/* Added pb-16 */}
+    <div className="flex h-screen bg-gray-100 relative pb-16">
+      {" "}
+      {/* Added pb-16 */}
       <Sidebar navItems={navItems} />
-      <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto pb-16"> {/* Added pb-16 */}
+      <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto pb-16">
+        {" "}
+        {/* Added pb-16 */}
         <Header title="Manage Enrollments" />
-
         {/* Add success/error message display */}
         {successMessage && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
@@ -364,7 +366,6 @@ function AdminEnrollment() {
             {error}
           </div>
         )}
-
         <div className="mt-4">
           <EnrolleeStats
             totalEnrollees={totalItems}
@@ -373,7 +374,9 @@ function AdminEnrollment() {
             rejectedEnrollees={rejectedCount}
           />
         </div>
-        <div className="bg-white shadow rounded-lg overflow-hidden mt-4">
+        <div className="bg-white shadow rounded-lg p-6 mt-4">
+          {" "}
+          {/* Added p-6 class */}
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#212529]"></div>

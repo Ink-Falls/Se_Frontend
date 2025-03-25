@@ -116,11 +116,6 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
         contact: "(02) 3406 1611",
         address: "España Blvd, Sampaloc, Manila",
       },
-      1003: {
-        name: "De lasalle University (DLSU)",
-        contact: "(02) 8524 4611",
-        address: "Taft Ave, Malate, Manila",
-      },
     };
     return schools[schoolId] || { name: "N/A", contact: "N/A", address: "N/A" };
   };

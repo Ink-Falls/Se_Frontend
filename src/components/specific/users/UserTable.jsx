@@ -32,26 +32,44 @@ const UserTable = ({
 
   const [sortOption, setSortOption] = useState("none"); // Add this state
 
-  // Add sorting function
+  // Updated sorting function
   const getSortedUsers = (users) => {
+    if (!users) return [];
     const sortedUsers = [...users];
+
     switch (sortOption) {
       case "name-asc":
-        return sortedUsers.sort((a, b) =>
-          `${a.first_name} ${a.last_name}`.localeCompare(
-            `${b.first_name} ${b.last_name}`
-          )
-        );
+        return sortedUsers.sort((a, b) => {
+          const nameA = `${a.first_name || ""} ${a.middle_initial || ""} ${
+            a.last_name || ""
+          }`
+            .trim()
+            .toLowerCase();
+          const nameB = `${b.first_name || ""} ${b.middle_initial || ""} ${
+            b.last_name || ""
+          }`
+            .trim()
+            .toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
       case "name-desc":
-        return sortedUsers.sort((a, b) =>
-          `${b.first_name} ${b.last_name}`.localeCompare(
-            `${a.first_name} ${a.last_name}`
-          )
-        );
+        return sortedUsers.sort((a, b) => {
+          const nameA = `${a.first_name || ""} ${a.middle_initial || ""} ${
+            a.last_name || ""
+          }`
+            .trim()
+            .toLowerCase();
+          const nameB = `${b.first_name || ""} ${b.middle_initial || ""} ${
+            b.last_name || ""
+          }`
+            .trim()
+            .toLowerCase();
+          return nameB.localeCompare(nameA);
+        });
       case "id-asc":
-        return sortedUsers.sort((a, b) => a.school_id - b.school_id);
+        return sortedUsers.sort((a, b) => a.id - b.id);
       case "id-desc":
-        return sortedUsers.sort((a, b) => b.school_id - a.school_id);
+        return sortedUsers.sort((a, b) => b.id - a.id);
       default:
         return sortedUsers;
     }
@@ -116,7 +134,9 @@ const UserTable = ({
                 <option value="all">Filter By: All</option>
                 <option value="learner">Filter By: Learner</option>
                 <option value="teacher">Filter By: Teacher</option>
-                <option value="student_teacher">Filter By: Student Teacher</option>
+                <option value="student_teacher">
+                  Filter By: Student Teacher
+                </option>
                 <option value="admin">Filter By: Admin</option>
               </select>
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -134,8 +154,8 @@ const UserTable = ({
                 <option value="none">Sort By</option>
                 <option value="name-asc">Name (A-Z)</option>
                 <option value="name-desc">Name (Z-A)</option>
-                <option value="id-asc">ID Number (Ascending)</option>
-                <option value="id-desc">ID Number (Descending)</option>
+                <option value="id-asc">User ID (Ascending)</option>
+                <option value="id-desc">User ID (Descending)</option>
               </select>
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Filter size={16} className="text-gray-400" />
@@ -150,14 +170,17 @@ const UserTable = ({
                 onChange={handleSearchChange}
                 className="w-full md:w-auto pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
               />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#475569]" size={20} />
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#475569]"
+                size={20}
+              />
             </div>
           </div>
 
           {/* Right side buttons */}
           <div className="flex flex-col md:flex-row w-full md:w-auto gap-4 md:ml-auto">
-            <button 
-              onClick={onAddUser} 
+            <button
+              onClick={onAddUser}
               className="flex items-center gap-2 md:p-2 md:bg-transparent px-4 py-2 bg-[#212529] text-white md:text-[#475569] rounded-lg md:rounded-full text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
             >
               <Plus size={20} />
@@ -226,7 +249,7 @@ const UserTable = ({
                 Contact No
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                School ID
+                School
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Role
@@ -269,7 +292,7 @@ const UserTable = ({
                   {user.contact_no}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {user.school_id}
+                  {user.school_name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {user.role}
