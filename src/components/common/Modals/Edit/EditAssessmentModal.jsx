@@ -116,10 +116,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
                 Title
               </label>
               <input
+                id="title"
                 type="text"
                 value={formData.title}
                 onChange={(e) =>
@@ -131,10 +132,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
                 Description
               </label>
               <textarea
+                id="description"
                 value={formData.description}
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
@@ -147,10 +149,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="type" className="block text-sm font-medium text-gray-700">
                   Type
                 </label>
                 <select
+                  id="type"
                   value={formData.type}
                   onChange={(e) =>
                     setFormData({ ...formData, type: e.target.value })
@@ -164,10 +167,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="duration" className="block text-sm font-medium text-gray-700">
                   Duration (minutes)
                 </label>
                 <input
+                  id="duration"
                   type="number"
                   value={formData.duration_minutes}
                   onChange={(e) =>
@@ -184,10 +188,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="max_score" className="block text-sm font-medium text-gray-700">
                   Max Score
                 </label>
                 <input
+                  id="max_score"
                   type="number"
                   value={formData.max_score}
                   onChange={(e) =>
@@ -199,10 +204,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="pass_score"className="block text-sm font-medium text-gray-700">
                   Passing Score
                 </label>
                 <input
+                  id="pass_score"
                   type="number"
                   value={formData.passing_score}
                   onChange={(e) =>
@@ -216,10 +222,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="due_date"className="block text-sm font-medium text-gray-700">
                   Due Date
                 </label>
                 <input
+                  id="due_date" 
                   type="datetime-local"
                   value={formData.due_date}
                   onChange={(e) =>
@@ -250,10 +257,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="instructions" className="block text-sm font-medium text-gray-700">
                 Instructions
               </label>
               <textarea
+                id="instructions"
                 value={formData.instructions}
                 onChange={(e) =>
                   setFormData({ ...formData, instructions: e.target.value })

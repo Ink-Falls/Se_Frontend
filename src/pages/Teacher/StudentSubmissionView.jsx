@@ -489,6 +489,8 @@ const StudentSubmissionView = () => {
         </div>
         <div className="flex justify-end mt-4">
           <button
+            id="edit-grade-button"
+            aria-label="edit_grade"
             onClick={() => {
               setSelectedQuestion(answer);
               setIsEditGradeModalOpen(true);

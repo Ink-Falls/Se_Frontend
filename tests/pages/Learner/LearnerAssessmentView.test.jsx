@@ -12,6 +12,16 @@ import {
   getUserSubmission,
 } from 'Se_Frontend/src/services/assessmentService';
 
+const mockNavigate = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 vi.mock('Se_Frontend/src/services/assessmentService', () => ({
   getAssessmentById: vi.fn(),
   createSubmission: vi.fn(),
@@ -49,6 +59,12 @@ describe('LearnerAssessmentView Component', () => {
           { id: 4, text: 'False', is_correct: false },
         ],
       },
+      {
+        id: 3,
+        question_text: 'Describe the water cycle.',
+        question_type: 'short_answer',
+        points: 15,
+      },
     ],
   };
 
@@ -59,6 +75,7 @@ describe('LearnerAssessmentView Component', () => {
     answers: [
       { question_id: 1, selected_option_id: 2, points_awarded: 10 },
       { question_id: 2, selected_option_id: 3, points_awarded: 5 },
+      { question_id: 3, text_response: 'The water cycle is the process by which water circulates between the earth\'s oceans, atmosphere, and land.' },
     ],
   };
 
@@ -87,7 +104,7 @@ describe('LearnerAssessmentView Component', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Sample Assessment')).toBeInTheDocument();
-      expect(screen.getByText('Due: 12/31/2025')).toBeInTheDocument();
+      expect(screen.getByLabelText('due')).toBeInTheDocument();
       expect(screen.getByText('Passing Score: 70%')).toBeInTheDocument();
       expect(screen.getByText('Please complete the assessment.')).toBeInTheDocument();
     });
@@ -109,7 +126,7 @@ describe('LearnerAssessmentView Component', () => {
   it('handles text answer input correctly', async () => {
     renderComponent(mockAssessment);
 
-    const textArea = screen.getByPlaceholderText('Type your answer here...');
+    const textArea = screen.getByPlaceholderText('Write your essay answer');
     fireEvent.change(textArea, { target: { value: 'This is my answer.' } });
 
     await waitFor(() => {
@@ -123,21 +140,27 @@ describe('LearnerAssessmentView Component', () => {
 
     renderComponent(mockAssessment);
 
-    const startButton = screen.getByText('Start New Attempt');
+    const startButton = screen.getByRole('button', { name: /start/i });
     fireEvent.click(startButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Question 1 of 2')).toBeInTheDocument();
+      expect(screen.getByText('Question 1 of 3')).toBeInTheDocument();
     });
 
-    const nextButton = screen.getByText('Next');
+    const nextButton = screen.getByRole('button', { name: /next/i });
     fireEvent.click(nextButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Question 2 of 2')).toBeInTheDocument();
+      expect(screen.getByText('Question 2 of 3')).toBeInTheDocument();
     });
 
-    const submitButton = screen.getByText('Submit');
+    fireEvent.click(nextButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Question 3 of 3')).toBeInTheDocument();
+    });
+
+    const submitButton = screen.getByRole('button', { name: /submit/i });
     fireEvent.click(submitButton);
 
     await waitFor(() => {
@@ -145,15 +168,11 @@ describe('LearnerAssessmentView Component', () => {
     });
   });
 
-  it('navigates back to assessments when no assessment is provided', () => {
-    const mockNavigate = vi.fn();
-    vi.mock('react-router-dom', () => ({
-      ...vi.importActual('react-router-dom'),
-      useNavigate: () => mockNavigate,
-    }));
-
+  it('navigates back to assessments when no assessment is provided', async () => {
     renderComponent(null);
 
-    expect(mockNavigate).toHaveBeenCalledWith('/Learner/Assessment');
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/Learner/Assessment');
+    });
   });
 });

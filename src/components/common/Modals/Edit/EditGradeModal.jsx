@@ -235,10 +235,11 @@ const EditGradeModal = ({ isOpen, onClose, submission, question, onSave }) => {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="points" className="block text-sm font-medium text-gray-700 mb-1">
                   Points (max: {submissionDetails?.answer.maxPoints || 0})
                 </label>
                 <input
+                  id="points"
                   type="number"
                   min="0"
                   max={submissionDetails?.answer.maxPoints || 0}
@@ -250,10 +251,11 @@ const EditGradeModal = ({ isOpen, onClose, submission, question, onSave }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="feedback" className="block text-sm font-medium text-gray-700 mb-1">
                   Feedback
                 </label>
                 <textarea
+                  id="feedback"
                   value={gradingData.feedback}
                   onChange={(e) => setGradingData(prev => ({
                     ...prev,

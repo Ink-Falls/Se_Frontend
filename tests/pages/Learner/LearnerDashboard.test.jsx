@@ -1,15 +1,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import LearnerDashboard from '../../../src/pages/Learner/LearnerDashboard';
-import { AuthProvider } from '../../../src/contexts/AuthContext';
-import { CourseProvider } from '../../../src/contexts/CourseContext';
-import { getLearnerCourses } from '../../../src/services/courseService';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import LearnerDashboard from 'Se_Frontend/src/pages/Learner/LearnerDashboard';
+import { AuthProvider } from 'Se_Frontend/src/contexts/AuthContext';
+import { CourseProvider } from 'Se_Frontend/src/contexts/CourseContext';
+import { getLearnerCourses } from 'Se_Frontend/src/services/courseService';
 
-vi.mock('../../../src/services/courseService', () => ({
+vi.mock('Se_Frontend/src/services/courseService', () => ({
   getLearnerCourses: vi.fn(),
 }));
 
+const mockNavigate = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 describe('LearnerDashboard Component', () => {
   beforeEach(() => {
@@ -120,7 +129,6 @@ describe('LearnerDashboard Component', () => {
   });
 
   it('navigates to the course modules page when a course is clicked', async () => {
-    const mockNavigate = vi.fn();
     getLearnerCourses.mockResolvedValueOnce([
       {
         id: 1,
@@ -136,7 +144,9 @@ describe('LearnerDashboard Component', () => {
       <MemoryRouter>
         <AuthProvider>
           <CourseProvider>
-            <LearnerDashboard />
+            <Routes>
+              <Route path="/" element={<LearnerDashboard />} />
+            </Routes>
           </CourseProvider>
         </AuthProvider>
       </MemoryRouter>

@@ -297,6 +297,7 @@ const UserTable = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
+                    aria-label="Edit"
                     onClick={() => onEdit(user)}
                     className="text-black hover:text-gray-700" // Changed color to black
                   >

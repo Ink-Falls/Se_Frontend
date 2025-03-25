@@ -30,6 +30,7 @@ const NotificationDetails = () => {
             <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 p-6 text-center">
               <p className="text-gray-500">Notification not found.</p>
               <button
+                aria-label="Back to Notifications"
                 className="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
                 onClick={() => navigate("/Learner/Notifications")}
               >
