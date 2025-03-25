@@ -892,8 +892,10 @@ const LearnerAssessmentView = () => {
             {showAnswers ? 'Hide My Answers' : 'Show My Answers'}
           </button>
           <button
+            aria-label="start"
             onClick={handleStartAssessment}
             className="px-4 py-2 border-2 border-[#212529] text-[#212529] rounded-md hover:bg-[#F6BA18] hover:border-[#F6BA18] hover:text-[#212529]"
+           
           >
             Start New Attempt
           </button>
@@ -1045,7 +1047,7 @@ const LearnerAssessmentView = () => {
           <h1 className="text-3xl font-bold mb-2">
             {assessmentData?.title}
           </h1>
-          <p className="text-gray-200 flex items-center gap-2">
+          <p aria-label="due" className="text-gray-200 flex items-center gap-2">
             <Clock size={16} />
             Due: {assessmentData?.due_date && new Date(assessmentData.due_date).toLocaleDateString()}
           </p>

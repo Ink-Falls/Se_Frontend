@@ -208,7 +208,7 @@ function Profile() {
         >
           &times;
         </button>
-        <h2 className="text-xl font-semibold mb-4">Edit Profile</h2>
+        <h2 aria-label="edit_profile"className="text-xl font-semibold mb-4">Edit Profile</h2>
 
         {successMessage && (
           <div className="mb-4 p-2 bg-green-100 text-green-600 rounded">
@@ -395,6 +395,7 @@ function Profile() {
                   </h3>
                   <div className="flex gap-2">
                     <button
+                      aria-label="change_password"
                       className="px-4 py-2 text-sm bg-[#212529] text-white font-medium rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
                       onClick={handleOpenModal}
                     >

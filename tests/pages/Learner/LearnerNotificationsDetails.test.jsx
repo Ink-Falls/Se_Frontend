@@ -1,8 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import NotificationDetails from '../../../src/pages/Learner/LearnerNotificationDetails';
-import { AuthProvider } from '../../../src/contexts/AuthContext';
+import NotificationDetails from 'Se_Frontend/src/pages/Learner/LearnerNotificationDetails';
+import { AuthProvider } from 'Se_Frontend/src/contexts/AuthContext';
+
+const mockNavigate = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 describe('NotificationDetails Component', () => {
   const mockNotification = {
@@ -54,16 +64,25 @@ describe('NotificationDetails Component', () => {
     const backButton = screen.getByRole('button', { name: /back to notifications/i });
     expect(backButton).toBeInTheDocument();
   });
-
   it('navigates back to the notifications page when the back button is clicked', () => {
-    const mockNavigate = vi.fn();
-    renderComponent(mockNotification);
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/Learner/NotificationDetails/1', state: { notification: null } }]}>
+        <AuthProvider>
+          <Routes>
+            <Route path="/Learner/NotificationDetails/:id" element={<NotificationDetails />} />
+          </Routes>
+        </AuthProvider>
+      </MemoryRouter>
+    );
 
-    // Simulate clicking on the back button
-    const backButton = screen.getByRole('button', { name: /back/i });
+    // Find the button with a flexible matcher
+    const backButton = screen.getByRole('button', { name: /back to notifications/i });
+    expect(backButton).toBeInTheDocument();
+
+    // Simulate button click
     fireEvent.click(backButton);
 
-    // Check if the navigate function was called with the correct route
+    // Verify navigation call
     expect(mockNavigate).toHaveBeenCalledWith('/Learner/Notifications');
   });
 });
