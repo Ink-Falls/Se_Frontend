@@ -9,6 +9,56 @@ import { Eye, EyeOff } from "lucide-react";
 import { changePassword } from "../../services/authService"; // Import function
 import profileImg from "/src/assets/images/profile2.jpeg"; // Add this import
 
+const getNavItems = (role) => {
+  // Base items for admin
+  const adminItems = [
+    { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
+    { text: "Courses", icon: <Book size={20} />, route: "/Admin/Courses" },
+    {
+      text: "Enrollments",
+      icon: <Bell size={20} />,
+      route: "/Admin/Enrollments",
+    },
+    {
+      text: "Announcements",
+      icon: <FileText size={20} />,
+      route: "/Admin/Announcements",
+    },
+  ];
+
+  // Base items for teacher/student_teacher
+  const teacherItems = [
+    { text: "Courses", icon: <Book size={20} />, route: "/Teacher/Dashboard" },
+    {
+      text: "Notifications",
+      icon: <Bell size={20} />,
+      route: "/Teacher/Notifications",
+    },
+  ];
+
+  // Base items for learner - Updated to match LearnerDashboard
+  const learnerItems = [
+    { text: "Courses", icon: <Book size={20} />, route: "/Learner/Dashboard" },
+    {
+      text: "Notifications",
+      icon: <Bell size={20} />,
+      route: "/Learner/Notifications",
+    },
+  ];
+
+  switch (role?.toLowerCase()) {
+    case "admin":
+      return adminItems;
+    case "teacher":
+    case "student_teacher":
+      return teacherItems;
+    case "learner":
+      return learnerItems;
+    default:
+      return learnerItems; // Default to learner items
+  }
+};
+
 function Profile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -87,43 +137,6 @@ function Profile() {
       1003: "De la Salle University (DLSU)",
     };
     return schools[schoolId] || "N/A";
-  };
-
-  // Simplified navigation items based on user role
-  const getNavItems = (role) => {
-    const baseItems = [
-      { text: "Home", icon: <Home size={20} /> },
-      { text: "Notifications", icon: <Bell size={20} /> },
-    ];
-
-    // Add routes based on role
-    switch (role?.toLowerCase()) {
-      case "admin":
-        return baseItems.map((item) => ({
-          ...item,
-          route:
-            item.text === "Home" ? "/Admin/Dashboard" : "/Admin/Notifications",
-        }));
-      case "teacher":
-      case "student_teacher":
-        return baseItems.map((item) => ({
-          ...item,
-          route:
-            item.text === "Home"
-              ? "/Teacher/Dashboard"
-              : "/Teacher/Notifications",
-        }));
-      case "learner":
-        return baseItems.map((item) => ({
-          ...item,
-          route:
-            item.text === "Home"
-              ? "/Learner/Dashboard"
-              : "/Learner/Notifications",
-        }));
-      default:
-        return baseItems;
-    }
   };
 
   const handleChangePassword = async () => {
