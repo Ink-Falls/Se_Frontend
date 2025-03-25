@@ -650,7 +650,7 @@ const TeacherCourseModules = () => {
     return (
       <div className="flex h-screen bg-gray-100">
         <Sidebar navItems={navItems} />
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-6 overflow-auto">
           <Header
             title={selectedCourse?.name || "Course Modules"}
             subtitle={selectedCourse?.code}
@@ -672,6 +672,15 @@ const TeacherCourseModules = () => {
               Create First Module
             </button>
           </div>
+
+          {/* Add CreateModuleModal */}
+          {isCreateModuleOpen && (
+            <CreateModuleModal
+              courseId={selectedCourse.id}
+              onClose={() => setIsCreateModuleOpen(false)}
+              onSubmit={handleCreateModule}
+            />
+          )}
         </div>
       </div>
     );
@@ -686,7 +695,7 @@ const TeacherCourseModules = () => {
           title={selectedCourse?.name || "Course Modules"}
           subtitle={selectedCourse?.code}
         />
-          <MobileNavBar navItems={navItems} />
+        <MobileNavBar navItems={navItems} />
         {/* Add success message display */}
         {successMessage && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
