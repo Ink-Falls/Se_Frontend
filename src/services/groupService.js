@@ -6,7 +6,7 @@
 import { API_BASE_URL } from "../utils/constants";
 import { getUserById } from "./userService";
 import tokenService from "./tokenService";
-
+import fetchWithInterceptor from "./apiService";
 /**
  * Fetches available members for a group based on type.
  * @async
@@ -219,7 +219,7 @@ export const getAllGroups = async () => {
       throw new Error("Authentication token not found");
     }
 
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/groups`, {
+    const response = await fetch(`${API_BASE_URL}/groups`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",

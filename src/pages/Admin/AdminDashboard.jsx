@@ -512,7 +512,7 @@ function AdminDashboard() {
 
   return (
     <>
-      <div className="flex h-screen bg-gray-100 pb-16">
+      <div className="flex h-screen bg-gray-100 pb-8">
         {" "}
         {/* Added pb-16 */}
         <Sidebar navItems={navItems} />

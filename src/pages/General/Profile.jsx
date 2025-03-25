@@ -8,6 +8,7 @@ import { Book, Bell, FileText, Home } from "lucide-react";
 import { Eye, EyeOff } from "lucide-react";
 import { changePassword } from "../../services/authService"; // Import function
 import profileImg from "/src/assets/images/profile2.jpeg"; // Add this import
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
 
 const getNavItems = (role) => {
   // Base items for admin
@@ -371,6 +372,7 @@ function Profile() {
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-6 overflow-auto">
         <Header title="Account" />
+        <MobileNavBar navItems={navItems} />
         <div className="mt-6 bg-white rounded-lg shadow-md">
           {/* Banner */}
           <div
@@ -400,11 +402,11 @@ function Profile() {
             {/* Personal Information Section */}
             <div className="mt-4 mx-6 mb-12">
               <div className="border-2 border-gray-200 rounded-lg p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-semibold">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
+                  <h3 className="text-xl font-semibold mb-4 md:mb-0">
                     Personal Information
                   </h3>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col md:flex-row gap-2">
                     <button
                       aria-label="change_password"
                       className="px-4 py-2 text-sm bg-[#212529] text-white font-medium rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
