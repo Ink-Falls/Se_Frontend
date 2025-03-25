@@ -3,7 +3,8 @@
  * @description Service for checking enrollment status
  */
 
-import { API_BASE_URL } from '../utils/constants';
+import { API_BASE_URL } from "../utils/constants";
+import fetchWithInterceptor from "./apiService";
 
 /**
  * Checks the enrollment status for a given email
@@ -15,21 +16,29 @@ import { API_BASE_URL } from '../utils/constants';
  */
 export const checkEnrollmentStatus = async (email) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/enrollments/check-status`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/enrollments/check-status`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      }
+    );
 
     const data = await response.json();
 
     if (!response.ok) {
-      if (response.status === 404 && data.message === "Enrollment not found for this email") {
+      if (
+        response.status === 404 &&
+        data.message === "Enrollment not found for this email"
+      ) {
         throw new Error("Email not found");
       }
-      throw new Error(`HTTP error! status: ${response.status}, message: ${data.message}`);
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${data.message}`
+      );
     }
 
     return data;

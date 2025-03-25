@@ -3,9 +3,10 @@
  * @description Service module for handling course-related API operations
  */
 
-import { API_BASE_URL } from '../utils/constants';
-import { getUserGroupIds } from './groupService';
-import tokenService from './tokenService';
+import { API_BASE_URL } from "../utils/constants";
+import { getUserGroupIds } from "./groupService";
+import tokenService from "./tokenService";
+import fetchWithInterceptor from "./apiService";
 
 /**
  * Fetches all courses with their associated groups
@@ -13,37 +14,41 @@ import tokenService from './tokenService';
  * @throws {Error} If the API request fails
  */
 export const getAllCourses = async () => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   try {
-    const response = await fetch(`${API_BASE_URL}/courses`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/courses`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch courses');
+      throw new Error("Failed to fetch courses");
     }
 
     const data = await response.json();
-    
+
     // Map and format the data consistently
-    return (data.rows || []).map(course => ({
+    return (data.rows || []).map((course) => ({
       id: course.id,
       name: course.name,
       description: course.description,
-      teacher: course.teacher ? `${course.teacher.first_name} ${course.teacher.last_name}` : "Not assigned",
+      teacher: course.teacher
+        ? `${course.teacher.first_name} ${course.teacher.last_name}`
+        : "Not assigned",
       user_id: course.user_id || course.teacher?.id, // Add this line to include user_id explicitly
       teacher_id: course.user_id || course.teacher?.id, // Keep both for compatibility
       learner_group: course.learnerGroup?.name || "Not assigned",
-      student_teacher_group: course.studentTeacherGroup?.name || "Not assigned", 
+      student_teacher_group: course.studentTeacherGroup?.name || "Not assigned",
       learner_group_id: course.learnerGroup?.group_id || null,
       student_teacher_group_id: course.studentTeacherGroup?.group_id || null,
-      image: course.image || "https://miro.medium.com/v2/resize:fit:1200/1*rKl56ixsC55cMAsO2aQhGQ@2x.jpeg"
+      image:
+        course.image ||
+        "https://miro.medium.com/v2/resize:fit:1200/1*rKl56ixsC55cMAsO2aQhGQ@2x.jpeg",
     }));
   } catch (error) {
-    console.error('Error fetching courses:', error);
+    console.error("Error fetching courses:", error);
     throw error;
   }
 };
@@ -55,35 +60,34 @@ export const getAllCourses = async () => {
 export const getLearnerCourses = async () => {
   try {
     const token = tokenService.getAccessToken();
-    if (!token) throw new Error('No authentication token');
+    if (!token) throw new Error("No authentication token");
 
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user?.id) throw new Error('User data not found');
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user?.id) throw new Error("User data not found");
 
     // First get user's groups
     const userGroups = await getUserGroupIds(user.id);
 
     // Then fetch all courses
-    const response = await fetch(`${API_BASE_URL}/courses`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/courses`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
     });
 
-    if (!response.ok) throw new Error('Failed to fetch courses');
+    if (!response.ok) throw new Error("Failed to fetch courses");
     const data = await response.json();
 
     // Filter courses where learner_group_id matches any of user's group_ids
-    const accessibleCourses = (data.rows || []).filter(course => 
+    const accessibleCourses = (data.rows || []).filter((course) =>
       userGroups.includes(course.learner_group_id)
     );
 
     // Return empty array instead of throwing error
     return formatCourses(accessibleCourses);
-
   } catch (error) {
-    console.error('Error fetching learner courses:', error);
+    console.error("Error fetching learner courses:", error);
     return []; // Return empty array on error
   }
 };
@@ -93,52 +97,51 @@ export const getLearnerCourses = async () => {
  * @returns {Promise<Array>} Array of course objects
  */
 export const getTeacherCourses = async () => {
-  const token = localStorage.getItem('token');
-  const currentUser = JSON.parse(localStorage.getItem('user'));
-  
+  const token = localStorage.getItem("token");
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+
   if (!token) {
-    throw new Error('Not authenticated');
+    throw new Error("Not authenticated");
   }
 
   if (!currentUser?.id) {
-    throw new Error('User data not found');
+    throw new Error("User data not found");
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/courses`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/courses`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch courses');
+      throw new Error("Failed to fetch courses");
     }
 
     const data = await response.json();
-    
+
     // Get user's groups if they are a student teacher
     let studentTeacherGroups = [];
-    if (currentUser.role === 'student_teacher') {
+    if (currentUser.role === "student_teacher") {
       const userGroups = await getUserGroupIds(currentUser.id);
       studentTeacherGroups = userGroups;
     }
-    
+
     // Filter courses based on user's role
-    const teacherCourses = (data.rows || []).filter(course => {
-      if (currentUser.role === 'teacher') {
+    const teacherCourses = (data.rows || []).filter((course) => {
+      if (currentUser.role === "teacher") {
         return course.user_id === currentUser.id;
-      } else if (currentUser.role === 'student_teacher') {
+      } else if (currentUser.role === "student_teacher") {
         return studentTeacherGroups.includes(course.student_teacher_group_id);
       }
       return false;
     });
 
     return formatCourses(teacherCourses);
-
   } catch (error) {
-    console.error('Error fetching teacher courses:', error);
+    console.error("Error fetching teacher courses:", error);
     return []; // Return empty array on error
   }
 };
@@ -149,34 +152,34 @@ export const getTeacherCourses = async () => {
  * @returns {Promise<Object>} The created course
  */
 export const createCourse = async (courseData) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   try {
     const formattedData = {
       name: courseData.name,
       description: courseData.description,
       user_id: parseInt(courseData.user_id),
       learner_group_id: parseInt(courseData.learner_group_id),
-      student_teacher_group_id: parseInt(courseData.student_teacher_group_id)
+      student_teacher_group_id: parseInt(courseData.student_teacher_group_id),
     };
 
-    const response = await fetch(`${API_BASE_URL}/courses`, {
-      method: 'POST',
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/courses`, {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(formattedData)
+      body: JSON.stringify(formattedData),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to create course');
+      throw new Error(errorData.message || "Failed to create course");
     }
 
     const newCourse = await response.json();
-    
+
     // Add a small delay before fetching the complete course data
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     try {
       // Attempt to fetch complete course data
@@ -185,7 +188,9 @@ export const createCourse = async (courseData) => {
         return completeCourse;
       }
     } catch (fetchError) {
-      console.error('Could not fetch complete course data, returning basic course data');
+      console.error(
+        "Could not fetch complete course data, returning basic course data"
+      );
     }
 
     // Fallback to basic course data if fetch fails
@@ -197,11 +202,10 @@ export const createCourse = async (courseData) => {
       learner_group: "Not assigned",
       student_teacher_group: "Not assigned",
       learner_group_id: formattedData.learner_group_id,
-      student_teacher_group_id: formattedData.student_teacher_group_id
+      student_teacher_group_id: formattedData.student_teacher_group_id,
     };
-
   } catch (error) {
-    console.error('Error creating course:', error);
+    console.error("Error creating course:", error);
     throw error;
   }
 };
@@ -213,28 +217,33 @@ export const createCourse = async (courseData) => {
  */
 export const getCourseById = async (courseId) => {
   try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/courses/${courseId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    const token = localStorage.getItem("token");
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/courses/${courseId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch course');
+      throw new Error("Failed to fetch course");
     }
 
     const data = await response.json();
-    
+
     // Format course with required fields
     return {
       id: data.id,
       name: data.name,
       description: data.description || "No description available",
-      teacher: data.teacher ? `${data.teacher.first_name} ${data.teacher.last_name}` : "Not assigned",
+      teacher: data.teacher
+        ? `${data.teacher.first_name} ${data.teacher.last_name}`
+        : "Not assigned",
       learner_group: data.learnerGroup?.name || "Not assigned",
-      student_teacher_group: data.studentTeacherGroup?.name || "Not assigned"
+      student_teacher_group: data.studentTeacherGroup?.name || "Not assigned",
     };
   } catch (error) {
     console.error(`Error fetching course ${courseId}:`, error);
@@ -249,34 +258,37 @@ export const getCourseById = async (courseId) => {
  * @returns {Promise<Object>} The updated course
  */
 export const updateCourse = async (courseId, courseData) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   try {
     const formattedData = {
       name: courseData.name,
       description: courseData.description,
       user_id: parseInt(courseData.user_id),
       learner_group_id: parseInt(courseData.learner_group_id),
-      student_teacher_group_id: parseInt(courseData.student_teacher_group_id)
+      student_teacher_group_id: parseInt(courseData.student_teacher_group_id),
     };
 
-    const response = await fetch(`${API_BASE_URL}/courses/${courseId}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(formattedData)
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/courses/${courseId}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formattedData),
+      }
+    );
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to update course');
+      throw new Error(errorData.message || "Failed to update course");
     }
 
     const updatedCourse = await response.json();
     return updatedCourse;
   } catch (error) {
-    console.error('Error updating course:', error);
+    console.error("Error updating course:", error);
     throw error;
   }
 };
@@ -288,24 +300,27 @@ export const updateCourse = async (courseId, courseData) => {
  * @throws {Error} If the deletion fails
  */
 export const deleteCourse = async (courseId) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   try {
-    const response = await fetch(`${API_BASE_URL}/courses/${courseId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/courses/${courseId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       }
-    });
+    );
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to delete course');
+      throw new Error(errorData.message || "Failed to delete course");
     }
 
     return await response.json();
   } catch (error) {
-    console.error('Error deleting course:', error);
+    console.error("Error deleting course:", error);
     throw error;
   }
 };
@@ -318,30 +333,30 @@ export const getUserAccessibleCourses = async () => {
   try {
     // Get current user from token
     const token = tokenService.getAccessToken();
-    if (!token) throw new Error('No authentication token');
+    if (!token) throw new Error("No authentication token");
 
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user?.id) throw new Error('User data not found');
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user?.id) throw new Error("User data not found");
 
     // Get user's groups
     const userGroups = await getUserGroupIds(user.id);
-    
+
     // Get all courses
-    const response = await fetch(`${API_BASE_URL}/courses`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/courses`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
     });
 
-    if (!response.ok) throw new Error('Failed to fetch courses');
+    if (!response.ok) throw new Error("Failed to fetch courses");
     const data = await response.json();
 
     // Filter courses based on user's groups
-    const courses = (data.rows || []).filter(course => {
-      if (user.role === 'learner') {
+    const courses = (data.rows || []).filter((course) => {
+      if (user.role === "learner") {
         return userGroups.includes(course.learner_group_id);
-      } else if (user.role === 'student_teacher') {
+      } else if (user.role === "student_teacher") {
         return userGroups.includes(course.student_teacher_group_id);
       }
       return false;
@@ -349,7 +364,7 @@ export const getUserAccessibleCourses = async () => {
 
     return formatCourses(courses);
   } catch (error) {
-    console.error('Error fetching user accessible courses:', error);
+    console.error("Error fetching user accessible courses:", error);
     throw error;
   }
 };
@@ -362,11 +377,11 @@ const generateCourseCode = (courseName, courseId) => {
     MATH: /\b(?:MATHEMATICS|MATH|MATHS|MATEMATIKA)\b/i,
     SCI: /\b(?:SCIENCE|SCI|NATURAL\s+SCIENCE|GENERAL\s+SCIENCE)\b/i,
     AP: /\b(?:ARALING\s+PANLIPUNAN|AP|SOCIAL\s+STUDIES)\b/i,
-    EsP: /\b(?:EDUKASYON\s+SA\s+PAGPAPAKATAO|ESP|EsP|VALUES\s+EDUCATION)\b/i
+    EsP: /\b(?:EDUKASYON\s+SA\s+PAGPAPAKATAO|ESP|EsP|VALUES\s+EDUCATION)\b/i,
   };
 
   const name = courseName.toUpperCase();
-  const id = String(courseId).padStart(3, '0');
+  const id = String(courseId).padStart(3, "0");
 
   for (const [prefix, pattern] of Object.entries(courseTags)) {
     if (pattern.test(name)) {
@@ -379,15 +394,17 @@ const generateCourseCode = (courseName, courseId) => {
 
 // Helper function to format course data consistently
 const formatCourses = (courses) => {
-  return courses.map(course => ({
+  return courses.map((course) => ({
     id: course.id,
     name: course.name,
     code: generateCourseCode(course.name, course.id),
     description: course.description,
-    teacher: course.teacher_name || 'Not assigned',
+    teacher: course.teacher_name || "Not assigned",
     learner_group_id: course.learner_group_id,
     student_teacher_group_id: course.student_teacher_group_id,
     studentCount: Math.floor(Math.random() * 30) + 10, // Consider replacing with actual count
-    imageUrl: course.imageUrl || "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg"
+    imageUrl:
+      course.imageUrl ||
+      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
   }));
 };

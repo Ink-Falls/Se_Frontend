@@ -1,5 +1,6 @@
 // src/services/enrollmentService.js
 import { API_BASE_URL } from "../utils/constants";
+import fetchWithInterceptor from "./apiService";
 
 /**
  * Enrollment service module that handles all enrollment-related API calls.
@@ -21,7 +22,7 @@ const getAllEnrollments = async () => {
       throw new Error("Not authenticated"); // Or redirect to login
     }
 
-    const response = await fetch(`${API_BASE_URL}/enrollments`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/enrollments`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json", // Good practice to include
@@ -86,7 +87,7 @@ const approveEnrollment = async (enrollmentId) => {
 
     console.log("Request body:", JSON.stringify(requestBody, null, 2));
 
-    const response = await fetch(url, {
+    const response = await fetchWithInterceptor(url, {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -147,7 +148,7 @@ const rejectEnrollment = async (enrollmentId) => {
     });
     console.log("Request body:", JSON.stringify(requestBody, null, 2));
 
-    const response = await fetch(url, {
+    const response = await fetchWithInterceptor(url, {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -186,7 +187,7 @@ const deleteEnrollment = async (enrollmentId) => {
       throw new Error("Not authenticated");
     }
 
-    const response = await fetch(
+    const response = await fetchWithInterceptor(
       `${API_BASE_URL}/enrollments/${enrollmentId}`,
       {
         method: "DELETE",
@@ -233,7 +234,7 @@ const getEnrollmentById = async (enrollmentId) => {
       enrollmentId
     )}`;
 
-    const response = await fetch(url, {
+    const response = await fetchWithInterceptor(url, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -272,7 +273,7 @@ const getEnrollmentById = async (enrollmentId) => {
  */
 const createEnrollment = async (enrollmentData) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/enrollments`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/enrollments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
