@@ -74,7 +74,6 @@ function EditUserModal({ user, onClose, onSave }) {
   const schoolOptions = [
     { id: "1001", name: "Asuncion Consunji Elementary School (ACES)" },
     { id: "1002", name: "University of Santo Tomas (UST)" },
-    { id: "1003", name: "De la Salle University (DLSU)" },
   ];
 
   return (

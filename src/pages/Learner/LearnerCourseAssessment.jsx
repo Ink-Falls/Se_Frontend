@@ -59,8 +59,12 @@ const LearnerCourseAssessment = () => {
         const assessmentsData = await getCourseAssessments(
           selectedCourse.id,
           true
-        ); // Add true to include questions
-        const courseAssessments = assessmentsData.assessments || [];
+        );
+
+        // Filter to only include published assessments
+        const courseAssessments = (assessmentsData.assessments || []).filter(
+          (assessment) => assessment.is_published
+        );
 
         // Fetch user's submission for each assessment with full details
         const submissionsMap = {};
@@ -105,12 +109,14 @@ const LearnerCourseAssessment = () => {
     if (submission.is_late) return "Late";
 
     // Check if submission has answers
-    if (!submission.answers || submission.answers.length === 0) return "Not Started";
+    if (!submission.answers || submission.answers.length === 0)
+      return "Not Started";
 
     // Count questions with points_awarded and total questions
     const totalQuestions = submission.answers.length;
-    const gradedQuestions = submission.answers.filter(answer => 
-      answer.points_awarded !== null && answer.points_awarded !== undefined
+    const gradedQuestions = submission.answers.filter(
+      (answer) =>
+        answer.points_awarded !== null && answer.points_awarded !== undefined
     ).length;
 
     // Determine status based on graded questions count
@@ -123,18 +129,18 @@ const LearnerCourseAssessment = () => {
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'graded':
-        return 'bg-green-100 text-green-800';
-      case 'partially graded':
-        return 'bg-orange-100 text-orange-800';
-      case 'submitted':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'late':
-        return 'bg-red-100 text-red-800';
-      case 'not started':
-        return 'bg-gray-100 text-gray-600';
+      case "graded":
+        return "bg-green-100 text-green-800";
+      case "partially graded":
+        return "bg-orange-100 text-orange-800";
+      case "submitted":
+        return "bg-yellow-100 text-yellow-800";
+      case "late":
+        return "bg-red-100 text-red-800";
+      case "not started":
+        return "bg-gray-100 text-gray-600";
       default:
-        return 'bg-gray-100 text-gray-600';
+        return "bg-gray-100 text-gray-600";
     }
   };
 
@@ -169,25 +175,28 @@ const LearnerCourseAssessment = () => {
 
     // Calculate total score considering both auto-graded and manual grades
     const totalPoints = calculateTotalPoints(submission);
-    const score = submission.answers?.reduce((sum, answer) => {
-      // For multiple choice and true/false
-      if (answer.is_auto_graded && answer.selected_option_id) {
-        const question = assessment.questions?.find(q => q.id === answer.question_id);
-        const selectedOption = question?.options?.find(opt => opt.id === answer.selected_option_id);
-        return sum + (selectedOption?.is_correct ? (question?.points || 0) : 0);
-      }
-      // For manual graded questions (short_answer and essay)
-      return sum + (parseInt(answer.points_awarded) || 0);
-    }, 0) || 0;
+    const score =
+      submission.answers?.reduce((sum, answer) => {
+        // For multiple choice and true/false
+        if (answer.is_auto_graded && answer.selected_option_id) {
+          const question = assessment.questions?.find(
+            (q) => q.id === answer.question_id
+          );
+          const selectedOption = question?.options?.find(
+            (opt) => opt.id === answer.selected_option_id
+          );
+          return sum + (selectedOption?.is_correct ? question?.points || 0 : 0);
+        }
+        // For manual graded questions (short_answer and essay)
+        return sum + (parseInt(answer.points_awarded) || 0);
+      }, 0) || 0;
 
     // Show score if available
     return (
       <div className="text-2xl font-bold text-gray-900">
         {score}/{totalPoints}
         {submission.status === "graded" && (
-          <div className="text-sm text-gray-500 mt-1">
-            Final Grade
-          </div>
+          <div className="text-sm text-gray-500 mt-1">Final Grade</div>
         )}
       </div>
     );
@@ -201,7 +210,7 @@ const LearnerCourseAssessment = () => {
           title={selectedCourse?.name || "Course"}
           subtitle={selectedCourse?.code}
         />
-      <MobileNavBar navItems={navItems} />
+        <MobileNavBar navItems={navItems} />
 
         {loading && (
           <div className="flex items-center justify-center min-h-[400px]">

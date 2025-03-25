@@ -19,8 +19,12 @@ import {
   FileText,
   Users,
   Search,
+  ArrowUpDown,
+  Megaphone,
+  Clock,
 } from "lucide-react";
 import MobileNavBar from "../../components/common/layout/MobileNavbar"; // Add this import
+import BlackHeader from "../../components/common/layout/BlackHeader";
 
 function AdminAnnouncements() {
   // Hardcoded data for testing
@@ -63,6 +67,7 @@ function AdminAnnouncements() {
   });
   const [announcementToDelete, setAnnouncementToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false); // Set to false since we're using hardcoded data
+  const [successMessage, setSuccessMessage] = useState(""); // Add success message state
 
   const toggleDropdown = (id, event) => {
     event.stopPropagation();
@@ -86,6 +91,15 @@ function AdminAnnouncements() {
     };
   }, []);
 
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage("");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
   const navItems = [
     { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
     { text: "Courses", icon: <Book size={20} />, route: "/Admin/Courses" },
@@ -106,7 +120,7 @@ function AdminAnnouncements() {
     { text: "Courses", icon: <Book size={20} />, route: "/Admin/Courses" },
     {
       text: "Enrollments",
-      icon: <Bell size={20} />, 
+      icon: <Bell size={20} />,
       route: "/Admin/Enrollments",
     },
     {
@@ -128,6 +142,7 @@ function AdminAnnouncements() {
       )
     );
     setEditingAnnouncement(null);
+    setSuccessMessage("Announcement updated successfully!");
   };
 
   const confirmDelete = () => {
@@ -135,6 +150,7 @@ function AdminAnnouncements() {
       prev.filter((a) => a.id !== announcementToDelete.id)
     );
     setAnnouncementToDelete(null);
+    setSuccessMessage("Announcement deleted successfully!");
   };
 
   const handleAddAnnouncement = () => {
@@ -150,106 +166,126 @@ function AdminAnnouncements() {
           profilePicture: "",
         },
       });
+      setSuccessMessage("Announcement added successfully!");
     }
   };
 
   return (
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar navItems={navItems} />
-      <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto">
+      <div className="flex-1 p-6 overflow-auto">
         <Header title="Announcements" />
+        <BlackHeader title="All Announcements" count={announcements.length}>
+          <button
+            onClick={() => setIsAddAnnouncementOpen(true)}
+            className="p-2 rounded hover:bg-gray-700"
+          >
+            <Plus size={20} />
+          </button>
+          <button className="p-2 rounded hover:bg-gray-700">
+            <ArrowUpDown size={20} />
+          </button>
+        </BlackHeader>
 
-        {/* Announcement List */}
-        <div className="flex flex-col gap-[2vw] md:gap-[1vw] mt-[1vw]">
-          <div className="flex-1 bg-[#212529] shadow rounded-lg p-[0.5vw] pl-[1vw] pr-[1vw]">
-            {/* Filter and Action Buttons */}
-            <div className="flex items-center">
-              {/* Filter button (left side) */}
-              <button
-                onClick={() => console.log("Filter By: All")}
-                className="flex text-md font-semibold items-center py-[2vw] md:py-[0.2vw] ml-[3vw] md:ml-[0vw] text-white rounded-lg"
-              >
-                <span>Announcements ({announcements.length})</span>
-              </button>
-
-              {/* Buttons on the right side */}
-              <div className="flex items-center gap-[3vw] md:gap-[1vw] ml-auto">
-                <button className="flex items-center rounded-lg">
-                  <Plus className="text-white" size={22} />
-                </button>
-                <button className="flex items-center rounded-lg mr-[3vw] md:mr-[0vw]">
-                  <Search className="text-white" size={20} />
-                </button>
-              </div>
-            </div>
+        {successMessage && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg mt-3">
+            {successMessage}
           </div>
-          {announcements.map((announcement) => (
-            <div
-              key={announcement.id}
-              className="relative bg-white rounded-lg md:p-[1vw] p-[2vw] border-l-[2vw] md:border-l-[0.5vw] border-yellow-500 transition-all shadow-sm hover:shadow-lg"
-            >
-              {/* Announcement Header */}
-              <div className="flex justify-between items-center cursor-pointer">
-                <div
-                  className="w-full"
-                  onClick={() =>
-                    setExpandedAnnouncementId(
-                      expandedAnnouncementId === announcement.id
-                        ? null
-                        : announcement.id
-                    )
-                  }
-                >
-                  <div className="flex items-center">
+        )}
+
+        {isLoading ? (
+          <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+            <div className="w-16 h-16 border-4 border-[#F6BA18] border-t-[#212529] rounded-full animate-spin"></div>
+          </div>
+        ) : announcements.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-lg shadow-sm mt-4">
+            <div className="text-gray-400 mb-4">
+              <Megaphone size={48} className="mx-auto" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900">
+              No Announcements Available
+            </h3>
+            <p className="text-gray-500 mt-2">
+              There are no announcements posted yet.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4 mt-4">
+            {announcements.map((announcement) => (
+              <div
+                key={announcement.id}
+                className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex items-start space-x-4">
                     <img
                       src={announcement.poster.profilePicture}
-                      alt={announcement.poster.name}
-                      className="w-[16vw] h-[16vw] md:w-[3vw] md:h-[3vw] rounded-full mr-[4vw] ml-[2vw] md:mr-[1vw] md:ml-[0vw]"
+                      alt=""
+                      className="h-12 w-12 rounded-full border-2 border-gray-200"
                     />
-                    <div>
-                      <h3 className="font-bold text-lg text-gray-800 text-justify">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-900">
                         {announcement.title}
                       </h3>
-                      <p className="text-sm text-gray-600 text-justify">
-                        {announcement.content.substring(0, 100)}...
+                      <p className="mt-1 text-sm text-gray-600">
+                        {announcement.content}
                       </p>
-                      <p className="text-xs text-gray-500 mt-[1vw] pb-[1vw] md:pb-[0vw]">
-                        Posted on: {announcement.date}
-                      </p>
+                      <div className="mt-2 flex items-center text-sm text-gray-500">
+                        <Clock className="mr-1.5 h-4 w-4" />
+                        {announcement.date}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Edit and Delete Buttons */}
-                <div className="flex items-center gap-[3vw] md:gap-[0.5vw] pl-[2vw] pr-[3vw] md:pr-[1vw]">
-                  <button
-                    onClick={() => setAnnouncementToDelete(announcement)}
-                    className="text-gray-500 hover:text-red-500 transition-colors mr-[0.5vw]"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                  <button
-                    onClick={() => handleEdit(announcement)}
-                    className="text-gray-500 hover:text-yellow-500 transition-colors"
-                  >
-                    <Edit size={20} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Announcement Details */}
-              {expandedAnnouncementId === announcement.id && (
-                <div className="mt-[1vw] border-t pt-[2vw] p-[1vw] md:pt-[1vw] md:p-[0vw]">
-                  <div className="space-y-[1vw]">
-                    <p className="text-gray-600 text-justify">{announcement.content}</p>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEdit(announcement)}
+                      className="p-2 text-gray-400 hover:text-yellow-600 transition-colors"
+                    >
+                      <Edit size={20} />
+                    </button>
+                    <button
+                      onClick={() => setAnnouncementToDelete(announcement)}
+                      className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 size={20} />
+                    </button>
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Modals */}
+        {isAddAnnouncementOpen && (
+          <Modal
+            isOpen={isAddAnnouncementOpen}
+            onClose={() => setIsAddAnnouncementOpen(false)}
+          >
+            {/* ...existing modal code... */}
+          </Modal>
+        )}
+
+        {editingAnnouncement && (
+          <Modal
+            isOpen={!!editingAnnouncement}
+            onClose={() => setEditingAnnouncement(null)}
+          >
+            {/* ...existing modal code... */}
+          </Modal>
+        )}
+
+        {announcementToDelete && (
+          <DeleteModal
+            title="Delete Announcement"
+            message={`Are you sure you want to delete "${announcementToDelete.title}"? This action cannot be undone.`}
+            onClose={() => setAnnouncementToDelete(null)}
+            onConfirm={confirmDelete}
+          />
+        )}
       </div>
-      <MobileNavBar navItems={navItems} /> {/* Pass the mobile nav items */}
+      <MobileNavBar navItems={navItems} />
     </div>
   );
 }

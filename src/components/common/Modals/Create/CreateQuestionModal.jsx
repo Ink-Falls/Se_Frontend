@@ -173,6 +173,7 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
                   type="button"
                   onClick={() => removeOption(index)}
                   className="p-2 text-red-500 hover:text-red-700"
+                  aria-label='trash'
                 >
                   <Trash2 size={16} />
                 </button>
@@ -336,6 +337,7 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
               Cancel
             </button>
             <button
+              aria-label='add question'
               type="submit"
               className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
             >

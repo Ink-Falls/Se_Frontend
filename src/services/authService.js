@@ -231,8 +231,8 @@ const changePassword = async (userId, oldPassword, newPassword, confirmPassword)
     const response = await fetch(`${API_BASE_URL}/users/${userId}/change-password`, {
       method: 'PUT', // Use PUT since the route is defined as PUT
       headers: {
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ oldPassword, newPassword, confirmPassword }),
     });

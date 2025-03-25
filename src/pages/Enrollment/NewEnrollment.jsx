@@ -347,9 +347,6 @@ function NewEnrollment() {
                       <option value="1002">
                         University of Santo Tomas (UST)
                       </option>
-                      <option value="1003">
-                        De la Salle University (DLSU)
-                      </option>
                     </select>
                   </div>
 

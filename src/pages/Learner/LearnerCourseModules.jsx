@@ -5,6 +5,7 @@ import {
   getModuleContents,
 } from "../../services/moduleService";
 import Sidebar from "../../components/common/layout/Sidebar";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import Header from "../../components/common/layout/Header";
 import {
   ChevronDown,
@@ -128,13 +129,20 @@ const LearnerCourseModules = () => {
     );
   };
 
-  // Loading state
+  // Replace the loading condition with LoadingSpinner
   if (loading) {
     return (
       <div className="flex h-screen bg-gray-100">
         <Sidebar navItems={navItems} />
-        <div className="flex-1 p-6 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
+        <div className="flex-1">
+          <Header
+            title={selectedCourse?.name || "Course Modules"}
+            subtitle={selectedCourse?.code}
+          />
+          <MobileNavBar navItems={navItems} onLogout={logout} />
+          <div className="flex items-center justify-center min-h-[400px]">
+            <LoadingSpinner />
+          </div>
         </div>
       </div>
     );
@@ -150,7 +158,7 @@ const LearnerCourseModules = () => {
             title={selectedCourse?.name || "Course Modules"}
             subtitle={selectedCourse?.code}
           />
-      <MobileNavBar navItems={navItems} onLogout={logout} />
+          <MobileNavBar navItems={navItems} onLogout={logout} />
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className="text-red-500 mb-4">⚠️</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -178,7 +186,7 @@ const LearnerCourseModules = () => {
             title={selectedCourse?.name || "Course Modules"}
             subtitle={selectedCourse?.code}
           />
-      <MobileNavBar navItems={navItems} onLogout={logout} />
+          <MobileNavBar navItems={navItems} onLogout={logout} />
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className="w-full max-w-md text-center">
               <div className="mx-auto w-24 h-24 bg-yellow-50 rounded-full flex items-center justify-center mb-6">
@@ -213,7 +221,7 @@ const LearnerCourseModules = () => {
           title={selectedCourse?.name || "Course Modules"}
           subtitle={selectedCourse?.code}
         />
-      <MobileNavBar navItems={navItems} onLogout={logout} />
+        <MobileNavBar navItems={navItems} onLogout={logout} />
 
         <div className="flex flex-col gap-4 mt-4">
           {modules.map((module) => (
