@@ -219,7 +219,7 @@ export const getAllGroups = async () => {
       throw new Error("Authentication token not found");
     }
 
-    const response = await fetch(`${API_BASE_URL}/groups`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/groups`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",

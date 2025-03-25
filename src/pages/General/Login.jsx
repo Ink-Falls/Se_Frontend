@@ -8,7 +8,7 @@ import logo from "../../assets/images/ARALKADEMYLOGO.png";
 import icon from "../../assets/images/ARALKADEMYICON.png";
 import nstpLogo from "../../assets/images/NSTPLOGO.png";
 import { Eye, EyeOff } from "lucide-react";
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from "../../contexts/AuthContext";
 
 /**
  * Login component for user authentication.
@@ -89,18 +89,18 @@ function Login() {
       const loginData = await loginUser(email, password, captchaResponse);
 
       if (!loginData.token || !loginData.user) {
-        throw new Error('Invalid login response');
+        throw new Error("Invalid login response");
       }
 
       // Wait a moment for token to be saved
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Update auth context
       const authResult = await checkAuth();
 
       // Check if we have a valid user object
       if (!authResult.user) {
-        throw new Error('No user data received');
+        throw new Error("No user data received");
       }
 
       const userRole = loginData.user.role?.toLowerCase();
@@ -108,7 +108,7 @@ function Login() {
         admin: "/Admin/Dashboard",
         teacher: "/Teacher/Dashboard",
         student_teacher: "/Teacher/Dashboard",
-        learner: "/Learner/Dashboard"
+        learner: "/Learner/Dashboard",
       };
 
       const route = dashboardRoutes[userRole];
@@ -116,10 +116,9 @@ function Login() {
         throw new Error(`Invalid user role: ${userRole}`);
       }
       navigate(route, { replace: true });
-
     } catch (err) {
       console.error("Login failed:", err);
-      setError(err.message || 'Login failed. Please try again.');
+      setError(err.message || "Login failed. Please try again.");
       resetRecaptcha();
     } finally {
       setLoading(false);

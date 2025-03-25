@@ -136,8 +136,8 @@ function AdminDashboard() {
         ] = await Promise.all([
           getAllCourses(),
           getAllUsers({ page: 1, limit: 1000 }), // Get all teachers
-          getGroupsByType('learner'),
-          getGroupsByType('student_teacher'),
+          getGroupsByType("learner"),
+          getGroupsByType("student_teacher"),
         ]);
 
         setCourses(coursesData);
@@ -162,10 +162,12 @@ function AdminDashboard() {
         if (Array.isArray(studentTeacherGroupsData)) {
           setStudentTeacherGroups(studentTeacherGroupsData);
         } else {
-          console.error("Invalid student teacher groups data:", studentTeacherGroupsData);
+          console.error(
+            "Invalid student teacher groups data:",
+            studentTeacherGroupsData
+          );
           setStudentTeacherGroups([]);
         }
-
       } catch (error) {
         console.error("Error fetching data:", error);
         setError(true);
@@ -203,6 +205,22 @@ function AdminDashboard() {
     }));
   };
 
+  const getSchoolName = (schoolId) => {
+    const schools = {
+      1001: "Asuncion Consunji Elementary School (ACES)",
+      1002: "University of Santo Tomas (UST)",
+    };
+    return schools[schoolId] || "N/A";
+  };
+
+  // Modify the users data to include school name
+  const enrichUserData = (users) => {
+    return users.map((user) => ({
+      ...user,
+      school_name: getSchoolName(user.school_id),
+    }));
+  };
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -235,15 +253,16 @@ function AdminDashboard() {
             totalAdmins: result.users.filter((u) => u.role === "admin").length,
           };
 
+          const enrichedUsers = enrichUserData(result.users);
           updateCache(cacheKey, {
-            users: result.users,
+            users: enrichedUsers,
             totalPages: result.totalPages,
             totalItems: result.totalItems,
             stats: statsData,
           });
 
-          setUsers(result.users);
-          setFilteredUsers(result.users);
+          setUsers(enrichedUsers);
+          setFilteredUsers(enrichedUsers);
           setTotalPages(result.totalPages);
           setTotalUsers(result.totalItems);
           setStats(statsData);
@@ -327,17 +346,18 @@ function AdminDashboard() {
       const totalItems = response.totalItems || response.count || 0;
       const totalPagesCount = response.totalPages || Math.ceil(totalItems / 10);
 
-      setUsers(usersArray);
-      setFilteredUsers(usersArray);
+      const enrichedUsers = enrichUserData(usersArray);
+      setUsers(enrichedUsers);
+      setFilteredUsers(enrichedUsers);
       setTotalPages(totalPagesCount);
       setTotalUsers(totalItems);
 
       // Update stats
       setStats({
         totalUsers: totalItems,
-        totalLearners: usersArray.filter((u) => u.role === "learner").length,
-        totalTeachers: usersArray.filter((u) => u.role === "teacher").length,
-        totalAdmins: usersArray.filter((u) => u.role === "admin").length,
+        totalLearners: enrichedUsers.filter((u) => u.role === "learner").length,
+        totalTeachers: enrichedUsers.filter((u) => u.role === "teacher").length,
+        totalAdmins: enrichedUsers.filter((u) => u.role === "admin").length,
       });
 
       setError(null);
@@ -402,20 +422,20 @@ function AdminDashboard() {
     try {
       setError(null);
       setReportError(null);
-      
+
       // Get current user from localStorage
-      const currentUser = JSON.parse(localStorage.getItem('user')) || {};
-      
+      const currentUser = JSON.parse(localStorage.getItem("user")) || {};
+
       const doc = await generateUsersReport(currentUser);
-      const pdfBlob = doc.output('blob');
+      const pdfBlob = doc.output("blob");
       const pdfUrl = URL.createObjectURL(pdfBlob);
-      
+
       setReportUrl(pdfUrl);
       setShowReportModal(true);
     } catch (error) {
-      console.error('Error generating report:', error);
-      setError('Failed to generate users report');
-      setReportError('Failed to generate users report');
+      console.error("Error generating report:", error);
+      setError("Failed to generate users report");
+      setReportError("Failed to generate users report");
       setShowReportModal(true);
     }
   };
@@ -431,7 +451,7 @@ function AdminDashboard() {
 
   const handlePrintReport = () => {
     if (reportUrl) {
-      window.open(reportUrl, '_blank');
+      window.open(reportUrl, "_blank");
     }
   };
 
@@ -492,18 +512,20 @@ function AdminDashboard() {
 
   return (
     <>
-      <div className="flex h-screen bg-gray-100 pb-16"> {/* Added pb-16 */}
+      <div className="flex h-screen bg-gray-100 pb-16">
+        {" "}
+        {/* Added pb-16 */}
         <Sidebar navItems={navItems} />
-        <div className="flex-1 p-6 overflow-auto pb-16"> {/* Added pb-16 */}
+        <div className="flex-1 p-6 overflow-auto pb-16">
+          {" "}
+          {/* Added pb-16 */}
           <Header title="Users" />
-
           {/* Add success message display */}
           {successMessage && (
             <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
               {successMessage}
             </div>
           )}
-
           {/* Loading skeleton for UserStats */}
           {isLoading && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -518,7 +540,6 @@ function AdminDashboard() {
               ))}
             </div>
           )}
-
           {/* Real UserStats when not loading */}
           {!isLoading && (
             <UserStats
@@ -528,7 +549,6 @@ function AdminDashboard() {
               totalAdmins={stats.totalAdmins}
             />
           )}
-
           <div className="bg-white shadow rounded-lg p-6">
             {isLoading ? (
               <div className="space-y-4">
