@@ -4,6 +4,7 @@
  */
 
 import { API_BASE_URL } from "../utils/constants";
+import fetchWithInterceptor from "./apiService";
 
 /**
  * Fetches all users from the API.
@@ -29,12 +30,15 @@ export const getAllUsers = async (options = {}) => {
       limit: Number(options.limit) || 10,
     }).toString();
 
-    const response = await fetch(`${API_BASE_URL}/users?${params}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/users?${params}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`Failed to fetch users: ${response.status}`);
@@ -73,7 +77,7 @@ export const getTeachers = async () => {
       throw new Error("Not authenticated");
     }
 
-    const response = await fetch(`${API_BASE_URL}/users`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/users`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -131,7 +135,7 @@ export const createUser = async (userData) => {
       group_id: null, // Optional, can be added later if needed
     };
 
-    const response = await fetch(`${API_BASE_URL}/users`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/users`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -191,14 +195,17 @@ export const updateUser = async (userId, updateData) => {
       cleanedData.contact_no = contactNo;
     }
 
-    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(cleanedData),
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/users/${userId}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(cleanedData),
+      }
+    );
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -230,13 +237,16 @@ export const deleteUser = async (userId) => {
       throw new Error("Not authenticated");
     }
 
-    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/users/${userId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       const error = await response.json();
@@ -266,7 +276,7 @@ export const removeUserFromGroup = async (groupId, userId) => {
       throw new Error("Not authenticated");
     }
 
-    const response = await fetch(
+    const response = await fetchWithInterceptor(
       `${API_BASE_URL}/groups/${groupId}/members/${userId}`,
       {
         method: "DELETE",
@@ -314,12 +324,15 @@ export const getUserById = async (userId) => {
       throw new Error("Not authenticated");
     }
 
-    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/users/${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error("Failed to fetch user");

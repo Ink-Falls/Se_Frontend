@@ -12,7 +12,16 @@ export default defineConfig({
         globals: true, //This is not necessary
         include: ['**/*.test.(js|jsx|ts|tsx)'], // Specifies which files are test files
         setupFiles: './tests/setup/setupTests.jsx',
-        // You might need to adjust this path depending on where the setupTests.js file is
+        coverage: {
+            provider: 'v8',
+            reporter: ['text', 'json', 'html'],
+            reportsDirectory: './coverage',
+            exclude: [
+                'node_modules/',
+                'tests/setup/',
+                '**/*.d.ts',
+            ]
+        },
         resolve: {
             alias: {
                 '@': resolve(__dirname, 'src'), // Assuming your 'src' folder is at the root

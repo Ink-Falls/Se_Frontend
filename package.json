@@ -8,7 +8,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest --coverage",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.3",
