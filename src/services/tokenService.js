@@ -4,7 +4,7 @@
  */
 import { API_BASE_URL } from '../utils/constants';
 
-const REFRESH_THRESHOLD_MINUTES = 5;
+const REFRESH_THRESHOLD_MINUTES = 15; // Update to match token expiration time
 
 /**
  * Service class for managing authentication tokens
@@ -212,8 +212,8 @@ class TokenService {
    */
   setupAutoRefresh() {
     // console.log('🎯 Setting up auto refresh');
-    const REFRESH_INTERVAL = 4 * 60 * 1000; // Check every 4 minutes
-    // console.log('🔄 Setting up auto refresh every 4 minutes');
+    const REFRESH_INTERVAL = 5 * 60 * 1000; // Check every 12 minutes to refresh before expiration
+    // console.log('🔄 Setting up auto refresh every 12 minutes');
     
     // Clear any existing refresh interval
     if (this._refreshInterval) {
