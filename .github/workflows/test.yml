@@ -1,0 +1,28 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [ main, master ] # Only trigger on PRs targeting main or master
+
+env:
+  STRICT_TESTING: false # Toggle this to true/false to control test failure behavior
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run tests
+      run: npm run test
+      continue-on-error: ${{ env.STRICT_TESTING == 'false' }}

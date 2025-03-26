@@ -271,7 +271,6 @@ export const getGroupsByType = async (type) => {
       throw new Error("Authentication token not found");
     }
 
-    // Update the endpoint to use group_type instead of type
     const response = await fetch(`${API_BASE_URL}/groups?group_type=${type}`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -284,17 +283,19 @@ export const getGroupsByType = async (type) => {
     }
 
     const data = await response.json();
+    if (!Array.isArray(data)) {
+      throw new Error("Invalid response format");
+    }
 
-    // Filter groups based on type before returning
-    const filteredGroups = data.filter(
-      (group) => group.group_type.toLowerCase() === type.toLowerCase()
-    );
-
-    return filteredGroups.map((group) => ({
-      id: group.group_id,
-      name: group.name,
-      type: group.group_type,
-    }));
+    // Add null check and default value for group_type
+    return data
+      .filter(group => group && group.group_type && 
+        group.group_type.toLowerCase() === type.toLowerCase())
+      .map(group => ({
+        id: group.group_id,
+        name: group.name,
+        type: group.group_type
+      }));
   } catch (error) {
     console.error(`Error fetching ${type} groups:`, error);
     throw error;
