@@ -432,11 +432,13 @@ const GroupDetailsModal = ({ onClose }) => {
                 <Loader className="animate-spin" size={24} />
               </div>
             ) : (
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              <div className="max-h-[400px] overflow-y-auto pr-2">
+                {" "}
+                {/* Added max height and scroll */}
                 {availableMembers.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center justify-between bg-gray-50 p-3 rounded-lg"
+                    className="flex items-center justify-between bg-gray-50 p-3 rounded-lg mb-2"
                   >
                     <div className="flex items-center space-x-3">
                       <input
