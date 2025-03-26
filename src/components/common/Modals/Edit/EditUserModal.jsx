@@ -37,6 +37,12 @@ function EditUserModal({ user, onClose, onSave }) {
         ...prev,
         [name]: formattedContactNo,
       }));
+    } else if (name === "middle_initial") {
+      // Convert to uppercase and limit to 1 character
+      setEditedUser((prev) => ({
+        ...prev,
+        [name]: value.toUpperCase().slice(0, 1),
+      }));
     } else {
       setEditedUser((prev) => ({
         ...prev,
@@ -140,6 +146,7 @@ function EditUserModal({ user, onClose, onSave }) {
                 name="middle_initial"
                 value={editedUser.middle_initial || ""}
                 onChange={handleInputChange}
+                maxLength={1}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>

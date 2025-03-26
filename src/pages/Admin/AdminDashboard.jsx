@@ -221,6 +221,30 @@ function AdminDashboard() {
     }));
   };
 
+  // Modified fetchTotalCounts to be more robust
+  const fetchTotalCounts = async () => {
+    try {
+      // Fetch all users without pagination to get accurate counts
+      const result = await getAllUsers({
+        page: 1,
+        limit: 99999, // Large number to get all users
+      });
+
+      if (result && Array.isArray(result.users)) {
+        const allUsers = result.users;
+        setStats({
+          totalUsers: allUsers.length,
+          totalLearners: allUsers.filter((u) => u.role === "learner").length,
+          totalTeachers: allUsers.filter((u) => u.role === "teacher").length,
+          totalAdmins: allUsers.filter((u) => u.role === "admin").length,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching total counts:", error);
+    }
+  };
+
+  // Modified main users fetch effect to not update stats
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -232,40 +256,29 @@ function AdminDashboard() {
           setFilteredUsers(cachedData.users);
           setTotalPages(cachedData.totalPages);
           setTotalUsers(cachedData.totalItems);
-          setStats(cachedData.stats);
           return;
         }
 
         setIsLoading(true);
 
+        // Only fetch paginated data for the table
         const result = await getAllUsers({
           page: currentPage,
           limit: 10,
         });
 
         if (result && Array.isArray(result.users)) {
-          const statsData = {
-            totalUsers: result.totalItems || 0,
-            totalLearners: result.users.filter((u) => u.role === "learner")
-              .length,
-            totalTeachers: result.users.filter((u) => u.role === "teacher")
-              .length,
-            totalAdmins: result.users.filter((u) => u.role === "admin").length,
-          };
-
           const enrichedUsers = enrichUserData(result.users);
           updateCache(cacheKey, {
             users: enrichedUsers,
             totalPages: result.totalPages,
             totalItems: result.totalItems,
-            stats: statsData,
           });
 
           setUsers(enrichedUsers);
           setFilteredUsers(enrichedUsers);
           setTotalPages(result.totalPages);
           setTotalUsers(result.totalItems);
-          setStats(statsData);
         }
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -277,6 +290,11 @@ function AdminDashboard() {
 
     fetchUsers();
   }, [currentPage]);
+
+  // Add effect to fetch stats on initial load
+  useEffect(() => {
+    fetchTotalCounts();
+  }, []);
 
   useEffect(() => {
     // Filter users based on both search query and role
@@ -334,9 +352,12 @@ function AdminDashboard() {
     setIsCreateGroupModalOpen(false);
   };
 
+  // Modify refreshUsers to update both table and stats
   const refreshUsers = async () => {
     try {
       setIsLoading(true);
+
+      // Fetch current page data for table
       const response = await getAllUsers({
         page: currentPage,
         limit: 10,
@@ -352,15 +373,8 @@ function AdminDashboard() {
       setTotalPages(totalPagesCount);
       setTotalUsers(totalItems);
 
-      // Update stats
-      setStats({
-        totalUsers: totalItems,
-        totalLearners: enrichedUsers.filter((u) => u.role === "learner").length,
-        totalTeachers: enrichedUsers.filter((u) => u.role === "teacher").length,
-        totalAdmins: enrichedUsers.filter((u) => u.role === "admin").length,
-      });
-
-      setError(null);
+      // Update stats separately
+      await fetchTotalCounts();
     } catch (error) {
       console.error("❌ Error refreshing users:", error);
       setError("Failed to refresh users");
