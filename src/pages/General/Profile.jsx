@@ -404,7 +404,7 @@ function Profile() {
               <div className="border-2 border-gray-200 rounded-lg p-6">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
                   <h3 className="text-xl font-semibold mb-4 md:mb-0">
-                    Personal Information
+                    Personal Information ss
                   </h3>
                   <div className="flex flex-col md:flex-row gap-2">
                     <button
