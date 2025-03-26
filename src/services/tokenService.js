@@ -159,11 +159,14 @@ class TokenService {
    * Manual token refresh - used when token is explicitly detected as expired
    */
   async refreshToken() {
-    // console.log('🔄 Attempting token refresh...');
     try {
-      // If already refreshing, wait for completion
+      // Don't attempt refresh if there's no refresh token
+      const refreshToken = this.getRefreshToken();
+      if (!refreshToken) {
+        return null; // Return null instead of throwing for public routes
+      }
+
       if (this.#isRefreshing) {
-        // console.log('⏳ Token refresh already in progress, waiting...');
         return new Promise((resolve, reject) => {
           this.#refreshSubscribers.push((error, token) => {
             if (error) reject(error);
@@ -174,11 +177,6 @@ class TokenService {
 
       this.#isRefreshing = true;
       await this.#checkRateLimit();
-
-      const refreshToken = this.getRefreshToken();
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
-      }
 
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
@@ -200,7 +198,8 @@ class TokenService {
     } catch (error) {
       this.#onRefreshComplete(error, null);
       console.error('❌ Token refresh failed:', error);
-      throw error;
+      // Don't throw error, just return null for public routes
+      return null;
     } finally {
       this.#isRefreshing = false;
     }
