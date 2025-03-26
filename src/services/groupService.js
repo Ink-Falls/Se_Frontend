@@ -29,7 +29,7 @@ export const getAvailableMembers = async (type) => {
         ? "/users/available-student-teachers"
         : "/users/available-learners";
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}${endpoint}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -95,14 +95,17 @@ export const createGroup = async (groupData) => {
       groupType: groupData.type,
     };
 
-    const createResponse = await fetch(`${API_BASE_URL}/groups`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(createPayload),
-    });
+    const createResponse = await fetchWithInterceptor(
+      `${API_BASE_URL}/groups`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(createPayload),
+      }
+    );
 
     if (!createResponse.ok) {
       const errorData = await createResponse.json();
@@ -133,14 +136,17 @@ export const createGroup = async (groupData) => {
         userIds: groupData.memberIds.map((id) => parseInt(id)),
       };
 
-      const assignResponse = await fetch(`${API_BASE_URL}${assignEndpoint}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(assignPayload),
-      });
+      const assignResponse = await fetchWithInterceptor(
+        `${API_BASE_URL}${assignEndpoint}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(assignPayload),
+        }
+      );
 
       const assignResponseData = await assignResponse.json();
 
@@ -174,13 +180,16 @@ export const deleteGroups = async (groupIds) => {
     // Delete groups sequentially
     for (const groupId of groupIds) {
       try {
-        const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await fetchWithInterceptor(
+          `${API_BASE_URL}/groups/${groupId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -219,7 +228,7 @@ export const getAllGroups = async () => {
       throw new Error("Authentication token not found");
     }
 
-    const response = await fetch(`${API_BASE_URL}/groups`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/groups`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -250,12 +259,15 @@ export const getAllGroups = async () => {
 export const getGroupById = async (groupId) => {
   try {
     const token = localStorage.getItem("token");
-    const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/groups/${groupId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) throw new Error("Failed to fetch group");
     return await response.json();
@@ -271,12 +283,16 @@ export const getGroupsByType = async (type) => {
       throw new Error("Authentication token not found");
     }
 
-    const response = await fetch(`${API_BASE_URL}/groups?group_type=${type}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    // Update the endpoint to use group_type instead of type
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/groups?group_type=${type}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error("Failed to fetch groups");
@@ -309,12 +325,15 @@ export const getGroupMembers = async (groupId) => {
       throw new Error("Authentication token not found");
     }
 
-    const response = await fetch(`${API_BASE_URL}/groups/${groupId}/members`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/groups/${groupId}/members`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error("Failed to fetch group members");
@@ -364,17 +383,20 @@ export const updateGroupMembers = async (
     const token = localStorage.getItem("token");
     if (!token) throw new Error("Authentication token not found");
 
-    const response = await fetch(`${API_BASE_URL}/groups/${groupId}/members`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        addMembers,
-        removeMembers,
-      }),
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/groups/${groupId}/members`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          addMembers,
+          removeMembers,
+        }),
+      }
+    );
 
     if (!response.ok) {
       const error = await response.json();
@@ -400,14 +422,17 @@ export const updateGroup = async (groupId, updateData) => {
       removeUserIds: updateData.removeUserIds || [],
     };
 
-    const response = await fetch(`${API_BASE_URL}/groups/${groupId}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formattedData),
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/groups/${groupId}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formattedData),
+      }
+    );
 
     if (!response.ok) {
       const error = await response.json();
@@ -448,7 +473,7 @@ export const getUserGroupIds = async (userId) => {
       try {
         await new Promise((resolve) => setTimeout(resolve, DELAY));
 
-        const response = await fetch(
+        const response = await fetchWithInterceptor(
           `${API_BASE_URL}/groups/${currentGroupId}/members`,
           {
             headers: {
@@ -524,7 +549,7 @@ export const assignUsersToGroup = async (groupId, userIds, groupType) => {
         ? "/groups/assign-learners"
         : "/groups/assign-student-teachers";
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}${endpoint}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -571,7 +596,7 @@ export const removeMember = async (groupId, userId) => {
       throw new Error("Invalid group ID or user ID");
     }
 
-    const response = await fetch(
+    const response = await fetchWithInterceptor(
       `${API_BASE_URL}/groups/${parsedGroupId}/members/${parsedUserId}`,
       {
         method: "PATCH",
