@@ -18,7 +18,14 @@ import {
 import Modal from "../../components/common/Button/Modal"; // Import the Modal component
 import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // Import the DeleteModal component
 import { useCourse } from '../../contexts/CourseContext';
-
+const navItems = [
+  { text: "Home", icon: <Home size={20} />, route: "/Teacher/Dashboard" },
+  { text: "Announcements", icon: <Megaphone size={20} />, route: "/Teacher/Announcements" },
+  { text: "Courses", icon: <BookOpen size={20} />, route: "/Teacher/Courses" },
+  { text: "Assessments", icon: <ClipboardList size={20} />, route: "/Teacher/Assessments" },
+  { text: "Users", icon: <User size={20} />, route: "/Teacher/Users" },
+  { text: "Reports", icon: <LineChart size={20} />, route: "/Teacher/Reports" },
+];
 const announcements = [
   {
     id: "1",
@@ -157,6 +164,7 @@ const AnnouncementDetails = () => {
               <button
                 onClick={() => navigate(-1)}
                 className="p-2 rounded hover:bg-gray-700"
+                aria-label="Back"
               >
                 <ArrowLeft size={20} />
               </button>
