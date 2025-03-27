@@ -192,6 +192,21 @@ function AdminCourses() {
     }
   }, [successMessage]);
 
+  // Add search-related state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredCourses, setFilteredCourses] = useState([]);
+
+  useEffect(() => {
+    if (!courses) return;
+    
+    const filtered = courses.filter((course) =>
+      course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.teacher?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredCourses(filtered);
+  }, [searchTerm, courses]);
+
   if (loading) {
     return (
       <div className="flex h-screen bg-gray-100">
@@ -308,16 +323,25 @@ function AdminCourses() {
         {" "}
         {/* Added pb-16 here too */}
         <Header title="Courses" />
-        <BlackHeader title="All Courses" count={courses.length}>
-          <button
-            onClick={() => setIsAddCourseOpen(true)}
-            className="p-2 rounded hover:bg-gray-700"
-          >
-            <Plus size={20} />
-          </button>
-          <button className="p-2 rounded hover:bg-gray-700">
-            <Search size={20} />
-          </button>
+        <BlackHeader title="All Courses" count={filteredCourses.length}>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search courses..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-yellow-500 w-64 text-sm text-black"
+              />
+              <Search size={20} className="absolute right-3 top-2 text-gray-400" />
+            </div>
+            <button
+              onClick={() => setIsAddCourseOpen(true)}
+              className="p-2 rounded hover:bg-gray-700"
+            >
+              <Plus size={20} />
+            </button>
+          </div>
         </BlackHeader>
         {successMessage && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg mt-3">
@@ -362,7 +386,7 @@ function AdminCourses() {
           <div className="flex flex-col gap-6 mt-4">
             {" "}
             {/* Increased gap */}
-            {courses.map((course) => (
+            {filteredCourses.map((course) => (
               <div
                 key={course.id}
                 className="bg-white rounded-xl p-6 border-l-4 border-yellow-500 transition-all duration-300 shadow-sm hover:shadow-md"

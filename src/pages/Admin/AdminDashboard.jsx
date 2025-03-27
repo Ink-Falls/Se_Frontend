@@ -84,6 +84,15 @@ function AdminDashboard() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportUrl, setReportUrl] = useState(null);
   const [reportError, setReportError] = useState(null);
+  const [allUsers, setAllUsers] = useState([]); // Store all users for search
+  const [isSearching, setIsSearching] = useState(false);
+  const [allUsersData, setAllUsersData] = useState([]); // Add this new state
+
+  // Add new state for sorting
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: 'asc'
+  });
 
   const toggleDropdown = (id, event) => {
     event.stopPropagation();
@@ -304,36 +313,203 @@ function AdminDashboard() {
     fetchTotalCounts();
   }, []);
 
+  // Add sorting function
+  const handleSort = (key) => {
+    setSortConfig(prevConfig => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
+    }));
+    setCurrentPage(1); // Reset to first page when sorting
+  };
+
+  // Replace the searchAndFilterUsers effect with this updated version
   useEffect(() => {
-    // Filter users based on both search query and role
-    let filteredResults = [...users];
+    const filterAndSortUsers = async () => {
+      try {
+        setIsSearching(true);
 
-    // Apply role filter first
-    if (roleFilter !== "all") {
-      filteredResults = filteredResults.filter(
-        (user) => user.role.toLowerCase() === roleFilter.toLowerCase()
-      );
-    }
+        // Fetch all users if we don't have them
+        if (allUsersData.length === 0) {
+          const result = await getAllUsers({ page: 1, limit: 99999 });
+          if (result && Array.isArray(result.users)) {
+            const enrichedUsers = enrichUserData(result.users);
+            setAllUsersData(enrichedUsers);
+          }
+        }
 
-    // Then apply search filter
-    if (searchQuery) {
-      filteredResults = filteredResults.filter((user) => {
-        const fullName = `${user.first_name} ${user.middle_initial || ""} ${
-          user.last_name
-        }`.toLowerCase();
-        const email = user.email?.toLowerCase() || "";
-        const searchTerm = searchQuery.toLowerCase();
+        let results = [...allUsersData];
 
-        return fullName.includes(searchTerm) || email.includes(searchTerm);
-      });
-    }
+        // Apply search if query exists
+        if (searchQuery) {
+          results = results.filter(user => {
+            const fullName = `${user.first_name} ${user.middle_initial || ""} ${user.last_name}`.toLowerCase();
+            const email = user.email?.toLowerCase() || "";
+            const searchTerm = searchQuery.toLowerCase();
+            return fullName.includes(searchTerm) || email.includes(searchTerm);
+          });
+        }
 
-    setFilteredUsers(filteredResults);
-  }, [searchQuery, users, roleFilter]);
+        // Apply role filter
+        if (roleFilter !== "all") {
+          results = results.filter(user => 
+            user.role.toLowerCase() === roleFilter.toLowerCase()
+          );
+        }
 
+        // Apply sorting
+        if (sortConfig.key) {
+          results.sort((a, b) => {
+            let aVal = a[sortConfig.key];
+            let bVal = b[sortConfig.key];
+
+            // Handle special cases like full name
+            if (sortConfig.key === 'name') {
+              aVal = `${a.first_name} ${a.last_name}`;
+              bVal = `${b.first_name} ${b.last_name}`;
+            }
+
+            // Convert to lowercase if string
+            if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+            if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+
+            if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+          });
+        }
+
+        // Update pagination details
+        const totalFilteredItems = results.length;
+        const totalFilteredPages = Math.ceil(totalFilteredItems / 10);
+        
+        // Slice the results for current page
+        const startIndex = (currentPage - 1) * 10;
+        const endIndex = startIndex + 10;
+        const paginatedResults = results.slice(startIndex, endIndex);
+
+        setFilteredUsers(paginatedResults);
+        setTotalUsers(totalFilteredItems);
+        setTotalPages(totalFilteredPages);
+
+      } catch (error) {
+        console.error("Error in filtering and sorting:", error);
+        setError("Failed to process users");
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    filterAndSortUsers();
+  }, [searchQuery, roleFilter, currentPage, allUsersData, sortConfig]);
+
+  useEffect(() => {
+    const searchAndFilterUsers = async () => {
+      try {
+        setIsSearching(true);
+
+        // If we don't have all users yet, fetch them
+        if (allUsersData.length === 0) {
+          const result = await getAllUsers({ page: 1, limit: 99999 });
+          if (result && Array.isArray(result.users)) {
+            const enrichedUsers = enrichUserData(result.users);
+            setAllUsersData(enrichedUsers);
+          }
+        }
+
+        let results = [...allUsersData];
+
+        // Apply search if query exists
+        if (searchQuery) {
+          results = results.filter(user => {
+            const fullName = `${user.first_name} ${user.middle_initial || ""} ${user.last_name}`.toLowerCase();
+            const email = user.email?.toLowerCase() || "";
+            const searchTerm = searchQuery.toLowerCase();
+            return fullName.includes(searchTerm) || email.includes(searchTerm);
+          });
+        }
+
+        // Apply role filter
+        if (roleFilter !== "all") {
+          results = results.filter(user => 
+            user.role.toLowerCase() === roleFilter.toLowerCase()
+          );
+        }
+
+        // Update pagination details
+        const totalFilteredItems = results.length;
+        const totalFilteredPages = Math.ceil(totalFilteredItems / 10);
+        
+        // Slice the results for current page
+        const startIndex = (currentPage - 1) * 10;
+        const endIndex = startIndex + 10;
+        const paginatedResults = results.slice(startIndex, endIndex);
+
+        setFilteredUsers(paginatedResults);
+        setTotalUsers(totalFilteredItems);
+        setTotalPages(totalFilteredPages);
+
+      } catch (error) {
+        console.error("Error in search:", error);
+        setError("Failed to search users");
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    searchAndFilterUsers();
+  }, [searchQuery, roleFilter, currentPage, allUsersData]);
+
+  // Modify handleSearch to reset pagination
   const handleSearch = (query) => {
     setSearchQuery(query);
+    setCurrentPage(1);
   };
+
+  // Add this function to handle search cancellation
+  const handleSearchCancel = () => {
+    setSearchQuery("");
+    setCurrentPage(1);
+    if (allUsersData.length > 0) {
+      const totalItems = allUsersData.length;
+      const totalPagesCount = Math.ceil(totalItems / 10);
+      setTotalPages(totalPagesCount);
+      setTotalUsers(totalItems);
+      setFilteredUsers(allUsersData.slice(0, 10));
+    }
+  };
+
+  // Modify the fetchUsers effect to store all users
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch all users if we don't have them
+        if (allUsersData.length === 0) {
+          const allUsersResult = await getAllUsers({ page: 1, limit: 99999 });
+          if (allUsersResult && Array.isArray(allUsersResult.users)) {
+            const enrichedUsers = enrichUserData(allUsersResult.users);
+            setAllUsersData(enrichedUsers);
+            setTotalUsers(enrichedUsers.length);
+            setTotalPages(Math.ceil(enrichedUsers.length / 10));
+          }
+        }
+
+        // Set current page data
+        const startIndex = (currentPage - 1) * 10;
+        const endIndex = startIndex + 10;
+        setFilteredUsers(allUsersData.slice(startIndex, endIndex));
+        
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        setError("Failed to load users");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [currentPage, allUsersData.length]);
 
   const handleFilterChange = (filter) => {
     setRoleFilter(filter);
@@ -605,6 +781,9 @@ function AdminDashboard() {
                 totalPages={totalPages}
                 onPageChange={handlePageChange}
                 onGenerateReport={handleGenerateReport}
+                onSearchCancel={handleSearchCancel} // Add this prop
+                onSort={handleSort}
+                sortConfig={sortConfig}
               />
             )}
           </div>
