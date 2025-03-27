@@ -49,8 +49,25 @@ function NumericCodeLogin() {
 
     try {
       // Use the same verification endpoint as magic links
-      await verifyMagicLinkToken(fullCode);
-      navigate("/Learner/Dashboard");
+      const response = await verifyMagicLinkToken(fullCode);
+
+      // Store the tokens in localStorage
+      if (response && response.tokens) {
+        localStorage.setItem("accessToken", response.tokens.accessToken);
+        localStorage.setItem("refreshToken", response.tokens.refreshToken);
+
+        // Optional: If you have user data in the response
+        if (response.user) {
+          localStorage.setItem("user", JSON.stringify(response.user));
+        }
+
+        // Add a small delay to ensure tokens are stored before navigation
+        setTimeout(() => {
+          navigate("/Learner/Dashboard");
+        }, 100);
+      } else {
+        throw new Error("Invalid response from server");
+      }
     } catch (err) {
       console.error("Code verification failed:", err);
       setError(err.message || "Invalid code. Please try again.");

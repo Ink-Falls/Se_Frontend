@@ -32,7 +32,18 @@ function PictureCodeGenerator() {
 
     try {
       const data = await requestPictureCode(studentEmail);
-      setCodeData(data);
+      console.log("API response:", data); // Log the entire response for debugging
+
+      // Handle different response formats
+      if (data.pictures) {
+        setCodeData(data);
+      } else if (data.sequence) {
+        setCodeData({ pictures: data.sequence });
+      } else if (Array.isArray(data)) {
+        setCodeData({ pictures: data });
+      } else {
+        setCodeData({ pictures: [data] }); // Last resort - try to use the whole response
+      }
     } catch (err) {
       console.error("Picture code generation failed:", err);
       setError(
@@ -49,6 +60,21 @@ function PictureCodeGenerator() {
 
   // Function to render picture sequence
   const renderPictureSequence = (pictures) => {
+    // If pictures is not an array or is empty, show an error message
+    if (!Array.isArray(pictures) || pictures.length === 0) {
+      return (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-md text-center">
+          <p className="text-red-500">No pictures received from server</p>
+          <p className="text-sm text-gray-500 mt-2">
+            There was an issue loading the picture sequence. Please try again.
+          </p>
+        </div>
+      );
+    }
+
+    // Log the received pictures for debugging
+    console.log("Received pictures:", pictures);
+
     return (
       <div className="flex items-center justify-center space-x-3">
         {pictures.map((pic, index) => (
@@ -56,10 +82,16 @@ function PictureCodeGenerator() {
             key={index}
             className="border-2 border-gray-300 rounded-md p-2 bg-white shadow-sm"
           >
+            {/* Handle both URL string format and object format */}
             <img
-              src={pic.url}
+              src={typeof pic === "string" ? pic : pic.url || pic.image || ""}
               alt={`Picture ${index + 1}`}
               className="w-16 h-16 object-contain"
+              onError={(e) => {
+                console.error("Image failed to load:", e.target.src);
+                e.target.src = "https://via.placeholder.com/100?text=Error";
+                e.target.alt = "Image not available";
+              }}
             />
             <p className="text-center text-xs mt-1 font-medium">{index + 1}</p>
           </div>

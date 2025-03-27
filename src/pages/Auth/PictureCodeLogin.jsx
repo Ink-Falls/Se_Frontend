@@ -69,7 +69,18 @@ function PictureCodeLogin() {
       const pictureCode = selectedPictures.map((p) => p.id).join("-");
 
       // Use the same verification endpoint with the picture code
-      await verifyMagicLinkToken(pictureCode);
+      const response = await verifyMagicLinkToken(pictureCode);
+
+      // Store tokens from response
+      if (response && response.tokens) {
+        localStorage.setItem("accessToken", response.tokens.accessToken);
+        localStorage.setItem("refreshToken", response.tokens.refreshToken);
+
+        if (response.user) {
+          localStorage.setItem("user", JSON.stringify(response.user));
+        }
+      }
+
       setSuccess(true);
 
       // Redirect after a short delay to show success animation
