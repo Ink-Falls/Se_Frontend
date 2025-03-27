@@ -33,6 +33,7 @@ import { getGroupsByType } from "../../services/groupService";
 import AddCourse from "../../components/common/Modals/Add/AddCourse";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import BlackHeader from "../../components/common/layout/BlackHeader";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 function AdminCourses() {
   const [courses, setCourses] = useState([]);
@@ -55,6 +56,7 @@ function AdminCourses() {
   const [availableTeachers, setAvailableTeachers] = useState([]);
   const [learnerGroups, setLearnerGroups] = useState([]);
   const [studentTeacherGroups, setStudentTeacherGroups] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const toggleDropdown = (id, event) => {
     event.stopPropagation();
@@ -198,11 +200,12 @@ function AdminCourses() {
 
   useEffect(() => {
     if (!courses) return;
-    
-    const filtered = courses.filter((course) =>
-      course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.teacher?.toLowerCase().includes(searchTerm.toLowerCase())
+
+    const filtered = courses.filter(
+      (course) =>
+        course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.teacher?.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredCourses(filtered);
   }, [searchTerm, courses]);
@@ -212,7 +215,7 @@ function AdminCourses() {
       <div className="flex h-screen bg-gray-100">
         <Sidebar navItems={navItems} />
         <div className="flex-1 p-6 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+          <LoadingSpinner text="Loading" />
         </div>
       </div>
     );
@@ -315,7 +318,7 @@ function AdminCourses() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100 relative pb-16">
+    <div className="flex h-screen bg-gray-100 relative pb-10">
       {" "}
       {/* Added pb-16 for padding bottom */}
       <Sidebar navItems={navItems} />
@@ -333,7 +336,10 @@ function AdminCourses() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-yellow-500 w-64 text-sm text-black"
               />
-              <Search size={20} className="absolute right-3 top-2 text-gray-400" />
+              <Search
+                size={20}
+                className="absolute right-3 top-2 text-gray-400"
+              />
             </div>
             <button
               onClick={() => setIsAddCourseOpen(true)}
@@ -383,142 +389,101 @@ function AdminCourses() {
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-6 mt-4">
-            {" "}
-            {/* Increased gap */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-4">
             {filteredCourses.map((course) => (
               <div
                 key={course.id}
-                className="bg-white rounded-xl p-6 border-l-4 border-yellow-500 transition-all duration-300 shadow-sm hover:shadow-md"
+                className="bg-white rounded-xl shadow-sm overflow-hidden group hover:shadow-lg transition-shadow duration-300"
               >
-                <div className="flex justify-between items-center cursor-pointer">
-                  {" "}
-                  {/* Changed from items-start to items-center */}
-                  <div
-                    className="w-full space-y-1"
-                    onClick={() =>
-                      setExpandedCourseId(
-                        expandedCourseId === course.id ? null : course.id
-                      )
+                {/* Course Header Image/Gradient */}
+                <div className="relative h-40">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10" />
+                  <img
+                    src={
+                      course.image ||
+                      "https://placehold.co/600x400/212529/FFF?text=Course"
                     }
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded">
-                        COURSE {course.id}
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-xl text-gray-800 group-hover:text-yellow-600 transition-colors">
-                      {course.name}
-                    </h3>
-                  </div>
-                  <div className="relative flex items-center space-x-2">
-                    {" "}
-                    {/* Changed gap-3 to space-x-2 */}
+                    alt={course.name}
+                    className="w-full h-full object-cover"
+                  />
+
+                  {/* Action Buttons - Positioned over image */}
+                  <div className="absolute top-2 right-2 z-20 flex gap-1">
                     <button
-                      className={`p-2 rounded-full hover:bg-gray-100 transition-colors duration-150 ${
-                        expandedCourseId === course.id ? "bg-gray-100" : ""
-                      }`}
-                      onClick={() =>
-                        setExpandedCourseId(
-                          expandedCourseId === course.id ? null : course.id
-                        )
-                      }
+                      onClick={() => handleEdit(course)}
+                      className="p-2 rounded-full bg-white/90 hover:bg-white transition-colors"
+                      title="Edit course"
                     >
-                      <ChevronDown
-                        size={20}
-                        className={`transform transition-transform duration-150 ${
-                          expandedCourseId === course.id ? "rotate-180" : ""
-                        }`}
-                      />
+                      <Edit size={16} />
                     </button>
                     <button
-                      onClick={(e) => toggleDropdown(course.id, e)}
-                      className="menu-btn relative z-20 p-2 rounded-full hover:bg-gray-100 transition-colors duration-150"
+                      onClick={() => setCourseToDelete(course)}
+                      className="p-2 rounded-full bg-white/90 hover:bg-white text-red-600 transition-colors"
+                      title="Delete course"
                     >
-                      <MoreVertical size={20} />
+                      <Trash2 size={16} />
                     </button>
-                    {dropdownOpen === course.id && (
-                      <div className="absolute right-0 top-12 bg-white border rounded-lg shadow-sm w-36 z-30 dropdown-menu overflow-hidden">
-                        <button
-                          className="flex items-center px-4 py-3 text-sm hover:bg-gray-50 w-full transition-colors"
-                          onClick={() => handleEdit(course)}
-                        >
-                          <Edit size={16} className="mr-3 text-gray-500" /> Edit
-                        </button>
-                        <button
-                          className="flex items-center px-4 py-3 text-sm hover:bg-red-50 w-full text-red-600 transition-colors"
-                          onClick={() => setCourseToDelete(course)}
-                        >
-                          <Trash2 size={16} className="mr-3" /> Delete
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </div>
 
-                <div
-                  className={`transition-all duration-150 overflow-hidden ${
-                    expandedCourseId === course.id ? "mt-6" : "max-h-0"
-                  }`}
-                >
-                  <div className="border-t pt-6 space-y-4">
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-600 mb-2">
-                        Description
-                      </h4>
-                      <p className="text-gray-700">
-                        {course.description || "No description available"}
-                      </p>
-                    </div>
+                {/* Course Content */}
+                <div className="p-5 flex-grow flex flex-col">
+                  <div className="mb-3">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                      {course.name}
+                    </h3>
+                    <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded inline-block">
+                      COURSE {course.id}
+                    </span>
+                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="text-sm font-semibold text-gray-600 mb-1">
+                  <p className="text-gray-600 text-sm mb-4">
+                    {course.description || "No description available"}
+                  </p>
+
+                  {/* Course Details - Always Visible */}
+                  <div className="space-y-3 pt-4 border-t">
+                    <div className="flex items-center text-sm">
+                      <div className="p-2 bg-blue-50 rounded-lg mr-3">
+                        <Users size={14} className="text-blue-500" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-500">
                           Teacher
-                        </h4>
-                        <p className="text-gray-700">
+                        </p>
+                        <p className="text-gray-900">
                           {course.teacher || "Not assigned"}
                         </p>
                       </div>
+                    </div>
 
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="text-sm font-semibold text-gray-600 mb-1">
-                          Learner Group
-                        </h4>
-                        <p className="text-gray-700">
-                          {course.learner_group}
-                          {course.learner_group_id && (
-                            <span className="text-xs text-gray-400 ml-1">
-                              (ID: {course.learner_group_id})
-                            </span>
-                          )}
-                        </p>
+                    <div className="flex items-center text-sm">
+                      <div className="p-2 bg-green-50 rounded-lg mr-3">
+                        <Users size={14} className="text-green-500" />
                       </div>
-
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <h4 className="text-sm font-semibold text-gray-600 mb-1">
-                          Student Teacher Group
-                        </h4>
-                        <p className="text-gray-700">
-                          {course.student_teacher_group}
-                          {course.student_teacher_group_id && (
-                            <span className="text-xs text-gray-400 ml-1">
-                              (ID: {course.student_teacher_group_id})
-                            </span>
-                          )}
+                      <div>
+                        <p className="text-xs font-medium text-gray-500">
+                          Learner Group
+                        </p>
+                        <p className="text-gray-900">
+                          {course.learner_group || "No group"}
                         </p>
                       </div>
                     </div>
 
-                    {course.image && (
-                      <div className="mt-4">
-                        <img
-                          src={course.image}
-                          alt={course.name}
-                          className="w-full max-w-2xl h-48 object-cover rounded-lg shadow-sm"
-                        />
+                    <div className="flex items-center text-sm">
+                      <div className="p-2 bg-purple-50 rounded-lg mr-3">
+                        <Users size={14} className="text-purple-500" />
                       </div>
-                    )}
+                      <div>
+                        <p className="text-xs font-medium text-gray-500">
+                          Student Teacher Group
+                        </p>
+                        <p className="text-gray-900">
+                          {course.student_teacher_group || "No group"}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

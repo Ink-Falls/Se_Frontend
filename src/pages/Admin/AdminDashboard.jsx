@@ -67,6 +67,7 @@ function AdminDashboard() {
     totalUsers: 0,
     totalLearners: 0,
     totalTeachers: 0,
+    totalStudentTeachers: 0,
     totalAdmins: 0,
   });
   const [selectedUser, setSelectedUser] = useState(null);
@@ -91,7 +92,7 @@ function AdminDashboard() {
   // Add new state for sorting
   const [sortConfig, setSortConfig] = useState({
     key: null,
-    direction: 'asc'
+    direction: "asc",
   });
 
   const toggleDropdown = (id, event) => {
@@ -241,19 +242,24 @@ function AdminDashboard() {
 
       if (result) {
         const roleCounts = result.roleCounts || [];
-      
+
         const totalUsers = result.totalItems; // Total users from API
-        const totalLearners = roleCounts.find(role => role.role === 'learner')?.count || 0;
-        const totalTeachers = roleCounts
-        .filter(role => role.role === 'teacher' || role.role === 'student_teacher')
-        .reduce((sum, role) => sum + Number(role.count), 0);
-        const totalAdmins = roleCounts.find(role => role.role === 'admin')?.count || 0;
-      
+        const totalLearners =
+          roleCounts.find((role) => role.role === "learner")?.count || 0;
+        const totalTeachers =
+          roleCounts.find((role) => role.role === "teacher")?.count || 0;
+        const totalStudentTeachers =
+          roleCounts.find((role) => role.role === "student_teacher")?.count ||
+          0;
+        const totalAdmins =
+          roleCounts.find((role) => role.role === "admin")?.count || 0;
+
         setStats({
           totalUsers,
           totalLearners,
           totalTeachers,
-          totalAdmins
+          totalStudentTeachers,
+          totalAdmins,
         });
       }
     } catch (error) {
@@ -315,9 +321,12 @@ function AdminDashboard() {
 
   // Add sorting function
   const handleSort = (key) => {
-    setSortConfig(prevConfig => ({
+    setSortConfig((prevConfig) => ({
       key,
-      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
+      direction:
+        prevConfig.key === key && prevConfig.direction === "asc"
+          ? "desc"
+          : "asc",
     }));
     setCurrentPage(1); // Reset to first page when sorting
   };
@@ -341,8 +350,10 @@ function AdminDashboard() {
 
         // Apply search if query exists
         if (searchQuery) {
-          results = results.filter(user => {
-            const fullName = `${user.first_name} ${user.middle_initial || ""} ${user.last_name}`.toLowerCase();
+          results = results.filter((user) => {
+            const fullName = `${user.first_name} ${user.middle_initial || ""} ${
+              user.last_name
+            }`.toLowerCase();
             const email = user.email?.toLowerCase() || "";
             const searchTerm = searchQuery.toLowerCase();
             return fullName.includes(searchTerm) || email.includes(searchTerm);
@@ -351,8 +362,8 @@ function AdminDashboard() {
 
         // Apply role filter
         if (roleFilter !== "all") {
-          results = results.filter(user => 
-            user.role.toLowerCase() === roleFilter.toLowerCase()
+          results = results.filter(
+            (user) => user.role.toLowerCase() === roleFilter.toLowerCase()
           );
         }
 
@@ -363,17 +374,17 @@ function AdminDashboard() {
             let bVal = b[sortConfig.key];
 
             // Handle special cases like full name
-            if (sortConfig.key === 'name') {
+            if (sortConfig.key === "name") {
               aVal = `${a.first_name} ${a.last_name}`;
               bVal = `${b.first_name} ${b.last_name}`;
             }
 
             // Convert to lowercase if string
-            if (typeof aVal === 'string') aVal = aVal.toLowerCase();
-            if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+            if (typeof aVal === "string") aVal = aVal.toLowerCase();
+            if (typeof bVal === "string") bVal = bVal.toLowerCase();
 
-            if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
-            if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+            if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+            if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
             return 0;
           });
         }
@@ -381,7 +392,7 @@ function AdminDashboard() {
         // Update pagination details
         const totalFilteredItems = results.length;
         const totalFilteredPages = Math.ceil(totalFilteredItems / 10);
-        
+
         // Slice the results for current page
         const startIndex = (currentPage - 1) * 10;
         const endIndex = startIndex + 10;
@@ -390,7 +401,6 @@ function AdminDashboard() {
         setFilteredUsers(paginatedResults);
         setTotalUsers(totalFilteredItems);
         setTotalPages(totalFilteredPages);
-
       } catch (error) {
         console.error("Error in filtering and sorting:", error);
         setError("Failed to process users");
@@ -420,8 +430,10 @@ function AdminDashboard() {
 
         // Apply search if query exists
         if (searchQuery) {
-          results = results.filter(user => {
-            const fullName = `${user.first_name} ${user.middle_initial || ""} ${user.last_name}`.toLowerCase();
+          results = results.filter((user) => {
+            const fullName = `${user.first_name} ${user.middle_initial || ""} ${
+              user.last_name
+            }`.toLowerCase();
             const email = user.email?.toLowerCase() || "";
             const searchTerm = searchQuery.toLowerCase();
             return fullName.includes(searchTerm) || email.includes(searchTerm);
@@ -430,15 +442,15 @@ function AdminDashboard() {
 
         // Apply role filter
         if (roleFilter !== "all") {
-          results = results.filter(user => 
-            user.role.toLowerCase() === roleFilter.toLowerCase()
+          results = results.filter(
+            (user) => user.role.toLowerCase() === roleFilter.toLowerCase()
           );
         }
 
         // Update pagination details
         const totalFilteredItems = results.length;
         const totalFilteredPages = Math.ceil(totalFilteredItems / 10);
-        
+
         // Slice the results for current page
         const startIndex = (currentPage - 1) * 10;
         const endIndex = startIndex + 10;
@@ -447,7 +459,6 @@ function AdminDashboard() {
         setFilteredUsers(paginatedResults);
         setTotalUsers(totalFilteredItems);
         setTotalPages(totalFilteredPages);
-
       } catch (error) {
         console.error("Error in search:", error);
         setError("Failed to search users");
@@ -483,7 +494,7 @@ function AdminDashboard() {
     const fetchUsers = async () => {
       try {
         setIsLoading(true);
-        
+
         // Fetch all users if we don't have them
         if (allUsersData.length === 0) {
           const allUsersResult = await getAllUsers({ page: 1, limit: 99999 });
@@ -499,7 +510,6 @@ function AdminDashboard() {
         const startIndex = (currentPage - 1) * 10;
         const endIndex = startIndex + 10;
         setFilteredUsers(allUsersData.slice(startIndex, endIndex));
-        
       } catch (error) {
         console.error("Error fetching users:", error);
         setError("Failed to load users");
@@ -521,14 +531,33 @@ function AdminDashboard() {
 
   const handleDeleteSelected = async () => {
     try {
-      await Promise.all(selectedIds.map((id) => deleteUser(id)));
+      setIsLoading(true);
+      setSuccessMessage(null);
+      setError(null);
+
+      // Delete users sequentially to avoid overloading the server
+      for (const id of selectedIds) {
+        await deleteUser(id);
+        // Remove the deleted user from all relevant state immediately
+        setUsers((prev) => prev.filter((user) => user.id !== id));
+        setFilteredUsers((prev) => prev.filter((user) => user.id !== id));
+        setAllUsersData((prev) => prev.filter((user) => user.id !== id));
+      }
+
+      // Refresh the complete data after all deletions
       await refreshUsers();
       setSelectedIds([]);
       setShowDeleteModal(false);
-      setSuccessMessage("Successfully deleted user");
+      setSuccessMessage(
+        `Successfully deleted ${selectedIds.length} user${
+          selectedIds.length > 1 ? "s" : ""
+        }`
+      );
     } catch (error) {
       console.error("Error deleting users:", error);
       setError(error.message || "Failed to delete users");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -536,31 +565,34 @@ function AdminDashboard() {
     setIsCreateGroupModalOpen(false);
   };
 
-  // Modify refreshUsers to update both table and stats
   const refreshUsers = async () => {
     try {
       setIsLoading(true);
+      setError(null);
 
-      // Fetch current page data for table
-      const response = await getAllUsers({
-        page: currentPage,
-        limit: 10,
-      });
+      // Fetch both paginated data and complete data
+      const [paginatedResult, allUsersResult] = await Promise.all([
+        getAllUsers({ page: currentPage, limit: 10 }),
+        getAllUsers({ page: 1, limit: 99999 }),
+      ]);
 
-      const usersArray = response.users || response.rows || [];
-      const totalItems = response.totalItems || response.count || 0;
-      const totalPagesCount = response.totalPages || Math.ceil(totalItems / 10);
+      if (paginatedResult?.users) {
+        const enrichedUsers = enrichUserData(paginatedResult.users);
+        setUsers(enrichedUsers);
+        setFilteredUsers(enrichedUsers);
+        setTotalPages(paginatedResult.totalPages);
+        setTotalUsers(paginatedResult.totalItems);
+      }
 
-      const enrichedUsers = enrichUserData(usersArray);
-      setUsers(enrichedUsers);
-      setFilteredUsers(enrichedUsers);
-      setTotalPages(totalPagesCount);
-      setTotalUsers(totalItems);
+      if (allUsersResult?.users) {
+        const enrichedAllUsers = enrichUserData(allUsersResult.users);
+        setAllUsersData(enrichedAllUsers);
+      }
 
-      // Update stats separately
+      // Update stats
       await fetchTotalCounts();
     } catch (error) {
-      console.error("❌ Error refreshing users:", error);
+      console.error("Error refreshing users:", error);
       setError("Failed to refresh users");
     } finally {
       setIsLoading(false);
@@ -726,8 +758,8 @@ function AdminDashboard() {
           )}
           {/* Loading skeleton for UserStats */}
           {isLoading && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {[...Array(4)].map((_, i) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+              {[...Array(5)].map((_, i) => (
                 <div
                   key={i}
                   className="bg-white p-6 rounded-lg shadow animate-pulse"
@@ -744,6 +776,7 @@ function AdminDashboard() {
               totalUsers={stats.totalUsers}
               totalLearners={stats.totalLearners}
               totalTeachers={stats.totalTeachers}
+              totalStudentTeachers={stats.totalStudentTeachers}
               totalAdmins={stats.totalAdmins}
             />
           )}

@@ -140,7 +140,10 @@ const UserTable = ({
                 <option value="admin">Filter By: Admin</option>
               </select>
               <div className="absolute inset-y-0 left-0 pl-3 md:pl-[0.5vw] flex items-center pointer-events-none">
-                <Filter size={16} className="text-gray-400 md:w-[1vw] md:h-[1vw]" />
+                <Filter
+                  size={16}
+                  className="text-gray-400 md:w-[1vw] md:h-[1vw]"
+                />
               </div>
             </div>
 
@@ -158,7 +161,10 @@ const UserTable = ({
                 <option value="id-desc">User ID (Descending)</option>
               </select>
               <div className="absolute inset-y-0 left-0 pl-3 md:pl-[0.5vw] flex items-center pointer-events-none">
-                <Filter size={16} className="text-gray-400 md:w-[1vw] md:h-[1vw]" />
+                <Filter
+                  size={16}
+                  className="text-gray-400 md:w-[1vw] md:h-[1vw]"
+                />
               </div>
             </div>
 
@@ -176,10 +182,9 @@ const UserTable = ({
 
           {/* Right side buttons */}
           <div className="flex flex-col md:flex-row w-full md:w-auto gap-2 md:ml-auto">
-            <button 
-              onClick={onAddUser} 
+            <button
+              onClick={onAddUser}
               className="flex items-center gap-2 md:gap-[0.3vw] p-2 md:p-[0.4vw] bg-[#212529] md:bg-transparent text-white md:text-[#475569] rounded-lg md:rounded-full text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
-
             >
               <Plus size={20} className="w-[10] h-[10]" />
               <span className="md:hidden">Add User</span>

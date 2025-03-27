@@ -5,13 +5,15 @@ import { getTeachers } from "../../../../services/userService";
 import { getGroupsByType } from "../../../../services/groupService";
 
 const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     name: "",
     description: "",
     user_id: "",
     learner_group_id: "",
     student_teacher_group_id: "",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
   const [availableTeachers, setAvailableTeachers] = useState([]);
   const [learnerGroups, setLearnerGroups] = useState([]);
   const [studentTeacherGroups, setStudentTeacherGroups] = useState([]);
@@ -43,6 +45,14 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setFormData(initialFormState);
+      setError(null);
+      setSuccessMessage("");
+    }
+  }, [isOpen]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -50,6 +60,7 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
     setSuccessMessage("");
 
     try {
+      // Validate required fields
       if (
         !formData.name ||
         !formData.description ||
@@ -58,6 +69,7 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
         !formData.student_teacher_group_id
       ) {
         setError("Please fill in all required fields");
+        setIsLoading(false);
         return;
       }
 
@@ -70,10 +82,12 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
       };
 
       const newCourse = await createCourse(courseToSubmit);
+      setSuccessMessage("Course created successfully");
       onCourseAdded(newCourse);
       onClose();
     } catch (err) {
-      setError(err.message || "Failed to create course");
+      // Display the error message from the backend or a fallback message
+      setError(err.message || "Server error. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -87,8 +101,15 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
     }));
   };
 
+  const handleClose = () => {
+    setFormData(initialFormState);
+    setError(null);
+    setSuccessMessage("");
+    onClose();
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={handleClose}>
       <div className="flex flex-col max-h-[80vh]">
         <div className="bg-white px-6 py-4 border-b sticky top-0 z-10">
           <h2 className="text-2xl font-bold">Add New Course</h2>
@@ -106,9 +127,12 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Course Name
               </label>
               <input
@@ -123,7 +147,10 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
             </div>
 
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="description"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Description
               </label>
               <textarea
@@ -138,72 +165,113 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
             </div>
 
             <div>
-              <label htmlFor="user_id" className="block text-sm font-medium text-gray-700">
-                Teacher
-              </label>
-              <select
-                id="user_id"
-                name="user_id"
-                value={formData.user_id}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                required
+              <label
+                htmlFor="user_id"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
-                <option value="">Select a teacher</option>
+                Select Teacher
+              </label>
+              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
                 {availableTeachers.map((teacher) => (
-                  <option key={teacher.id} value={teacher.id}>
-                    {`${teacher.first_name} ${teacher.last_name}`}
-                  </option>
+                  <div
+                    key={teacher.id}
+                    className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 ${
+                      formData.user_id === teacher.id.toString()
+                        ? "bg-yellow-50 border-yellow-500"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        user_id: teacher.id.toString(),
+                      }))
+                    }
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">
+                        {`${teacher.first_name} ${teacher.last_name}`}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {teacher.email}
+                      </span>
+                    </div>
+                  </div>
                 ))}
-              </select>
+              </div>
             </div>
 
             <div>
-              <label htmlFor="learner_group_id" className="block text-sm font-medium text-gray-700">
-                Learner Group
-              </label>
-              <select
-                id="learner_group_id"
-                name="learner_group_id"
-                value={formData.learner_group_id}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                required
+              <label
+                htmlFor="learner_group_id"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
-                <option value="">Select a learner group</option>
+                Select Learner Group
+              </label>
+              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
                 {learnerGroups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.name}
-                  </option>
+                  <div
+                    key={group.id}
+                    className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 ${
+                      formData.learner_group_id === group.id.toString()
+                        ? "bg-yellow-50 border-yellow-500"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        learner_group_id: group.id.toString(),
+                      }))
+                    }
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{group.name}</span>
+                      <span className="text-sm text-gray-500">
+                        Group ID: {group.id}
+                      </span>
+                    </div>
+                  </div>
                 ))}
-              </select>
+              </div>
             </div>
 
             <div>
-              <label htmlFor="student_teacher_group_id" className="block text-sm font-medium text-gray-700">
-                Student Teacher Group
-              </label>
-              <select
-                id="student_teacher_group_id"
-                name="student_teacher_group_id"
-                value={formData.student_teacher_group_id}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                required
+              <label
+                htmlFor="student_teacher_group_id"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
-                <option value="">Select a student teacher group</option>
+                Select Student Teacher Group
+              </label>
+              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
                 {studentTeacherGroups.map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.name}
-                  </option>
+                  <div
+                    key={group.id}
+                    className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 ${
+                      formData.student_teacher_group_id === group.id.toString()
+                        ? "bg-yellow-50 border-yellow-500"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        student_teacher_group_id: group.id.toString(),
+                      }))
+                    }
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{group.name}</span>
+                      <span className="text-sm text-gray-500">
+                        Group ID: {group.id}
+                      </span>
+                    </div>
+                  </div>
                 ))}
-              </select>
+              </div>
             </div>
 
             <div className="flex justify-end pt-4">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleClose}
                 disabled={isLoading}
                 className="px-4 py-2 border rounded-md hover:bg-gray-50 mr-2"
               >
