@@ -353,6 +353,50 @@ const requestNumericCode = async (studentEmail) => {
 };
 
 /**
+ * Requests a picture code sequence for very young student login.
+ *
+ * @async
+ * @function requestPictureCode
+ * @param {string} studentEmail - The student's email address
+ * @returns {Promise<object>} - Response with picture code sequence data
+ * @throws {Error} - If the request fails
+ */
+const requestPictureCode = async (studentEmail) => {
+  try {
+    const token = tokenService.getAccessToken();
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/auth/passwordless/picture-code`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: studentEmail }),
+      }
+    );
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      const errorMessage =
+        responseData?.error?.message || "Failed to generate picture login code";
+      throw new Error(errorMessage);
+    }
+
+    return responseData;
+  } catch (error) {
+    throw new Error(
+      error.message || "Network error. Please check your connection."
+    );
+  }
+};
+
+/**
  * Verifies a magic link token and logs the user in.
  *
  * @async
@@ -406,4 +450,5 @@ export {
   requestMagicLink,
   verifyMagicLinkToken,
   requestNumericCode,
+  requestPictureCode,
 };

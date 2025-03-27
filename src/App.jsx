@@ -63,6 +63,9 @@ const TeacherPages = {
   StudentCodeGenerator: lazy(() =>
     import("./pages/Teacher/StudentCodeGenerator")
   ),
+  PictureCodeGenerator: lazy(() =>
+    import("./pages/Teacher/PictureCodeGeneratorPage")
+  ),
 };
 
 const LearnerPages = {
@@ -288,6 +291,20 @@ function AppRoutes() {
                             ]}
                           >
                             <TeacherPages.StudentCodeGenerator />
+                          </RoleBasedRoute>
+                        }
+                      />
+                      <Route
+                        path="PictureCodeGenerator"
+                        element={
+                          <RoleBasedRoute
+                            allowedRoles={[
+                              "admin",
+                              "teacher",
+                              "student_teacher",
+                            ]}
+                          >
+                            <TeacherPages.PictureCodeGenerator />
                           </RoleBasedRoute>
                         }
                       />

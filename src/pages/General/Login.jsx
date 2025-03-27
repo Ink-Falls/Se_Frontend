@@ -11,6 +11,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import MagicLinkLogin from "../Auth/MagicLinkLogin";
 import NumericCodeLogin from "../Auth/NumericCodeLogin";
+import PictureCodeLogin from "../Auth/PictureCodeLogin";
 
 /**
  * Login component for user authentication.
@@ -25,7 +26,7 @@ function Login() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [loginMethod, setLoginMethod] = useState("password"); // 'password', 'magic-link', or 'numeric-code'
+  const [loginMethod, setLoginMethod] = useState("password"); // 'password', 'magic-link', 'numeric-code', or 'picture-code'
   const navigate = useNavigate();
   const recaptchaRef = useRef(null);
   const { checkAuth } = useAuth();
@@ -241,10 +242,10 @@ function Login() {
               </p>
 
               {/* Login method toggle */}
-              <div className="flex mb-[4vw] lg:mb-[1.5vw] border rounded overflow-hidden">
+              <div className="grid grid-cols-2 gap-1 mb-[4vw] lg:mb-[1.5vw] border rounded overflow-hidden">
                 <button
                   onClick={() => setLoginMethod("password")}
-                  className={`flex-1 py-[1vw] lg:py-[0.5vw] text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] font-medium ${
+                  className={`py-[1vw] lg:py-[0.5vw] text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] font-medium ${
                     loginMethod === "password"
                       ? "bg-[#F6BA18] text-[#212529]"
                       : "bg-gray-100 text-gray-500"
@@ -254,7 +255,7 @@ function Login() {
                 </button>
                 <button
                   onClick={() => setLoginMethod("magic-link")}
-                  className={`flex-1 py-[1vw] lg:py-[0.5vw] text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] font-medium ${
+                  className={`py-[1vw] lg:py-[0.5vw] text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] font-medium ${
                     loginMethod === "magic-link"
                       ? "bg-[#F6BA18] text-[#212529]"
                       : "bg-gray-100 text-gray-500"
@@ -264,13 +265,23 @@ function Login() {
                 </button>
                 <button
                   onClick={() => setLoginMethod("numeric-code")}
-                  className={`flex-1 py-[1vw] lg:py-[0.5vw] text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] font-medium ${
+                  className={`py-[1vw] lg:py-[0.5vw] text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] font-medium ${
                     loginMethod === "numeric-code"
                       ? "bg-[#F6BA18] text-[#212529]"
                       : "bg-gray-100 text-gray-500"
                   }`}
                 >
-                  Student Code
+                  Number Code
+                </button>
+                <button
+                  onClick={() => setLoginMethod("picture-code")}
+                  className={`py-[1vw] lg:py-[0.5vw] text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] font-medium ${
+                    loginMethod === "picture-code"
+                      ? "bg-[#F6BA18] text-[#212529]"
+                      : "bg-gray-100 text-gray-500"
+                  }`}
+                >
+                  Picture Login
                 </button>
               </div>
 
@@ -416,6 +427,11 @@ function Login() {
               {loginMethod === "numeric-code" && (
                 // Numeric Code Login Form
                 <NumericCodeLogin />
+              )}
+
+              {loginMethod === "picture-code" && (
+                // Picture Code Login Form
+                <PictureCodeLogin />
               )}
             </div>
           </div>
