@@ -161,7 +161,10 @@ function AdminCourses() {
       if (editingCourse) {
         try {
           const [teachers, learners, studentTeachers] = await Promise.all([
-            getTeachers(),
+            getTeachers({
+                page: 1,
+                limit: 0,
+            }),
             getGroupsByType("learner"),
             getGroupsByType("student_teacher"),
           ]);
