@@ -147,7 +147,21 @@ const checkRateLimit = async (url, options) => {
   return true;
 };
 
+const PUBLIC_ROUTES = [
+  "/login",
+  "/Enrollment",
+  "/Enrollment/New",
+  "/ForgotPassword",
+  "/EnrollConfirm",
+  "/VerifyCode",
+  "/ChangePassword",
+  "/PasswordConfirm",
+];
+
 const fetchWithInterceptor = async (url, options = {}, retryCount = 0) => {
+  // Skip token checks for public routes
+  const isPublicRoute = PUBLIC_ROUTES.some(route => url.includes(route));
+
   // Add token to headers
   const token = tokenService.getAccessToken();
   options.headers = {
@@ -190,8 +204,8 @@ const fetchWithInterceptor = async (url, options = {}, retryCount = 0) => {
     // Add credentials for cookie handling
     options.credentials = 'include';
 
-    // Check if token refresh is needed before request
-    if (tokenService.isTokenExpired() && !url.includes('/auth/refresh')) {
+    // Only check token refresh for protected routes
+    if (!isPublicRoute && tokenService.isTokenExpired() && !url.includes('/auth/refresh')) {
       try {
         const newToken = await tokenService.refreshToken();
         options.headers['Authorization'] = `Bearer ${newToken}`;

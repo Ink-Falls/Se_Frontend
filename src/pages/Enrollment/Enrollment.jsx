@@ -97,7 +97,7 @@ function Enrollment() {
                 <div className="flex justify-between items-center mt-[0.5vw] w-full">
                   {/* Enroll button */}
                   <button
-                    type="submit"
+                    type="button" // Changed from 'submit' to 'button'
                     onClick={() => navigate("/Enrollment/New")}
                     className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] mb-[2vw] mt-[2vw] lg:mb-[0vw] lg:mt-[0vw] lg:py-[0.4vw] lg:px-[2.5vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-bold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
                   >
