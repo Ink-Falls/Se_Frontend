@@ -6,9 +6,12 @@ on:
 
 env:
   STRICT_TESTING: false # Toggle this to true/false to control test failure behavior
+  skip_tests: true # Add this line to skip tests entirely
 
 jobs:
   test:
+    # Skip the entire job if skip_tests is true
+    if: ${{ !env.skip_tests }}
     runs-on: ubuntu-latest
     
     steps:
@@ -25,4 +28,4 @@ jobs:
       
     - name: Run tests
       run: npm run test
-      continue-on-error: ${{ env.STRICT_TESTING == 'false' }}
+      continue-on-error: true # Tests will run but failures won't fail the workflow

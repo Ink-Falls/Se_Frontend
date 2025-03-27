@@ -382,14 +382,10 @@ function App() {
       <ErrorBoundary>
         <MaintenanceProvider>
           <NetworkProvider>
-            {" "}
-            {/* Add NetworkProvider */}
             <AppProvider>
-              {" "}
-              {/* Global state management */}
               <AuthProvider>
                 <CourseProvider>
-                  <AppRoutes /> {/* All routes/components are children */}
+                  <AppRoutes /> 
                 </CourseProvider>
               </AuthProvider>
             </AppProvider>
