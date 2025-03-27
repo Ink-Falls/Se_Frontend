@@ -71,19 +71,33 @@ export const getAllUsers = async (options = {}) => {
  * @returns {Promise<Array>} Array of teacher objects
  * @throws {Error} If the API request fails
  */
-export const getTeachers = async () => {
+export const getTeachers = async (options = {}) => {
   try {
     const token = localStorage.getItem("token");
     if (!token) {
       throw new Error("Not authenticated");
     }
 
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/users`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const result = await getAllUsers();
+
+    if(options.limit === 0) {
+      options.limit = result.totalItems;
+    }
+
+    const params = new URLSearchParams({
+      page: Number(options.page) || 1,
+      limit: Number(options.limit) || 10,
+    }).toString();
+
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/users?${params}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error("Failed to fetch users");

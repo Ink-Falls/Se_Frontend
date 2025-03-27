@@ -144,7 +144,7 @@ function AdminDashboard() {
           studentTeacherGroupsData,
         ] = await Promise.all([
           getAllCourses(),
-          getAllUsers({ page: 1, limit: 1000 }), // Get all teachers
+          getAllUsers({ page: 1, limit: 0 }), // Get all teachers
           getGroupsByType("learner"),
           getGroupsByType("student_teacher"),
         ]);
@@ -236,12 +236,11 @@ function AdminDashboard() {
       // Fetch all users without pagination to get accurate counts
       const result = await getAllUsers({
         page: 1,
-        limit: 99999, // Large number to get all users
+        limit: 0, // Large number to get all users
       });
 
       if (result) {
         const roleCounts = result.roleCounts || [];
-      
         const totalUsers = result.totalItems; // Total users from API
         const totalLearners = roleCounts.find(role => role.role === 'learner')?.count || 0;
         const totalTeachers = roleCounts
