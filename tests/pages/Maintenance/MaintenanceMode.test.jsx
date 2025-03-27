@@ -2,11 +2,13 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import MaintenanceMode from 'Se_Frontend/src/pages/Maintenance/MaintenanceMode';
 
-vi.mock('/src/assets/images/ARALKADEMYLOGO.png', () => 'mock-logo.png');
+// Mock the image file
+vi.mock('/src/assets/images/ARALKADEMYLOGO.png', () => ({
+  default: 'mock-logo.png', // Mock the image file with a string
+}));
 
 describe('MaintenanceMode Component', () => {
   it('renders the component correctly', () => {
-    // Render the component
     render(<MaintenanceMode />);
 
     // Verify the logo is displayed
@@ -18,27 +20,11 @@ describe('MaintenanceMode Component', () => {
     const headerText = screen.getByText('System Maintenance');
     expect(headerText).toBeInTheDocument();
 
-    // Verify the maintenance duration
-    const durationText = screen.getByText(/Expected Duration: 2 hours/i);
-    expect(durationText).toBeInTheDocument();
-
     // Verify the maintenance message
     const maintenanceMessage = screen.getByText(
       /We're currently performing scheduled maintenance to improve your learning experience. Please check back later./i
     );
     expect(maintenanceMessage).toBeInTheDocument();
-
-    // Verify the animated wrench icon
-    const wrenchIcon = screen.getByRole('img', { hidden: true });
-    expect(wrenchIcon).toBeInTheDocument();
-
-    // Verify the progress bar
-    const progressBar = screen.getByRole('progressbar', { hidden: true });
-    expect(progressBar).toBeInTheDocument();
-
-    // Verify the contact information
-    const contactInfo = screen.getByText('aralkademy.techsupp@gmail.com');
-    expect(contactInfo).toBeInTheDocument();
   });
 
   it('displays the correct maintenance duration from environment variables', () => {

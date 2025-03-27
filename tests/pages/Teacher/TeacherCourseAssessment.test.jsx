@@ -1,12 +1,12 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
-import { CourseContext } from "Se_Frontend/src/contexts/CourseContext";
-import TeacherCourseAssessment from "Se_Frontend/src/pages/Teacher/TeacherCourseAssessment";
-import { getCourseAssessments, deleteAssessment } from "Se_Frontend/src/services/assessmentService";
+import { CourseContext } from "../../../src/contexts/CourseContext";
+import TeacherCourseAssessment from "../../../src/pages/Teacher/TeacherCourseAssessment";
+import { getCourseAssessments, deleteAssessment } from "../../../src/services/assessmentService";
 
 // Mock API Services
-vi.mock("Se_Frontend/src/services/assessmentService", () => ({
+vi.mock("../../../src/services/assessmentService", () => ({
   getCourseAssessments: vi.fn(),
   deleteAssessment: vi.fn(),
 }));
