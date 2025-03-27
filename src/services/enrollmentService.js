@@ -64,10 +64,8 @@ const approveEnrollment = async (enrollmentId) => {
     const adminId = tokenPayload.id;
 
     const url = `${API_BASE_URL}/enrollments/${enrollmentId}/approve`;
-    console.log("Making PATCH request to:", url);
 
     // First get the enrollment details
-    console.log("Fetching enrollment details for ID:", enrollmentId);
     const enrollment = await getEnrollmentById(enrollmentId);
 
     if (!enrollment) {
@@ -85,8 +83,6 @@ const approveEnrollment = async (enrollmentId) => {
       status: "approved",
     };
 
-    console.log("Request body:", JSON.stringify(requestBody, null, 2));
-
     const response = await fetchWithInterceptor(url, {
       method: "PATCH",
       headers: {
@@ -103,7 +99,6 @@ const approveEnrollment = async (enrollmentId) => {
     }
 
     const data = await response.json();
-    console.log("Server response:", JSON.stringify(data, null, 2));
     return data;
   } catch (error) {
     console.error("Error in approveEnrollment:", error);
@@ -135,18 +130,12 @@ const rejectEnrollment = async (enrollmentId) => {
     const adminId = tokenPayload.id;
 
     const url = `${API_BASE_URL}/enrollments/${enrollmentId}/reject`;
-    console.log("Making PATCH request to:", url);
 
     const requestBody = {
       enrollmentId,
       adminId,
     };
 
-    console.log("Request headers:", {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    });
-    console.log("Request body:", JSON.stringify(requestBody, null, 2));
 
     const response = await fetchWithInterceptor(url, {
       method: "PATCH",
@@ -164,7 +153,6 @@ const rejectEnrollment = async (enrollmentId) => {
     }
 
     const data = await response.json();
-    console.log("Server response:", JSON.stringify(data, null, 2));
     return data;
   } catch (error) {
     console.error("Error in rejectEnrollment:", error);
