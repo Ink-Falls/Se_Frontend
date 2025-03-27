@@ -2,6 +2,8 @@ import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CourseProvider } from "./contexts/CourseContext";
+import { AppProvider } from "./contexts/AppContext";
+import { NetworkProvider } from "./contexts/NetworkContext";  // Add this import
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import LoadingSpinner from "./components/common/LoadingSpinner";
 import { MaintenanceProvider, useMaintenance } from './contexts/MaintenanceContext';
@@ -161,11 +163,21 @@ function AppRoutes() {
 
 function App() {
   return (
-    <MaintenanceProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
-    </MaintenanceProvider>
+    <Router>
+      <ErrorBoundary>
+        <MaintenanceProvider>
+          <NetworkProvider>    {/* Add NetworkProvider */}
+            <AppProvider>      {/* Global state management */}
+              <AuthProvider>    
+                <CourseProvider>
+                  <AppRoutes />  {/* All routes/components are children */}
+                </CourseProvider>
+              </AuthProvider>
+            </AppProvider>
+          </NetworkProvider>
+        </MaintenanceProvider>
+      </ErrorBoundary>
+    </Router>
   );
 }
 
