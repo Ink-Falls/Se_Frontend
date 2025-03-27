@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
-import { Book, Bell, AlertTriangle, InboxIcon } from "lucide-react";
+import {
+  Book,
+  Bell,
+  AlertTriangle,
+  InboxIcon,
+  Hash,
+  Image,
+} from "lucide-react";
 import Header from "../../components/common/layout/Header";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import { getTeacherCourses } from "../../services/courseService";
@@ -21,6 +28,16 @@ const Dashboard = () => {
       text: "Notifications",
       icon: <Bell size={20} />,
       route: "/Teacher/Notifications",
+    },
+    {
+      text: "Number Codes (4-6)",
+      icon: <Hash size={20} />,
+      route: "/Teacher/StudentCodeGenerator",
+    },
+    {
+      text: "Picture Codes (1-3)",
+      icon: <Image size={20} />,
+      route: "/Teacher/PictureCodeGenerator",
     },
   ];
 
