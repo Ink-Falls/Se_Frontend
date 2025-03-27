@@ -1,6 +1,5 @@
 import React from "react";
 import NumericCodeGenerator from "../Teacher/NumericCodeGenerator";
-import withAuth from "../../hoc/withAuth";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
@@ -69,8 +68,4 @@ function StudentCodeGenerator() {
   );
 }
 
-export default withAuth(StudentCodeGenerator, [
-  "admin",
-  "teacher",
-  "student_teacher",
-]);
+export default StudentCodeGenerator;
