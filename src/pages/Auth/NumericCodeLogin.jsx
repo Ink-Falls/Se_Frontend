@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { verifyMagicLinkToken } from "../../services/authService";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 function NumericCodeLogin() {
   const navigate = useNavigate();
+  const { checkAuth } = useAuth();
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -74,10 +76,14 @@ function NumericCodeLogin() {
         // Store user data if available
         if (response.user) {
           localStorage.setItem("user", JSON.stringify(response.user));
+        }
 
-          // Determine correct dashboard based on user role
-          let dashboardRoute = "/Learner/Dashboard";
+        await checkAuth();
+
+        // Determine correct dashboard based on user role
+        if (response.user) {
           const role = response.user.role?.toLowerCase();
+          let dashboardRoute = "/Learner/Dashboard";
 
           if (role === "admin") {
             dashboardRoute = "/Admin/Dashboard";
@@ -85,15 +91,10 @@ function NumericCodeLogin() {
             dashboardRoute = "/Teacher/Dashboard";
           }
 
-          // Navigate to the appropriate dashboard
-          setTimeout(() => {
-            navigate(dashboardRoute);
-          }, 100);
+          navigate(dashboardRoute, { replace: true });
         } else {
           // Default navigation if no user data
-          setTimeout(() => {
-            navigate("/Learner/Dashboard");
-          }, 100);
+          navigate("/Learner/Dashboard", { replace: true });
         }
       } else {
         throw new Error("Invalid response from server");

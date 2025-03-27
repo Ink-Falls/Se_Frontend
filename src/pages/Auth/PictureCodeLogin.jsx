@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { verifyMagicLinkToken } from "../../services/authService";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext"; // Add this import
+import { useAuth } from "../../contexts/AuthContext";
 
 import dogImage from "../../assets/images/picture-codes/dog.png";
 import catImage from "../../assets/images/picture-codes/cat.png";
