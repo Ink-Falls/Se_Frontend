@@ -23,6 +23,7 @@ import {
   deleteEnrollment,
 } from "/src/services/enrollmentService.js";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 function AdminEnrollment() {
   const [enrollees, setEnrollees] = useState([]);
@@ -348,14 +349,9 @@ function AdminEnrollment() {
 
   return (
     <div className="flex h-screen bg-gray-100 relative pb-16">
-      {" "}
-      {/* Added pb-16 */}
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto pb-16">
-        {" "}
-        {/* Added pb-16 */}
         <Header title="Manage Enrollments" />
-        {/* Add success/error message display */}
         {successMessage && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
             {successMessage}
@@ -366,20 +362,43 @@ function AdminEnrollment() {
             {error}
           </div>
         )}
-        <div className="mt-4">
-          <EnrolleeStats
-            totalEnrollees={totalItems}
-            approvedEnrollees={approvedCount}
-            pendingEnrollees={pendingCount}
-            rejectedEnrollees={rejectedCount}
-          />
-        </div>
-        <div className="bg-white shadow rounded-lg p-6 mt-4">
-          {" "}
-          {/* Added p-6 class */}
+
+        {/* Loading skeleton for EnrolleeStats */}
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-white p-6 rounded-lg shadow animate-pulse"
+              >
+                <div className="h-4 bg-gray-200 rounded-full w-20 mb-3"></div>
+                <div className="h-8 bg-gray-200 rounded-full w-16"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-4">
+            <EnrolleeStats
+              totalEnrollees={totalItems}
+              approvedEnrollees={approvedCount}
+              pendingEnrollees={pendingCount}
+              rejectedEnrollees={rejectedCount}
+            />
+          </div>
+        )}
+
+        <div className="bg-white shadow rounded-lg p-6">
           {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#212529]"></div>
+            <div className="space-y-4">
+              <div className="h-8 bg-gray-200 rounded-full w-1/4 animate-pulse"></div>
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-16 bg-gray-200 rounded-lg animate-pulse"
+                  ></div>
+                ))}
+              </div>
             </div>
           ) : error ? (
             <ErrorState />

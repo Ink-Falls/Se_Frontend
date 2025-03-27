@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from '../../../src/contexts/AuthContext'; // Import AuthProvider
 import AdminEnrollment from '../../../src/pages/Admin/AdminEnrollment';
 import * as enrollmentService from '../../../src/services/enrollmentService';
 
@@ -56,12 +57,17 @@ describe('AdminEnrollment Component', () => {
         enrollmentService.deleteEnrollment.mockResolvedValue({ success: true });
     });
 
-    it('renders the component with initial loading state', () => {
+    const renderComponent = () =>
         render(
-            <BrowserRouter>
-                <AdminEnrollment />
-            </BrowserRouter>
+            <AuthProvider> {/* Wrap with AuthProvider */}
+                <BrowserRouter>
+                    <AdminEnrollment />
+                </BrowserRouter>
+            </AuthProvider>
         );
+
+    it('renders the component with initial loading state', () => {
+        renderComponent();
 
         expect(screen.getByTestId('header')).toHaveTextContent(
             'Manage Enrollments'
@@ -71,11 +77,7 @@ describe('AdminEnrollment Component', () => {
     });
 
     it('fetches and displays enrollment data', async () => {
-        render(
-            <BrowserRouter>
-                <AdminEnrollment />
-            </BrowserRouter>
-        );
+        renderComponent();
 
         await waitFor(() => {
             expect(enrollmentService.getAllEnrollments).toHaveBeenCalledTimes(
@@ -87,11 +89,7 @@ describe('AdminEnrollment Component', () => {
     });
 
     it('handles enrollment approval correctly', async () => {
-        render(
-            <BrowserRouter>
-                <AdminEnrollment />
-            </BrowserRouter>
-        );
+        renderComponent();
 
         await waitFor(() => {
             fireEvent.click(screen.getByText('Approve'));
@@ -102,11 +100,7 @@ describe('AdminEnrollment Component', () => {
     });
 
     it('handles enrollment rejection correctly', async () => {
-        render(
-            <BrowserRouter>
-                <AdminEnrollment />
-            </BrowserRouter>
-        );
+        renderComponent();
 
         await waitFor(() => {
             fireEvent.click(screen.getByText('Reject'));
@@ -117,11 +111,7 @@ describe('AdminEnrollment Component', () => {
     });
 
     it('handles enrollment deletion correctly', async () => {
-        render(
-            <BrowserRouter>
-                <AdminEnrollment />
-            </BrowserRouter>
-        );
+        renderComponent();
 
         await waitFor(() => {
             fireEvent.click(screen.getByText('Delete'));
@@ -139,11 +129,7 @@ describe('AdminEnrollment Component', () => {
             new Error('API Error')
         );
 
-        render(
-            <BrowserRouter>
-                <AdminEnrollment />
-            </BrowserRouter>
-        );
+        renderComponent();
 
         await waitFor(() => {
             expect(consoleError).toHaveBeenCalled();
@@ -153,11 +139,7 @@ describe('AdminEnrollment Component', () => {
     });
 
     it('updates pagination correctly', async () => {
-        render(
-            <BrowserRouter>
-                <AdminEnrollment />
-            </BrowserRouter>
-        );
+        renderComponent();
 
         await waitFor(() => {
             expect(enrollmentService.getAllEnrollments).toHaveBeenCalledWith(1);
@@ -166,9 +148,11 @@ describe('AdminEnrollment Component', () => {
         // Mock the EnrolleeTable's onPageChange call
         const mockOnPageChange = vi.fn();
         render(
-            <BrowserRouter>
-                <AdminEnrollment onPageChange={mockOnPageChange} />
-            </BrowserRouter>
+            <AuthProvider>
+                <BrowserRouter>
+                    <AdminEnrollment onPageChange={mockOnPageChange} />
+                </BrowserRouter>
+            </AuthProvider>
         );
     });
 });
