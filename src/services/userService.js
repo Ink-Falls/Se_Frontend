@@ -78,6 +78,12 @@ export const getTeachers = async (options = {}) => {
       throw new Error("Not authenticated");
     }
 
+    const result = await getAllUsers();
+
+    if(options.limit === 0) {
+      options.limit = result.totalItems;
+    }
+
     const params = new URLSearchParams({
       page: Number(options.page) || 1,
       limit: Number(options.limit) || 10,
