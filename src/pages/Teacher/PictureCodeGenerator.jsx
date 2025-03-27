@@ -1,6 +1,32 @@
 import React, { useState } from "react";
 import { requestPictureCode } from "../../services/authService";
 
+import dogImage from "../../assets/images/picture-codes/dog.png";
+import catImage from "../../assets/images/picture-codes/cat.png";
+import fishImage from "../../assets/images/picture-codes/fish.png";
+import appleImage from "../../assets/images/picture-codes/apple.png";
+import ballImage from "../../assets/images/picture-codes/ball.png";
+import elephantImage from "../../assets/images/picture-codes/elephant.png";
+import giraffeImage from "../../assets/images/picture-codes/giraffe.png";
+import houseImage from "../../assets/images/picture-codes/house.png";
+import iceCreamImage from "../../assets/images/picture-codes/iceCream.png";
+import kiteImage from "../../assets/images/picture-codes/kite.png";
+
+const IMAGE_MAP = {
+  dog: dogImage,
+  cat: catImage,
+  fish: fishImage,
+  apple: appleImage,
+  ball: ballImage,
+  elephant: elephantImage,
+  giraffe: giraffeImage,
+  house: houseImage,
+  "ice-cream": iceCreamImage,
+  icecream: iceCreamImage,
+  "ice cream": iceCreamImage,
+  kite: kiteImage,
+};
+
 function PictureCodeGenerator() {
   const [studentEmail, setStudentEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -77,25 +103,42 @@ function PictureCodeGenerator() {
 
     return (
       <div className="flex items-center justify-center space-x-3">
-        {pictures.map((pic, index) => (
-          <div
-            key={index}
-            className="border-2 border-gray-300 rounded-md p-2 bg-white shadow-sm"
-          >
-            {/* Handle both URL string format and object format */}
-            <img
-              src={typeof pic === "string" ? pic : pic.url || pic.image || ""}
-              alt={`Picture ${index + 1}`}
-              className="w-16 h-16 object-contain"
-              onError={(e) => {
-                console.error("Image failed to load:", e.target.src);
-                e.target.src = "https://via.placeholder.com/100?text=Error";
-                e.target.alt = "Image not available";
-              }}
-            />
-            <p className="text-center text-xs mt-1 font-medium">{index + 1}</p>
-          </div>
-        ))}
+        {pictures.map((pic, index) => {
+          // Get the appropriate image based on the name
+          let imgSrc;
+
+          if (typeof pic === "string") {
+            // Convert the string to lowercase for case-insensitive matching
+            const picLower = pic.toLowerCase();
+            imgSrc = IMAGE_MAP[picLower] || null;
+          } else if (pic.url) {
+            imgSrc = pic.url;
+          } else if (pic.image) {
+            imgSrc = pic.image;
+          }
+
+          return (
+            <div
+              key={index}
+              className="border-2 border-gray-300 rounded-md p-2 bg-white shadow-sm"
+            >
+              {imgSrc ? (
+                <img
+                  src={imgSrc}
+                  alt={`Picture ${index + 1}`}
+                  className="w-16 h-16 object-contain"
+                />
+              ) : (
+                <div className="w-16 h-16 flex items-center justify-center bg-gray-100 text-gray-500 text-xs">
+                  Image not found
+                </div>
+              )}
+              <p className="text-center text-xs mt-1 font-medium">
+                {index + 1}
+              </p>
+            </div>
+          );
+        })}
       </div>
     );
   };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { verifyMagicLinkToken } from "../../services/authService";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext"; // Add this import
 
 import dogImage from "../../assets/images/picture-codes/dog.png";
 import catImage from "../../assets/images/picture-codes/cat.png";
@@ -26,8 +27,22 @@ const SAMPLE_PICTURES = [
   { id: 10, url: kiteImage, name: "Kite" },
 ];
 
+const ID_TO_NAME_MAP = {
+  1: "dog",
+  2: "cat",
+  3: "fish",
+  4: "apple",
+  5: "ball",
+  6: "elephant",
+  7: "giraffe",
+  8: "house",
+  9: "ice-cream",
+  10: "kite",
+};
+
 function PictureCodeLogin() {
   const navigate = useNavigate();
+  const { checkAuth } = useAuth();
   const [selectedPictures, setSelectedPictures] = useState([]);
   const [pictures, setPictures] = useState(SAMPLE_PICTURES);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,27 +80,43 @@ function PictureCodeLogin() {
     setError(null);
 
     try {
-      // Create a code from the picture IDs
-      const pictureCode = selectedPictures.map((p) => p.id).join("-");
+      // Create a code from picture NAMES not IDs
+      const pictureCode = selectedPictures
+        .map((p) => ID_TO_NAME_MAP[p.id])
+        .join("-");
 
-      // Use the same verification endpoint with the picture code
+      // Use the verification endpoint with the picture code
       const response = await verifyMagicLinkToken(pictureCode);
 
-      // Store tokens from response
-      if (response && response.tokens) {
-        localStorage.setItem("accessToken", response.tokens.accessToken);
-        localStorage.setItem("refreshToken", response.tokens.refreshToken);
+      // Store tokens using the direct format from backend
+      if (response) {
+        // Set tokens using the correct format
+        localStorage.setItem("accessToken", response.token || "");
+        localStorage.setItem("refreshToken", response.refreshToken || "");
 
+        // Store user data if available
         if (response.user) {
           localStorage.setItem("user", JSON.stringify(response.user));
         }
+
+        // Update auth context - critical step
+        await checkAuth();
       }
 
       setSuccess(true);
 
       // Redirect after a short delay to show success animation
       setTimeout(() => {
-        navigate("/Learner/Dashboard");
+        const role = response.user?.role?.toLowerCase();
+        let dashboardRoute = "/Learner/Dashboard";
+
+        if (role === "admin") {
+          dashboardRoute = "/Admin/Dashboard";
+        } else if (role === "teacher" || role === "student_teacher") {
+          dashboardRoute = "/Teacher/Dashboard";
+        }
+
+        navigate(dashboardRoute);
       }, 1500);
     } catch (err) {
       console.error("Picture verification failed:", err);

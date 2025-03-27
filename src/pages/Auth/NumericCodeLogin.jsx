@@ -51,20 +51,50 @@ function NumericCodeLogin() {
       // Use the same verification endpoint as magic links
       const response = await verifyMagicLinkToken(fullCode);
 
-      // Store the tokens in localStorage
-      if (response && response.tokens) {
-        localStorage.setItem("accessToken", response.tokens.accessToken);
-        localStorage.setItem("refreshToken", response.tokens.refreshToken);
-
-        // Optional: If you have user data in the response
-        if (response.user) {
-          localStorage.setItem("user", JSON.stringify(response.user));
+      // Handle both response structures
+      if (response) {
+        // Store access token (handle both formats)
+        if (response.tokens?.accessToken) {
+          localStorage.setItem("accessToken", response.tokens.accessToken);
+        } else if (response.token) {
+          localStorage.setItem("accessToken", response.token);
+        } else {
+          throw new Error("No access token found in response");
         }
 
-        // Add a small delay to ensure tokens are stored before navigation
-        setTimeout(() => {
-          navigate("/Learner/Dashboard");
-        }, 100);
+        // Store refresh token (handle both formats)
+        if (response.tokens?.refreshToken) {
+          localStorage.setItem("refreshToken", response.tokens.refreshToken);
+        } else if (response.refreshToken) {
+          localStorage.setItem("refreshToken", response.refreshToken);
+        } else {
+          throw new Error("No refresh token found in response");
+        }
+
+        // Store user data if available
+        if (response.user) {
+          localStorage.setItem("user", JSON.stringify(response.user));
+
+          // Determine correct dashboard based on user role
+          let dashboardRoute = "/Learner/Dashboard";
+          const role = response.user.role?.toLowerCase();
+
+          if (role === "admin") {
+            dashboardRoute = "/Admin/Dashboard";
+          } else if (role === "teacher" || role === "student_teacher") {
+            dashboardRoute = "/Teacher/Dashboard";
+          }
+
+          // Navigate to the appropriate dashboard
+          setTimeout(() => {
+            navigate(dashboardRoute);
+          }, 100);
+        } else {
+          // Default navigation if no user data
+          setTimeout(() => {
+            navigate("/Learner/Dashboard");
+          }, 100);
+        }
       } else {
         throw new Error("Invalid response from server");
       }
