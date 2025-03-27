@@ -231,287 +231,292 @@ const GroupDetailsModal = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
       <div
-        className={`bg-white rounded-2xl shadow-lg w-[700px] p-8 relative ${
+        className={`bg-white rounded-2xl shadow-lg w-full max-w-[700px] max-h-[90vh] relative ${
           animate ? "opacity-100 scale-100" : "opacity-0 scale-95"
         }`}
       >
-        <button
-          aria-label="Close"
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-          onClick={onClose}
-        >
-          <X size={24} />
-        </button>
-
-        <h2 className="text-2xl font-bold mb-6">Group List</h2>
-
-        <div className="flex space-x-4 mb-6">
+        <div className="overflow-y-auto h-full max-h-[90vh] px-4 md:px-8 py-6 pr-6 md:pr-10">
           <button
-            className={`px-4 py-2 rounded-lg ${
-              activeTab === "groups"
-                ? "bg-[#F6BA18] text-white"
-                : "bg-gray-100 text-gray-600"
-            }`}
-            onClick={() => setActiveTab("groups")}
+            aria-label="Close"
+            className="absolute top-6 right-4 md:right-8 text-gray-500 hover:text-gray-700"
+            onClick={onClose}
           >
-            Existing Groups
+            <X size={24} />
           </button>
-          <button
-            className={`px-4 py-2 rounded-lg ${
-              activeTab === "members"
-                ? "bg-[#F6BA18] text-white"
-                : "bg-gray-100 text-gray-600"
-            }`}
-            onClick={() => setActiveTab("members")}
-          >
-            Available Members
-          </button>
-        </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
-            {error}
+          <h2 className="text-2xl font-bold mb-6">Group List</h2>
+
+          <div className="flex flex-col md:flex-row gap-2 md:space-x-4 mb-6">
+            <button
+              className={`px-4 py-2 rounded-lg flex-1 md:flex-none ${
+                activeTab === "groups"
+                  ? "bg-[#F6BA18] text-white"
+                  : "bg-gray-100 text-gray-600"
+              }`}
+              onClick={() => setActiveTab("groups")}
+            >
+              Existing Groups
+            </button>
+            <button
+              className={`px-4 py-2 rounded-lg flex-1 md:flex-none ${
+                activeTab === "members"
+                  ? "bg-[#F6BA18] text-white"
+                  : "bg-gray-100 text-gray-600"
+              }`}
+              onClick={() => setActiveTab("members")}
+            >
+              Available Members
+            </button>
           </div>
-        )}
 
-        {successMessage && (
-          <div className="mb-4 p-3 bg-green-100 text-green-600 rounded-lg">
-            {successMessage}
-          </div>
-        )}
-
-        {activeTab === "groups" ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <Users size={20} />
-                <h3 className="text-lg font-semibold">
-                  Existing Groups ({existingGroups?.length || 0})
-                </h3>
-              </div>
-              {selectedGroups.length > 0 && (
-                <button
-                  onClick={handleDeleteSelected}
-                  className="flex items-center gap-2 px-3 py-1 text-red-600 hover:text-red-800"
-                >
-                  <Trash2 size={18} />
-                  <span>Delete Selected ({selectedGroups.length})</span>
-                </button>
-              )}
+          {/* Error and Success Messages */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
+              {error}
             </div>
+          )}
 
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {existingGroups.map((group) => (
-                <div
-                  key={group.id}
-                  className="flex items-center space-x-4 bg-gray-50 p-3 rounded-lg"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedGroups.includes(group.id)}
-                    onChange={() => handleGroupSelect(group.id)}
-                    className="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
-                  />
-                  <div className="flex flex-1 items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="font-medium">{group.name}</span>
-                      <div className="flex gap-4 text-sm text-gray-600">
-                        <span className="capitalize">{group.groupType}</span>
-                        <span>|</span>
-                        <span>ID: {group.id}</span>
-                      </div>
-                      {/* Add members list if this group's members are loaded */}
-                      {selectedGroupMembers.length > 0 &&
-                        group.id === selectedGroupMembers[0]?.groupId && (
-                          <div className="mt-2 pl-4 border-l-2 border-gray-200">
-                            <p className="text-sm font-medium text-gray-600 mb-1">
-                              Members:
-                            </p>
-                            <div className="space-y-1">
-                              {selectedGroupMembers.map((member) => (
-                                <div
-                                  key={member.id}
-                                  className="flex items-center justify-between text-sm text-gray-600 p-2 hover:bg-gray-100 rounded"
-                                >
-                                  <span>
-                                    {member.first_name} {member.last_name} (
-                                    {member.role})
-                                  </span>
-                                  <button
-                                    onClick={() =>
-                                      handleRemoveMember(group, member)
-                                    }
-                                    className="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors"
-                                    disabled={loadingMembers}
-                                    title="Remove member"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
+          {successMessage && (
+            <div className="mb-4 p-3 bg-green-100 text-green-600 rounded-lg">
+              {successMessage}
+            </div>
+          )}
+
+          {activeTab === "groups" ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <Users size={20} />
+                  <h3 className="text-lg font-semibold">
+                    Existing Groups ({existingGroups?.length || 0})
+                  </h3>
+                </div>
+                {selectedGroups.length > 0 && (
+                  <button
+                    onClick={handleDeleteSelected}
+                    className="flex items-center gap-2 px-3 py-1 text-red-600 hover:text-red-800"
+                  >
+                    <Trash2 size={18} />
+                    <span>Delete Selected ({selectedGroups.length})</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-2 max-h-[250px] md:max-h-[400px] overflow-y-auto pr-2">
+                {existingGroups.map((group) => (
+                  <div
+                    key={group.id}
+                    className="flex items-center space-x-4 bg-gray-50 p-3 rounded-lg"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedGroups.includes(group.id)}
+                      onChange={() => handleGroupSelect(group.id)}
+                      className="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                    />
+                    <div className="flex flex-1 items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{group.name}</span>
+                        <div className="flex gap-4 text-sm text-gray-600">
+                          <span className="capitalize">{group.groupType}</span>
+                          <span>|</span>
+                          <span>ID: {group.id}</span>
+                          {/* Add members list if this group's members are loaded */}
+                          {selectedGroupMembers.length > 0 &&
+                            group.id === selectedGroupMembers[0]?.groupId && (
+                              <div className="mt-2 pl-4 border-l-2 border-gray-200">
+                                <p className="text-sm font-medium text-gray-600 mb-1">
+                                  Members:
+                                </p>
+                                <div className="space-y-1">
+                                  {selectedGroupMembers.map((member) => (
+                                    <div
+                                      key={member.id}
+                                      className="flex items-center justify-between text-sm text-gray-600 p-2 hover:bg-gray-100 rounded"
+                                    >
+                                      <span>
+                                        {member.first_name} {member.last_name} (
+                                        {member.role})
+                                      </span>
+                                      <button
+                                        onClick={() =>
+                                          handleRemoveMember(group, member)
+                                        }
+                                        className="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors"
+                                        disabled={loadingMembers}
+                                        title="Remove member"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleViewMembers(group)}
-                        className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800"
-                        disabled={loadingMembers}
-                      >
-                        {loadingMembers ? (
-                          <Loader className="animate-spin" size={16} />
-                        ) : (
-                          <Users size={16} />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleUpdateGroup(group)}
-                        className="p-1 text-gray-600 hover:text-yellow-600"
-                      >
-                        <PencilIcon size={16} />
-                      </button>
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          group.groupType === "learner"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {group.groupType}
-                      </span>
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => handleViewMembers(group)}
+                          className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800"
+                          disabled={loadingMembers}
+                        >
+                          {loadingMembers ? (
+                            <Loader className="animate-spin" size={16} />
+                          ) : (
+                            <Users size={16} />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleUpdateGroup(group)}
+                          className="p-1 text-gray-600 hover:text-yellow-600"
+                        >
+                          <PencilIcon size={16} />
+                        </button>
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            group.groupType === "learner"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-green-100 text-green-800"
+                          }`}
+                        >
+                          {group.groupType}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <Users size={20} />
-                <h3 className="text-lg font-semibold">
-                  Available Members ({availableMembers.length})
-                </h3>
-              </div>
-              <select
-                value={memberType}
-                onChange={(e) => setMemberType(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="learner">Learners</option>
-                <option value="student_teacher">Student Teachers</option>
-              </select>
-            </div>
-
-            <div className="flex items-center justify-between mb-4">
-              <select
-                value={selectedGroupForAssignment?.id || ""}
-                onChange={(e) => {
-                  const group = existingGroups.find(
-                    (g) => g.id === parseInt(e.target.value)
-                  );
-                  setSelectedGroupForAssignment(group);
-                }}
-                className="px-3 py-2 border border-gray-300 rounded-lg"
-              >
-                <option value="">Select a group to assign to...</option>
-                {getCompatibleGroups(memberType).map((group) => (
-                  <option key={group.id} value={group.id}>
-                    {group.name} ({group.groupType})
-                  </option>
                 ))}
-              </select>
-            </div>
-
-            {isLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader className="animate-spin" size={24} />
               </div>
-            ) : (
-              <div className="max-h-[400px] overflow-y-auto pr-2">
-                {" "}
-                {/* Added max height and scroll */}
-                {availableMembers.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between bg-gray-50 p-3 rounded-lg mb-2"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedAvailableMembers.includes(member.id)}
-                        onChange={() => handleSelectAvailableMember(member.id)}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      <div className="flex flex-col">
-                        <span className="font-medium">
-                          {member.first_name} {member.last_name}
-                        </span>
-                        <div className="flex gap-4 text-sm text-gray-600">
-                          <span>{member.email}</span>
-                          <span>|</span>
-                          <span>ID: {member.school_id}</span>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <Users size={20} />
+                  <h3 className="text-lg font-semibold">
+                    Available Members ({availableMembers.length})
+                  </h3>
+                </div>
+                <select
+                  value={memberType}
+                  onChange={(e) => setMemberType(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="learner">Learners</option>
+                  <option value="student_teacher">Student Teachers</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-between mb-4">
+                <select
+                  value={selectedGroupForAssignment?.id || ""}
+                  onChange={(e) => {
+                    const group = existingGroups.find(
+                      (g) => g.id === parseInt(e.target.value)
+                    );
+                    setSelectedGroupForAssignment(group);
+                  }}
+                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="">Select a group to assign to...</option>
+                  {getCompatibleGroups(memberType).map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name} ({group.groupType})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {isLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader className="animate-spin" size={24} />
+                </div>
+              ) : (
+                <div className="max-h-[200px] md:max-h-[300px] overflow-y-auto pr-2">
+                  {" "}
+                  {/* Added max height and scroll */}
+                  {availableMembers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between bg-gray-50 p-3 rounded-lg mb-2"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedAvailableMembers.includes(member.id)}
+                          onChange={() =>
+                            handleSelectAvailableMember(member.id)
+                          }
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            {member.first_name} {member.last_name}
+                          </span>
+                          <div className="flex gap-4 text-sm text-gray-600">
+                            <span>{member.email}</span>
+                            <span>|</span>
+                            <span>ID: {member.school_id}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
 
-            {selectedAvailableMembers.length > 0 && (
-              <div className="flex justify-end mt-4 items-center gap-4">
-                <span className="text-sm text-gray-600">
-                  {selectedGroupForAssignment
-                    ? `Assigning to: ${selectedGroupForAssignment.name}`
-                    : "Please select a group"}
-                </span>
-                <button
-                  onClick={handleAssignMembers}
-                  disabled={assigningMembers || !selectedGroupForAssignment}
-                  className="px-4 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#F6BA18] hover:text-black transition-colors disabled:opacity-50"
-                >
-                  {assigningMembers
-                    ? "Assigning..."
-                    : `Assign Selected (${selectedAvailableMembers.length})`}
-                </button>
-              </div>
-            )}
-          </div>
+              {selectedAvailableMembers.length > 0 && (
+                <div className="flex justify-end mt-4 items-center gap-4">
+                  <span className="text-sm text-gray-600">
+                    {selectedGroupForAssignment
+                      ? `Assigning to: ${selectedGroupForAssignment.name}`
+                      : "Please select a group"}
+                  </span>
+                  <button
+                    onClick={handleAssignMembers}
+                    disabled={assigningMembers || !selectedGroupForAssignment}
+                    className="px-4 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#F6BA18] hover:text-black transition-colors disabled:opacity-50"
+                  >
+                    {assigningMembers
+                      ? "Assigning..."
+                      : `Assign Selected (${selectedAvailableMembers.length})`}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Add GroupMembersModal */}
+        {showMembersModal && selectedGroup && (
+          <GroupMembersModal
+            isOpen={showMembersModal}
+            onClose={() => {
+              setShowMembersModal(false);
+              setSelectedGroup(null);
+              setSelectedGroupMembers([]);
+            }}
+            group={selectedGroup}
+            members={selectedGroupMembers}
+            isLoading={loadingMembers}
+            onMemberRemoved={handleMemberRemoved}
+          />
+        )}
+
+        {showEditModal && editingGroup && (
+          <EditGroupModal
+            group={editingGroup}
+            isOpen={showEditModal}
+            onClose={() => {
+              setShowEditModal(false);
+              setEditingGroup(null);
+            }}
+            onUpdate={handleGroupUpdated}
+          />
         )}
       </div>
-
-      {/* Add GroupMembersModal */}
-      {showMembersModal && selectedGroup && (
-        <GroupMembersModal
-          isOpen={showMembersModal}
-          onClose={() => {
-            setShowMembersModal(false);
-            setSelectedGroup(null);
-            setSelectedGroupMembers([]);
-          }}
-          group={selectedGroup}
-          members={selectedGroupMembers}
-          isLoading={loadingMembers}
-          onMemberRemoved={handleMemberRemoved}
-        />
-      )}
-
-      {showEditModal && editingGroup && (
-        <EditGroupModal
-          group={editingGroup}
-          isOpen={showEditModal}
-          onClose={() => {
-            setShowEditModal(false);
-            setEditingGroup(null);
-          }}
-          onUpdate={handleGroupUpdated}
-        />
-      )}
     </div>
   );
 };
