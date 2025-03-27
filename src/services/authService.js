@@ -34,7 +34,7 @@ const handleAuthErrors = (status, data) => {
 const loginUser = async (email, password, captchaResponse) => {
   // console.log('🔑 Attempting login for:', email);
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, captchaResponse }),
@@ -90,7 +90,7 @@ const logoutUser = async () => {
     // Only attempt server logout if token exists and appears valid
     if (token && token.split(".").length === 3) {
       try {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
+        await fetchWithInterceptor(`${API_BASE_URL}/auth/logout`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -122,7 +122,7 @@ const logoutUser = async () => {
  */
 const forgotPassword = async (email) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/users/forgot-password`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/users/forgot-password`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -158,7 +158,7 @@ const forgotPassword = async (email) => {
  */
 const verifyResetCode = async (email, code) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/users/verify-reset-code`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/users/verify-reset-code`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -194,7 +194,7 @@ const verifyResetCode = async (email, code) => {
  */
 const resetPassword = async (email, newPassword, confirmPassword) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/users/reset-password`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/users/reset-password`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -242,7 +242,7 @@ const changePassword = async (
       throw new Error("Not authenticated");
     }
 
-    const response = await fetch(
+    const response = await fetchWithInterceptor(
       `${API_BASE_URL}/users/${userId}/change-password`,
       {
         method: "PUT", // Use PUT since the route is defined as PUT
@@ -281,7 +281,7 @@ const changePassword = async (
  */
 const requestMagicLink = async (email) => {
   try {
-    const response = await fetch(
+    const response = await fetchWithInterceptor(
       `${API_BASE_URL}/auth/passwordless/magic-link`,
       {
         method: "POST",
@@ -324,7 +324,7 @@ const requestNumericCode = async (studentEmail) => {
       throw new Error("Not authenticated");
     }
 
-    const response = await fetch(
+    const response = await fetchWithInterceptor(
       `${API_BASE_URL}/auth/passwordless/numeric-code`,
       {
         method: "POST",
@@ -368,7 +368,7 @@ const requestPictureCode = async (studentEmail) => {
       throw new Error("Not authenticated");
     }
 
-    const response = await fetch(
+    const response = await fetchWithInterceptor(
       `${API_BASE_URL}/auth/passwordless/picture-code`,
       {
         method: "POST",
@@ -407,7 +407,7 @@ const requestPictureCode = async (studentEmail) => {
  */
 const verifyMagicLinkToken = async (token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/passwordless/verify`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/auth/passwordless/verify`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
