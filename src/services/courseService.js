@@ -79,16 +79,46 @@ export const getLearnerCourses = async () => {
     if (!response.ok) throw new Error("Failed to fetch courses");
     const data = await response.json();
 
-    // Filter courses where learner_group_id matches any of user's group_ids
+    // Filter courses where learner_group_id matches any of user's groups
     const accessibleCourses = (data.rows || []).filter((course) =>
-      userGroups.includes(course.learner_group_id)
+      userGroups.some(g => g.groupId === course.learner_group_id)
     );
 
-    // Return empty array instead of throwing error
-    return formatCourses(accessibleCourses);
+    // Get member counts for each course's learner group
+    const groupMemberCounts = {};
+    for (const course of accessibleCourses) {
+      if (course.learner_group_id) {
+        try {
+          const groupMembers = await fetchWithInterceptor(
+            `${API_BASE_URL}/groups/${course.learner_group_id}/members`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          if (groupMembers.ok) {
+            const members = await groupMembers.json();
+            groupMemberCounts[course.learner_group_id] = members.length;
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch members for group ${course.learner_group_id}:`, error);
+          groupMemberCounts[course.learner_group_id] = 0;
+        }
+      }
+    }
+
+    // Add member counts to courses
+    const coursesWithCounts = accessibleCourses.map(course => ({
+      ...course,
+      studentCount: groupMemberCounts[course.learner_group_id] || 0
+    }));
+
+    return formatCourses(coursesWithCounts);
   } catch (error) {
     console.error("Error fetching learner courses:", error);
-    return []; // Return empty array on error
+    return []; 
   }
 };
 
@@ -100,15 +130,11 @@ export const getTeacherCourses = async () => {
   const token = localStorage.getItem("token");
   const currentUser = JSON.parse(localStorage.getItem("user"));
 
-  if (!token) {
-    throw new Error("Not authenticated");
-  }
-
-  if (!currentUser?.id) {
-    throw new Error("User data not found");
-  }
+  if (!token) throw new Error("Not authenticated");
+  if (!currentUser?.id) throw new Error("User data not found");
 
   try {
+    // First fetch courses
     const response = await fetchWithInterceptor(`${API_BASE_URL}/courses`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -116,33 +142,53 @@ export const getTeacherCourses = async () => {
       },
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch courses");
-    }
-
+    if (!response.ok) throw new Error("Failed to fetch courses");
     const data = await response.json();
+    const courses = data.rows || [];
 
-    // Get user's groups if they are a student teacher
-    let studentTeacherGroups = [];
-    if (currentUser.role === "student_teacher") {
-      const userGroups = await getUserGroupIds(currentUser.id);
-      studentTeacherGroups = userGroups;
-    }
-
-    // Filter courses based on user's role
-    const teacherCourses = (data.rows || []).filter((course) => {
+    // Filter courses based on user role
+    const teacherCourses = courses.filter(course => {
       if (currentUser.role === "teacher") {
         return course.user_id === currentUser.id;
-      } else if (currentUser.role === "student_teacher") {
-        return studentTeacherGroups.includes(course.student_teacher_group_id);
       }
       return false;
     });
 
-    return formatCourses(teacherCourses);
+    // Then get member counts for the filtered courses
+    const groupMemberCounts = {};
+    for (const course of teacherCourses) {
+      if (course.learner_group_id) {
+        try {
+          const groupMembers = await fetchWithInterceptor(
+            `${API_BASE_URL}/groups/${course.learner_group_id}/members`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          if (groupMembers.ok) {
+            const members = await groupMembers.json();
+            groupMemberCounts[course.learner_group_id] = members.length;
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch members for group ${course.learner_group_id}:`, error);
+          groupMemberCounts[course.learner_group_id] = 0;
+        }
+      }
+    }
+
+    // Add member counts to courses
+    const coursesWithCounts = teacherCourses.map(course => ({
+      ...course,
+      studentCount: groupMemberCounts[course.learner_group_id] || 0
+    }));
+
+    return formatCourses(coursesWithCounts);
   } catch (error) {
     console.error("Error fetching teacher courses:", error);
-    return []; // Return empty array on error
+    return [];
   }
 };
 
@@ -400,11 +446,9 @@ const formatCourses = (courses) => {
     code: generateCourseCode(course.name, course.id),
     description: course.description,
     teacher: course.teacher_name || "Not assigned",
-    learner_group_id: course.learner_group_id,
+    learner_group_id: course.learner_group_id, 
     student_teacher_group_id: course.student_teacher_group_id,
-    studentCount: Math.floor(Math.random() * 30) + 10, // Consider replacing with actual count
-    imageUrl:
-      course.imageUrl ||
-      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+    studentCount: course.studentCount || 0, // Use actual count instead of random
+    imageUrl: course.imageUrl || "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
   }));
 };

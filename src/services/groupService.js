@@ -454,72 +454,45 @@ export const updateGroup = async (groupId, updateData) => {
 export const getUserGroupIds = async (userId) => {
   const token = tokenService.getAccessToken();
   let userGroups = [];
-  let currentGroupId = 1; // Start from group 1
+  let currentGroupId = 1;
   let consecutiveErrors = 0;
-  const MAX_CONSECUTIVE_ERRORS = 2; // Stop after 2 consecutive errors
-  const DELAY = 1000; // 1 second delay between requests
+  const MAX_CONSECUTIVE_ERRORS = 2;
+  const DELAY = 1000;
 
   try {
-    // Get user role from localStorage
-    const user = JSON.parse(localStorage.getItem("user"));
-    const userRole = user?.role;
-
-    if (!userRole) {
-      console.error("User role not found in localStorage");
-      return userGroups;
-    }
-
-    while (consecutiveErrors < MAX_CONSECUTIVE_ERRORS) {
-      try {
-        await new Promise((resolve) => setTimeout(resolve, DELAY));
-
-        const response = await fetchWithInterceptor(
-          `${API_BASE_URL}/groups/${currentGroupId}/members`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (response.ok) {
-          const members = await response.json();
-          const isMember = members.some((member) => member.user_id === userId);
-
-          if (isMember) {
-            // Check if this is a valid group based on user role
-            const group = await getGroupById(currentGroupId);
-            if (group) {
-              const isValidGroup =
-                userRole === "student_teacher"
-                  ? group.group_type === "student_teacher" // For student teachers
-                  : group.group_type === "learner"; // For learners
-
-              if (isValidGroup) {
-                userGroups.push(currentGroupId);
-                return userGroups; // Return once we find a valid group
-              }
-            }
-          }
-
-          currentGroupId++;
-          consecutiveErrors = 0;
-        } else {
-          throw new Error(`Failed to fetch group ${currentGroupId} members`);
-        }
-      } catch (error) {
-        console.warn(`Error checking group ${currentGroupId}:`, error);
-        consecutiveErrors++;
-        currentGroupId++;
-
-        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-          break;
-        }
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/groups/${currentGroupId}/members`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch group members");
     }
+
+    const members = await response.json();
+    
+    // Group members by group_id and count
+    const groupCounts = members.reduce((acc, member) => {
+      if (!acc[member.group_id]) {
+        acc[member.group_id] = 0;
+      }
+      acc[member.group_id]++;
+      return acc;
+    }, {});
+
+    // Return array of objects with counts
+    userGroups = Object.entries(groupCounts).map(([groupId, count]) => ({
+      groupId: parseInt(groupId),
+      memberCount: count
+    }));
 
     return userGroups;
+
   } catch (error) {
     console.error("Error fetching user groups:", error);
     return userGroups;
