@@ -54,6 +54,7 @@ export const getAllUsers = async (options = {}) => {
         data.totalPages ||
         Math.ceil((data.count || data.totalItems || 0) / (options.limit || 10)),
       currentPage: Number(options.page) || 1,
+      roleCounts: data.roleCounts || [],
     };
 
     return result;

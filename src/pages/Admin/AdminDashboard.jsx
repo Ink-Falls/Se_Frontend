@@ -230,13 +230,21 @@ function AdminDashboard() {
         limit: 99999, // Large number to get all users
       });
 
-      if (result && Array.isArray(result.users)) {
-        const allUsers = result.users;
+      if (result) {
+        const roleCounts = result.roleCounts || [];
+      
+        const totalUsers = result.totalItems; // Total users from API
+        const totalLearners = roleCounts.find(role => role.role === 'learner')?.count || 0;
+        const totalTeachers = roleCounts
+        .filter(role => role.role === 'teacher' || role.role === 'student_teacher')
+        .reduce((sum, role) => sum + Number(role.count), 0);
+        const totalAdmins = roleCounts.find(role => role.role === 'admin')?.count || 0;
+      
         setStats({
-          totalUsers: allUsers.length,
-          totalLearners: allUsers.filter((u) => u.role === "learner").length,
-          totalTeachers: allUsers.filter((u) => u.role === "teacher").length,
-          totalAdmins: allUsers.filter((u) => u.role === "admin").length,
+          totalUsers,
+          totalLearners,
+          totalTeachers,
+          totalAdmins
         });
       }
     } catch (error) {
