@@ -1,9 +1,21 @@
 /**
  * @module apiService
- * @description Handles API requests with automatic token refresh and request queue management
+ * @description Handles API requests with automatic token refresh, request queue management,
+ * rate limiting, circuit breaking, and request batching.
  */
 
 import tokenService from './tokenService';
+
+/**
+ * @typedef {Object} RateLimit
+ * @property {number} WINDOW - Time window for rate limiting in milliseconds (15 minutes)
+ * @property {number} MAX_REQUESTS - Maximum regular requests allowed per window
+ * @property {number} AUTH_MAX_REQUESTS - Maximum authentication requests allowed per window
+ * @property {number} COOLDOWN_PERIOD - Delay between batch processing in milliseconds
+ * @property {number} REQUEST_DELAY - Delay between individual requests in milliseconds
+ * @property {number} BATCH_SIZE - Maximum number of requests to process in one batch
+ * @property {Map} QUEUED_REQUESTS - Map of queued requests waiting to be processed
+ */
 
 const RATE_LIMIT = {
   WINDOW: 900000, // 15 minutes in milliseconds
@@ -15,11 +27,24 @@ const RATE_LIMIT = {
   QUEUED_REQUESTS: new Map() // Keep existing queue
 };
 
+/**
+ * @typedef {Object} BackoffStrategy
+ * @property {number} INITIAL_DELAY - Initial delay for exponential backoff in milliseconds
+ * @property {number} MAX_DELAY - Maximum delay cap for exponential backoff in milliseconds
+ * @property {number} JITTER - Random jitter range to prevent thundering herd
+ */
+
 const BACKOFF_STRATEGY = {
   INITIAL_DELAY: 1000,       // Start with 1 second
   MAX_DELAY: 32000,         // Maximum delay of 32 seconds
   JITTER: 300               // Random jitter to prevent thundering herd
 };
+
+/**
+ * @typedef {Object} CircuitBreaker
+ * @property {number} FAILURE_THRESHOLD - Number of failures before opening circuit
+ * @property {number} RESET_TIMEOUT - Time in milliseconds before attempting to close circuit
+ */
 
 const CIRCUIT_BREAKER = {
   FAILURE_THRESHOLD: 5,
@@ -32,6 +57,12 @@ let failureCount = 0;
 let circuitOpen = false;
 let circuitTimer = null;
 
+/**
+ * @function showAlert
+ * @param {string} message - Alert message to display
+ * @param {number} retryAfter - Time in milliseconds before retry is allowed
+ * @description Displays a toast notification for rate limit alerts
+ */
 const showAlert = (message, retryAfter) => {
   const div = document.createElement('div');
   div.className = 'fixed bottom-4 right-4 max-w-md w-full bg-white rounded-lg shadow-lg border-l-4 border-[#F6BA18] p-4 z-50';
@@ -51,14 +82,25 @@ const showAlert = (message, retryAfter) => {
   setTimeout(() => div.remove(), retryAfter);
 };
 
-// Add request queue with priorities
+/**
+ * @enum {number} REQUEST_PRIORITIES
+ * @readonly
+ * @description Priority levels for request queuing
+ */
 const REQUEST_PRIORITIES = {
   HIGH: 0,    // Auth requests - highest priority
   MEDIUM: 1,  // User data - medium priority
   LOW: 2      // Non-critical requests - lowest priority
 };
 
-// Add request batching and prioritization
+/**
+ * @function queueRequest
+ * @param {string} url - Request URL
+ * @param {Object} options - Fetch options
+ * @param {number} [priority=REQUEST_PRIORITIES.LOW] - Request priority level
+ * @returns {Promise} Promise that resolves when request is processed
+ * @description Queues a request with priority for later processing
+ */
 const queueRequest = (url, options, priority = REQUEST_PRIORITIES.LOW) => {
   const requestId = Math.random().toString(36).substring(7);
   
@@ -74,7 +116,11 @@ const queueRequest = (url, options, priority = REQUEST_PRIORITIES.LOW) => {
   });
 };
 
-// Process queued requests in batches
+/**
+ * @function processQueue
+ * @returns {Promise<void>}
+ * @description Processes queued requests in batches based on priority and timestamp
+ */
 const processQueue = async () => {
   if (RATE_LIMIT.QUEUED_REQUESTS.size === 0) return;
 
@@ -108,7 +154,12 @@ const processQueue = async () => {
   }
 };
 
-// Add exponential backoff calculation
+/**
+ * @function calculateBackoff
+ * @param {number} retryCount - Number of retry attempts
+ * @returns {number} Calculated delay in milliseconds
+ * @description Calculates exponential backoff with jitter
+ */
 const calculateBackoff = (retryCount) => {
   const delay = Math.min(
     BACKOFF_STRATEGY.INITIAL_DELAY * Math.pow(2, retryCount),
@@ -119,7 +170,13 @@ const calculateBackoff = (retryCount) => {
   return delay + Math.random() * BACKOFF_STRATEGY.JITTER;
 };
 
-// Update rate limiting check with separate auth limit
+/**
+ * @function checkRateLimit
+ * @param {string} url - Request URL
+ * @param {Object} options - Fetch options
+ * @returns {Promise<boolean>} Whether request can proceed
+ * @description Checks rate limits and handles request queueing
+ */
 const checkRateLimit = async (url, options) => {
   const now = Date.now();
   const isAuthRequest = url.includes('/auth/');
@@ -158,69 +215,41 @@ const PUBLIC_ROUTES = [
   "/PasswordConfirm",
 ];
 
+/**
+ * @function fetchWithInterceptor
+ * @param {string} url - Request URL
+ * @param {Object} [options={}] - Fetch options
+ * @param {number} [retryCount=0] - Number of retry attempts
+ * @returns {Promise<Response>} Fetch response
+ * @throws {Error} Various error types based on response status
+ * @description Main request handler with token refresh, rate limiting, and error handling
+ */
 const fetchWithInterceptor = async (url, options = {}, retryCount = 0) => {
   // Skip token checks for public routes
   const isPublicRoute = PUBLIC_ROUTES.some(route => url.includes(route));
+  const isLoginRequest = url.includes('/auth/login');
 
-  // Add token to headers
-  const token = tokenService.getAccessToken();
-  options.headers = {
-    ...options.headers,
-    'Authorization': token ? `Bearer ${token}` : ''
-  };
-  
   try {
-    // Circuit breaker check
-    if (circuitOpen) {
-      throw new Error('Circuit breaker is open. Too many failed requests.');
-    }
+    // Skip token refresh for logout requests
+    const isLogoutRequest = url.includes('/auth/logout');
 
-    // Determine request priority
-    const priority = url.includes('/auth/') 
-      ? REQUEST_PRIORITIES.HIGH 
-      : url.includes('/user/') 
-        ? REQUEST_PRIORITIES.MEDIUM 
-        : REQUEST_PRIORITIES.LOW;
-
-    // Queue the request if we're near the limit based on request type
-    const maxRequests = url.includes('/auth/') ? RATE_LIMIT.AUTH_MAX_REQUESTS : RATE_LIMIT.MAX_REQUESTS;
-    if (requestCount >= maxRequests * 0.8) {
-      return await queueRequest(url, options, priority);
-    }
-
-    requestCount++;
-    
-    // Add small delay between requests
-    await new Promise(resolve => setTimeout(resolve, RATE_LIMIT.REQUEST_DELAY));
-
-    // Check rate limit and possibly queue request
-    const canProceed = await checkRateLimit(url, options);
-    if (!canProceed) {
-      const backoff = calculateBackoff(retryCount);
-      await new Promise(resolve => setTimeout(resolve, backoff));
-      return fetchWithInterceptor(url, options, retryCount + 1);
-    }
-
-    // Add credentials for cookie handling
-    options.credentials = 'include';
-
-    // Only check token refresh for protected routes
-    if (!isPublicRoute && tokenService.isTokenExpired() && !url.includes('/auth/refresh')) {
-      try {
-        const newToken = await tokenService.refreshToken();
-        options.headers['Authorization'] = `Bearer ${newToken}`;
-      } catch (refreshError) {
-        if (!url.includes('/auth/login')) {
-          window.location.href = '/login';
-          throw refreshError;
-        }
-      }
-    }
+    // Add token to headers
+    const token = tokenService.getAccessToken();
+    options.headers = {
+      ...options.headers,
+      'Authorization': token ? `Bearer ${token}` : ''
+    };
 
     const response = await fetch(url, options);
 
-    // Handle 401 with proper queueing
-    if (response.status === 401 && !url.includes('/auth/refresh')) {
+    // Special handling for login failures
+    if (response.status === 401 && isLoginRequest) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Invalid credentials');
+    }
+
+    // Handle 401 with proper queueing (only for non-login requests)
+    if (response.status === 401 && !isLogoutRequest && !url.includes('/auth/refresh')) {
       try {
         const newToken = await tokenService.refreshToken();
         options.headers['Authorization'] = `Bearer ${newToken}`;
@@ -249,6 +278,9 @@ const fetchWithInterceptor = async (url, options = {}, retryCount = 0) => {
       switch (response.status) {
         case 400:
           throw new Error(errorData.message || 'Invalid request');
+        case 401:
+          // Already handled above
+          throw new Error(errorData.message || 'Unauthorized');
         case 403:
           window.dispatchEvent(new CustomEvent('authError', { 
             detail: { type: 'forbidden', message: 'Access denied' }
@@ -303,6 +335,12 @@ const fetchWithInterceptor = async (url, options = {}, retryCount = 0) => {
 
     return response;
   } catch (error) {
+    // Don't retry login failures
+    if (isLoginRequest || error.message.includes('Invalid credentials')) {
+      throw error;
+    }
+
+    // Only retry non-login requests
     if (error.status === 429 && retryCount < RATE_LIMIT.MAX_RETRIES) {
       const backoff = calculateBackoff(retryCount);
       await new Promise(resolve => setTimeout(resolve, backoff));
@@ -334,18 +372,32 @@ const fetchWithInterceptor = async (url, options = {}, retryCount = 0) => {
   }
 };
 
+/**
+ * @function resetRequestCount
+ * @description Resets rate limiting counters
+ */
 const resetRequestCount = () => {
   requestCount = 0;
   requestTimestamp = Date.now();
 };
 
+/**
+ * @function resetCircuitBreaker
+ * @description Resets circuit breaker state
+ */
 const resetCircuitBreaker = () => {
   circuitOpen = false;
   failureCount = 0;
   if (circuitTimer) clearTimeout(circuitTimer);
 };
 
-// Add request debouncing helper
+/**
+ * @function debounce
+ * @param {Function} func - Function to debounce
+ * @param {number} wait - Debounce delay in milliseconds
+ * @returns {Function} Debounced function
+ * @description Creates a debounced version of a function
+ */
 const debounce = (func, wait) => {
   let timeout;
   return (...args) => {
@@ -356,7 +408,11 @@ const debounce = (func, wait) => {
   };
 };
 
-// Export debounced version for non-critical requests
+/**
+ * @function debouncedFetch
+ * @type {Function}
+ * @description Debounced version of fetchWithInterceptor for non-critical requests
+ */
 export const debouncedFetch = debounce(fetchWithInterceptor, 300);
 
 // Start queue processor

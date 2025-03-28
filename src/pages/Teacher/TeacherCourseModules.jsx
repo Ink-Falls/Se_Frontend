@@ -254,7 +254,6 @@ const TeacherCourseModules = () => {
           })
         );
 
-        console.log("Modules with contents:", modulesWithContents);
         setModules(modulesWithContents);
       } catch (error) {
         console.error("Error fetching modules:", error);
@@ -292,7 +291,7 @@ const TeacherCourseModules = () => {
       // Close modals after successful creation and refresh
       setIsCreateModuleOpen(false);
       setIsAddModuleOpen(false);
-      setSuccessMessage("Module created successfully"); // Add this line
+      setSuccessMessage("Module created successfully"); 
 
       return newModule;
     } catch (error) {
@@ -301,11 +300,6 @@ const TeacherCourseModules = () => {
     }
   };
 
-  // Add debug logging
-  useEffect(() => {
-    console.log("Location state:", location.state);
-    console.log("Course data:", selectedCourse);
-  }, [location.state, selectedCourse]);
 
   const handleEdit = (module) => {
     setEditingModule(module);
@@ -322,10 +316,10 @@ const TeacherCourseModules = () => {
         prev.map((m) => (m.id === updatedModule.id ? updatedModule : m))
       );
       setEditingModule(null);
-      setSuccessMessage("Module updated successfully"); // Add this line
+      setSuccessMessage("Module updated successfully"); 
     } catch (error) {
       console.error("Error updating module:", error);
-      setError("Failed to update module"); // Add error message
+      setError("Failed to update module"); 
     }
   };
 
@@ -334,17 +328,15 @@ const TeacherCourseModules = () => {
       await deleteModule(moduleToDelete.id);
       await fetchModules(); // Refresh modules after deletion
       setModuleToDelete(null);
-      setSuccessMessage("Module deleted successfully"); // Add this line
+      setSuccessMessage("Module deleted successfully");
     } catch (error) {
       console.error("Error deleting module:", error);
-      setError("Failed to delete module"); // Add error message
+      setError("Failed to delete module"); 
     }
   };
 
   const handleCreateContent = async (contentData) => {
     try {
-      console.log("Creating content for module:", selectedModuleId);
-
       await addModuleContent(selectedModuleId, {
         title: contentData.title.trim(),
         type: "link",

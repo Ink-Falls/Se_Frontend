@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useCourse } from "../../contexts/CourseContext"; // Add this import
+import { useCourse } from "../../contexts/CourseContext"; 
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
-import SubmissionHistoryDropdown from "../../components/assessment/SubmissionHistoryDropdown"; // Import the component
+import SubmissionHistoryDropdown from "../../components/assessment/SubmissionHistoryDropdown"; 
 import {
   Home,
   Megaphone,

@@ -6,13 +6,9 @@ import Header from "/src/components/common/layout/Header.jsx";
 import Modal from "../../components/common/Button/Modal";
 import DeleteModal from "/src/components/common/Modals/Delete/DeleteModal.jsx";
 import {
-  MoreVertical,
-  ChevronDown,
   Edit,
   Trash2,
   Plus,
-  Save,
-  XCircle,
   Home,
   Book,
   Bell,
@@ -24,7 +20,6 @@ import {
 } from "lucide-react";
 import {
   getAllCourses,
-  getCourseById,
   updateCourse,
   deleteCourse,
 } from "../../services/courseService";
@@ -39,11 +34,10 @@ function AdminCourses() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expandedCourseId, setExpandedCourseId] = useState(null);
   const [editingCourse, setEditingCourse] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const [isAddCourseOpen, setIsAddCourseOpen] = useState(false);
-  const [newCourse, setNewCourse] = useState({
+  const [newCourse, setNewCourse] = useState({ //never read 
     name: "",
     description: "",
     teacher: "",
@@ -56,7 +50,6 @@ function AdminCourses() {
   const [availableTeachers, setAvailableTeachers] = useState([]);
   const [learnerGroups, setLearnerGroups] = useState([]);
   const [studentTeacherGroups, setStudentTeacherGroups] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   const toggleDropdown = (id, event) => {
     event.stopPropagation();

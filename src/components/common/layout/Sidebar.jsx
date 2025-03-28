@@ -33,15 +33,13 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      // Wait for logout to complete before navigating
       await logout();
-      // Use window.location.href instead of navigate for full page refresh
-      window.location.href = "/login";
+      // Use navigate and force reload
+      window.location.replace('/login');
     } catch (error) {
-      console.error("Logout failed:", error);
-      // Show error message to user
-      const errorMessage = error.message || "Logout failed. Please try again.";
-      alert(errorMessage);
+      console.error('Logout failed:', error);
+      // Force redirect to login even if logout fails
+      window.location.replace('/login'); 
     } finally {
       setIsLoggingOut(false);
     }

@@ -12,11 +12,10 @@ import {
   LineChart,
   ArrowLeft,
   FileText,
-  Clock,
   X,
   AlertTriangle,
 } from "lucide-react";
-import { getUserSubmission, getAssessmentById, gradeSubmission, getSubmissionDetails } from "../../services/assessmentService";
+import {getAssessmentById, gradeSubmission, getSubmissionDetails } from "../../services/assessmentService";
 import EditGradeModal from '../../components/common/Modals/Edit/EditGradeModal';
 
 const StudentSubmissionView = () => {

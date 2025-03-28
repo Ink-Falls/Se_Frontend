@@ -4,7 +4,6 @@
  */
 
 import { API_BASE_URL } from "../utils/constants";
-import { getUserGroupIds } from "./groupService";
 import tokenService from "./tokenService";
 import fetchWithInterceptor from "./apiService";
 
@@ -291,51 +290,6 @@ export const deleteCourse = async (courseId) => {
   }
 };
 
-/**
- * Gets courses accessible to the current user based on their group memberships
- * @returns {Promise<Array>} Array of courses the user has access to
- */
-export const getUserAccessibleCourses = async () => {
-  try {
-    // Get current user from token
-    const token = tokenService.getAccessToken();
-    if (!token) throw new Error("No authentication token");
-
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user?.id) throw new Error("User data not found");
-
-    // Get user's groups
-    const userGroups = await getUserGroupIds(user.id);
-
-    // Get all courses
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/courses`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) throw new Error("Failed to fetch courses");
-    const data = await response.json();
-
-    // Filter courses based on user's groups
-    const courses = (data.rows || []).filter((course) => {
-      if (user.role === "learner") {
-        return userGroups.includes(course.learner_group_id);
-      } else if (user.role === "student_teacher") {
-        return userGroups.includes(course.student_teacher_group_id);
-      }
-      return false;
-    });
-
-    return formatCourses(courses);
-  } catch (error) {
-    console.error("Error fetching user accessible courses:", error);
-    throw error;
-  }
-};
-
-// Add this helper function before formatCourses
 const generateCourseCode = (courseName, courseId) => {
   const courseTags = {
     FIL: /\b(?:FILIPINO|FIL|FILIPINO\s+SUBJECT|FILIPINO\s+STUDIES)\b/i,

@@ -19,7 +19,6 @@ export const getModulesByCourseId = async (courseId, page = 1) => {
 
     const data = await response.json();
 
-    // Return the modules array directly if it exists, otherwise return the whole response
     return data.modules || data;
   } catch (error) {
     console.error('❌ Error fetching modules:', error);
@@ -39,7 +38,6 @@ export const createModule = async (courseId, moduleData) => {
       throw new Error('Course ID is required');
     }
 
-    // Format the request body
     const formattedData = {
       course_id: parseInt(courseId),
       name: moduleData.name || moduleData.title,
@@ -64,7 +62,6 @@ export const createModule = async (courseId, moduleData) => {
 
     const data = await response.json();
     
-    // If the response has a nested module object, return that, otherwise return the whole response
     return data.module || data;
   } catch (error) {
     console.error('Error in createModule:', error);
@@ -132,7 +129,6 @@ export const getModuleContents = async (moduleId, page = 1) => {
     
     const data = await response.json();
     
-    // Return the contents array directly if it exists, otherwise return the whole response
     return {
       contents: data.contents || data,
       totalCount: data.totalCount,
@@ -152,10 +148,10 @@ export const getModuleContents = async (moduleId, page = 1) => {
  */
 export const addModuleContent = async (moduleId, contentData) => {
   try {
-    // Format the request body to match API expectations
+
     const formattedData = {
       name: contentData.title,
-      link: contentData.content // Changed from content to link
+      link: contentData.content 
     };
 
     const response = await fetchWithInterceptor(
@@ -171,7 +167,6 @@ export const addModuleContent = async (moduleId, contentData) => {
 
     const responseData = await response.json();
     
-    // Return formatted data that matches our frontend structure
     return {
       id: responseData.id || responseData.content_id,
       title: responseData.name || contentData.title,
