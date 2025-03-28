@@ -28,7 +28,7 @@ const LearnerDashboard = () => {
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      const coursesData = await getUserCourses(user.id);
+      const coursesData = await getUserCourses();
       setCourses(coursesData);
     } catch (error) {
       setError(error.message || "Failed to fetch courses");
