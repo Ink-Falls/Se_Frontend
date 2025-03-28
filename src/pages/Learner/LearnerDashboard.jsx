@@ -8,7 +8,6 @@ import { getUserCourses } from "../../services/courseService"; // Add this impor
 import EmptyState from "../../components/common/states/EmptyState";
 import LoadingSpinner from "../../components/common/LoadingSpinner"; // Add this import
 import { useCourse } from "../../contexts/CourseContext";
-import { useAuth } from "../../contexts/AuthContext";
 
 const LearnerDashboard = () => {
   const navigate = useNavigate();
@@ -16,8 +15,6 @@ const LearnerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { setSelectedCourse } = useCourse();
-
-  const { user } = useAuth();
 
   const navItems = [
     { text: "Courses", icon: <Book size={20} />, route: "/Learner/Dashboard" },
@@ -31,7 +28,7 @@ const LearnerDashboard = () => {
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      const coursesData = await getUserCourses(user.id);
+      const coursesData = await getUserCourses();
       setCourses(coursesData);
     } catch (error) {
       setError(error.message || "Failed to fetch courses");

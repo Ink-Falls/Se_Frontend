@@ -1,7 +1,6 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import tokenService from "../services/tokenService";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 
 // Whitelist of public routes

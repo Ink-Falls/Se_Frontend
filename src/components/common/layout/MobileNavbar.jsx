@@ -17,11 +17,12 @@ const MobileNavBar = ({ navItems }) => {
     try {
       setIsLoggingOut(true);
       await logout();
-      window.location.href = "/login";
+      // Use navigate and force reload
+      window.location.replace('/login');
     } catch (error) {
-      console.error("Logout failed:", error);
-      const errorMessage = error.message || "Logout failed. Please try again.";
-      alert(errorMessage);
+      console.error('Logout failed:', error);
+      // Force redirect to login even if logout fails
+      window.location.replace('/login');
     } finally {
       setIsLoggingOut(false);
     }

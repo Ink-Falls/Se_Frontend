@@ -1,14 +1,10 @@
 // src/pages/Admin/AdminEnrollment.jsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import Sidebar, {
-  SidebarItem,
-} from "/src/components/common/layout/Sidebar.jsx";
+import Sidebar from "/src/components/common/layout/Sidebar.jsx";
 import Header from "/src/components/common/layout/Header.jsx";
 import EnrolleeStats from "/src/components/specific/enrollments/EnrolleeStats.jsx";
 import EnrolleeTable from "/src/components/specific/enrollments/EnrolleeTable.jsx";
 import {
-  Users,
   Book,
   Bell,
   FileText,
@@ -23,7 +19,7 @@ import {
   deleteEnrollment,
 } from "/src/services/enrollmentService.js";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import LoadingSpinner from "../../components/common/LoadingSpinner"; 
 
 function AdminEnrollment() {
   const [enrollees, setEnrollees] = useState([]);
