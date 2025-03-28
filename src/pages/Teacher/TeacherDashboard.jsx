@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import Header from "../../components/common/layout/Header";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
-import { getTeacherCourses } from "../../services/courseService";
+import { getUserCourses } from "../../services/courseService";
 import { useCourse } from "../../contexts/CourseContext";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 
@@ -55,7 +55,7 @@ const Dashboard = () => {
 
       setLoading(true);
       try {
-        const coursesData = await getTeacherCourses();
+        const coursesData = await getUserCourses();
         setCourses(coursesData);
         setError(null);
 
