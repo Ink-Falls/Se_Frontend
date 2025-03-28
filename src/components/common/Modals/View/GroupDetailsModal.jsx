@@ -3,11 +3,9 @@ import { X, Users, Loader, PencilIcon, Trash2 } from "lucide-react";
 import {
   getAllGroups,
   getAvailableMembers,
-  updateGroup,
   deleteGroups,
   getGroupMembers,
   assignUsersToGroup,
-  removeMember,
 } from "../../../../services/groupService";
 import GroupMembersModal from "./GroupMembersModal";
 import EditGroupModal from "../Edit/EditGroupModal";

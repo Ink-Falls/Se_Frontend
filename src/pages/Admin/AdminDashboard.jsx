@@ -1,28 +1,16 @@
 import React, { useState, useEffect } from "react";
-import Sidebar, {
-  SidebarItem,
-} from "/src/components/common/layout/Sidebar.jsx";
+import Sidebar from "/src/components/common/layout/Sidebar.jsx";
 import Header from "/src/components/common/layout/Header.jsx";
-import Modal from "../../components/common/Button/Modal";
 import DeleteModal from "/src/components/common/Modals/Delete/DeleteModal.jsx";
 import AddUserModal from "/src/components/common/Modals/Add/AddUserModal.jsx";
 import CreateGroupModal from "/src/components/common/Modals/Create/CreateGroupModal.jsx";
 import EditUserModal from "/src/components/common/Modals/Edit/EditUserModal.jsx";
 import GroupDetailsModal from "../../components/common/Modals/View/GroupDetailsModal";
 import {
-  MoreVertical,
-  ChevronDown,
-  Edit,
-  Trash2,
-  Plus,
-  Save,
-  XCircle,
   Home,
   Book,
   Bell,
   FileText,
-  Users,
-  Search,
   InboxIcon,
   AlertTriangle,
 } from "lucide-react";
