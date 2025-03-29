@@ -15,8 +15,12 @@ import {
   X,
   AlertTriangle,
 } from "lucide-react";
-import {getAssessmentById, gradeSubmission, getSubmissionDetails } from "../../services/assessmentService";
-import EditGradeModal from '../../components/common/Modals/Edit/EditGradeModal';
+import {
+  getAssessmentById,
+  gradeSubmission,
+  getSubmissionDetails,
+} from "../../services/assessmentService";
+import EditGradeModal from "../../components/common/Modals/Edit/EditGradeModal";
 
 const StudentSubmissionView = () => {
   const location = useLocation();
@@ -30,46 +34,63 @@ const StudentSubmissionView = () => {
   const [questions, setQuestions] = useState([]);
   const [gradingData, setGradingData] = useState({
     grades: [],
-    feedback: ''
+    feedback: "",
   });
   const [assessmentDetails, setAssessmentDetails] = useState(null);
   const [isGradingModalOpen, setIsGradingModalOpen] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [isEditGradeModalOpen, setIsEditGradeModalOpen] = useState(false);
   const [answersWithDetails, setAnswersWithDetails] = useState({});
-  const [isConfirmAutoGradeModalOpen, setIsConfirmAutoGradeModalOpen] = useState(false);
+  const [isConfirmAutoGradeModalOpen, setIsConfirmAutoGradeModalOpen] =
+    useState(false);
   const [autoGradeLoading, setAutoGradeLoading] = useState(false);
-  const [autoGradeStats, setAutoGradeStats] = useState({ total: 0, processed: 0 });
+  const [autoGradeStats, setAutoGradeStats] = useState({
+    total: 0,
+    processed: 0,
+  });
 
   const calculateTotalPoints = (questions) => {
-    return questions?.reduce((total, question) => total + (parseInt(question.points) || 0), 0) || 0;
+    return (
+      questions?.reduce(
+        (total, question) => total + (parseInt(question.points) || 0),
+        0
+      ) || 0
+    );
   };
 
   const calculateAutoGradedScore = (submission) => {
     if (!submission?.answers) return { total: 0, possible: 0 };
-    
-    const scores = submission.answers.reduce((acc, answer) => {
-      const question = submission.assessment?.questions?.find(q => q.id === answer.question_id);
-      
-      if (!question) return acc;
 
-      // Auto-grade multiple choice and true/false questions
-      if (question.question_type === 'multiple_choice' || question.question_type === 'true_false') {
-        const correctOption = question.options?.find(opt => opt.is_correct);
-        const isCorrect = answer.selected_option_id === correctOption?.id;
-        
+    const scores = submission.answers.reduce(
+      (acc, answer) => {
+        const question = submission.assessment?.questions?.find(
+          (q) => q.id === answer.question_id
+        );
+
+        if (!question) return acc;
+
+        // Auto-grade multiple choice and true/false questions
+        if (
+          question.question_type === "multiple_choice" ||
+          question.question_type === "true_false"
+        ) {
+          const correctOption = question.options?.find((opt) => opt.is_correct);
+          const isCorrect = answer.selected_option_id === correctOption?.id;
+
+          return {
+            total: acc.total + (isCorrect ? question.points : 0),
+            possible: acc.possible + question.points,
+          };
+        }
+
+        // For manual grading questions, use points_awarded if available
         return {
-          total: acc.total + (isCorrect ? question.points : 0),
-          possible: acc.possible + question.points
+          total: acc.total + (parseInt(answer.points_awarded) || 0),
+          possible: acc.possible + question.points,
         };
-      }
-      
-      // For manual grading questions, use points_awarded if available
-      return {
-        total: acc.total + (parseInt(answer.points_awarded) || 0),
-        possible: acc.possible + question.points
-      };
-    }, { total: 0, possible: 0 });
+      },
+      { total: 0, possible: 0 }
+    );
 
     return scores;
   };
@@ -77,71 +98,82 @@ const StudentSubmissionView = () => {
   const processSubmissionAnswers = (submissionData) => {
     if (!submissionData?.answers) return submissionData;
 
-    const processedAnswers = submissionData.answers.map(answer => {
-      const question = submissionData.assessment?.questions?.find(q => q.id === answer.question_id);
-      
+    const processedAnswers = submissionData.answers.map((answer) => {
+      const question = submissionData.assessment?.questions?.find(
+        (q) => q.id === answer.question_id
+      );
+
       // Auto-grade multiple choice and true/false questions if not already graded
-      if ((question?.question_type === 'multiple_choice' || question?.question_type === 'true_false') 
-          && answer.points_awarded === null) {
-        const correctOption = question.options?.find(opt => opt.is_correct);
+      if (
+        (question?.question_type === "multiple_choice" ||
+          question?.question_type === "true_false") &&
+        answer.points_awarded === null
+      ) {
+        const correctOption = question.options?.find((opt) => opt.is_correct);
         const isCorrect = answer.selected_option_id === correctOption?.id;
-        
+
         return {
           ...answer,
           points_awarded: isCorrect ? question.points : 0,
           is_auto_graded: true,
-          feedback: isCorrect ? 'Correct' : 'Incorrect'
+          feedback: isCorrect ? "Correct" : "Incorrect",
         };
       }
-      
+
       return answer;
     });
 
     return {
       ...submissionData,
-      answers: processedAnswers
+      answers: processedAnswers,
     };
   };
 
   useEffect(() => {
     const fetchSubmissionDetails = async () => {
       if (!location.state?.submission?.id) return;
-      
+
       try {
         setLoading(true);
-        const response = await getSubmissionDetails(location.state.submission.id);
-        
+        const response = await getSubmissionDetails(
+          location.state.submission.id
+        );
+
         if (response.success && response.submission) {
           // Sort answers by order_index
-          const sortedAnswers = [...response.submission.answers].sort((a, b) => 
-            (a.question?.order_index || 0) - (b.question?.order_index || 0)
+          const sortedAnswers = [...response.submission.answers].sort(
+            (a, b) =>
+              (a.question?.order_index || 0) - (b.question?.order_index || 0)
           );
 
           // Update submission details with sorted answers
           setSubmissionDetails({
             ...response.submission,
-            answers: sortedAnswers
+            answers: sortedAnswers,
           });
 
           // Update answers with details maintaining the sort order
           const answersWithDetailsMap = {};
-          sortedAnswers.forEach(answer => {
+          sortedAnswers.forEach((answer) => {
             const question = response.submission.assessment.questions.find(
-              q => q.id === answer.question_id
+              (q) => q.id === answer.question_id
             );
-            
+
             if (question) {
               answersWithDetailsMap[answer.question_id] = {
                 ...answer,
                 questionText: question.question_text,
                 questionType: question.question_type,
                 maxPoints: question.points,
-                selectedAnswer: answer.selected_option?.option_text || answer.text_response || 'No answer provided',
+                selectedAnswer:
+                  answer.selected_option?.option_text ||
+                  answer.text_response ||
+                  "No answer provided",
                 isCorrect: answer.selected_option?.is_correct || false,
                 selectedOptionId: answer.selected_option_id,
                 allOptions: question.options || [],
                 answerKey: question.answer_key,
-                isAutoGraded: answer.is_auto_graded
+                isAutoGraded: answer.is_auto_graded,
               };
             }
           });
@@ -150,7 +182,7 @@ const StudentSubmissionView = () => {
           setQuestions(response.submission.assessment.questions || []);
         }
       } catch (err) {
-        console.error('Error fetching submission:', err);
+        console.error("Error fetching submission:", err);
         setSubmissionError(err.message);
       } finally {
         setLoading(false);
@@ -165,17 +197,17 @@ const StudentSubmissionView = () => {
       try {
         setLoading(true);
         const response = await getAssessmentById(assessment.id);
-        
+
         if (response.success) {
           setAssessmentDetails(response.assessment);
           // Initialize grading data with questions
-          setGradingData(prev => ({
+          setGradingData((prev) => ({
             ...prev,
-            grades: response.assessment.questions.map(q => ({
+            grades: response.assessment.questions.map((q) => ({
               questionId: q.id,
               points: 0,
-              feedback: ''
-            }))
+              feedback: "",
+            })),
           }));
         }
       } catch (err) {
@@ -223,52 +255,52 @@ const StudentSubmissionView = () => {
     try {
       setLoading(true);
       const response = await gradeSubmission(submission.id, gradingData);
-      
+
       if (response.success) {
         // Update submission details with new grades
         setSubmissionDetails(response.submission);
         setIsGrading(false);
       } else {
-        throw new Error(response.message || 'Failed to submit grades');
+        throw new Error(response.message || "Failed to submit grades");
       }
     } catch (err) {
-      console.error('Error submitting grades:', err);
-      alert('Failed to submit grades. Please try again.');
+      console.error("Error submitting grades:", err);
+      alert("Failed to submit grades. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleGradeChange = (questionId, points, feedback) => {
-    setGradingData(prev => ({
+    setGradingData((prev) => ({
       ...prev,
-      grades: prev.grades.map(grade => 
-        grade.questionId === questionId 
-          ? { ...grade, points, feedback }
-          : grade
-      )
+      grades: prev.grades.map((grade) =>
+        grade.questionId === questionId ? { ...grade, points, feedback } : grade
+      ),
     }));
   };
 
   const handleOverallFeedbackChange = (feedback) => {
-    setGradingData(prev => ({
+    setGradingData((prev) => ({
       ...prev,
-      feedback
+      feedback,
     }));
   };
 
   useEffect(() => {
     if (submissionDetails?.answers) {
       // Ensure answers exist and are in an array before mapping
-      const answersArray = Array.isArray(submissionDetails.answers) ? submissionDetails.answers : [];
-      
+      const answersArray = Array.isArray(submissionDetails.answers)
+        ? submissionDetails.answers
+        : [];
+
       setGradingData({
-        grades: answersArray.map(answer => ({
+        grades: answersArray.map((answer) => ({
           questionId: answer.id,
           points: answer.pointsAwarded || 0,
-          feedback: answer.feedback || ''
+          feedback: answer.feedback || "",
         })),
-        feedback: submissionDetails.feedback || ''
+        feedback: submissionDetails.feedback || "",
       });
     }
   }, [submissionDetails]);
@@ -280,101 +312,117 @@ const StudentSubmissionView = () => {
       if (response.success) {
         // Update submission details with the fresh data
         setSubmissionDetails(response.submission);
-        
+
         // Update answers with details
         const newAnswers = {};
-        response.submission.answers.forEach(answer => {
+        response.submission.answers.forEach((answer) => {
           const question = response.submission.assessment.questions.find(
-            q => q.id === answer.question_id
+            (q) => q.id === answer.question_id
           );
-          
+
           if (question) {
             newAnswers[answer.question_id] = {
               ...answer,
               questionText: question.question_text,
               questionType: question.question_type,
               maxPoints: question.points,
-              selectedAnswer: answer.selected_option?.option_text || answer.text_response || 'No answer provided',
+              selectedAnswer:
+                answer.selected_option?.option_text ||
+                answer.text_response ||
+                "No answer provided",
               isCorrect: answer.selected_option?.is_correct || false,
               pointsAwarded: answer.points_awarded, // Make sure this is updated
               allOptions: question.options || [],
-              answerKey: question.answer_key
+              answerKey: question.answer_key,
             };
           }
         });
-        
+
         setAnswersWithDetails(newAnswers);
       }
     } catch (err) {
-      console.error('Error refreshing submission details:', err);
+      console.error("Error refreshing submission details:", err);
     }
   };
 
   const handleAutoGrade = async () => {
     try {
       setAutoGradeLoading(true);
-      setError(''); // Add error state reset
-      
+      setError(""); // Add error state reset
+
       if (!submissionDetails?.answers) {
-        throw new Error('No submission answers found');
+        throw new Error("No submission answers found");
       }
-      
+
       // Filter only ungraded multiple choice and true/false questions
-      const autoGradeableAnswers = submissionDetails.answers.filter(answer => {
-        const question = submissionDetails.assessment.questions.find(q => q.id === answer.question_id);
-        return (question?.question_type === 'multiple_choice' || question?.question_type === 'true_false') 
-               && answer.points_awarded === null; // Only grade ungraded questions
-      });
-      
+      const autoGradeableAnswers = submissionDetails.answers.filter(
+        (answer) => {
+          const question = submissionDetails.assessment.questions.find(
+            (q) => q.id === answer.question_id
+          );
+          return (
+            (question?.question_type === "multiple_choice" ||
+              question?.question_type === "true_false") &&
+            answer.points_awarded === null
+          ); // Only grade ungraded questions
+        }
+      );
+
       if (autoGradeableAnswers.length === 0) {
-        throw new Error('No auto-gradeable questions found or all questions are already graded');
+        throw new Error(
+          "No auto-gradeable questions found or all questions are already graded"
+        );
       }
-      
+
       // Update stats
       setAutoGradeStats({
         total: autoGradeableAnswers.length,
-        processed: 0
+        processed: 0,
       });
-      
+
       // Prepare grading data
       const grades = [];
-      
+
       // Process each answer
       for (const answer of autoGradeableAnswers) {
-        const question = submissionDetails.assessment.questions.find(q => q.id === answer.question_id);
+        const question = submissionDetails.assessment.questions.find(
+          (q) => q.id === answer.question_id
+        );
         if (!question) continue;
-        
-        const correctOption = question.options?.find(opt => opt.is_correct);
+
+        const correctOption = question.options?.find((opt) => opt.is_correct);
         const isCorrect = answer.selected_option_id === correctOption?.id;
-        
+
         grades.push({
           questionId: answer.question_id,
           points: isCorrect ? question.points : 0,
-          feedback: isCorrect ? 'Correct answer' : 'Incorrect answer'
+          feedback: isCorrect ? "Correct answer" : "Incorrect answer",
         });
-        
-        setAutoGradeStats(prev => ({...prev, processed: prev.processed + 1}));
+
+        setAutoGradeStats((prev) => ({
+          ...prev,
+          processed: prev.processed + 1,
+        }));
       }
-      
+
       // Submit grades
       const response = await gradeSubmission(submissionDetails.id, {
         grades,
-        feedback: 'Auto-graded multiple choice and true/false questions'
+        feedback: "Auto-graded multiple choice and true/false questions",
       });
-      
+
       if (response.success) {
         await handleGradeUpdate(response.submission);
         setIsConfirmAutoGradeModalOpen(false);
         // Show success message
-        alert('Auto-grading completed successfully!');
+        alert("Auto-grading completed successfully!");
       } else {
-        throw new Error(response.message || 'Failed to save grades');
+        throw new Error(response.message || "Failed to save grades");
       }
-      
     } catch (err) {
-      console.error('Error during auto-grading:', err);
+      console.error("Error during auto-grading:", err);
       setError(err.message);
-      alert('Auto-grading failed: ' + err.message);
+      alert("Auto-grading failed: " + err.message);
     } finally {
       setAutoGradeLoading(false);
       setIsConfirmAutoGradeModalOpen(false);
@@ -386,115 +434,109 @@ const StudentSubmissionView = () => {
     if (!details) return null;
 
     return (
-      <div key={answer.id} className="bg-white p-4 rounded-lg shadow-sm">
-        <div className="flex justify-between">
-          <p className="font-medium">Question {index + 1}</p>
-          <div className="flex items-center gap-2">
+      <div key={answer.id} className="bg-white p-6 rounded-lg shadow-sm">
+        <div className="flex justify-between items-center mb-4">
+          <p className="text-lg font-medium">Question {index + 1}</p>
+          <div className="flex items-center gap-3">
             <span className="text-sm text-gray-500">
-              {answer.points_awarded !== null ? 
-                `${answer.points_awarded}/${details.maxPoints} points` : 
-                'Not graded'}
+              {answer.points_awarded !== null
+                ? `${answer.points_awarded}/${details.maxPoints} points`
+                : "Not graded"}
             </span>
-            {/* Add auto-graded tag if question was auto-graded */}
-            {(details.questionType === 'multiple_choice' || details.questionType === 'true_false') && 
-             answer.points_awarded !== null && (
-              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                Auto-graded
-              </span>
-            )}
+            {(details.questionType === "multiple_choice" ||
+              details.questionType === "true_false") &&
+              answer.points_awarded !== null && (
+                <span className="text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
+                  Auto-graded
+                </span>
+              )}
           </div>
         </div>
 
-        <div className="mt-3">
-          <p className="text-sm font-medium text-gray-600">Question:</p>
-          <p className="mt-1 text-gray-800">{details.questionText}</p>
-
-          <p className="text-sm font-medium text-gray-600 mt-3">Student's Answer:</p>
-          <div className="mt-1 p-2 bg-gray-50 rounded">
-            <span className={`${details.isCorrect ? 'text-green-600 font-medium' : 'text-gray-800'}`}>
-              {details.selectedAnswer}
-            </span>
-            {details.isCorrect && <span className="text-green-500 ml-2">✓</span>}
+        <div className="space-y-6">
+          <div>
+            <p className="text-sm font-medium text-gray-600 mb-2">Question:</p>
+            <p className="text-gray-800 bg-gray-50 p-4 rounded-lg">
+              {details.questionText}
+            </p>
           </div>
 
-          {details.questionType === 'multiple_choice' && (
-            <div className="mt-3">
-              <p className="text-sm font-medium text-green-600">All Options:</p>
-              <div className="mt-1 space-y-1">
-                {details.allOptions.map(option => (
-                  <div 
+          <div>
+            <p className="text-sm font-medium text-gray-600 mb-2">
+              Student's Answer:
+            </p>
+            <div
+              className={`p-4 rounded-lg ${
+                details.isCorrect ? "bg-green-50" : "bg-gray-50"
+              }`}
+            >
+              <span
+                className={
+                  details.isCorrect
+                    ? "text-green-600 font-medium"
+                    : "text-gray-800"
+                }
+              >
+                {details.selectedAnswer}
+              </span>
+              {details.isCorrect && (
+                <span className="text-green-500 ml-2">✓</span>
+              )}
+            </div>
+          </div>
+
+          {details.questionType === "multiple_choice" && (
+            <div>
+              <p className="text-sm font-medium text-green-600 mb-2">
+                All Options:
+              </p>
+              <div className="space-y-2">
+                {details.allOptions.map((option) => (
+                  <div
                     key={option.id}
-                    className={`p-2 rounded ${
-                      option.is_correct ? 'bg-green-50 text-green-700 font-medium' : 
-                      option.id === details.selectedOptionId ? 
-                        `bg-${details.isCorrect ? 'green' : 'red'}-50` : ''
+                    className={`p-4 rounded-lg ${
+                      option.is_correct
+                        ? "bg-green-50 text-green-700 font-medium"
+                        : option.id === details.selectedOptionId
+                        ? details.isCorrect
+                          ? "bg-green-50 text-green-700"
+                          : "bg-red-50 text-red-700"
+                        : "bg-gray-50"
                     }`}
                   >
-                    {option.is_correct && '✓ '}{option.option_text}
-                    {option.id === details.selectedOptionId && !option.is_correct && ' (Student\'s choice)'}
+                    {option.is_correct && "✓ "}
+                    {option.option_text}
+                    {option.id === details.selectedOptionId &&
+                      !option.is_correct &&
+                      " (Student's choice)"}
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {details.questionType === 'true_false' && (
-            <div className="mt-3">
-              <p className="text-sm font-medium text-green-600">Correct Answer:</p>
-              <div className="mt-1 space-y-1">
-                {details.allOptions.map(option => (
-                  <div 
-                    key={option.id}
-                    className={`p-2 rounded ${
-                      option.is_correct ? 'bg-green-50 text-green-700 font-medium' : 
-                      option.id === details.selectedOptionId ? 
-                        `bg-${details.isCorrect ? 'green' : 'red'}-50` : ''
-                    }`}
-                  >
-                    {option.is_correct && '✓ '}{option.option_text}
-                    {option.id === details.selectedOptionId && !option.is_correct && ' (Student\'s choice)'}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {details.questionType === 'short_answer' && (
-            <div className="mt-3">
-              <p className="text-sm font-medium text-green-600">Answer Key:</p>
-              <div className="mt-1 p-2 bg-green-50 rounded text-green-700">
-                {details.answerKey || 'No answer key provided'}
-              </div>
-            </div>
-          )}
-
-          {details.questionType === 'essay' && (
-            <div className="mt-3">
-              <p className="text-sm font-medium text-green-600">Grading Guidelines:</p>
-              <div className="mt-1 p-2 bg-green-50 rounded text-green-700">
-                {details.answerKey || 'No grading guidelines provided'}
-              </div>
-            </div>
-          )}
+          {/* ...existing other question types... */}
 
           {answer.feedback && (
-            <div className="mt-2">
-              <p className="text-sm font-medium text-gray-600">Feedback:</p>
-              <div className="mt-1 p-2 bg-blue-50 rounded text-blue-700">
+            <div>
+              <p className="text-sm font-medium text-gray-600 mb-2">
+                Feedback:
+              </p>
+              <div className="p-4 bg-blue-50 rounded-lg text-blue-700">
                 {answer.feedback}
               </div>
             </div>
           )}
         </div>
-        <div className="flex justify-end mt-4">
+
+        <div className="flex justify-end mt-6">
           <button
-            id="edit-grade-button"
-            aria-label="edit_grade"
+            data-testid="edit-grade-button"
             onClick={() => {
               setSelectedQuestion(answer);
               setIsEditGradeModalOpen(true);
             }}
-            className="px-3 py-1 text-sm bg-[#212529] text-white rounded hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
+            className="px-4 py-2 text-sm bg-[#212529] text-white rounded-lg hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
           >
             Edit Grade
           </button>
@@ -505,44 +547,57 @@ const StudentSubmissionView = () => {
 
   const renderSubmissionContent = () => {
     if (loading) return <div>Loading...</div>;
-    if (submissionError) return <div className="text-red-600">{submissionError}</div>;
+    if (submissionError)
+      return <div className="text-red-600">{submissionError}</div>;
     if (!submissionDetails?.answers) return <div>No submission found.</div>;
 
     // Format the submission date consistently
-    const formattedSubmitTime = submissionDetails.submit_time ? 
-      new Date(submissionDetails.submit_time).toLocaleString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }) : 'Not submitted';
+    const formattedSubmitTime = submissionDetails.submit_time
+      ? new Date(submissionDetails.submit_time).toLocaleString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "Not submitted";
 
     // Calculate total awarded points and total possible points
-    const totalAwarded = submissionDetails.answers.reduce((sum, answer) => 
-      sum + (parseInt(answer.points_awarded) || 0), 0);
-    const totalPossible = submissionDetails.assessment.questions.reduce((sum, question) => 
-      sum + (parseInt(question.points) || 0), 0);
+    const totalAwarded = submissionDetails.answers.reduce(
+      (sum, answer) => sum + (parseInt(answer.points_awarded) || 0),
+      0
+    );
+    const totalPossible = submissionDetails.assessment.questions.reduce(
+      (sum, question) => sum + (parseInt(question.points) || 0),
+      0
+    );
 
     // Check if all questions have been answered
-    const allQuestionsAnswered = submissionDetails.answers.every(answer => {
-      return answer.selected_option_id !== null || answer.text_response !== null;
+    const allQuestionsAnswered = submissionDetails.answers.every((answer) => {
+      return (
+        answer.selected_option_id !== null || answer.text_response !== null
+      );
     });
 
     // Check if all questions have been graded
-    const allQuestionsGraded = submissionDetails.answers.every(answer => 
-      answer.points_awarded !== null && answer.points_awarded !== undefined
+    const allQuestionsGraded = submissionDetails.answers.every(
+      (answer) =>
+        answer.points_awarded !== null && answer.points_awarded !== undefined
     );
 
     // Determine submission status based on answer completion and grading status
-    const submissionStatus = !allQuestionsAnswered ? 'Not Submitted' :
-                           allQuestionsGraded ? 'Graded' : 
-                           'Submitted';
+    const submissionStatus = !allQuestionsAnswered
+      ? "Not Submitted"
+      : allQuestionsGraded
+      ? "Graded"
+      : "Submitted";
 
     return (
       <div className="bg-gray-50 rounded-lg p-4">
         <div className="space-y-4">
-          {submissionDetails.answers.map((answer, index) => renderQuestionAnswer(answer, index))}
+          {submissionDetails.answers.map((answer, index) =>
+            renderQuestionAnswer(answer, index)
+          )}
         </div>
 
         {/* Updated submission meta data section with total score */}
@@ -554,9 +609,7 @@ const StudentSubmissionView = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Submitted:</p>
-              <p className="font-medium">
-                {formattedSubmitTime}
-              </p>
+              <p className="font-medium">{formattedSubmitTime}</p>
             </div>
             <div className="col-span-2">
               <p className="text-sm text-gray-600 mb-1">Total Score:</p>
@@ -579,8 +632,13 @@ const StudentSubmissionView = () => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold text-gray-900">Grade Submission</h3>
-          <button onClick={() => setIsGrading(false)} className="text-gray-400 hover:text-gray-500">
+          <h3 className="text-xl font-semibold text-gray-900">
+            Grade Submission
+          </h3>
+          <button
+            onClick={() => setIsGrading(false)}
+            className="text-gray-400 hover:text-gray-500"
+          >
             <X size={20} />
           </button>
         </div>
@@ -590,11 +648,13 @@ const StudentSubmissionView = () => {
             <div key={question.id} className="p-4 border rounded-lg">
               <div className="flex justify-between mb-2">
                 <h4 className="font-medium">Question {index + 1}</h4>
-                <span className="text-sm text-gray-500">Max: {question.points} points</span>
+                <span className="text-sm text-gray-500">
+                  Max: {question.points} points
+                </span>
               </div>
-              
+
               <p className="text-gray-700 mb-4">{question.question_text}</p>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -604,28 +664,47 @@ const StudentSubmissionView = () => {
                     type="number"
                     min="0"
                     max={question.points}
-                    value={gradingData.grades.find(g => g.questionId === question.id)?.points || 0}
-                    onChange={(e) => handleGradeChange(
-                      question.id,
-                      Math.min(question.points, Math.max(0, parseInt(e.target.value) || 0)),
-                      gradingData.grades.find(g => g.questionId === question.id)?.feedback || ''
-                    )}
+                    value={
+                      gradingData.grades.find(
+                        (g) => g.questionId === question.id
+                      )?.points || 0
+                    }
+                    onChange={(e) =>
+                      handleGradeChange(
+                        question.id,
+                        Math.min(
+                          question.points,
+                          Math.max(0, parseInt(e.target.value) || 0)
+                        ),
+                        gradingData.grades.find(
+                          (g) => g.questionId === question.id
+                        )?.feedback || ""
+                      )
+                    }
                     className="w-full p-2 border rounded"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Feedback
                   </label>
                   <input
                     type="text"
-                    value={gradingData.grades.find(g => g.questionId === question.id)?.feedback || ''}
-                    onChange={(e) => handleGradeChange(
-                      question.id,
-                      gradingData.grades.find(g => g.questionId === question.id)?.points || 0,
-                      e.target.value
-                    )}
+                    value={
+                      gradingData.grades.find(
+                        (g) => g.questionId === question.id
+                      )?.feedback || ""
+                    }
+                    onChange={(e) =>
+                      handleGradeChange(
+                        question.id,
+                        gradingData.grades.find(
+                          (g) => g.questionId === question.id
+                        )?.points || 0,
+                        e.target.value
+                      )
+                    }
                     className="w-full p-2 border rounded"
                     placeholder="Optional feedback for this question"
                   />
@@ -640,7 +719,12 @@ const StudentSubmissionView = () => {
             </label>
             <textarea
               value={gradingData.feedback}
-              onChange={(e) => setGradingData(prev => ({ ...prev, feedback: e.target.value }))}
+              onChange={(e) =>
+                setGradingData((prev) => ({
+                  ...prev,
+                  feedback: e.target.value,
+                }))
+              }
               className="w-full p-2 border rounded"
               rows={3}
               placeholder="Provide overall feedback for the submission"
@@ -659,7 +743,7 @@ const StudentSubmissionView = () => {
               className="px-6 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#F6BA18] hover:text-[#212529]"
               disabled={loading}
             >
-              {loading ? 'Saving...' : 'Save Grades'}
+              {loading ? "Saving..." : "Save Grades"}
             </button>
           </div>
         </div>
@@ -674,16 +758,15 @@ const StudentSubmissionView = () => {
           <AlertTriangle size={24} className="mr-2" />
           <h3 className="text-xl font-semibold">Confirm Auto-Grading</h3>
         </div>
-        
+
         <p className="text-gray-600 mb-4">
-          This will automatically grade all multiple-choice and true/false questions in this submission.
-          Existing grades for these questions will be overwritten.
+          This will automatically grade all multiple-choice and true/false
+          questions in this submission. Existing grades for these questions will
+          be overwritten.
         </p>
-        
-        <p className="text-gray-600 mb-6">
-          Do you want to continue?
-        </p>
-        
+
+        <p className="text-gray-600 mb-6">Do you want to continue?</p>
+
         <div className="flex justify-end gap-3">
           <button
             onClick={() => setIsConfirmAutoGradeModalOpen(false)}
@@ -697,17 +780,26 @@ const StudentSubmissionView = () => {
             className="px-6 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#F6BA18] hover:text-[#212529]"
             disabled={autoGradeLoading}
           >
-            {autoGradeLoading ? 'Processing...' : 'Proceed'}
+            {autoGradeLoading ? "Processing..." : "Proceed"}
           </button>
         </div>
-        
+
         {autoGradeLoading && (
           <div className="mt-4">
-            <p className="text-sm text-gray-600">Processing questions: {autoGradeStats.processed}/{autoGradeStats.total}</p>
+            <p className="text-sm text-gray-600">
+              Processing questions: {autoGradeStats.processed}/
+              {autoGradeStats.total}
+            </p>
             <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-              <div 
-                className="bg-[#F6BA18] h-2.5 rounded-full" 
-                style={{width: `${(autoGradeStats.processed / Math.max(1, autoGradeStats.total)) * 100}%`}}
+              <div
+                className="bg-[#F6BA18] h-2.5 rounded-full"
+                style={{
+                  width: `${
+                    (autoGradeStats.processed /
+                      Math.max(1, autoGradeStats.total)) *
+                    100
+                  }%`,
+                }}
               ></div>
             </div>
           </div>

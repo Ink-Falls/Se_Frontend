@@ -1,100 +1,111 @@
-import React, { useState } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from "react"; // Add useEffect import
+import { X, Plus, Trash2 } from "lucide-react";
 
 const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
-  const [questionData, setQuestionData] = useState({
-    question_text: '',
-    question_type: 'multiple_choice',
+  const initialState = {
+    question_text: "",
+    question_type: "multiple_choice",
     points: 5,
     order_index: 1,
-    media_url: '',
-    options: [{ text: '', is_correct: false }], // Keep text for internal use
-    correct_answer: '' // For identification and true/false
-  });
+    media_url: "",
+    options: [{ text: "", is_correct: false }], // Keep text for internal use
+    correct_answer: "", // For identification and true/false
+  };
+
+  const [questionData, setQuestionData] = useState(initialState);
+
+  // Add effect to reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setQuestionData(initialState);
+    }
+  }, [isOpen]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setQuestionData(prev => ({
+    setQuestionData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleOptionChange = (index, field, value) => {
-    setQuestionData(prev => ({
+    setQuestionData((prev) => ({
       ...prev,
-      options: prev.options.map((option, i) => 
-        i === index 
-          ? { ...option, [field]: field === 'is_correct' ? value : value }
-          : field === 'is_correct' && value ? { ...option, is_correct: false } : option
-      )
+      options: prev.options.map((option, i) =>
+        i === index
+          ? { ...option, [field]: field === "is_correct" ? value : value }
+          : field === "is_correct" && value
+          ? { ...option, is_correct: false }
+          : option
+      ),
     }));
   };
 
   const addOption = () => {
-    setQuestionData(prev => ({
+    setQuestionData((prev) => ({
       ...prev,
-      options: [...prev.options, { text: '', is_correct: false }]
+      options: [...prev.options, { text: "", is_correct: false }],
     }));
   };
 
   const removeOption = (index) => {
-    setQuestionData(prev => ({
+    setQuestionData((prev) => ({
       ...prev,
-      options: prev.options.filter((_, i) => i !== index)
+      options: prev.options.filter((_, i) => i !== index),
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       const basicData = {
         question_text: questionData.question_text.trim(),
         question_type: questionData.question_type,
         points: parseInt(questionData.points),
-        media_url: questionData.media_url || ''
+        media_url: questionData.media_url || "",
       };
 
       switch (questionData.question_type) {
-        case 'multiple_choice':
-          if (!questionData.options.some(opt => opt.is_correct)) {
-            alert('Please select a correct answer');
+        case "multiple_choice":
+          if (!questionData.options.some((opt) => opt.is_correct)) {
+            alert("Please select a correct answer");
             return;
           }
           basicData.options = questionData.options
-            .filter(opt => opt.text.trim())
-            .map(opt => ({
+            .filter((opt) => opt.text.trim())
+            .map((opt) => ({
               text: opt.text.trim(),
-              is_correct: opt.is_correct
+              is_correct: opt.is_correct,
             }));
           break;
 
-        case 'true_false':
+        case "true_false":
           if (!questionData.correct_answer) {
-            alert('Please select the correct answer');
+            alert("Please select the correct answer");
             return;
           }
           basicData.correct_answer = questionData.correct_answer;
           break;
 
-        case 'short_answer':
-        case 'essay':
+        case "short_answer":
+        case "essay":
           if (!questionData.correct_answer?.trim()) {
-            alert('Please provide an answer key or guidelines');
+            alert("Please provide an answer key or guidelines");
             return;
           }
           basicData.correct_answer = questionData.correct_answer.trim();
           break;
 
         default:
-          throw new Error('Invalid question type');
+          throw new Error("Invalid question type");
       }
 
       await onSubmit(basicData);
     } catch (err) {
-      console.error('Error submitting question:', err);
-      alert(err.message || 'Error creating question. Please try again.');
+      console.error("Error submitting question:", err);
+      alert(err.message || "Error creating question. Please try again.");
     }
   };
 
@@ -102,7 +113,10 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
     return (
       <>
         <div>
-          <label htmlFor="media_url" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="media_url"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Media URL (Optional)
           </label>
           <input
@@ -117,10 +131,10 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
           {questionData.media_url && (
             <div className="mt-2">
               {questionData.media_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                <img 
-                  src={questionData.media_url} 
+                <img
+                  src={questionData.media_url}
                   alt="Question media"
-                  className="max-h-40 rounded-md" 
+                  className="max-h-40 rounded-md"
                 />
               ) : (
                 <div className="p-2 bg-gray-50 rounded-md text-sm text-gray-600">
@@ -131,54 +145,73 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
           )}
         </div>
 
-        {questionData.question_type === 'multiple_choice' && (
+        {questionData.question_type === "multiple_choice" && (
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label htmlFor="select_ans"className="block text-sm font-medium text-gray-700">Options</label>
-              <span className="text-sm text-gray-500">Select the correct answer</span>
+              <label
+                htmlFor="select_ans"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Options
+              </label>
+              <span className="text-sm text-gray-500">
+                Select the correct answer
+              </span>
             </div>
-            {questionData.options.map((option, index) => (
-              <div key={index} className="flex gap-2 items-center">
-                <div className="flex items-center h-5">
+            <div
+              className={`pr-2 ${
+                questionData.options.length > 3
+                  ? "max-h-[180px] overflow-y-auto"
+                  : ""
+              }`}
+            >
+              {questionData.options.map((option, index) => (
+                <div key={index} className="flex gap-2 items-center mb-2">
+                  <div className="flex items-center h-5">
+                    <input
+                      id="select_ans"
+                      type="radio"
+                      name="correct_option"
+                      checked={option.is_correct}
+                      onChange={(e) => {
+                        // Update all options to false first
+                        const updatedOptions = questionData.options.map(
+                          (opt) => ({
+                            ...opt,
+                            is_correct: false,
+                          })
+                        );
+                        // Set the selected option to true
+                        updatedOptions[index].is_correct = true;
+                        setQuestionData((prev) => ({
+                          ...prev,
+                          options: updatedOptions,
+                        }));
+                      }}
+                      className="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300"
+                    />
+                  </div>
                   <input
-                    id="select_ans"
-                    type="radio"
-                    name="correct_option"
-                    checked={option.is_correct}
-                    onChange={(e) => {
-                      // Update all options to false first
-                      const updatedOptions = questionData.options.map(opt => ({
-                        ...opt,
-                        is_correct: false
-                      }));
-                      // Set the selected option to true
-                      updatedOptions[index].is_correct = true;
-                      setQuestionData(prev => ({
-                        ...prev,
-                        options: updatedOptions
-                      }));
-                    }}
-                    className="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300"
+                    type="text"
+                    value={option.text}
+                    onChange={(e) =>
+                      handleOptionChange(index, "text", e.target.value)
+                    }
+                    className="flex-1 px-3 py-2 border rounded-md"
+                    placeholder={`Option ${index + 1}`}
+                    required
                   />
+                  <button
+                    type="button"
+                    onClick={() => removeOption(index)}
+                    className="p-2 text-red-500 hover:text-red-700"
+                    aria-label="trash"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
-                <input
-                  type="text"
-                  value={option.text}
-                  onChange={(e) => handleOptionChange(index, 'text', e.target.value)}
-                  className="flex-1 px-3 py-2 border rounded-md"
-                  placeholder={`Option ${index + 1}`}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => removeOption(index)}
-                  className="p-2 text-red-500 hover:text-red-700"
-                  aria-label='trash'
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
             <button
               type="button"
               onClick={addOption}
@@ -190,7 +223,7 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
           </div>
         )}
 
-        {questionData.question_type === 'true_false' && (
+        {questionData.question_type === "true_false" && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Correct Answer
@@ -207,7 +240,9 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
                   className="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300"
                   required
                 />
-                <label htmlFor="true" className="text-sm text-gray-700">True</label>
+                <label htmlFor="true" className="text-sm text-gray-700">
+                  True
+                </label>
               </div>
               <div className="flex items-center gap-2">
                 <input
@@ -220,13 +255,15 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
                   className="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300"
                   required
                 />
-                <label htmlFor="false" className="text-sm text-gray-700">False</label>
+                <label htmlFor="false" className="text-sm text-gray-700">
+                  False
+                </label>
               </div>
             </div>
           </div>
         )}
 
-        {questionData.question_type === 'short_answer' && (
+        {questionData.question_type === "short_answer" && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Correct Answer
@@ -243,7 +280,7 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
           </div>
         )}
 
-        {questionData.question_type === 'essay' && (
+        {questionData.question_type === "essay" && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Answer Guidelines
@@ -266,85 +303,102 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-        <div className="flex justify-between items-center mb-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="p-4 sm:p-6 border-b flex justify-between items-center">
           <h2 className="text-xl font-semibold">Add Question</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
             <X size={24} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label  htmlFor="question_text" className="block text-sm font-medium text-gray-700 mb-1">
-              Question Text
-            </label>
-            <textarea
-              id="question_text"
-              name="question_text"
-              value={questionData.question_text}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border rounded-md"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Question Text section */}
             <div>
-              <label  htmlFor="question_type" className="block text-sm font-medium text-gray-700 mb-1">
-                Question Type
-              </label>
-              <select
-                id="question_type"
-                name="question_type"
-                value={questionData.question_type}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border rounded-md"
+              <label
+                htmlFor="question_text"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
-                <option value="multiple_choice">Multiple Choice</option>
-                <option value="true_false">True/False</option>
-                <option value="short_answer">Short Answer</option>
-                <option value="essay">Essay</option>
-              </select>
-            </div>
-
-            <div>
-              <label  htmlFor="points" className="block text-sm font-medium text-gray-700 mb-1">
-                Points
+                Question Text
               </label>
-              <input
-                id="points"
-                type="number"
-                name="points"
-                value={questionData.points}
+              <textarea
+                id="question_text"
+                name="question_text"
+                value={questionData.question_text}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border rounded-md"
-                min="1"
                 required
               />
             </div>
-          </div>
 
-          {renderQuestionFields()}
+            {/* Question Type and Points section */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="question_type"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Question Type
+                </label>
+                <select
+                  id="question_type"
+                  name="question_type"
+                  value={questionData.question_type}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="multiple_choice">Multiple Choice</option>
+                  <option value="true_false">True/False</option>
+                  <option value="short_answer">Short Answer</option>
+                  <option value="essay">Essay</option>
+                </select>
+              </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-            >
-              Cancel
-            </button>
-            <button
-              aria-label='add question'
-              type="submit"
-              className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
-            >
-              Add Question
-            </button>
-          </div>
-        </form>
+              <div>
+                <label
+                  htmlFor="points"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Points
+                </label>
+                <input
+                  id="points"
+                  type="number"
+                  name="points"
+                  value={questionData.points}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border rounded-md"
+                  min="1"
+                  required
+                />
+              </div>
+            </div>
+
+            {renderQuestionFields()}
+
+            {/* Form buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t mt-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                aria-label="add question"
+                type="submit"
+                className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
+              >
+                Add Question
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
