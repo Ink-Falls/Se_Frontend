@@ -89,7 +89,7 @@ describe('SubmissionHistoryDropdown Component', () => {
       expect(screen.getByText('Submission')).toBeInTheDocument();
     });
 
-    const dropdownButton = screen.getByRole('button', { name: /submission/i });
+    const dropdownButton = screen.getByRole('button', { name: 'Submission' });
     fireEvent.click(dropdownButton);
 
     expect(screen.getByText('Attempt 1')).toBeInTheDocument();
