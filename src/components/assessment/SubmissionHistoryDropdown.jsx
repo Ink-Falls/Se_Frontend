@@ -20,6 +20,7 @@ const SubmissionHistoryDropdown = ({
   maxScore = 0
 }) => {
   const [submissions, setSubmissions] = useState([]);
+  const [displaySubmissions, setDisplaySubmissions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -37,24 +38,29 @@ const SubmissionHistoryDropdown = ({
         const response = await getUserSubmission(assessmentId, true);
         
         if (response.success && response.submission) {
-          // Create a submissions array even though we're getting just one submission
-          // This ensures the component displays at least the current submission
-          const currentSubmissionData = {
+          // Store the original submission data
+          const originalSubmission = {
             ...response.submission,
-            submit_time: response.submission.submit_time,
-            formatted_time: new Date(response.submission.submit_time).toLocaleString(),
             total_score: response.submission.total_score || 0
           };
           
-          // Place the submission in an array
-          setSubmissions([currentSubmissionData]);
+          // Create a display version with formatted time
+          const displaySubmission = {
+            ...originalSubmission,
+            formatted_time: new Date(response.submission.submit_time).toLocaleString()
+          };
+          
+          // Store both versions
+          setSubmissions([originalSubmission]);
+          setDisplaySubmissions([displaySubmission]);
           
           // If there's no current submission selected and we have one, select it
           if (!currentSubmission && onSelectSubmission) {
-            onSelectSubmission(currentSubmissionData);
+            onSelectSubmission(originalSubmission);
           }
         } else {
           setSubmissions([]);
+          setDisplaySubmissions([]);
         }
       } catch (err) {
         console.error('Error fetching submission:', err);
@@ -69,9 +75,9 @@ const SubmissionHistoryDropdown = ({
 
   const toggleDropdown = () => setIsOpen(!isOpen);
 
-  const handleSelect = (submission) => {
-    if (onSelectSubmission) {
-      onSelectSubmission(submission);
+  const handleSelect = (index) => {
+    if (onSelectSubmission && submissions[index]) {
+      onSelectSubmission(submissions[index]);
     }
     setIsOpen(false);
   };
@@ -91,7 +97,7 @@ const SubmissionHistoryDropdown = ({
   };
 
   if (loading) {
-    return <div className="h-10 w-full bg-gray-100 animate-pulse rounded-md"></div>;
+    return <div role="status" className="h-10 w-full bg-gray-100 animate-pulse rounded-md"></div>;
   }
 
   if (error) {
@@ -111,7 +117,18 @@ const SubmissionHistoryDropdown = ({
   }
 
   // Find currently selected submission
-  const selectedSubmission = currentSubmission || submissions[0];
+  const selectedSubmissionIndex = currentSubmission 
+    ? submissions.findIndex(sub => sub.id === currentSubmission.id)
+    : 0;
+  
+  const selectedSubmission = selectedSubmissionIndex >= 0 
+    ? submissions[selectedSubmissionIndex]
+    : submissions[0];
+  
+  const selectedDisplaySubmission = selectedSubmissionIndex >= 0
+    ? displaySubmissions[selectedSubmissionIndex]
+    : displaySubmissions[0];
+    
   const statusBadge = getStatusBadge(selectedSubmission?.status);
 
   return (
@@ -121,11 +138,12 @@ const SubmissionHistoryDropdown = ({
       {/* Dropdown trigger button */}
       <button
         onClick={toggleDropdown}
+        aria-label="Submission"
         className="w-full flex items-center justify-between p-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center">
           <span className="mr-2 text-sm">
-            {selectedSubmission?.formatted_time || new Date(selectedSubmission?.submit_time).toLocaleString()}
+            {selectedDisplaySubmission?.formatted_time || new Date(selectedSubmission?.submit_time).toLocaleString()}
           </span>
           <span className={`px-2 py-0.5 text-xs flex items-center rounded-full ${statusBadge.color}`}>
             {statusBadge.icon}
@@ -146,12 +164,13 @@ const SubmissionHistoryDropdown = ({
       {/* Dropdown menu - only show if we have multiple submissions (future support) */}
       {isOpen && submissions.length > 0 && (
         <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-          {submissions.map((submission, index) => {
+          {displaySubmissions.map((displaySubmission, index) => {
+            const submission = submissions[index];
             const subStatusBadge = getStatusBadge(submission.status);
             return (
               <button
                 key={submission.id || index}
-                onClick={() => handleSelect(submission)}
+                onClick={() => handleSelect(index)}
                 className={`w-full text-left p-2 hover:bg-gray-50 flex items-center justify-between ${
                   selectedSubmission?.id === submission.id ? 'bg-yellow-50' : ''
                 }`}
@@ -161,7 +180,7 @@ const SubmissionHistoryDropdown = ({
                     Attempt {index + 1}
                   </span>
                   <span className="text-xs text-gray-500">
-                    {submission.formatted_time || new Date(submission.submit_time).toLocaleString()}
+                    {displaySubmission.formatted_time || new Date(submission.submit_time).toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center">
