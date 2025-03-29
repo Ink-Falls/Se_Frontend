@@ -1,4 +1,4 @@
-name: Copilot Code Review
+name: Automated PR Review
 
 on:
   pull_request:
@@ -9,50 +9,39 @@ permissions:
   pull-requests: write
 
 jobs:
-  copilot-review:
+  auto-review:
     runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v3
       
-      # Use the Copilot for PRs action instead
-      - name: Copilot for PRs
-        uses: github/copilot-preview-action@v1
+      # Assign Reviewers Automatically
+      - name: Assign Reviewers
+        uses: actions/github-script@v7
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Add Review Summary
-        if: success()
-        uses: actions/github-script@v6
-        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const summary = `## 🤖 Copilot Review Complete
+            github.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              reviewers: ["your-github-username"]  # Change this to actual GitHub user/team
+            });
 
-            The automated code review has completed successfully.
+      - name: Add Review Summary
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const summary = `## 🤖 Automated Review Started
+
+            The pull request has been assigned for review.
             
-            Please review any generated suggestions and comments.`;
+            Please review the suggested changes and feedback.`;
             
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: summary
-            });
-
-      - name: Report Failure
-        if: failure() 
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const errorMessage = `## ❌ Review Failed
-
-            The automated code review encountered an error.
-            
-            Please check the workflow logs for details.`;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: errorMessage
             });
