@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import tokenService from '../services/tokenService';
-import { validateToken, logoutUser } from '../services/authService';
+import { logoutUser } from '../services/authService';
 
 const AuthContext = createContext(null);
 
@@ -27,14 +27,15 @@ export function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
-      // Using validateToken from authService as expected by tests
-      const result = await validateToken();
+      // Using tokenService.validateAuth instead of validateToken
+      const result = await tokenService.validateAuth();
       
-      if (result && result.role) {
+      // Handle null or undefined result
+      if (result && result.valid && result.user) {
         setAuthState({
           isAuthenticated: true,
-          user: { role: result.role },
-          userRole: result.role,
+          user: result.user,
+          userRole: result.user.role,
           loading: false
         });
         
@@ -47,6 +48,7 @@ export function AuthProvider({ children }) {
           userRole: null,
           loading: false
         });
+        // Return null for invalid authentication
         return null;
       }
     } catch (error) {

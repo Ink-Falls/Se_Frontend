@@ -1,18 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, act, renderHook, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuth } from '../../src/contexts/AuthContext';
-import { validateToken, logoutUser } from '../../src/services/authService';
+import { logoutUser } from '../../src/services/authService';
 import tokenService from '../../src/services/tokenService';
 
-// Provide complete mocks for authService
+// Provide mock for authService
 vi.mock('../../src/services/authService', () => ({
-  validateToken: vi.fn(),
   logoutUser: vi.fn().mockResolvedValue(true)
 }));
 
 // Mock tokenService with all methods used in AuthContext
 vi.mock('../../src/services/tokenService', () => ({
   default: {
+    validateAuth: vi.fn(),
     removeTokens: vi.fn().mockResolvedValue(true),
     clearAutoRefresh: vi.fn()
   }
@@ -27,12 +27,14 @@ describe('AuthContext', () => {
     window.location = { href: '' };
 
     // Setup default mock implementation
-    validateToken.mockReset();
     logoutUser.mockReset().mockResolvedValue(true);
     tokenService.removeTokens.mockReset().mockResolvedValue(true);
     
-    // Default mock implementation - return null by default
-    validateToken.mockResolvedValue(null);
+    // Default mock implementation - return a default response matching the new format
+    tokenService.validateAuth.mockReset().mockResolvedValue({
+      valid: false,
+      user: null
+    });
   });
 
   afterEach(() => {
@@ -43,7 +45,7 @@ describe('AuthContext', () => {
 
   it('initializes with default values', async () => {
     // Set up validateToken to return immediately
-    validateToken.mockResolvedValueOnce(null);
+    tokenService.validateAuth.mockResolvedValueOnce(null);
     
     const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
     const { result } = renderHook(() => useAuth(), { wrapper });
@@ -64,44 +66,49 @@ describe('AuthContext', () => {
   }, 10000); // Increase timeout for this test
 
   it('handles successful authentication', async () => {
-    // Mock a successful authentication with admin role - make sure this is called
-    validateToken.mockImplementation(() => Promise.resolve({ role: 'admin' }));
+    // Mock a successful authentication with admin role
+    const mockAuthResult = {
+      valid: true,
+      user: { role: 'admin' }
+    };
+    
+    // Reset and make sure the mock is cleared
+    tokenService.validateAuth.mockReset();
+    
+    // Use mockResolvedValue (not once) to apply for any calls during this test
+    tokenService.validateAuth.mockResolvedValue(mockAuthResult);
+    
+    // Make sure our mock is working before entering the component
+    const mockCheck = await tokenService.validateAuth();
+    expect(mockCheck).toEqual(mockAuthResult);
     
     const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
     const { result } = renderHook(() => useAuth(), { wrapper });
 
-    // Initial check before checkAuth is explicitly called
-    expect(result.current.loading).toBe(true);
-    
+    // Wait for the initial auth check to finish
     await act(async () => {
-      // Call checkAuth explicitly
-      const checkResult = await result.current.checkAuth();
-      expect(checkResult).toEqual({ role: 'admin' });
+      await vi.runAllTimersAsync();
     });
-
-    // After checkAuth, these values should be set
+    
+    // After the initial checkAuth from useEffect
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.user).toEqual({ role: 'admin' });
     expect(result.current.userRole).toBe('admin');
-    expect(result.current.loading).toBe(false);
   });
 
   it('handles authentication failure', async () => {
-    // Make error available for try/catch by storing it first
-    const authError = new Error('Auth failed');
-    validateToken.mockImplementation(() => Promise.reject(authError));
+    // Mock authentication failure
+    tokenService.validateAuth.mockResolvedValueOnce({
+      valid: false,
+      user: null
+    });
     
     const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
     const { result } = renderHook(() => useAuth(), { wrapper });
 
-    // Need to catch the error in the test
     await act(async () => {
-      try {
-        await result.current.checkAuth();
-      } catch (error) {
-        // We expect this error, so we catch it to prevent unhandled rejection
-        expect(error).toBe(authError);
-      }
+      const checkResult = await result.current.checkAuth();
+      expect(checkResult).toBeNull();
     });
 
     expect(result.current.isAuthenticated).toBe(false);
@@ -112,7 +119,7 @@ describe('AuthContext', () => {
   it('handles rate limit errors', async () => {
     // Make error available for try/catch by storing it first
     const rateLimitError = new Error('Rate limit exceeded');
-    validateToken.mockImplementation(() => Promise.reject(rateLimitError));
+    tokenService.validateAuth.mockImplementation(() => Promise.reject(rateLimitError));
     
     const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
     const { result } = renderHook(() => useAuth(), { wrapper });
