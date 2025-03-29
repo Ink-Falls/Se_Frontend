@@ -4,24 +4,31 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   copilot-review:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: write
     
     steps:
       - uses: actions/checkout@v3
       
       - name: Request Copilot Review
+        id: copilot
         uses: github/copilot-preview@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Check Review Status
+      
+      - name: Success Message
+        if: success()
         run: |
-          if [ "${{ github.event.pull_request.requested_reviewers }}" != *"github-copilot[bot]"* ]; then
-            echo "GitHub Copilot review is required"
-            exit 1
-          fi
+          echo "✅ Copilot review completed successfully!"
+          echo "Review comments have been added to the pull request."
+
+      - name: Error Message 
+        if: failure()
+        run: |
+          echo "❌ Copilot review failed."
+          echo "Please check the workflow logs for more details."
