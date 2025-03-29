@@ -1,0 +1,27 @@
+name: Copilot Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  copilot-review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Request Copilot Review
+        uses: github/copilot-preview@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Check Review Status
+        run: |
+          if [ "${{ github.event.pull_request.requested_reviewers }}" != *"github-copilot[bot]"* ]; then
+            echo "GitHub Copilot review is required"
+            exit 1
+          fi
