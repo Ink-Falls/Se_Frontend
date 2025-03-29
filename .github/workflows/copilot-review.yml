@@ -1,15 +1,13 @@
-name: Copilot Review
+name: Copilot Code Review
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
 
-# Update permissions to include write access
 permissions:
   contents: write
   pull-requests: write
   issues: write
-  checks: write
 
 jobs:
   copilot-review:
@@ -18,20 +16,44 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Request Copilot Review
-        id: copilot
-        uses: github/copilot-preview@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Success Message
+      # Use the official GitHub Copilot action
+      - name: GitHub Copilot Review
+        uses: github/copilot/review@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Add Review Summary
         if: success()
-        run: |
-          echo "✅ Copilot review completed successfully!"
-          echo "Review comments have been added to the pull request."
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const summary = `## 🤖 Copilot Review Complete
 
-      - name: Error Message 
+            The automated code review by GitHub Copilot has completed successfully.
+            
+            Please review the comments and suggestions left on the pull request.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+
+      - name: Report Failure
         if: failure()
-        run: |
-          echo "❌ Copilot review failed."
-          echo "Please check the workflow logs for more details."
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const errorMessage = `## ❌ Copilot Review Failed
+
+            The automated code review by GitHub Copilot encountered an error.
+            
+            Please check the workflow logs for more details.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: errorMessage
+            });
