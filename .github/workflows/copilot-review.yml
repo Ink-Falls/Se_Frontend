@@ -5,9 +5,8 @@ on:
     types: [opened, synchronize, reopened]
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
-  issues: write
 
 jobs:
   copilot-review:
@@ -16,11 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      # Use the official GitHub Copilot action
-      - name: GitHub Copilot Review
-        uses: github/copilot/review@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Use the Copilot for PRs action instead
+      - name: Copilot for PRs
+        uses: github/copilot-preview-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           
       - name: Add Review Summary
         if: success()
@@ -29,9 +28,9 @@ jobs:
           script: |
             const summary = `## 🤖 Copilot Review Complete
 
-            The automated code review by GitHub Copilot has completed successfully.
+            The automated code review has completed successfully.
             
-            Please review the comments and suggestions left on the pull request.`;
+            Please review any generated suggestions and comments.`;
             
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -41,15 +40,15 @@ jobs:
             });
 
       - name: Report Failure
-        if: failure()
+        if: failure() 
         uses: actions/github-script@v6
         with:
           script: |
-            const errorMessage = `## ❌ Copilot Review Failed
+            const errorMessage = `## ❌ Review Failed
 
-            The automated code review by GitHub Copilot encountered an error.
+            The automated code review encountered an error.
             
-            Please check the workflow logs for more details.`;
+            Please check the workflow logs for details.`;
             
             github.rest.issues.createComment({
               issue_number: context.issue.number,
