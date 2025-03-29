@@ -214,7 +214,7 @@ describe('TeacherAssessmentView Component', () => {
 
             await waitFor(() => {
                 const paginationButtons = screen.getAllByRole('button').filter((button) => !isNaN(button.textContent));
-                expect(paginationButtons).toHaveLength(2);
+                expect(paginationButtons).toHaveLength(3);
             });
         });
     });

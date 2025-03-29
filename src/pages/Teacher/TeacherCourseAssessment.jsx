@@ -321,6 +321,8 @@ const TeacherCourseAssessment = () => {
               There are no assessments for this course yet.
             </p>
             <button
+              data-testid="create-assessment-button"
+              aria-label="create assessment"
               onClick={() => setIsCreateModalOpen(true)}
               className="px-6 py-3 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors inline-flex items-center gap-2"
             >
