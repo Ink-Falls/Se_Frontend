@@ -4,9 +4,12 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# Update permissions to include write access
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
+  issues: write
+  checks: write
 
 jobs:
   copilot-review:
