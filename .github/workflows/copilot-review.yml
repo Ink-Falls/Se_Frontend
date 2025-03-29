@@ -28,20 +28,14 @@ jobs:
               reviewers: ["your-github-username"]  # Change this to actual GitHub user/team
             });
 
-      - name: Add Review Summary
+      - name: Assign Reviewers
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const summary = `## 🤖 Automated Review Started
-
-            The pull request has been assigned for review.
-            
-            Please review the suggested changes and feedback.`;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            github.pulls.requestReviewers({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: summary
+              pull_number: context.payload.pull_request.number,
+              reviewers: ["your-github-username"]
             });
