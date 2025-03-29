@@ -1,24 +1,16 @@
 import React, { useState, useEffect } from "react";
-import Sidebar, {
-  SidebarItem,
-} from "/src/components/common/layout/Sidebar.jsx";
+import Sidebar from "/src/components/common/layout/Sidebar.jsx";
 import Header from "/src/components/common/layout/Header.jsx";
 import Modal from "../../components/common/Button/Modal";
 import DeleteModal from "/src/components/common/Modals/Delete/DeleteModal.jsx";
 import {
-  MoreVertical,
-  ChevronDown,
   Edit,
   Trash2,
   Plus,
-  Save,
-  XCircle,
   Home,
   Book,
   Bell,
   FileText,
-  Users,
-  Search,
   ArrowUpDown,
   Megaphone,
   Clock,
@@ -53,7 +45,6 @@ function AdminAnnouncements() {
     },
   ]);
 
-  const [expandedAnnouncementId, setExpandedAnnouncementId] = useState(null);
   const [editingAnnouncement, setEditingAnnouncement] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const [isAddAnnouncementOpen, setIsAddAnnouncementOpen] = useState(false);

@@ -256,25 +256,6 @@ export const getAllGroups = async () => {
   }
 };
 
-export const getGroupById = async (groupId) => {
-  try {
-    const token = localStorage.getItem("token");
-    const response = await fetchWithInterceptor(
-      `${API_BASE_URL}/groups/${groupId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (!response.ok) throw new Error("Failed to fetch group");
-    return await response.json();
-  } catch (error) {
-    throw error;
-  }
-};
 
 export const getGroupsByType = async (type) => {
   try {
@@ -374,42 +355,6 @@ export const getGroupMembers = async (groupId) => {
   }
 };
 
-export const updateGroupMembers = async (
-  groupId,
-  addMembers = [],
-  removeMembers = []
-) => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) throw new Error("Authentication token not found");
-
-    const response = await fetchWithInterceptor(
-      `${API_BASE_URL}/groups/${groupId}/members`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          addMembers,
-          removeMembers,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to update group members");
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Error updating group members:", error);
-    throw error;
-  }
-};
-
 export const updateGroup = async (groupId, updateData) => {
   try {
     const token = localStorage.getItem("token");
@@ -443,59 +388,6 @@ export const updateGroup = async (groupId, updateData) => {
   } catch (error) {
     console.error("Error updating group:", error);
     throw error;
-  }
-};
-
-/**
- * Gets all groups where user is a member
- * @param {number} userId - The user's ID to check membership
- * @returns {Promise<Array>} Array of group IDs the user belongs to
- */
-export const getUserGroupIds = async (userId) => {
-  const token = tokenService.getAccessToken();
-  let userGroups = [];
-  let currentGroupId = 1;
-  let consecutiveErrors = 0;
-  const MAX_CONSECUTIVE_ERRORS = 2;
-  const DELAY = 1000;
-
-  try {
-    const response = await fetchWithInterceptor(
-      `${API_BASE_URL}/groups/${currentGroupId}/members`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch group members");
-    }
-
-    const members = await response.json();
-    
-    // Group members by group_id and count
-    const groupCounts = members.reduce((acc, member) => {
-      if (!acc[member.group_id]) {
-        acc[member.group_id] = 0;
-      }
-      acc[member.group_id]++;
-      return acc;
-    }, {});
-
-    // Return array of objects with counts
-    userGroups = Object.entries(groupCounts).map(([groupId, count]) => ({
-      groupId: parseInt(groupId),
-      memberCount: count
-    }));
-
-    return userGroups;
-
-  } catch (error) {
-    console.error("Error fetching user groups:", error);
-    return userGroups;
   }
 };
 

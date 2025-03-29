@@ -10,9 +10,6 @@ import {
   Megaphone,
   BookOpen,
   ClipboardList,
-  User,
-  LineChart,
-  Plus,
   ArrowUpDown,
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";

@@ -1,11 +1,9 @@
 import React from "react";
-import { Edit, Trash2, Clock } from "lucide-react";
+import {Clock } from "lucide-react";
 
 const AnnouncementsComponent = ({
   announcements,
   onAnnouncementClick,
-  onEdit,
-  onDelete,
   courseId // Add courseId prop
 }) => {
   const getAnnouncementStyles = (type) => {

@@ -424,7 +424,7 @@ export const getUserSubmission = async (assessmentId, includeAnswers = false, pa
 export const gradeSubmission = async (submissionId, gradingData) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/assessments/submissions/${submissionId}/grade`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/assessments/submissions/${submissionId}/grade`, {
       method: 'POST',
       headers: { 
         'Authorization': `Bearer ${token}`,
@@ -448,7 +448,7 @@ export const gradeSubmission = async (submissionId, gradingData) => {
 export const getSubmissionDetails = async (submissionId) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/assessments/submissions/${submissionId}`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/assessments/submissions/${submissionId}`, {
       headers: { 
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'

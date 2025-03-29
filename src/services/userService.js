@@ -24,7 +24,6 @@ export const getAllUsers = async (options = {}) => {
       throw new Error("Not authenticated");
     }
 
-    // Ensure parameters are numbers
     const params = new URLSearchParams({
       page: Number(options.page) || 1,
       limit: Number(options.limit) || 10,
@@ -46,7 +45,6 @@ export const getAllUsers = async (options = {}) => {
 
     const data = await response.json();
 
-    // Handle response structure
     const result = {
       users: data.rows || data.users || [],
       totalItems: data.count || data.totalItems || 0,
@@ -104,7 +102,6 @@ export const getTeachers = async (options = {}) => {
     }
 
     const data = await response.json();
-    // Handle the new response structure
     const usersList = data.users || [];
     return usersList.filter((user) => user.role === "teacher");
   } catch (error) {
@@ -133,7 +130,6 @@ export const createUser = async (userData) => {
       throw new Error("Not authenticated");
     }
 
-    // Format data to match backend parameter order and naming
     const formattedData = {
       email: userData.email,
       password: userData.password,
@@ -189,7 +185,6 @@ export const updateUser = async (userId, updateData) => {
 
     let cleanedData = { ...updateData };
 
-    // Format contact number if present
     if (cleanedData.contact_no) {
       // Remove all non-digits
       let contactNo = cleanedData.contact_no.replace(/\D/g, "");
@@ -198,15 +193,12 @@ export const updateUser = async (userId, updateData) => {
       if (contactNo.startsWith("63")) {
         contactNo = "0" + contactNo.substring(2);
       }
-
       // Validate number format
       if (!contactNo.startsWith("09") || contactNo.length !== 11) {
         throw new Error(
           "Contact number must start with 09 and be 11 digits long"
         );
       }
-
-      // Store cleaned number without hyphens
       cleanedData.contact_no = contactNo;
     }
 
@@ -276,44 +268,6 @@ export const deleteUser = async (userId) => {
 };
 
 /**
- * Removes a user from a specific group
- * @async
- * @function removeUserFromGroup
- * @param {number|string} groupId - ID of the group
- * @param {number|string} userId - ID of the user to remove
- * @returns {Promise<boolean>} True if successful
- * @throws {Error} If the removal fails
- */
-export const removeUserFromGroup = async (groupId, userId) => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("Not authenticated");
-    }
-
-    const response = await fetchWithInterceptor(
-      `${API_BASE_URL}/groups/${groupId}/members/${userId}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to remove user from group");
-    }
-    return true;
-  } catch (error) {
-    console.error("❌ Error removing user from group:", error);
-    throw error;
-  }
-};
-
-/**
  * Updates a user's password.
  * @async
  * @function updatePassword
@@ -323,9 +277,6 @@ export const removeUserFromGroup = async (groupId, userId) => {
  * @returns {Promise<Object>} Response object
  * @throws {Error} If the password update fails
  */
-export const updatePassword = async (userId, oldPassword, newPassword) => {
-  // ...existing code...
-};
 
 /**
  * Fetches a single user by ID

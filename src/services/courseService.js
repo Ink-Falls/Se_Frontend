@@ -4,7 +4,6 @@
  */
 
 import { API_BASE_URL } from "../utils/constants";
-import { getUserGroupIds } from "./groupService";
 import tokenService from "./tokenService";
 import fetchWithInterceptor from "./apiService";
 
@@ -54,10 +53,10 @@ export const getAllCourses = async () => {
 };
 
 /**
- * Fetches courses for the currently logged-in learner
+ * Fetches courses for the currently logged-in user
  * @returns {Promise<Array>} Array of course objects
  */
-export const getLearnerCourses = async () => {
+export const getUserCourses = async () => {
   try {
     const token = tokenService.getAccessToken();
     if (!token) throw new Error("No authentication token");
@@ -65,11 +64,7 @@ export const getLearnerCourses = async () => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user?.id) throw new Error("User data not found");
 
-    // First get user's groups
-    const userGroups = await getUserGroupIds(user.id);
-
-    // Then fetch all courses
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/courses`, {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/courses/user/${user.id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -77,14 +72,8 @@ export const getLearnerCourses = async () => {
     });
 
     if (!response.ok) throw new Error("Failed to fetch courses");
-    const data = await response.json();
+    const accessibleCourses = await response.json();
 
-    // Filter courses where learner_group_id matches any of user's groups
-    const accessibleCourses = (data.rows || []).filter((course) =>
-      userGroups.some(g => g.groupId === course.learner_group_id)
-    );
-
-    // Get member counts for each course's learner group
     const groupMemberCounts = {};
     for (const course of accessibleCourses) {
       if (course.learner_group_id) {
@@ -120,77 +109,7 @@ export const getLearnerCourses = async () => {
     console.error("Error fetching learner courses:", error);
     return []; 
   }
-};
-
-/**
- * Fetches courses assigned to the logged-in teacher
- * @returns {Promise<Array>} Array of course objects
- */
-export const getTeacherCourses = async () => {
-  const token = localStorage.getItem("token");
-  const currentUser = JSON.parse(localStorage.getItem("user"));
-
-  if (!token) throw new Error("Not authenticated");
-  if (!currentUser?.id) throw new Error("User data not found");
-
-  try {
-    // First fetch courses
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/courses`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) throw new Error("Failed to fetch courses");
-    const data = await response.json();
-    const courses = data.rows || [];
-
-    // Filter courses based on user role
-    const teacherCourses = courses.filter(course => {
-      if (currentUser.role === "teacher") {
-        return course.user_id === currentUser.id;
-      }
-      return false;
-    });
-
-    // Then get member counts for the filtered courses
-    const groupMemberCounts = {};
-    for (const course of teacherCourses) {
-      if (course.learner_group_id) {
-        try {
-          const groupMembers = await fetchWithInterceptor(
-            `${API_BASE_URL}/groups/${course.learner_group_id}/members`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-          if (groupMembers.ok) {
-            const members = await groupMembers.json();
-            groupMemberCounts[course.learner_group_id] = members.length;
-          }
-        } catch (error) {
-          console.warn(`Failed to fetch members for group ${course.learner_group_id}:`, error);
-          groupMemberCounts[course.learner_group_id] = 0;
-        }
-      }
-    }
-
-    // Add member counts to courses
-    const coursesWithCounts = teacherCourses.map(course => ({
-      ...course,
-      studentCount: groupMemberCounts[course.learner_group_id] || 0
-    }));
-
-    return formatCourses(coursesWithCounts);
-  } catch (error) {
-    console.error("Error fetching teacher courses:", error);
-    return [];
-  }
-};
+}; 
 
 /**
  * Creates a new course
@@ -371,51 +290,6 @@ export const deleteCourse = async (courseId) => {
   }
 };
 
-/**
- * Gets courses accessible to the current user based on their group memberships
- * @returns {Promise<Array>} Array of courses the user has access to
- */
-export const getUserAccessibleCourses = async () => {
-  try {
-    // Get current user from token
-    const token = tokenService.getAccessToken();
-    if (!token) throw new Error("No authentication token");
-
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user?.id) throw new Error("User data not found");
-
-    // Get user's groups
-    const userGroups = await getUserGroupIds(user.id);
-
-    // Get all courses
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/courses`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) throw new Error("Failed to fetch courses");
-    const data = await response.json();
-
-    // Filter courses based on user's groups
-    const courses = (data.rows || []).filter((course) => {
-      if (user.role === "learner") {
-        return userGroups.includes(course.learner_group_id);
-      } else if (user.role === "student_teacher") {
-        return userGroups.includes(course.student_teacher_group_id);
-      }
-      return false;
-    });
-
-    return formatCourses(courses);
-  } catch (error) {
-    console.error("Error fetching user accessible courses:", error);
-    throw error;
-  }
-};
-
-// Add this helper function before formatCourses
 const generateCourseCode = (courseName, courseId) => {
   const courseTags = {
     FIL: /\b(?:FILIPINO|FIL|FILIPINO\s+SUBJECT|FILIPINO\s+STUDIES)\b/i,

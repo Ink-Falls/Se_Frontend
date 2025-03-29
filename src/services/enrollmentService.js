@@ -64,8 +64,6 @@ const approveEnrollment = async (enrollmentId) => {
     const adminId = tokenPayload.id;
 
     const url = `${API_BASE_URL}/enrollments/${enrollmentId}/approve`;
-
-    // First get the enrollment details
     const enrollment = await getEnrollmentById(enrollmentId);
 
     if (!enrollment) {
@@ -77,7 +75,7 @@ const approveEnrollment = async (enrollmentId) => {
     }
 
     const requestBody = {
-      enrollment_id: enrollmentId, // Using snake_case to match backend
+      enrollment_id: enrollmentId,
       admin_id: adminId,
       year_level: enrollment.year_level,
       status: "approved",
@@ -125,7 +123,6 @@ const rejectEnrollment = async (enrollmentId) => {
       throw new Error("Not authenticated");
     }
 
-    // Get admin ID from the JWT token
     const tokenPayload = JSON.parse(atob(token.split(".")[1]));
     const adminId = tokenPayload.id;
 
@@ -217,7 +214,6 @@ const getEnrollmentById = async (enrollmentId) => {
       throw new Error("Not authenticated");
     }
 
-    // Ensure enrollmentId is a number and properly formatted in the URL
     const url = `${API_BASE_URL}/enrollments/${encodeURIComponent(
       enrollmentId
     )}`;
@@ -291,5 +287,5 @@ export {
   rejectEnrollment,
   deleteEnrollment,
   getEnrollmentById,
-  createEnrollment, // Add the new function to exports
+  createEnrollment, 
 };

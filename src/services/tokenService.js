@@ -53,7 +53,6 @@ class TokenService {
     return localStorage.getItem('refreshToken');
   }
 
-  // Secure token storage
   /**
    * Saves tokens to local storage
    * @param {string} accessToken 
@@ -126,7 +125,6 @@ class TokenService {
     }
   }
   
-  // Token expiration checking
   /**
    * Single source of truth for token expiration checking
    */
@@ -219,7 +217,6 @@ class TokenService {
       clearInterval(this._refreshInterval);
     }
     
-    // Set up new refresh interval
     this._refreshInterval = setInterval(async () => {
       try {
         const currentTime = new Date().toLocaleTimeString();

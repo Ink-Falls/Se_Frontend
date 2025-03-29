@@ -79,35 +79,38 @@ const logoutUser = async () => {
   try {
     // Clear auto refresh first
     tokenService.clearAutoRefresh();
-
+    
     // Get token before clearing storage
-    const token = tokenService.getAccessToken();
+    const token = localStorage.getItem('token');
 
-    // Clear all storage
+    // Clear storage immediately 
     localStorage.clear();
     sessionStorage.clear();
 
-    // Only attempt server logout if token exists and appears valid
-    if (token && token.split(".").length === 3) {
-      try {
-        await fetchWithInterceptor(`${API_BASE_URL}/auth/logout`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        });
-      } catch (serverError) {
-        // Ignore server errors during logout since local cleanup is done
-        console.warn("Server logout notification failed:", serverError);
-      }
+    // Skip server logout if no token
+    if (!token) {
+      return true;
     }
+
+    // Try server logout but don't retry on failure
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      // Ignore server errors since we've already cleared local storage
+      console.warn('Server logout failed:', error);
+    }
+
+    return true;
   } catch (error) {
-    console.error("Logout error:", error);
     // Ensure storage is cleared even if there's an error
     localStorage.clear();
     sessionStorage.clear();
+    return true;
   }
 };
 

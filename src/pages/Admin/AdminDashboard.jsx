@@ -1,28 +1,16 @@
 import React, { useState, useEffect } from "react";
-import Sidebar, {
-  SidebarItem,
-} from "/src/components/common/layout/Sidebar.jsx";
+import Sidebar from "/src/components/common/layout/Sidebar.jsx";
 import Header from "/src/components/common/layout/Header.jsx";
-import Modal from "../../components/common/Button/Modal";
 import DeleteModal from "/src/components/common/Modals/Delete/DeleteModal.jsx";
 import AddUserModal from "/src/components/common/Modals/Add/AddUserModal.jsx";
 import CreateGroupModal from "/src/components/common/Modals/Create/CreateGroupModal.jsx";
 import EditUserModal from "/src/components/common/Modals/Edit/EditUserModal.jsx";
 import GroupDetailsModal from "../../components/common/Modals/View/GroupDetailsModal";
 import {
-  MoreVertical,
-  ChevronDown,
-  Edit,
-  Trash2,
-  Plus,
-  Save,
-  XCircle,
   Home,
   Book,
   Bell,
   FileText,
-  Users,
-  Search,
   InboxIcon,
   AlertTriangle,
 } from "lucide-react";
@@ -41,23 +29,10 @@ import { getGroupsByType } from "/src/services/groupService.js";
 
 function AdminDashboard() {
   const [courses, setCourses] = useState([]);
-  const [expandedCourseId, setExpandedCourseId] = useState(null);
-  const [editingCourse, setEditingCourse] = useState(null);
   const [teachers, setTeachers] = useState([]);
   const [learnerGroups, setLearnerGroups] = useState([]); //for dropdown
   const [studentTeacherGroups, setStudentTeacherGroups] = useState([]); //for dropdown
   const [dropdownOpen, setDropdownOpen] = useState(null);
-  const [isAddCourseOpen, setIsAddCourseOpen] = useState(false);
-  const [newCourse, setNewCourse] = useState({
-    //for add
-    name: "",
-    description: "",
-    user_id: "", // Teacher ID,
-    learner_group_id: "",
-    student_teacher_group_id: "",
-    image: "",
-  });
-  const [moduleToDelete, setModuleToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(true); // Add loading state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [users, setUsers] = useState([]);
@@ -85,7 +60,6 @@ function AdminDashboard() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportUrl, setReportUrl] = useState(null);
   const [reportError, setReportError] = useState(null);
-  const [allUsers, setAllUsers] = useState([]); // Store all users for search
   const [isSearching, setIsSearching] = useState(false);
   const [allUsersData, setAllUsersData] = useState([]); // Add this new state
 
