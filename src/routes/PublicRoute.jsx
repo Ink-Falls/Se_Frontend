@@ -38,16 +38,16 @@ export const PublicRoute = ({ children }) => {
     location.pathname.toLowerCase().startsWith(route.toLowerCase())
   );
 
-  if (isPublicRoute) {
-    return children;
-  }
-
   if (loading) {
     return <LoadingSpinner />;
   }
 
   if (isAuthenticated && user) {
     return <Navigate to={getDashboardByRole(user.role)} replace />;
+  }
+
+  if (isPublicRoute) {
+    return children;
   }
 
   return children;

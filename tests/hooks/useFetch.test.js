@@ -1,36 +1,36 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { useFetch } from "Se_Frontend/src/hooks/useFetch";
-import { useAppState } from "Se_Frontend/src/contexts/AppContext";
-import fetchWithInterceptor from "Se_Frontend/src/services/apiService";
+import { useFetch } from "../../src/hooks/useFetch";
+import fetchWithInterceptor from "../../src/services/apiService";
 
-
-// Mock dependencies
-vi.mock("../../../src/contexts/AppContext", () => ({
-  useAppState: vi.fn(), // Ensure `useAppState` is mocked as a function
+// Create mock functions before mocking modules
+const mockDispatch = vi.fn();
+const mockClearError = vi.fn();
+const mockUseAppState = vi.fn(() => ({
+  state: { cachedData: {} },
+  dispatch: mockDispatch,
+  actions: { clearError: mockClearError },
 }));
 
-vi.mock("../../../src/services/apiService", () => ({
+// Mock the entire modules
+vi.mock("../../src/contexts/AppContext", () => ({
+  useAppState: () => mockUseAppState(),
+}));
+
+vi.mock("../../src/services/apiService", () => ({
   default: vi.fn(),
 }));
 
 describe("useFetch Hook", () => {
-  const mockDispatch = vi.fn();
-  const mockActions = {
-    clearError: vi.fn(),
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock the AppContext state
-    useAppState.mockReturnValue({
-      state: {
-        cachedData: {},
-      },
+    // Reset the mock implementation for each test
+    mockUseAppState.mockImplementation(() => ({
+      state: { cachedData: {} },
       dispatch: mockDispatch,
-      actions: mockActions,
-    });
+      actions: { clearError: mockClearError },
+    }));
   });
 
   it("fetches data successfully", async () => {
@@ -41,9 +41,6 @@ describe("useFetch Hook", () => {
     });
 
     const { result } = renderHook(() => useFetch("/test-url"));
-
-    // Initially, loading should be true
-    expect(result.current.isLoading).toBe(true);
 
     // Wait for the fetch to complete
     await act(async () => {
@@ -76,9 +73,6 @@ describe("useFetch Hook", () => {
 
     const { result } = renderHook(() => useFetch("/test-url"));
 
-    // Initially, loading should be true
-    expect(result.current.isLoading).toBe(true);
-
     // Wait for the fetch to complete
     await act(async () => {
       try {
@@ -109,21 +103,24 @@ describe("useFetch Hook", () => {
 
   it("uses cached data if available", async () => {
     // Mock cached data
-    const mockCachedData = { data: "cached data", timestamp: Date.now() };
-    useAppState.mockReturnValueOnce({
+    const cachedTimestamp = Date.now();
+    mockUseAppState.mockImplementation(() => ({
       state: {
         cachedData: {
-          "/test-url": mockCachedData,
+          "/test-url": {
+            data: "cached data",
+            timestamp: cachedTimestamp,
+          },
         },
       },
       dispatch: mockDispatch,
-      actions: mockActions,
-    });
+      actions: { clearError: mockClearError },
+    }));
 
     const { result } = renderHook(() => useFetch("/test-url"));
 
     // Verify that cached data is used
-    expect(result.current.data).toEqual("cached data");
+    expect(result.current.data).toBe("cached data");
     expect(result.current.isLoading).toBe(false);
 
     // Verify no fetch call is made

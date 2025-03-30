@@ -195,7 +195,7 @@ describe('Assessment Service', () => {
         }
       };
 
-      global.fetch.mockResolvedValueOnce({
+      fetchWithInterceptor.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockSubmission)
       });
