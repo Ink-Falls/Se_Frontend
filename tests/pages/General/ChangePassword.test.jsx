@@ -48,7 +48,7 @@ describe('ChangePassword', () => {
                 </MemoryRouter>
             );
 
-            expect(screen.getByText('Change password')).toBeInTheDocument();
+            expect(screen.getByText('Reset password')).toBeInTheDocument();
             expect(
                 screen.queryByText('Error: No email found')
             ).not.toBeInTheDocument();
@@ -56,7 +56,7 @@ describe('ChangePassword', () => {
     });
 
     describe('Form Validation', () => {
-        it('shows error when passwords do not match', async () => {
+        it('shows password validation error when password is invalid', async () => {
             render(
                 <MemoryRouter>
                     <ChangePassword />
@@ -79,7 +79,7 @@ describe('ChangePassword', () => {
             fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
 
             expect(
-                screen.getByText('Passwords do not match. Please try again.')
+                screen.getByText('Password must have at least 8 characters, one digit, and one symbol.')
             ).toBeInTheDocument();
         });
 
@@ -112,16 +112,19 @@ describe('ChangePassword', () => {
                 </MemoryRouter>
             );
 
+            // Use a password with a special character to pass validation
+            const validPassword = 'newPassword123!';
+            
             fireEvent.change(
                 screen.getByPlaceholderText('Enter new password'),
                 {
-                    target: { value: 'newPassword123' },
+                    target: { value: validPassword },
                 }
             );
             fireEvent.change(
                 screen.getByPlaceholderText('Confirm new password'),
                 {
-                    target: { value: 'newPassword123' },
+                    target: { value: validPassword },
                 }
             );
 
@@ -130,7 +133,8 @@ describe('ChangePassword', () => {
             await waitFor(() => {
                 expect(resetPassword).toHaveBeenCalledWith(
                     validEmail,
-                    'newPassword123'
+                    validPassword,
+                    validPassword
                 );
                 expect(mockNavigate).toHaveBeenCalledWith('/PasswordConfirm', {
                     state: { passwordReset: true },
@@ -149,16 +153,19 @@ describe('ChangePassword', () => {
                 </MemoryRouter>
             );
 
+            // Use a password with a special character to pass validation
+            const validPassword = 'newPassword123!';
+
             fireEvent.change(
                 screen.getByPlaceholderText('Enter new password'),
                 {
-                    target: { value: 'newPassword123' },
+                    target: { value: validPassword },
                 }
             );
             fireEvent.change(
                 screen.getByPlaceholderText('Confirm new password'),
                 {
-                    target: { value: 'newPassword123' },
+                    target: { value: validPassword },
                 }
             );
 

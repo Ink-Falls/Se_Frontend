@@ -27,8 +27,8 @@ describe('Modal Component', () => {
       </Modal>
     );
 
-    // Simulate clicking the close button
-    fireEvent.click(screen.getByRole('button', { name: /✖/i }));
+    // Simulate clicking the close button using aria-label instead of text content
+    fireEvent.click(screen.getByLabelText('Close modal'));
 
     // Check if the onClose function was called
     expect(onClose).toHaveBeenCalledTimes(1);

@@ -97,7 +97,7 @@ describe('AppContext', () => {
       }
     });
 
-    expect(result).toBeInstanceOf(Error);
-    expect(result.message).toBe('useAppState must be used within AppProvider');
+    expect(result.current).toBeInstanceOf(Error);
+    expect(result.current.message).toBe('useAppState must be used within AppProvider');
   });
 });
