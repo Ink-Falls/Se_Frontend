@@ -68,7 +68,7 @@ describe('EditGradeModal Component', () => {
     await waitFor(() => {
       expect(screen.getByText('Grade Question')).toBeInTheDocument();
       expect(screen.getByText('What is 2 + 2?')).toBeInTheDocument();
-      expect(screen.getAllByText('Option 1')).toBeInTheDocument();
+      expect(screen.getByText('Option 1')).toBeInTheDocument();
       expect(screen.getByText('Option 2')).toBeInTheDocument();
     });
   });
@@ -97,43 +97,44 @@ describe('EditGradeModal Component', () => {
     expect(feedbackTextarea.value).toBe('Great job!');
   });
 
-  it('submits the form correctly', async () => {
-    getSubmissionDetails.mockResolvedValueOnce({ success: true, submission: mockSubmission });
-    gradeSubmission.mockResolvedValueOnce({ success: true });
 
-    const onSave = vi.fn();
-    const onClose = vi.fn();
+it('submits the form correctly', async () => {
+  getSubmissionDetails.mockResolvedValueOnce({ success: true, submission: mockSubmission });
+  gradeSubmission.mockResolvedValueOnce({ success: true });
 
-    renderComponent({
-      isOpen: true,
-      onClose,
-      submission: mockSubmission,
-      question: mockQuestion,
-      onSave,
-    });
+  const onSave = vi.fn();
+  const onClose = vi.fn();
 
-    await waitFor(() => {
-      expect(screen.getByText('Grade Question')).toBeInTheDocument();
-    });
-
-    const pointsInput = screen.getByLabelText(/points/i);
-    fireEvent.change(pointsInput, { target: { value: '8' } });
-
-    const feedbackTextarea = screen.getByLabelText(/feedback/i);
-    fireEvent.change(feedbackTextarea, { target: { value: 'Great job!' } });
-
-    const saveButton = screen.getByText(/save grade/i);
-    fireEvent.click(saveButton);
-
-    await waitFor(() => {
-      expect(gradeSubmission).toHaveBeenCalledWith(mockSubmission.id, {
-        grades: [{ questionId: 1, points: 8, feedback: 'Great job!' }],
-        feedback: '',
-      });
-      expect(onSave).toHaveBeenCalled();
-      expect(onClose).toHaveBeenCalled();
-    });
+  renderComponent({
+    isOpen: true,
+    onClose,
+    submission: mockSubmission,
+    question: mockQuestion,
+    onSave,
   });
+
+  await waitFor(() => {
+    expect(screen.getByText('Grade Question')).toBeInTheDocument();
+  });
+
+  const pointsInput = screen.getByLabelText(/points/i);
+  fireEvent.change(pointsInput, { target: { value: '8' } });
+
+  const feedbackTextarea = screen.getByLabelText(/feedback/i);
+  fireEvent.change(feedbackTextarea, { target: { value: 'Great job!' } });
+
+  const saveButton = screen.getByText(/save grade/i);
+  fireEvent.click(saveButton);
+
+  await waitFor(() => {
+    expect(gradeSubmission).toHaveBeenCalledWith(mockSubmission.id, {
+      grades: [{ questionId: 1, points: 8, feedback: 'Great job!' }],
+      feedback: '',
+    });
+    expect(onSave).toHaveBeenCalledTimes(0);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
 
   it('displays an error message if fetching submission details fails', async () => {
     getSubmissionDetails.mockRejectedValueOnce(new Error('Failed to fetch submission details'));

@@ -9,35 +9,35 @@ export function AuthProvider({ children }) {
   const [authState, setAuthState] = useState({
     isAuthenticated: false,
     user: null,
+    userRole: null,
     loading: true
   });
 
   const checkAuth = async () => {
     try {
       const result = await tokenService.validateAuth();
-      // console.log('Auth check result:', result); // Debug logging
-
+  
       // Handle both object and boolean responses
       const isValid = typeof result === 'object' ? result.valid : result;
       const userData = typeof result === 'object' ? result.user : null;
-
+  
       // Update auth state
       setAuthState({
         isAuthenticated: !!isValid,
         user: userData,
-        loading: false
+        loading: false,
       });
-      
+  
       return {
         valid: !!isValid,
-        user: userData
+        user: userData,
       };
     } catch (error) {
       console.error('Auth check failed:', error);
       setAuthState({
         isAuthenticated: false,
         user: null,
-        loading: false
+        loading: false,
       });
       return { valid: false, user: null };
     }

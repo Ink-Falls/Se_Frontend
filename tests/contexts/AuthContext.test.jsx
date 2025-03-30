@@ -6,11 +6,15 @@ import tokenService from '../../src/services/tokenService';
 
 vi.mock('../../src/services/authService', () => ({
   validateToken: vi.fn(),
+ // logoutUser: vi.fn().mockResolvedValue(undefined),
+  
 }));
 
 vi.mock('../../src/services/tokenService', () => ({
   default: {
     removeTokens: vi.fn(),
+    clearAutoRefresh: vi.fn(), // Add this function to prevent TypeError
+    validateAuth: vi.fn()
   },
 }));
 
@@ -43,20 +47,26 @@ describe('AuthContext', () => {
     expect(result.current.user).toBeNull();
 });
 
-  it('handles successful authentication', async () => {
-    validateToken.mockResolvedValueOnce({ role: 'admin' });
-    const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
-
-    await act(async () => {
-      await result.current.checkAuth();
-    });
-
-    expect(result.current.isAuthenticated).toBe(false);
-    expect(result.current.userRole).toBe('admin');
-    expect(result.current.loading).toBe(false);
+it('handles successful authentication', async () => {
+  // Mock the validateAuth function to return a user with a role of 'admin'
+  tokenService.validateAuth.mockResolvedValueOnce({
+    valid: true,
+    user: { id: 1, name: 'John Doe', role: 'admin' },
   });
+
+  const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
+  const { result } = renderHook(() => useAuth(), { wrapper });
+
+  // Call the checkAuth function
+  await act(async () => {
+    await result.current.checkAuth();
+  });
+
+  // Assert the expected state
+  expect(result.current.isAuthenticated).toBe(true); // Ensure the user is authenticated
+  expect(result.current.userRole).toBe('admin'); // Ensure the userRole is set to 'admin'
+  expect(result.current.loading).toBe(false); // Ensure loading is false
+});
 
   it('handles authentication failure', async () => {
     validateToken.mockRejectedValueOnce(new Error('Auth failed'));
@@ -128,10 +138,10 @@ describe('AuthContext', () => {
   });
 
   it('handles rate limit events', () => {
-    const consoleSpy = vi.spyOn(console, 'warn');
+    const consoleSpy = vi.spyOn(console, 'warn'); // Spy on console.warn
     const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
     renderHook(() => useAuth(), { wrapper });
-
+  
     act(() => {
       window.dispatchEvent(
         new CustomEvent('rateLimitExceeded', {
@@ -139,7 +149,7 @@ describe('AuthContext', () => {
         })
       );
     });
-
-    expect(consoleSpy).toHaveBeenCalledWith('Rate limit reached');
+  
+    expect(consoleSpy).toHaveBeenCalledWith('Rate limit reached'); // Ensure the correct message is logged
   });
 });
