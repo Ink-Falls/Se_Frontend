@@ -119,12 +119,11 @@ const LearnerCourseAssessment = () => {
         answer.points_awarded !== null && answer.points_awarded !== undefined
     ).length;
 
-    // Determine status based on graded questions count
     if (gradedQuestions === 0) return "Submitted";
     if (gradedQuestions < totalQuestions) return "Partially Graded";
     if (gradedQuestions === totalQuestions) return "Graded";
 
-    return "Submitted"; // Default fallback
+    return "Submitted";
   };
 
   const getStatusColor = (status) => {
@@ -177,16 +176,6 @@ const LearnerCourseAssessment = () => {
     const totalPoints = calculateTotalPoints(submission);
     const score =
       submission.answers?.reduce((sum, answer) => {
-        // For multiple choice and true/false
-        if (answer.is_auto_graded && answer.selected_option_id) {
-          const question = assessment.questions?.find(
-            (q) => q.id === answer.question_id
-          );
-          const selectedOption = question?.options?.find(
-            (opt) => opt.id === answer.selected_option_id
-          );
-          return sum + (selectedOption?.is_correct ? question?.points || 0 : 0);
-        }
         // For manual graded questions (short_answer and essay)
         return sum + (parseInt(answer.points_awarded) || 0);
       }, 0) || 0;
