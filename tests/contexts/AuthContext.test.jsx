@@ -183,10 +183,10 @@ describe('AuthContext', () => {
   });
 
   it('handles rate limit events', () => {
-    const consoleSpy = vi.spyOn(console, 'warn');
+    const consoleSpy = vi.spyOn(console, 'warn'); // Spy on console.warn
     const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
     renderHook(() => useAuth(), { wrapper });
-
+  
     act(() => {
       window.dispatchEvent(
         new CustomEvent('rateLimitExceeded', {
@@ -194,7 +194,7 @@ describe('AuthContext', () => {
         })
       );
     });
-
-    expect(consoleSpy).toHaveBeenCalledWith('Rate limit reached');
+  
+    expect(consoleSpy).toHaveBeenCalledWith('Rate limit reached'); // Ensure the correct message is logged
   });
 });

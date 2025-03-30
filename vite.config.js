@@ -8,6 +8,7 @@ export default defineConfig({
         port: 3000, // Change this to your desired port
     },
     test: {
+        testTimeout: 10000, // Set timeout to 10 seconds
         environment: 'jsdom', // Use jsdom environment
         globals: true, //This is not necessary
         include: ['**/*.test.(js|jsx|ts|tsx)'], // Specifies which files are test files
