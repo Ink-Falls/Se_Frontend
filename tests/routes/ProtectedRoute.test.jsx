@@ -18,7 +18,8 @@ describe('ProtectedRoute', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    // Look for the loading spinner component instead of the text
+    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
   });
 
   it('redirects to login if not authenticated', () => {
