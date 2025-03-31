@@ -19,6 +19,8 @@ import {
   getCourseAssessments,
   getUserSubmission,
 } from "../../services/assessmentService";
+import { getModulesByCourseId } from "../../services/moduleService";
+import { ChevronDown } from "lucide-react";
 
 const LearnerCourseAssessment = () => {
   const { selectedCourse } = useCourse();
@@ -27,6 +29,9 @@ const LearnerCourseAssessment = () => {
   const [submissions, setSubmissions] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [moduleAssessments, setModuleAssessments] = useState({});
+  const [modules, setModules] = useState([]);
+  const [expandedModules, setExpandedModules] = useState(new Set());
 
   const navItems = [
     { text: "Home", icon: <Home size={20} />, route: "/Learner/Dashboard" },
@@ -56,30 +61,60 @@ const LearnerCourseAssessment = () => {
     const fetchAssessmentsAndSubmissions = async () => {
       try {
         setLoading(true);
-        const assessmentsData = await getCourseAssessments(
-          selectedCourse.id,
-          true
-        );
+        const modulesResponse = await getModulesByCourseId(selectedCourse.id);
 
-        // Filter to only include published assessments
-        const courseAssessments = (assessmentsData.assessments || []).filter(
-          (assessment) => assessment.is_published
-        );
+        if (!modulesResponse) {
+          throw new Error("Failed to fetch modules data");
+        }
 
-        // Fetch user's submission for each assessment with full details
+        setModules(modulesResponse);
+
+        const assessmentsByModule = {};
+        let allAssessments = [];
+
+        for (const module of modulesResponse) {
+          try {
+            const response = await getCourseAssessments(module.module_id, true);
+
+            if (response.success && response.assessments) {
+              const moduleAssessments = response.assessments.filter(
+                (assessment) =>
+                  assessment.module_id === module.module_id &&
+                  assessment.is_published
+              );
+
+              if (moduleAssessments.length > 0) {
+                assessmentsByModule[module.module_id] = moduleAssessments;
+                allAssessments = [...allAssessments, ...moduleAssessments];
+              } else {
+                assessmentsByModule[module.module_id] = [];
+              }
+            } else {
+              assessmentsByModule[module.module_id] = [];
+            }
+          } catch (err) {
+            console.error(`Error processing module ${module.module_id}:`, err);
+            assessmentsByModule[module.module_id] = [];
+          }
+        }
+
+        setModuleAssessments(assessmentsByModule);
+        setAssessments(allAssessments);
+
+        // Fetch submissions for all assessments
         const submissionsMap = {};
         await Promise.all(
-          courseAssessments.map(async (assessment) => {
+          allAssessments.map(async (assessment) => {
             try {
               const submissionData = await getUserSubmission(
                 assessment.id,
                 true
-              ); // Add true to include answers
+              );
               if (submissionData.success && submissionData.submission) {
                 submissionsMap[assessment.id] = {
                   ...submissionData.submission,
                   total_score: submissionData.submission.total_score,
-                  assessment: assessment, // Include assessment details with questions
+                  assessment: assessment,
                 };
               }
             } catch (err) {
@@ -91,9 +126,9 @@ const LearnerCourseAssessment = () => {
           })
         );
 
-        setAssessments(courseAssessments);
         setSubmissions(submissionsMap);
       } catch (err) {
+        console.error("Error in fetchAssessments:", err);
         setError(err.message || "Failed to fetch assessments");
       } finally {
         setLoading(false);
@@ -191,6 +226,122 @@ const LearnerCourseAssessment = () => {
     );
   };
 
+  const toggleModule = (moduleId) => {
+    setExpandedModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(moduleId)) {
+        next.delete(moduleId);
+      } else {
+        next.add(moduleId);
+      }
+      return next;
+    });
+  };
+
+  const renderModuleAssessments = () => (
+    <div className="space-y-6">
+      {modules.map((module) => (
+        <div
+          key={module.module_id}
+          className="bg-white rounded-lg shadow-sm overflow-hidden"
+        >
+          <div
+            className="p-4 bg-gray-50 border-l-4 border-yellow-500 flex justify-between items-center cursor-pointer hover:bg-gray-100"
+            onClick={() => toggleModule(module.module_id)}
+          >
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">
+                {module.name}
+              </h3>
+              <p className="text-sm text-gray-600">{module.description}</p>
+              <span className="text-xs text-gray-500 mt-1 block">
+                {moduleAssessments[module.module_id]?.length || 0} Assessment(s)
+              </span>
+            </div>
+            <ChevronDown
+              className={`transform transition-transform duration-200 ${
+                expandedModules.has(module.module_id) ? "rotate-180" : ""
+              }`}
+            />
+          </div>
+
+          {expandedModules.has(module.module_id) && (
+            <div className="p-4">
+              {moduleAssessments[module.module_id]?.length > 0 ? (
+                <div className="space-y-4">
+                  {moduleAssessments[module.module_id].map((assessment) => (
+                    <div
+                      key={assessment.id}
+                      className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg cursor-pointer"
+                      onClick={() => handleAssessmentClick(assessment)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                assessment.type === "quiz"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-purple-100 text-purple-800"
+                              }`}
+                            >
+                              {assessment.type?.toUpperCase() || "QUIZ"}
+                            </span>
+                            {submissions[assessment.id] && (
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                                  getStatus(submissions[assessment.id]),
+                                  submissions[assessment.id].is_late
+                                )}`}
+                              >
+                                {getStatus(submissions[assessment.id])}
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="font-bold text-lg text-gray-800">
+                            {assessment.title}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {assessment.description}
+                          </p>
+                          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <Clock size={16} />
+                              {assessment.duration_minutes} minutes
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Award size={16} />
+                              Passing: {assessment.passing_score}%
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Calendar size={16} />
+                              Due: {formatDate(assessment.due_date)}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          {renderSubmissionScore(
+                            submissions[assessment.id],
+                            assessment
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No assessments available in this module
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar navItems={navItems} />
@@ -225,7 +376,7 @@ const LearnerCourseAssessment = () => {
 
         {!loading && !error && (
           <div className="flex flex-col gap-4 mt-4">
-            {assessments.length === 0 ? (
+            {modules.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-lg shadow-sm">
                 <div className="text-gray-400 mb-4">
                   <ClipboardList size={48} className="mx-auto" />
@@ -238,66 +389,7 @@ const LearnerCourseAssessment = () => {
                 </p>
               </div>
             ) : (
-              assessments.map((assessment) => (
-                <div
-                  key={assessment.id}
-                  className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg cursor-pointer"
-                  onClick={() => handleAssessmentClick(assessment)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            assessment.type === "quiz"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-purple-100 text-purple-800"
-                          }`}
-                        >
-                          {assessment.type?.toUpperCase() || "QUIZ"}
-                        </span>
-                        {submissions[assessment.id] && (
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                              getStatus(submissions[assessment.id]),
-                              submissions[assessment.id].is_late
-                            )}`}
-                          >
-                            {getStatus(submissions[assessment.id])}
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="font-bold text-lg text-gray-800">
-                        {assessment.title}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {assessment.description}
-                      </p>
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <Clock size={16} />
-                          {assessment.duration_minutes} minutes
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Award size={16} />
-                          Passing: {assessment.passing_score}%
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar size={16} />
-                          Due: {formatDate(assessment.due_date)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      {renderSubmissionScore(
-                        submissions[assessment.id],
-                        assessment
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
+              renderModuleAssessments()
             )}
           </div>
         )}
