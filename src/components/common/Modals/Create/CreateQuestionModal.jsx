@@ -10,6 +10,8 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
     media_url: "",
     options: [{ text: "", is_correct: false }], // Keep text for internal use
     correct_answer: "", // For identification and true/false
+    answer_key: "",
+    word_limit: 500,
   };
 
   const [questionData, setQuestionData] = useState(initialState);
@@ -23,10 +25,18 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setQuestionData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    // Allow empty value for word_limit
+    if (name === 'word_limit') {
+      setQuestionData((prev) => ({
+        ...prev,
+        [name]: value === '' ? '' : parseInt(value),
+      }));
+    } else {
+      setQuestionData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleOptionChange = (index, field, value) => {
@@ -65,6 +75,7 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
         question_type: questionData.question_type,
         points: parseInt(questionData.points),
         media_url: questionData.media_url || "",
+        answer_key: null
       };
 
       switch (questionData.question_type) {
@@ -79,6 +90,8 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
               text: opt.text.trim(),
               is_correct: opt.is_correct,
             }));
+          // Remove answer_key for multiple_choice
+          delete basicData.answer_key;
           break;
 
         case "true_false":
@@ -86,23 +99,33 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
             alert("Please select the correct answer");
             return;
           }
-          basicData.correct_answer = questionData.correct_answer;
+          // Remove answer_key for true_false
+          delete basicData.answer_key;
+          basicData.options = [
+            { text: "True", is_correct: questionData.correct_answer === "true" },
+            { text: "False", is_correct: questionData.correct_answer === "false" }
+          ];
           break;
 
         case "short_answer":
         case "essay":
-          if (!questionData.correct_answer?.trim()) {
-            alert("Please provide an answer key or guidelines");
+          if (!questionData.answer_key?.trim()) {
+            alert("Please provide the correct answer");
             return;
           }
-          basicData.correct_answer = questionData.correct_answer.trim();
+          basicData.answer_key = questionData.answer_key.trim();
+          if (questionData.question_type === "essay") {
+            basicData.word_limit = parseInt(questionData.word_limit) || 500;
+          }
           break;
 
         default:
           throw new Error("Invalid question type");
       }
 
+      console.log('Formatted question data:', basicData);
       await onSubmit(basicData);
+      
     } catch (err) {
       console.error("Error submitting question:", err);
       alert(err.message || "Error creating question. Please try again.");
@@ -270,30 +293,50 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
             </label>
             <input
               type="text"
-              name="correct_answer"
-              value={questionData.correct_answer}
+              name="answer_key"
+              value={questionData.answer_key || ''}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border rounded-md"
-              placeholder="Enter the correct answer"
+              placeholder="Enter the exact correct answer"
               required
             />
           </div>
         )}
 
         {questionData.question_type === "essay" && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Answer Guidelines
-            </label>
-            <textarea
-              name="correct_answer"
-              value={questionData.correct_answer}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border rounded-md"
-              placeholder="Enter guidelines for grading the essay"
-              rows={3}
-              required
-            />
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Grading Guidelines
+              </label>
+              <textarea
+                name="answer_key" 
+                value={questionData.answer_key || ''}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border rounded-md"
+                placeholder="Enter detailed guidelines for grading the essay"
+                rows={4}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Word Limit
+              </label>
+              <input
+                type="number"
+                name="word_limit"
+                value={questionData.word_limit}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border rounded-md"
+                min="50"
+                max="5000"
+                required
+              />
+              <span className="text-xs text-gray-500 mt-1">
+                Must be between 50 and 5000 words
+              </span>
+            </div>
           </div>
         )}
       </>
