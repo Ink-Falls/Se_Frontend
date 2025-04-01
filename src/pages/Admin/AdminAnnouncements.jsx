@@ -147,7 +147,19 @@ function AdminAnnouncements() {
   const handleAddAnnouncement = () => {
     if (newAnnouncement.title.trim() && newAnnouncement.content.trim()) {
       const newId = announcements.length + 1;
-      setAnnouncements([...announcements, { id: newId, ...newAnnouncement }]);
+      const currentDate = new Date().toISOString().split('T')[0];
+      setAnnouncements([
+        ...announcements,
+        {
+          id: newId,
+          ...newAnnouncement,
+          date: currentDate,
+          poster: {
+            name: "Admin",
+            profilePicture: "https://i.imgur.com/RTMTvNB.png"
+          }
+        }
+      ]);
       setIsAddAnnouncementOpen(false);
       setNewAnnouncement({
         title: "",
@@ -254,7 +266,62 @@ function AdminAnnouncements() {
             isOpen={isAddAnnouncementOpen}
             onClose={() => setIsAddAnnouncementOpen(false)}
           >
-            {/* ...existing modal code... */}
+            <div className="p-6">
+              <h2 className="text-2xl font-bold mb-4">Add New Announcement</h2>
+              <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={newAnnouncement.title}
+                    onChange={(e) =>
+                      setNewAnnouncement({
+                        ...newAnnouncement,
+                        title: e.target.value,
+                      })
+                    }
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500"
+                    placeholder="Enter announcement title"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Content
+                  </label>
+                  <textarea
+                    value={newAnnouncement.content}
+                    onChange={(e) =>
+                      setNewAnnouncement({
+                        ...newAnnouncement,
+                        content: e.target.value,
+                      })
+                    }
+                    rows={4}
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500"
+                    placeholder="Enter announcement content"
+                  />
+                </div>
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddAnnouncementOpen(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddAnnouncement}
+                    className="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700"
+                    disabled={!newAnnouncement.title || !newAnnouncement.content}
+                  >
+                    Add Announcement
+                  </button>
+                </div>
+              </form>
+            </div>
           </Modal>
         )}
 
