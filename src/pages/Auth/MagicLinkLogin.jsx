@@ -40,6 +40,7 @@ function MagicLinkLogin() {
       setIsLoading(false);
     }
   };
+  
 
   if (success) {
     return (

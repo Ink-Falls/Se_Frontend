@@ -230,6 +230,13 @@ const GroupDetailsModal = ({ onClose }) => {
     }
   };
 
+  // Modify this function to handle type change
+  const handleMemberTypeChange = (e) => {
+    // Clear selected members when switching types
+    setSelectedAvailableMembers([]);
+    setMemberType(e.target.value);
+  };
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
       <div
@@ -401,7 +408,7 @@ const GroupDetailsModal = ({ onClose }) => {
                 </div>
                 <select
                   value={memberType}
-                  onChange={(e) => setMemberType(e.target.value)}
+                  onChange={handleMemberTypeChange} // Use the new handler
                   className="px-3 py-2 border border-gray-300 rounded-lg"
                 >
                   <option value="learner">Learners</option>

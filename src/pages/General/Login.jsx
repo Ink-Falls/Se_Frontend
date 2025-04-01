@@ -38,10 +38,13 @@ function Login() {
     if (touched.email) {
       const emailError = validateEmail(email);
       setValidationErrors((prev) => ({ ...prev, email: emailError }));
+      setValidationErrors((prev) => ({ ...prev, email: emailError }));
     }
+
 
     if (touched.password) {
       const passwordError = validatePassword(password);
+      setValidationErrors((prev) => ({ ...prev, password: passwordError }));
       setValidationErrors((prev) => ({ ...prev, password: passwordError }));
     }
   }, [email, password, touched]);
@@ -78,6 +81,7 @@ function Login() {
   // Handle input blur to mark fields as touched
   const handleBlur = (field) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
+    setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
   /**
@@ -92,25 +96,36 @@ function Login() {
     e.preventDefault();
     setError(null);
 
+
     // Mark all fields as touched
     setTouched({ email: true, password: true });
+
 
     // Validate inputs before proceeding
     const emailError = validateEmail(email);
     const passwordError = validatePassword(password);
 
+
     const newValidationErrors = {
       email: emailError,
       password: passwordError,
+      password: passwordError,
     };
 
+
     setValidationErrors(newValidationErrors);
+
 
     if (emailError || passwordError) {
       return;
     }
 
     // In a testing environment, we can bypass captcha validation
+    if (
+      process.env.NODE_ENV !== "test" &&
+      !captchaResponse &&
+      !window.captchaResponse
+    ) {
     if (
       process.env.NODE_ENV !== "test" &&
       !captchaResponse &&
@@ -255,7 +270,7 @@ function Login() {
                   className="h-[6vw] lg:h-[6vw]"
                 />
               </div>
-              <h1 className="text-[5vw] font-extrabold drop-shadow-[5px_5px_5px_rgba(0,0,0,0.8)]">
+              <h1 className="text-[5vw] font-extrabold drop-shadow-[3px_3px_3px_rgba(0,0,0,0.8)]">
                 <span className="text-[#F6BA18]">Aral</span>
                 <span className="text-[#FFFFFF]">Kademy</span>
               </h1>
