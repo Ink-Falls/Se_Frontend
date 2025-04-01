@@ -281,6 +281,8 @@ const fetchWithInterceptor = async (url, options = {}, retryCount = 0) => {
         case 401:
           // Already handled above
           throw new Error(errorData.message || 'Unauthorized');
+        case 409:
+          throw new Error(errorData.error.message || 'Invalid credentials');
         case 403:
           window.dispatchEvent(new CustomEvent('authError', { 
             detail: { type: 'forbidden', message: 'Access denied' }
