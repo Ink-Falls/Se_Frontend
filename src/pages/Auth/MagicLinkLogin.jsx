@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { requestMagicLink } from "../../services/authService";
 
 function MagicLinkLogin() {
@@ -6,16 +6,45 @@ function MagicLinkLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [isValidEmail, setIsValidEmail] = useState(true);
+  const [touched, setTouched] = useState(false);
+
+  // Validate email on every change
+  useEffect(() => {
+    if (touched) {
+      const emailError = validateEmail(email);
+      setIsValidEmail(!emailError);
+      setError(emailError);
+    }
+  }, [email, touched]);
 
   const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Array of common TLDs - add more as needed
+    const validTLDs = ["com", "edu", "ph", "org", "net", "gov", "edu.ph"];
+
     if (!email) {
       return "Email is required";
     }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return "Please enter a valid email address";
     }
+
+    // Extract domain and check TLD
+    const domain = email.split("@")[1];
+    if (!validTLDs.some((tld) => domain.toLowerCase().endsWith(`.${tld}`))) {
+      return "Please enter a valid email domain";
+    }
+
     return null;
+  };
+
+  const handleEmailChange = (e) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    setTouched(true);
   };
 
   const handleSubmit = async (e) => {
@@ -24,6 +53,7 @@ function MagicLinkLogin() {
 
     if (emailError) {
       setError(emailError);
+      setIsValidEmail(false);
       return;
     }
 
@@ -35,12 +65,20 @@ function MagicLinkLogin() {
       setSuccess(true);
     } catch (err) {
       console.error("Magic link request failed:", err);
-      setError(err.message || "Failed to send magic link. Please try again.");
+      if (err.response?.status === 404 || err.message.includes("not found")) {
+        setError("Email address not found");
+      } else if (
+        err.response?.status === 409 ||
+        err.message.includes("already exists")
+      ) {
+        setError("Email already registered");
+      } else {
+        setError(err.message || "Failed to send magic link. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
   };
-  
 
   if (success) {
     return (
@@ -63,16 +101,13 @@ function MagicLinkLogin() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-[1vw]">
-      {error && (
-        <p className="text-red-500 text-left text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw]">
-          {error}
-        </p>
-      )}
-
-      <div>
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-[1vw] w-full flex flex-col justify-center flex-1"
+    >
+      <div className="w-full">
         <label
-          htmlFor="magic-link-email"
+          htmlFor="email"
           className="text-[3vw] block text-[#64748B] lg:text-[0.8vw] max-lg:text-[2.5vw]"
         >
           Email
@@ -81,20 +116,31 @@ function MagicLinkLogin() {
           type="email"
           id="magic-link-email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={handleEmailChange}
+          onBlur={() => setTouched(true)}
           required
-          className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+          className={`mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border ${
+            !isValidEmail && touched ? "border-red-500" : "border-[#64748B]"
+          } rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]`}
           placeholder="Enter your email"
         />
+        {error && touched && (
+          <p className="text-red-500 text-left text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] mt-1">
+            {error}
+          </p>
+        )}
       </div>
 
-      <div className="flex justify-center mt-[4vw] lg:mt-[2vw]">
+      {/* Spacer div that only appears on mobile */}
+      <div className="h-[3vw] md:h-[0vw]"></div>
+
+      <div className="flex justify-center">
         <button
           type="submit"
           className="flex items-center justify-center min-w-[14rem] max-w-[14rem] px-6 py-3 
-      font-semibold rounded-md transition-colors duration-300 ease-in-out flex-shrink-0
-      text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529] dark:bg-gray-900 dark:hover:bg-yellow-400
-      disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300"
+          font-semibold rounded-md transition-colors duration-300 ease-in-out flex-shrink-0
+          text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529]
+          disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300"
           disabled={isLoading}
         >
           {isLoading ? (

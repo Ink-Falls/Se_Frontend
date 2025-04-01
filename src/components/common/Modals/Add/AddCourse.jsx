@@ -3,6 +3,7 @@ import Modal from "../../Button/Modal.jsx";
 import { createCourse } from "../../../../services/courseService";
 import { getTeachers } from "../../../../services/userService";
 import { getGroupsByType } from "../../../../services/groupService";
+import { X, AlertTriangle } from "lucide-react";
 
 const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
   const initialFormState = {
@@ -25,7 +26,7 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
     const fetchData = async () => {
       try {
         const [teachers, learners, studentTeachers] = await Promise.all([
-          getTeachers({page: 1, limit: 0}),
+          getTeachers({ page: 1, limit: 0 }),
           getGroupsByType("learner"),
           getGroupsByType("student_teacher"),
         ]);
@@ -117,8 +118,9 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
 
         <div className="p-6 overflow-y-auto">
           {error && (
-            <div role="alert" className="bg-red-50 text-red-500 p-4 rounded mb-4">
-              {error}
+            <div role="alert" className="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-center gap-2">
+              <AlertTriangle size={20} />
+              <span>{error}</span>
             </div>
           )}
           {successMessage && (

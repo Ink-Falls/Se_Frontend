@@ -12,7 +12,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
     duration_minutes: 60,
     due_date: "",
     instructions: "",
-    is_published: false,
+    allowed_attempts: 1
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -39,16 +39,15 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
 
         setFormData({
           ...assessment,
-          type: assessment.type || "quiz", // Default to "quiz" if no type is provided
+          due_date: formattedDate,
+          // Make sure all required fields are present with appropriate defaults
+          instructions: assessment.instructions || "",
+          type: assessment.type || "quiz",
           max_score: assessment.max_score || 100,
           passing_score: assessment.passing_score || 60,
           duration_minutes: assessment.duration_minutes || 60,
-          due_date: assessment.due_date
-            ? new Date(assessment.due_date).toISOString().substring(0, 16)
-            : "",
-          is_published: assessment.is_published || false,
-          instructions: assessment.instructions || "",
-      });
+          allowed_attempts: assessment.allowed_attempts || 1, // Use existing value or default to 1
+        });
       } catch (err) {
         console.error("Error formatting assessment data:", err);
         setError("Error preparing form data. Please try again.");
@@ -71,8 +70,9 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
         passing_score: parseInt(formData.passing_score),
         duration_minutes: parseInt(formData.duration_minutes),
         due_date: new Date(formData.due_date).toISOString(),
-        is_published: Boolean(formData.is_published),
         instructions: formData.instructions?.trim() || "",
+        allowed_attempts: parseInt(formData.allowed_attempts),
+        is_published: assessment.is_published // Maintain current publish state
       };
 
       // Call the API
@@ -206,7 +206,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
 
               <div>
                 <label htmlFor="pass_score"className="block text-sm font-medium text-gray-700">
-                  Passing Score
+                  Passing Score (%)
                 </label>
                 <input
                   id="pass_score"
@@ -223,37 +223,36 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="due_date"className="block text-sm font-medium text-gray-700">
-                  Due Date
+                <label htmlFor="allowed_attempts" className="block text-sm font-medium text-gray-700">
+                  Allowed Attempts
                 </label>
                 <input
-                  id="due_date" 
-                  type="datetime-local"
-                  value={new Date(assessment.due_date).toISOString().slice(0, 16)} // Convert to local datetime format
-                  onChange={(e) =>
-                    setFormData({ ...formData, due_date: e.target.value })
-                  }
+                  id="allowed_attempts"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={formData.allowed_attempts}
+                  onChange={(e) => setFormData({ ...formData, allowed_attempts: Math.max(1, parseInt(e.target.value) || 1) })}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   required
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  Current setting: {formData.allowed_attempts} attempt{formData.allowed_attempts !== 1 ? 's' : ''}
+                </p>
               </div>
-
-              <div className="flex items-center mt-6">
-                <input
-                  type="checkbox"
-                  id="is_published"
-                  checked={formData.is_published}
-                  onChange={(e) =>
-                    setFormData({ ...formData, is_published: e.target.checked })
-                  }
-                  className="h-4 w-4 text-yellow-600 rounded border-gray-300"
-                />
-                <label
-                  htmlFor="is_published"
-                  className="ml-2 text-sm text-gray-700"
-                >
-                  Published
+              
+              <div>
+                <label htmlFor="due_date" className="block text-sm font-medium text-gray-700">
+                  Due Date
                 </label>
+                <input
+                  id="due_date"
+                  type="datetime-local"
+                  value={formData.due_date}
+                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                  required
+                />
               </div>
             </div>
 

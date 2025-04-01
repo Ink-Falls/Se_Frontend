@@ -24,11 +24,59 @@ import {
   getUserSubmission 
 } from "../../services/assessmentService";
 
+// Add this helper function before the component
+const calculateTotalPoints = (answers) => {
+  if (!answers || !Array.isArray(answers)) return 0;
+  
+  // Calculate earned points
+  const earnedPoints = answers.reduce((total, answer) => {
+    if (answer.is_auto_graded && answer.points_awarded !== null) {
+      return total + (answer.points_awarded || 0);
+    }
+    if (answer.manual_grade !== null) {
+      return total + (answer.manual_grade || 0);
+    }
+    return total;
+  }, 0);
+
+  // Calculate total possible points
+  const totalPossiblePoints = answers.reduce((total, answer) => {
+    // Add the question's points to the total
+    return total + (answer.question?.points || 0);
+  }, 0);
+
+  return {
+    earned: earnedPoints,
+    total: totalPossiblePoints
+  };
+};
+
+const getStatus = (submission) => {
+  if (!submission) return "Not Started";
+  if (submission.is_late) return "Late";
+  return submission.status?.charAt(0).toUpperCase() + submission.status?.slice(1) || "Not Started";
+};
+
+const getStatusColor = (status) => {
+  switch (status?.toLowerCase()) {
+    case "graded":
+      return "bg-green-100 text-green-800";
+    case "submitted":
+      return "bg-yellow-100 text-yellow-800";
+    case "late":
+      return "bg-red-100 text-red-800";
+    case "not started":
+      return "bg-gray-100 text-gray-600";
+    default:
+      return "bg-gray-100 text-gray-600";
+  }
+};
+
 const LearnerAssessmentView = () => {
   const { selectedCourse } = useCourse();
   const navigate = useNavigate();
   const location = useLocation();
-  const { assessment } = location.state || {};
+  const { assessment, submission: initialSubmission, status, error: routeError } = location.state || {};
   const [textAnswer, setTextAnswer] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState("");
@@ -182,6 +230,12 @@ const LearnerAssessmentView = () => {
     fetchSubmissions();
   }, [assessment?.id]);
 
+  useEffect(() => {
+    if (routeError === 'Maximum attempts reached') {
+      setError('You have reached the maximum number of allowed attempts for this assessment.');
+    }
+  }, [routeError]);
+
   if (!assessment) {
     navigate("/Learner/Assessment");
     return null;
@@ -269,765 +323,11 @@ const LearnerAssessmentView = () => {
     setIsEditing(false);
   };
 
-  const handleStartAssessment = async () => {
-    try {
-      setLoading(true);
-      // Set hasStarted early to prevent double rendering issues
-      setHasStarted(true);
-      
-      const response = await createSubmission(assessment.id);
-      
-      if (response.success) {
-        // Store assessment ID directly in a local variable or component state for immediate access
-        setSubmissionId(response.submission.id);
-        
-        // Store more detailed information in localStorage
-        try {
-          localStorage.setItem(`submission_${response.submission.id}`, JSON.stringify({
-            assessmentId: assessment.id,
-            startTime: new Date().toISOString(),
-            assessmentTitle: assessment.title,
-            // Store question type information to determine if manual grading is needed
-            hasManualQuestions: (assessment.questions || []).some(q => 
-              q.question_type === 'short_answer' || q.question_type === 'essay'
-            )
-          }));
-        } catch (e) {
-          console.warn('Could not store submission data in localStorage:', e);
-        }
-        
-        setAnswers({});
-        setCurrentQuestionIndex(0);
-        setExistingSubmission(null); // Clear existing submission
-        setShowAnswers(false);
-        
-        // Reset progress data
-        const newProgress = questions.map(question => ({
-          questionId: question.id,
-          answered: false,
-          answer: null
-        }));
-        setProgressData(newProgress);
-        
-        // Set timer
-        const durationInSeconds = assessmentData.duration_minutes * 60;
-        setTimeRemaining(durationInSeconds);
-        setStartTime(new Date());
-        
-        // Add new submission to history
-        setSubmissions(prev => [response.submission, ...prev]);
-      } else {
-        // If there's an error, reset hasStarted
-        setHasStarted(false);
-        throw new Error(response.message || 'Failed to start assessment');
-      }
-    } catch (err) {
-      // Make sure hasStarted is reset on error
-      setHasStarted(false);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  const handleStartNewAttempt = () => {
+    navigate(`/Learner/Assessment/Attempt/${assessment.id}`, {
+      state: { assessment }
+    });
   };
-
-  // Add timer effect - Combined both timer effects into one
-  useEffect(() => {
-    if (hasStarted && timeRemaining !== null) {
-      const timerInterval = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            clearInterval(timerInterval);
-            handleSubmitAssessment(); // Auto-submit when time runs out
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      setTimer(timerInterval);
-
-      return () => clearInterval(timerInterval);
-    }
-  }, [hasStarted, timeRemaining]);
-
-  // Format time remaining - Single source of truth
-  const formatTimeRemaining = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  const handleAnswerChange = async (questionId, answer, questionType) => {
-    try {
-      
-      // Update the local state first for immediate feedback
-      if (questionType === 'multiple_choice' || questionType === 'true_false') {
-        // For radio buttons/multiple choice, update with option ID
-        const parsedOptionId = parseInt(answer, 10);
-        
-        setAnswers(prev => ({
-          ...prev,
-          [questionId]: {
-            ...(prev[questionId] || {}),
-            selected_option_id: parsedOptionId,
-            text_response: ''
-          }
-        }));
-
-        // Update progress data to show this question was answered
-        setProgressData(prev => prev.map(p => 
-          p.questionId === questionId 
-            ? { ...p, answered: true, answer: { selected_option_id: parsedOptionId } }
-            : p
-        ));
-        
-        // Then prepare data for API call
-        const answerData = {
-          optionId: parsedOptionId
-        };
-        
-        // Validate answer data
-        if (Number.isNaN(answerData.optionId)) {
-          throw new Error('Invalid option ID');
-        }
-        
-        // Send to API
-        const response = await saveQuestionAnswer(submissionId, questionId, answerData);
-        
-        if (!response.success) {
-          throw new Error(response.message || 'Failed to save answer');
-        }
-      } else {
-        // For text inputs/essays, update with text response
-        setAnswers(prev => ({
-          ...prev,
-          [questionId]: {
-            ...(prev[questionId] || {}),
-            selected_option_id: null,
-            text_response: answer
-          }
-        }));
-        
-        // Update progress data to show this question was answered
-        setProgressData(prev => prev.map(p => 
-          p.questionId === questionId 
-            ? { ...p, answered: true, answer: { text_response: answer } }
-            : p
-        ));
-
-        // Then prepare data for API call
-        const answerData = {
-          textResponse: answer
-        };
-        
-        // Send to API
-        const response = await saveQuestionAnswer(submissionId, questionId, answerData);
-        
-        if (!response.success) {
-          throw new Error(response.message || 'Failed to save answer');
-        }
-      }
-    } catch (err) {
-      console.error('Error saving answer:', err);
-      setError(err.message || 'Failed to save answer');
-    }
-  };
-
-  const handleSubmitAssessment = async () => {
-    try {
-      setIsSubmitting(true);
-      if (timer) {
-        clearInterval(timer);
-        setTimer(null);
-      }
-      
-      const endTime = new Date();
-      const timeTaken = Math.floor((endTime - startTime) / 1000);
-
-      const response = await submitAssessment(submissionId, assessment.id);
-      
-      if (response.success) {
-        // Fetch the latest submission details after successful submission
-        const submissionResponse = await getUserSubmission(assessment.id, true);
-        
-        if (submissionResponse.success && submissionResponse.submission) {
-          const latestSubmission = submissionResponse.submission;
-          
-          // Ensure we have the latest submit_time
-          const submissionWithTime = {
-            ...latestSubmission,
-            submit_time: latestSubmission.submit_time || response.submit_time || new Date().toISOString()
-          };
-          
-          setExistingSubmission(submissionWithTime);
-          setHasStarted(false);
-          setSubmitResult({
-            success: true,
-            message: 'Assessment submitted successfully',
-            submission: submissionWithTime
-          });
-          
-          // Update submissions list with the latest submission
-          setSubmissions(prev => [submissionWithTime, ...prev.filter(s => s.id !== submissionWithTime.id)]);
-          
-          setShowSubmitModal(true);
-          setTimeRemaining(0);
-        } else {
-          throw new Error('Failed to fetch updated submission details');
-        }
-      } else {
-        throw new Error(response.message || 'Failed to submit assessment');
-      }
-    } catch (err) {
-      console.error('Error submitting assessment:', err);
-      setError(err.message || 'Failed to submit assessment. Please try again.');
-      setIsSubmitting(false);
-      setShowSubmitModal(true);
-      return;
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Update SubmitResultModal to handle errors
-  const SubmitResultModal = () => {
-    if (!showSubmitModal) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-8 max-w-md w-full">
-          <div className="text-center">
-            {error ? (
-              <>
-                <AlertTriangle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-                <h2 className="text-2xl font-bold mb-2">Submission Failed</h2>
-                <p className="text-gray-600 mb-6">{error}</p>
-              </>
-            ) : (
-              <>
-                <Check className="mx-auto h-12 w-12 text-green-500 mb-4" />
-                <h2 className="text-2xl font-bold mb-2">Assessment Submitted!</h2>
-                <p className="text-gray-600 mb-6">
-                  Your assessment has been submitted successfully.
-                </p>
-              </>
-            )}
-            <button
-              onClick={() => {
-                if (error) {
-                  setShowSubmitModal(false);
-                  setError(null);
-                } else {
-                  navigate('/Learner/Assessment');
-                }
-              }}
-              className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
-            >
-              {error ? 'Try Again' : 'Return to Assessments'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Update useEffect to handle initial loading and submission status
-  useEffect(() => {
-    const fetchAssessmentAndSubmission = async () => {
-      try {
-        if (!assessment?.id) return;
-        
-        setLoading(true);
-        setError(null);
-        
-        const submissionResponse = await getUserSubmission(assessment.id, true);
-        
-        if (submissionResponse.success) {
-          const submission = submissionResponse.submission;
-          setExistingSubmission(submission);
-          
-          // If there's a submission and it's already submitted, update the UI accordingly
-          if (submission?.status === 'submitted' || submission?.status === 'graded') {
-            setHasStarted(false);
-            setShowAnswers(true);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching assessment details:', err);
-        setError(err.message || 'Failed to load assessment details');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAssessmentAndSubmission();
-  }, [assessment?.id]);
-
-  const renderQuestion = (question) => {
-    if (!question) return null;
-    
-    switch (question.question_type) {
-      case 'multiple_choice':
-        return (
-          <div>
-            <div className="flex justify-between items-start mb-2">
-              <h4 className="font-medium text-gray-700">Select your answer:</h4>
-              <span className="text-sm text-gray-500">Points: {question.points}</span>
-            </div>
-            <div className="space-y-3">
-              {question.options?.map(option => (
-                <div 
-                  key={option.id} 
-                  className={`flex items-center gap-3 p-3 rounded-lg border 
-                    ${existingSubmission?.status === 'graded' && option.is_correct ? 'bg-green-50 border-green-200' : ''}
-                    hover:bg-gray-50 cursor-pointer
-                  `}
-                  onClick={() => handleAnswerChange(question.id, option.id, 'multiple_choice')}
-                >
-                  <input
-                    type="radio"
-                    name={`question-${question.id}`}
-                    value={option.id}
-                    checked={answers[question.id]?.selected_option_id === option.id}
-                    onChange={() => {}} // Changed to empty function since onClick is on the parent div
-                    className="h-4 w-4 text-yellow-600 cursor-pointer"
-                    disabled={existingSubmission?.status === 'graded' || loading}
-                  />
-                  <span className="flex-1">{option?.option_text || option?.text || 'No option text'}</span>
-                  {existingSubmission?.status === 'graded' && option.is_correct && (
-                    <span className="text-green-600 text-sm">✓ Correct Answer</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'true_false':
-        return (
-          <div>
-            <div className="flex justify-between items-start mb-2">
-              <h4 className="font-medium text-gray-700">Select True or False:</h4>
-              <span className="text-sm text-gray-500">Points: {question.points}</span>
-            </div>
-            <div className="space-y-3">
-              {question.options?.map(option => (
-                <div 
-                  key={option.id} 
-                  className={`flex items-center gap-3 p-3 rounded-lg border
-                    ${existingSubmission?.status === 'graded' && option.is_correct ? 'bg-green-50 border-green-200' : ''}
-                    hover:bg-gray-50 cursor-pointer
-                  `}
-                  onClick={() => handleAnswerChange(question.id, option.id, 'true_false')}
-                >
-                  <input
-                    type="radio"
-                    name={`question-${question.id}`}
-                    value={option.id}
-                    checked={answers[question.id]?.selected_option_id === option.id}
-                    onChange={() => {}} // Changed to empty function since onClick is on the parent div
-                    className="h-4 w-4 text-yellow-600 cursor-pointer"
-                    disabled={existingSubmission?.status === 'graded' || loading}
-                  />
-                  <span className="flex-1">{option?.option_text || option?.text || 'No option text'}</span>
-                  {existingSubmission?.status === 'graded' && option.is_correct && (
-                    <span className="text-green-600 text-sm">✓ Correct Answer</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'short_answer':
-        return (
-          <input
-            type="text"
-            value={answers[question.id]?.text_response || ''}
-            onChange={(e) => handleAnswerChange(question.id, e.target.value, 'short_answer')}
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-            placeholder="Enter your answer"
-            disabled={loading}
-          />
-        );
-
-      case 'essay':
-        return (
-          <textarea
-            value={answers[question.id]?.text_response || ''}
-            onChange={(e) => handleAnswerChange(question.id, e.target.value, 'essay')}
-            className="w-full p-3 border rounded-lg h-32 focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-            placeholder="Write your essay answer"
-            disabled={loading}
-          />
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const renderPdfPreview = () => {
-    if (!pdfPreviewUrl) return null;
-
-    return (
-      <div className="mt-4 border rounded-lg p-4 bg-gray-50">
-        <h4 className="font-medium text-gray-700 mb-2">PDF Preview</h4>
-        <div className="overflow-auto" style={{ height: "500px" }}>
-          <iframe
-            src={pdfPreviewUrl}
-            className="w-full h-full border-0"
-            title="PDF Preview"
-          />
-        </div>
-      </div>
-    );
-  };
-
-  const renderQuestionProgress = () => {
-    if (loading) return <LoadingSpinner />;
-    if (error) return <div className="text-red-600">{error}</div>;
-    if (!Array.isArray(questions) || questions.length === 0) return null;
-    
-    return (
-      <div className="flex flex-wrap gap-2 mb-4">
-        {questions.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentQuestionIndex(index)}
-            className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium
-              ${currentQuestionIndex === index 
-                ? 'ring-2 ring-yellow-500 ring-offset-2'
-                : ''} 
-              ${progressData[index]?.answered
-                ? 'bg-green-500 text-white'
-                : 'bg-gray-200 text-gray-600'}
-            `}
-          >
-            {index + 1}
-          </button>
-        ))}
-      </div>
-    );
-  };
-
-  const renderQuestionsSection = () => {
-    if (loading) return <LoadingSpinner />;
-    if (error) return <div className="text-red-600">{error}</div>;
-    if (!Array.isArray(questions) || !questions[currentQuestionIndex]) {
-      return (
-        <div className="bg-white p-6 rounded-lg shadow">
-          <p className="text-gray-500 text-center">No questions available</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h3 className="text-lg font-medium mb-4">
-          {questions[currentQuestionIndex].question_text}
-        </h3>
-        {renderQuestion(questions[currentQuestionIndex])}
-      </div>
-    );
-  };
-
-  const calculateTotalPoints = (questions = []) => {
-    const total = questions.reduce((sum, question) => {
-      return sum + (parseInt(question.points) || 0);
-    }, 0);
-    return total;
-  };
-
-  const renderAnswerFeedback = (question, answer) => {
-    if (!existingSubmission || existingSubmission.status !== 'graded') {
-      return null;
-    }
-
-    switch (question.question_type) {
-      case 'multiple_choice':
-      case 'true_false':
-        const correctOption = question.options.find(opt => opt.is_correct);
-        return (
-          <div className="mt-3 p-3 bg-green-50 rounded">
-            <p className="text-sm font-medium text-green-700">Correct Answer:</p>
-            <p className="text-green-600">{correctOption?.option_text}</p>
-            {answer?.feedback && (
-              <p className="mt-2 text-sm text-blue-600">
-                Feedback: {answer.feedback}
-              </p>
-            )}
-          </div>
-        );
-
-      case 'short_answer':
-      case 'essay':
-        return (
-          <div className="mt-3 p-3 bg-green-50 rounded">
-            <p className="text-sm font-medium text-green-700">Answer Key:</p>
-            <p className="text-green-600">{question.answer_key}</p>
-            {answer?.feedback && (
-              <p className="mt-2 text-sm text-blue-600">
-                Feedback: {answer.feedback}
-              </p>
-            )}
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const renderAnswerWithFeedback = (question, answer) => {
-    if (!answer) {
-      return <div className="text-gray-500">Not answered</div>;
-    }
-
-    const yourAnswer = answer.selected_option_id 
-      ? (answer.selected_option?.option_text || answer.selected_option?.text || 'No answer text')
-      : answer.text_response;
-
-    const isManualGradingType = question.question_type === 'essay' || question.question_type === 'short_answer'; // Removed extra parenthesis
-
-    return (
-      <div className="space-y-3">
-        {/* Your Answer Section */}
-        <div className="mt-2">
-          <p className="text-sm font-medium text-gray-600">Your Answer:</p>
-          <div className="mt-1 p-2 bg-gray-50 rounded text-gray-700">
-            {yourAnswer || 'No response'}
-          </div>
-        </div>
-
-        {/* Points Section - modified to show "not graded" message */}
-        <div className="mt-2">
-          <p className="text-sm font-medium text-gray-600">Points:</p>
-          {(answer.points_awarded == null && isManualGradingType) ? (
-            <div className="mt-1 p-2 bg-yellow-50 text-yellow-700 rounded">
-              The teacher has not yet graded this question
-            </div>
-          ) : (
-            <div className={`mt-1 p-2 rounded ${
-              answer.points_awarded === question.points
-                ? 'bg-green-50 text-green-700'
-                : answer.points_awarded === 0
-                  ? 'bg-red-50 text-red-700'
-                  : 'bg-yellow-50 text-yellow-700'
-            }`}>
-              {answer.points_awarded === null ? '-' : `${answer.points_awarded}/${question.points}`}
-            </div>
-          )}
-        </div>
-        
-        {/* Feedback Section */}
-        {answer.feedback && (
-          <div className="mt-2">
-            <p className="text-sm font-medium text-blue-600">Feedback:</p>
-            <div className="mt-1 p-2 bg-blue-50 rounded text-blue-700">
-              {answer.feedback}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderExistingSubmissionAnswers = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <Check className="mx-auto h-12 w-12 text-green-500" />
-        <h3 className="mt-2 text-lg font-medium">Assessment Already Submitted</h3>
-        <p className="mt-1 text-sm text-gray-500">
-          You have already completed this assessment.
-        </p>
-        {existingSubmission?.answers ? (
-          <div className="mt-4 text-2xl font-bold">
-            {(() => {
-              const totalPoints = calculateTotalPoints(questions);
-              
-              
-              const score = existingSubmission.answers.reduce((sum, answer) => {
-                const question = questions.find(q => q.id === answer.question_id);
-                
-                
-                if (!question) return sum;
-        
-                // Check for manual grading types first
-                if (question.question_type === 'essay' || question.question_type === 'short_answer') {
-                  // If points_awarded is null, don't add anything to the sum
-                  if (answer.points_awarded === null) {
-                    return sum;
-                  }
-                  return sum + (parseInt(answer.points_awarded) || 0);
-                }
-        
-                // For multiple choice and true/false
-                if (['multiple_choice', 'true_false'].includes(question.question_type)) {
-                  // If points were manually awarded, use them
-                  if (answer.points_awarded !== null) {
-                    return sum + parseInt(answer.points_awarded);
-                  }
-        
-                  // Auto-grade based on correct answer
-                  const selectedOption = question.options?.find(opt => opt.id === answer.selected_option_id);
-                  if (selectedOption?.is_correct) {
-                    return sum + parseInt(question.points);
-                  }
-                }
-                
-                return sum;
-              }, 0);
-        
-              return `Score: ${score}/${totalPoints}`;
-            })()}
-          </div>
-        ) : null /* Remove the else block that showed "Not yet graded" */}
-        
-        <div className="mt-4 flex justify-center gap-4">
-          <button
-            onClick={() => setShowAnswers(!showAnswers)}
-            className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
-          >
-            {showAnswers ? 'Hide My Answers' : 'Show My Answers'}
-          </button>
-          <button
-            aria-label="start"
-            onClick={handleStartAssessment}
-            className="px-4 py-2 border-2 border-[#212529] text-[#212529] rounded-md hover:bg-[#F6BA18] hover:border-[#F6BA18] hover:text-[#212529]"
-           
-          >
-            Start New Attempt
-          </button>
-        </div>
-      </div>
-
-      {/* Show submission history if available */}
-      {submissions.length > 1 && (
-        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-sm text-yellow-700">
-            Previous attempts: {submissions.length}
-          </p>
-          <p className="mt-2 text-sm font-medium text-yellow-800">
-            Best Score: {Math.max(...submissions.map(s => s.score || 0))}/{assessmentData?.max_score}
-          </p>
-        </div>
-      )}
-      
-      {showAnswers && (
-        <div className="mt-6 bg-gray-50 rounded-lg p-6">
-          <h4 className="font-medium text-lg mb-4">Your Answers</h4>
-          <div className="space-y-4">
-            {questions.map((question, index) => {
-              // Find the answer from the submission answers array instead of progressData
-              const answer = existingSubmission.answers?.find(a => a.question_id === question.id);
-              return (
-                <div key={question.id} className="p-4 bg-white rounded-lg shadow-sm">
-                  <div className="font-medium text-gray-900">Question {index + 1}</div>
-                  <div className="mt-2 text-gray-600">{question.question_text}</div>
-                  <div className="mt-2 text-sm text-gray-500">
-                    Your answer: {
-                      answer ? (
-                        answer.selected_option_id 
-                          ? question.options?.find(o => o.id === answer.selected_option_id)?.option_text
-                          : answer.text_response || 'No response'
-                      ) : 'Not answered'
-                    }
-                  </div>
-                  {renderAnswerWithFeedback(question, answer)}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderSubmissionSection = () => (
-    <div className="p-6">
-      {loading ? (
-        <LoadingSpinner />
-      ) : error ? (
-        <div className="text-center text-red-600">{error}</div>
-      ) : existingSubmission && !hasStarted ? (
-        // Only show existing submission view when not starting a new attempt
-        <div>
-          {renderExistingSubmissionAnswers()}
-        </div>
-      ) : !hasStarted ? (
-        // Show "Ready to Start" when no submission exists or not started
-        <div className="text-center">
-          <h3 className="text-lg font-medium">Ready to Start?</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            You will have {assessmentData?.duration_minutes} minutes to complete this assessment.
-          </p>
-          <button
-            onClick={handleStartAssessment}
-            className="mt-4 px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
-            disabled={loading}
-          >
-            {loading ? 'Starting...' : 'Start New Attempt'}
-          </button>
-        </div>
-      ) : (
-        // Show question navigation when assessment is in progress
-        <div className="space-y-6">
-          {renderQuestionProgress()}
-          {/* Question Navigation */}
-          <div className="flex justify-between items-center">
-            <button
-              onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-              disabled={currentQuestionIndex === 0}
-              className="px-4 py-2 bg-gray-100 rounded-md disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <span>Question {currentQuestionIndex + 1} of {questions?.length || 0}</span>
-            <button
-              onClick={() => {
-                if (currentQuestionIndex === (questions?.length || 0) - 1) {
-                  handleSubmitAssessment();
-                } else {
-                  setCurrentQuestionIndex(prev => Math.min((questions?.length || 0) - 1, prev + 1));
-                }
-              }}
-              className="px-4 py-2 bg-[#212529] text-white rounded-md"
-              disabled={isSubmitting || !questions?.length}
-            >
-              {currentQuestionIndex === (questions?.length || 0) - 1 ? 'Submit' : 'Next'}
-            </button>
-          </div>
-
-          {/* Current Question */}
-          {renderQuestionsSection()}
-        </div>
-      )}
-
-      {submissionHistory.length > 1 && (
-        <div className="mt-8 border-t border-gray-200 pt-6">
-          <h4 className="font-medium text-gray-900 mb-4">
-            Submission History
-          </h4>
-          <div className="space-y-3">
-            {submissionHistory.slice(0, -1).map((entry, index) => (
-              <div
-                key={index}
-                className="flex justify-between items-center py-2 px-4 bg-gray-50 rounded-lg"
-              >
-                <span className="text-sm font-medium text-gray-600">
-                  Version {index + 1}
-                </span>
-                <span className="text-sm text-gray-500">
-                  {new Date(entry.submittedAt).toLocaleString()}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
 
   const renderHeader = () => (
     <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 p-8 text-white">
@@ -1044,82 +344,196 @@ const LearnerAssessmentView = () => {
 
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold mb-2">
-            {assessmentData?.title}
-          </h1>
-          <p aria-label="due" className="text-gray-200 flex items-center gap-2">
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold">
+              {assessmentData?.title || assessment?.title}
+            </h1>
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(getStatus(initialSubmission))}`}>
+              {getStatus(initialSubmission)}
+            </span>
+          </div>
+          <p className="text-gray-200 flex items-center gap-2">
             <Clock size={16} />
-            Due: {assessmentData?.due_date && new Date(assessmentData.due_date).toLocaleDateString()}
+            Due: {assessment?.due_date && new Date(assessment.due_date).toLocaleDateString()}
           </p>
-          {hasStarted && timeRemaining !== null && (
-            <div className="mt-2 text-xl font-mono">
-              Time Remaining: {formatTimeRemaining(timeRemaining)}
-            </div>
-          )}
+          <p className="text-sm text-gray-300 mt-2">
+            {assessment?.description}
+          </p>
         </div>
         <div className="text-right">
-          <p className="mt-3 text-lg font-semibold">
-            Passing Score: {assessmentData?.passing_score || '0'}%
+          <p className="text-lg font-semibold">
+            Passing Score: {assessment?.passing_score || '0'}%
           </p>
           <p className="text-sm text-gray-300">
-            Duration: {assessmentData?.duration_minutes || '0'} minutes
+            Duration: {assessment?.duration_minutes || '0'} minutes
           </p>
         </div>
       </div>
     </div>
   );
 
-  const calculateAutoGradedScore = (submission) => {
-    if (!submission?.answers) return { total: 0, possible: 0 };
-    
-    const scores = submission.answers.reduce((acc, answer) => {
-      const question = submission.assessment?.questions?.find(q => q.id === answer.question_id);
-      
-      if (!question) return acc;
-  
-      // Auto-grade multiple choice and true/false questions
-      if ((question.question_type === 'multiple_choice' || question.question_type === 'true_false') 
-          && answer.selected_option_id) {
-        const selectedOption = question.options?.find(opt => opt.id === answer.selected_option_id);
-        const isCorrect = selectedOption?.is_correct || false;
-        
-        return {
-          total: acc.total + (isCorrect ? (question.points || 0) : 0),
-          possible: acc.possible + (question.points || 0)
-        };
-      }
-      
-      // For manual grading questions, use points_awarded if available
-      if (answer.points_awarded !== null && answer.points_awarded !== undefined) {
-        return {
-          total: acc.total + (parseInt(answer.points_awarded) || 0),
-          possible: acc.possible + (question.points || 0)
-        };
-      }
-  
-      return {
-        total: acc.total,
-        possible: acc.possible + (question.points || 0)
-      };
-    }, { total: 0, possible: 0 });
-  
-    return scores;
-  };
-  
-  // Update the renderSubmissionScore function
-  const renderSubmissionScore = (submission, assessment) => {
-    if (!submission || !submission.status || submission.status === "null") {
-      return <div className="text-sm text-gray-600">Not Started</div>;
+  const renderSubmissionStatus = () => {
+    if (error) {
+      return (
+        <div className="text-center py-8">
+          <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
+          <h3 className="text-xl font-medium text-gray-900 mt-4 mb-2">
+            {error}
+          </h3>
+          <button
+            onClick={() => navigate("/Learner/Assessment")}
+            className="mt-4 px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
+          >
+            Back to Assessments
+          </button>
+        </div>
+      );
     }
-  
-    const scores = calculateAutoGradedScore(submission);
-    
+
+    if (!initialSubmission) {
+      const pendingSubmission = submissions?.find(s => s.status === 'in_progress');
+      if (pendingSubmission) {
+        return (
+          <div className="text-center py-8">
+            <Clock className="mx-auto h-12 w-12 text-yellow-500" />
+            <h3 className="text-xl font-medium text-gray-900 mb-4">
+              Assessment In Progress
+            </h3>
+            <p className="text-gray-500 mb-6">
+              You have an unfinished attempt that needs to be completed.
+            </p>
+            <button
+              onClick={() => navigate(`/Learner/Assessment/Attempt/${assessment.id}`, {
+                state: { assessment, submission: pendingSubmission }
+              })}
+              className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
+            >
+              Resume Attempt
+            </button>
+          </div>
+        );
+      }
+      
+      return (
+        <div className="text-center py-8">
+          <div className="text-gray-400 mb-4">
+            <ClipboardList size={48} className="mx-auto" />
+          </div>
+          <h3 className="text-xl font-medium text-gray-900 mb-4">
+            Not Started
+          </h3>
+          <p className="text-gray-500 mb-6">
+            You haven't attempted this assessment yet.
+          </p>
+          <button
+            onClick={handleStartNewAttempt}
+            className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
+          >
+            Start New Attempt
+          </button>
+        </div>
+      );
+    }
+
+    // Check if there's a resumable attempt
+    const isResumable = initialSubmission.status === 'in_progress' && !initialSubmission.submit_time;
+
     return (
-      <div className="text-2xl font-bold text-gray-900">
-        {scores.total}/{scores.possible}
-        {submission.status === "graded" && (
-          <div className="text-sm text-gray-500 mt-1">
-            Final Grade
+      <div className="space-y-6">
+        <div className="text-center">
+          {isResumable ? (
+            <>
+              <Clock className="mx-auto h-12 w-12 text-yellow-500" />
+              <h3 className="mt-2 text-lg font-medium">Assessment In Progress</h3>
+              <p className="text-sm text-gray-500">
+                Started on: {new Date(initialSubmission.start_time).toLocaleString()}
+              </p>
+              <div className="mt-6 flex justify-center gap-4">
+                <button
+                  onClick={() => navigate(`/Learner/Assessment/Attempt/${assessment.id}`, {
+                    state: { assessment, submission: initialSubmission }
+                  })}
+                  className="px-6 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+                >
+                  Resume Attempt
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <Check className="mx-auto h-12 w-12 text-green-500" />
+              <h3 className="mt-2 text-lg font-medium">Latest Attempt</h3>
+              <p className="text-sm text-gray-500">
+                Submitted on: {new Date(initialSubmission.submit_time).toLocaleString()}
+              </p>
+              
+              {/* Show score if available */}
+              {initialSubmission.total_score !== undefined && (
+                <div className="mt-4 text-2xl font-bold">
+                  Score: {calculateTotalPoints(initialSubmission.answers).earned}/{calculateTotalPoints(initialSubmission.answers).total}
+                </div>
+              )}
+
+              <div className="mt-6 flex justify-center gap-4">
+                <button
+                  onClick={() => setShowAnswers(!showAnswers)}
+                  className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
+                >
+                  {showAnswers ? 'Hide My Answers' : 'Show My Answers'}
+                </button>
+                <button
+                  onClick={handleStartNewAttempt}
+                  className="px-4 py-2 border-2 border-[#212529] text-[#212529] rounded-md hover:bg-[#F6BA18] hover:border-[#F6BA18]"
+                >
+                  Start New Attempt
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Show answers section */}
+        {showAnswers && (
+          <div className="mt-6 space-y-6">
+            <h4 className="text-lg font-medium text-gray-900">Your Answers</h4>
+            {questions.map((question, index) => {
+              const answer = initialSubmission.answers?.find(a => a.question_id === question.id);
+              return (
+                <div key={question.id} className="bg-white p-6 rounded-lg shadow-sm">
+                  <div className="flex justify-between items-start mb-4">
+                    <h5 className="text-md font-medium text-gray-900">Question {index + 1}</h5>
+                    <span className="text-sm text-gray-500">Points: {question.points}</span>
+                  </div>
+                  <p className="text-gray-700 mb-4">{question.question_text}</p>
+                  <div className="bg-gray-50 p-4 rounded-md">
+                    <p className="text-sm font-medium text-gray-700">Your Answer:</p>
+                    <div className="mt-2">
+                      {answer ? (
+                        answer.selected_option ? (
+                          <p className="text-gray-800">{answer.selected_option.option_text}</p>
+                        ) : (
+                          <p className="text-gray-800">{answer.text_response || 'No response'}</p>
+                        )
+                      ) : (
+                        <p className="text-gray-500 italic">Not answered</p>
+                      )}
+                    </div>
+                    {answer?.points_awarded !== undefined && (
+                      <div className="mt-4 flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-700">Score:</span>
+                        <span className="text-sm text-gray-900">{answer.points_awarded}/{question.points}</span>
+                      </div>
+                    )}
+                    {answer?.feedback && (
+                      <div className="mt-4">
+                        <p className="text-sm font-medium text-gray-700">Feedback:</p>
+                        <p className="mt-1 text-sm text-gray-600">{answer.feedback}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -1136,25 +550,26 @@ const LearnerAssessmentView = () => {
         />
         <div className="max-w-7xl mx-auto">
           <div className="mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
+            {/* Header section with assessment details */}
             {renderHeader()}
-            {/* Instructions Section */}
+            
+            {/* Instructions section */}
             <div className="p-6 border-b border-gray-200">
-              <div className="bg-gray-50 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                  <FileText size={20} className="text-gray-500" />
-                  Instructions
-                </h3>
-                <div className="prose max-w-none text-gray-600">
-                  {assessmentData?.instructions || "No instructions provided."}
-                </div>
-              </div>
+              {/* ...existing instructions code... */}
             </div>
 
-            {/* Submission Section */}
-            {renderSubmissionSection()}
+            {/* Submission status and answers section */}
+            <div className="p-6">
+              {loading ? (
+                <LoadingSpinner />
+              ) : error ? (
+                <div className="text-center text-red-600">{error}</div>
+              ) : (
+                renderSubmissionStatus()
+              )}
+            </div>
           </div>
         </div>
-        <SubmitResultModal />
       </div>
     </div>
   );

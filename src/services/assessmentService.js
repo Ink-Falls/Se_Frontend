@@ -68,13 +68,8 @@ export const getCourseAssessments = async (moduleId, includeQuestions = false, p
     url.searchParams.append('page', page);
     url.searchParams.append('limit', limit);
 
-    console.log('Fetching assessments with URL:', url.toString());
-
     const response = await fetchWithInterceptor(url.toString());
     const data = await response.json();
-
-    console.log('Raw assessment response:', data);
-    console.log('Response structure:', JSON.stringify(data, null, 2));
 
     if (!response.ok) {
       throw new Error(data.message || 'Failed to fetch assessments');
@@ -164,15 +159,54 @@ export const getAssessmentById = async (assessmentId, includeQuestions = false, 
  */
 export const createAssessmentQuestion = async (assessmentId, questionData) => {
   try {
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/assessments/${assessmentId}/questions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(questionData),
-    });
+    
+    let requestBody = {
+      question_text: questionData.question_text,
+      question_type: questionData.question_type,
+      points: parseInt(questionData.points),
+      order_index: questionData.order_index || 1,
+      media_url: questionData.media_url || "",
+      answer_key: questionData.answer_key // Make sure answer_key is included
+    };
 
-    return await response.json();
+    if (questionData.word_limit) {
+      requestBody.word_limit = parseInt(questionData.word_limit);
+    }
+
+    if (questionData.options) {
+      requestBody.options = questionData.options;
+    }
+
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/assessments/${assessmentId}/questions`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create question');
+    }
+
+    // Return standardized response
+    return {
+      success: true,
+      message: data.message || 'Question added successfully',
+      question: {
+        ...data.question,
+        id: data.question.id || 0,
+        assessment_id: assessmentId,
+        createdAt: new Date(data.question.createdAt || Date.now()),
+        updatedAt: new Date(data.question.updatedAt || Date.now())
+      }
+    };
+
   } catch (error) {
     console.error('Error creating question:', error);
     throw error;
@@ -305,22 +339,6 @@ export const saveQuestionAnswer = async (submissionId, questionId, answerData) =
   }
 };
 
-/**
- * Submits a completed assessment
- * @param {number} submissionId - The submission ID
- * @param {number} assessmentId - The assessment ID (optional, will try to find from localStorage if not provided)
- * @returns {Promise<Object>} Submission result
- */
-const hasManualGradingQuestions = (questions = []) => {
-  // Add null/undefined check to prevent TypeError
-  if (!questions || !Array.isArray(questions)) return false;
-  
-  return questions.some(q => 
-    q.question_type === 'short_answer' || 
-    q.question_type === 'essay'
-  );
-};
-
 export const submitAssessment = async (submissionId, assessmentId = null) => {
   try {
     // First try to get the assessment ID from the provided parameter
@@ -343,7 +361,7 @@ export const submitAssessment = async (submissionId, assessmentId = null) => {
       throw new Error('Assessment ID not found for submission');
     }
     
-    // Set status to 'submitted' for all submissions
+    // Always set status to 'submitted' for learner submissions
     const status = 'submitted';
     const submit_time = new Date().toISOString();
 
@@ -509,20 +527,20 @@ export const getSubmissionDetails = async (submissionId) => {
  */
 export const editAssessment = async (assessmentId, assessmentData) => {
   try {
-    // Validate assessmentId
     if (!assessmentId) throw new Error('Assessment ID is required');
 
-    // Format request body to match API requirements exactly
+    // Ensure all required fields are included in request body
     const requestBody = {
       title: assessmentData.title,
       description: assessmentData.description,
       type: assessmentData.type,
-      max_score: assessmentData.max_score,
-      passing_score: assessmentData.passing_score,
-      duration_minutes: assessmentData.duration_minutes,
+      max_score: parseInt(assessmentData.max_score),
+      passing_score: parseInt(assessmentData.passing_score),
+      duration_minutes: parseInt(assessmentData.duration_minutes),
       due_date: assessmentData.due_date,
-      is_published: assessmentData.is_published,
-      instructions: assessmentData.instructions
+      is_published: Boolean(assessmentData.is_published),
+      instructions: assessmentData.instructions || "",
+      allowed_attempts: parseInt(assessmentData.allowed_attempts) || 1
     };
 
     const response = await fetchWithInterceptor(`${API_BASE_URL}/assessments/${assessmentId}`, {

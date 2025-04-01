@@ -19,9 +19,9 @@ import {
   Trash2,
 } from "lucide-react";
 import {
-  getAssessmentById,
-  createAssessmentQuestion,
-  getAssessmentSubmissions,
+  getAssessmentById, // for getting all the questions
+  createAssessmentQuestion, // done
+  getAssessmentSubmissions, 
   getSubmissionDetails,
   deleteQuestion,
   deleteAssessment,
@@ -70,9 +70,6 @@ const TeacherAssessmentView = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { assessment } = location.state || {};
-  const [selectedStudent, setSelectedStudent] = useState(null);
-  const [isGrading, setIsGrading] = useState(false);
-  const [grade, setGrade] = useState(0);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [deletingQuestion, setDeletingQuestion] = useState(null);
 
@@ -105,95 +102,7 @@ const TeacherAssessmentView = () => {
     },
   ];
 
-  const handleSubmitGrade = () => {
-    // Update the student's grade
-    const updatedStudents = students.map((student) => {
-      if (student.id === selectedStudent.id) {
-        return { ...student, grade };
-      }
-      return student;
-    });
-    setIsGrading(false);
-  };
-
-  const renderStudentSubmission = () => {
-    if (!selectedStudent) return null;
-    if (!selectedStudent.submitted) {
-      return (
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <p className="text-gray-500">No submission yet</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-4">
-        <div className="bg-gray-50 rounded-lg p-4">
-          <p className="text-gray-700 whitespace-pre-wrap mb-4">
-            {selectedStudent.submission.textAnswer}
-          </p>
-          {selectedStudent.submission.fileName && (
-            <div className="flex items-center text-sm text-gray-600">
-              <FileText size={16} className="mr-2" />
-              {selectedStudent.submission.fileName}
-            </div>
-          )}
-        </div>
-
-        <div className="flex justify-between items-center">
-          <div className="text-sm text-gray-500">
-            <Clock size={14} className="inline mr-1" />
-            Submitted:{" "}
-            {new Date(selectedStudent.submission.submittedAt).toLocaleString()}
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-gray-700">
-              Grade:{" "}
-              {selectedStudent.grade
-                ? `${selectedStudent.grade}/100`
-                : "Not graded"}
-            </span>
-            <button
-              onClick={() => setIsGrading(true)}
-              className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
-            >
-              {selectedStudent.grade ? "Edit Grade" : "Grade"}
-            </button>
-          </div>
-        </div>
-
-        {isGrading && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div className="bg-white p-6 rounded-lg w-96">
-              <h3 className="text-lg font-semibold mb-4">Grade Submission</h3>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={grade}
-                onChange={(e) => setGrade(e.target.value)}
-                className="w-full p-2 border rounded-md mb-4"
-              />
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setIsGrading(false)}
-                  className="px-4 py-2 border rounded-md"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmitGrade}
-                  className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
-                >
-                  Save Grade
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
+  console.log 
 
   const getStatusColor = (status, score) => {
     switch (status?.toLowerCase()) {
@@ -425,52 +334,17 @@ const TeacherAssessmentView = () => {
 
   const handleCreateQuestion = async (questionData) => {
     try {
-      // Base question data that's common for all types
-      const formattedData = {
-        question_text: questionData.question_text,
-        question_type: questionData.question_type,
-        points: parseInt(questionData.points),
-        order_index: (questions?.length || 0) + 1,
-        media_url: questionData.media_url || "",
-      };
+      console.log('Creating question with data:', questionData);
 
-      // Add options only for multiple_choice questions
-      if (questionData.question_type === "multiple_choice") {
-        formattedData.options = questionData.options.map((opt) => ({
-          text: opt.text,
-          is_correct: opt.is_correct,
-        }));
-      }
-      // Add special handling for true/false questions
-      else if (questionData.question_type === "true_false") {
-        formattedData.options = [
-          { text: "True", is_correct: questionData.correct_answer === "true" },
-          {
-            text: "False",
-            is_correct: questionData.correct_answer === "false",
-          },
-        ];
-      }
-      // For short_answer and essay, include answer_key if provided
-      else if (questionData.correct_answer) {
-        formattedData.answer_key = questionData.correct_answer;
-      }
-
-      const response = await createAssessmentQuestion(
-        assessment.id,
-        formattedData
-      );
+      const response = await createAssessmentQuestion(assessment.id, questionData);
 
       if (response.success) {
-        const updatedAssessment = await getAssessmentById(
-          assessment.id,
-          true,
-          true
-        );
+        // Immediately fetch updated questions after creating a new one
+        const updatedAssessment = await getAssessmentById(assessment.id, true, true);
         if (updatedAssessment.success) {
           setQuestions(updatedAssessment.assessment.questions || []);
           setIsCreateQuestionOpen(false);
-          setSuccessMessage("Question added successfully"); // Add this line
+          setSuccessMessage("Question added successfully");
         }
       } else {
         throw new Error(response.message || "Failed to create question");
@@ -578,14 +452,6 @@ const TeacherAssessmentView = () => {
           <span className="text-sm text-gray-500">Question {index + 1}</span>
           <p className="font-medium mt-1">{question.question_text}</p>
 
-          {/* Show student's answer */}
-          <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm font-medium text-gray-700">
-              Student's Answer:
-            </p>
-            <p className="mt-1 text-gray-600">{renderAnswer(question)}</p>
-          </div>
-
           {/* Show correct answer based on question type */}
           {question.question_type === "multiple_choice" && (
             <div className="mt-3 p-3 bg-green-50 rounded-lg">
@@ -615,24 +481,20 @@ const TeacherAssessmentView = () => {
               <p className="text-sm font-medium text-green-700">
                 Correct Answer:
               </p>
-              <div className="bg-white p-3 rounded-lg">
-                {question.options?.length > 0 ? (
-                  question.options.map((option) => (
-                    <div
-                      key={option.id}
-                      className={`${
-                        option.is_correct
-                          ? "text-green-600 font-medium"
-                          : "text-gray-600"
-                      }`}
-                    >
-                      {option.is_correct && "✓ "}
-                      {option.text || option.option_text}
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-gray-600">No answer set</div>
-                )}
+              <div className="mt-1">
+                {question.options?.map((option) => (
+                  <div
+                    key={option.id}
+                    className={`${
+                      option.is_correct
+                        ? "text-green-600 font-medium"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    {option.is_correct && "✓ "}
+                    {option.text || option.option_text}
+                  </div>
+                ))}
               </div>
             </div>
           )}
