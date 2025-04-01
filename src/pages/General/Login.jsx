@@ -37,12 +37,12 @@ function Login() {
   useEffect(() => {
     if (touched.email) {
       const emailError = validateEmail(email);
-      setValidationErrors(prev => ({ ...prev, email: emailError }));
+      setValidationErrors((prev) => ({ ...prev, email: emailError }));
     }
-    
+
     if (touched.password) {
       const passwordError = validatePassword(password);
-      setValidationErrors(prev => ({ ...prev, password: passwordError }));
+      setValidationErrors((prev) => ({ ...prev, password: passwordError }));
     }
   }, [email, password, touched]);
 
@@ -77,7 +77,7 @@ function Login() {
 
   // Handle input blur to mark fields as touched
   const handleBlur = (field) => {
-    setTouched(prev => ({ ...prev, [field]: true }));
+    setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
   /**
@@ -91,27 +91,31 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    
+
     // Mark all fields as touched
     setTouched({ email: true, password: true });
-    
+
     // Validate inputs before proceeding
     const emailError = validateEmail(email);
     const passwordError = validatePassword(password);
-    
+
     const newValidationErrors = {
       email: emailError,
-      password: passwordError
+      password: passwordError,
     };
-    
+
     setValidationErrors(newValidationErrors);
-    
+
     if (emailError || passwordError) {
       return;
     }
 
     // In a testing environment, we can bypass captcha validation
-    if (process.env.NODE_ENV !== 'test' && !captchaResponse && !window.captchaResponse) {
+    if (
+      process.env.NODE_ENV !== "test" &&
+      !captchaResponse &&
+      !window.captchaResponse
+    ) {
       setError("Please verify the CAPTCHA");
       return;
     }
@@ -121,9 +125,12 @@ function Login() {
     try {
       // First attempt login
       const loginData = await loginUser(
-        email, 
-        password, 
-        captchaResponse || (window.captchaResponse ? window.captchaResponse : 'test-captcha-response')
+        email,
+        password,
+        captchaResponse ||
+          (window.captchaResponse
+            ? window.captchaResponse
+            : "test-captcha-response")
       );
 
       if (!loginData.token || !loginData.user) {
@@ -250,7 +257,7 @@ function Login() {
                   className="h-[6vw] lg:h-[6vw]"
                 />
               </div>
-              <h1 className="text-[5vw] font-extrabold drop-shadow-[5px_5px_5px_rgba(0,0,0,0.8)]">
+              <h1 className="text-[5vw] font-extrabold drop-shadow-[3px_3px_3px_rgba(0,0,0,0.8)]">
                 <span className="text-[#F6BA18]">Aral</span>
                 <span className="text-[#FFFFFF]">Kademy</span>
               </h1>
@@ -325,7 +332,10 @@ function Login() {
                 <form onSubmit={handleSubmit} className="space-y-[1vw]">
                   {/* Display error message */}
                   {error && (
-                    <p className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw]" data-testid="error-message">
+                    <p
+                      className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw]"
+                      data-testid="error-message"
+                    >
                       {error}
                     </p>
                   )}
@@ -342,14 +352,17 @@ function Login() {
                       id="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      onBlur={() => handleBlur('email')}
+                      onBlur={() => handleBlur("email")}
                       required
                       className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                       placeholder="Enter your email"
                       data-testid="email-input"
                     />
                     {validationErrors.email && (
-                      <p className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw] mt-1" data-testid="email-error">
+                      <p
+                        className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw] mt-1"
+                        data-testid="email-error"
+                      >
                         {validationErrors.email}
                       </p>
                     )}
@@ -369,7 +382,7 @@ function Login() {
                         id="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        onBlur={() => handleBlur('password')}
+                        onBlur={() => handleBlur("password")}
                         required
                         className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529] pr-[10vw] lg:pr-[3vw]"
                         placeholder="Enter your password"
@@ -390,7 +403,10 @@ function Login() {
                       </button>
                     </div>
                     {validationErrors.password && (
-                      <p className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw] mt-1" data-testid="password-error">
+                      <p
+                        className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw] mt-1"
+                        data-testid="password-error"
+                      >
                         {validationErrors.password}
                       </p>
                     )}

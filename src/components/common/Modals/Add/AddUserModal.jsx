@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X } from "lucide-react";
+import { X, Eye, EyeOff } from "lucide-react";
 import { createUser } from "../../../../services/userService";
 
 const AddUserModal = ({ onClose, onSubmit }) => {
@@ -20,6 +20,8 @@ const AddUserModal = ({ onClose, onSubmit }) => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateForm = () => {
     const errors = {};
@@ -111,10 +113,24 @@ const AddUserModal = ({ onClose, onSubmit }) => {
       });
 
       const createdUser = await createUser(userData);
-      onSubmit(createdUser); // Pass the created user up
+      onSubmit(createdUser);
     } catch (err) {
-      setError(err.message || "Failed to create user");
       console.error("User creation error:", err);
+
+      // Handle specific API errors
+      if (err.message === "Email already exists") {
+        setFieldErrors({
+          email: "Email already exists. Please use a different email.",
+        });
+      } else if (err.message.includes("validation")) {
+        // Handle validation errors from API
+        setFieldErrors({
+          general: "Please check your input and try again.",
+        });
+      } else {
+        // Handle general errors
+        setError(err.message || "Failed to create user. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -142,7 +158,16 @@ const AddUserModal = ({ onClose, onSubmit }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto">
-          {error && <div className="text-red-600 mb-4 text-sm">{error}</div>}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
+              {error}
+            </div>
+          )}
+          {fieldErrors.general && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
+              {fieldErrors.general}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -371,22 +396,31 @@ const AddUserModal = ({ onClose, onSubmit }) => {
               </>
             )}
 
-            <div className="col-span-2">
+            <div className="col-span-2 relative">
               <label className="block text-sm font-medium text-gray-700">
                 Password
               </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Enter password"
-                className={`mt-1 block w-full rounded-md border ${
-                  fieldErrors.password ? "border-red-500" : "border-gray-300"
-                } px-3 py-2`}
-                required
-                minLength="8"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Enter password"
+                  className={`mt-1 block w-full rounded-md border ${
+                    fieldErrors.password ? "border-red-500" : "border-gray-300"
+                  } px-3 py-2 pr-10`}
+                  required
+                  minLength="8"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 mt-1 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
               {fieldErrors.password && (
                 <p className="text-red-500 text-xs mt-1">
                   {fieldErrors.password}
@@ -394,23 +428,36 @@ const AddUserModal = ({ onClose, onSubmit }) => {
               )}
             </div>
 
-            <div className="col-span-2">
+            <div className="col-span-2 relative">
               <label className="block text-sm font-medium text-gray-700">
                 Confirm Password
               </label>
-              <input
-                type="password"
-                name="confirm_password"
-                value={formData.confirm_password}
-                onChange={handleChange}
-                placeholder="Confirm password"
-                className={`mt-1 block w-full rounded-md border ${
-                  fieldErrors.confirm_password
-                    ? "border-red-500"
-                    : "border-gray-300"
-                } px-3 py-2`}
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  name="confirm_password"
+                  value={formData.confirm_password}
+                  onChange={handleChange}
+                  placeholder="Confirm password"
+                  className={`mt-1 block w-full rounded-md border ${
+                    fieldErrors.confirm_password
+                      ? "border-red-500"
+                      : "border-gray-300"
+                  } px-3 py-2 pr-10`}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 mt-1 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff size={20} />
+                  ) : (
+                    <Eye size={20} />
+                  )}
+                </button>
+              </div>
               {fieldErrors.confirm_password && (
                 <p className="text-red-500 text-xs mt-1">
                   {fieldErrors.confirm_password}
