@@ -186,7 +186,7 @@ function PictureCodeLogin() {
 
       {/* Selected pictures preview */}
       <div>
-        <p className="text-[3vw] text-[#64748B] lg:text-[0.9vw] max-lg:text-[2.5vw]">
+        <p className="text-[3vw] text-[#64748B] lg:text-[1.2vw] max-lg:text-[2.5vw]">
           Select your picture sequence to log in:
         </p>
 
@@ -241,7 +241,7 @@ function PictureCodeLogin() {
         <button
           type="button"
           onClick={handleReset}
-          className="py-2 px-4 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+          className="py-2 px-4 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors text-[3.5vw] lg:text-[1.2vw]"
         >
           Clear
         </button>
@@ -250,7 +250,7 @@ function PictureCodeLogin() {
           type="button"
           onClick={handleSubmit}
           disabled={selectedPictures.length < 3 || isLoading}
-          className="flex items-center justify-center min-w-[10rem] px-6 py-3 
+          className="flex items-center justify-center min-w-[10rem] px-6 py-2 
             font-semibold rounded-md transition-colors duration-300 flex-shrink-0
             text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529] 
             disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-gray-200"
@@ -282,7 +282,7 @@ function PictureCodeLogin() {
               </span>
             </div>
           ) : (
-            <span className="text-xs sm:text-sm md:text-base lg:text-base">
+            <span className="text-[5vw] md:text-[3vw] lg:text-[1.2vw]">
               Log In
             </span>
           )}

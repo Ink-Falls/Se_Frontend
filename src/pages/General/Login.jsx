@@ -271,10 +271,10 @@ function Login() {
               <div className="h-2 lg:h-2 absolute w-full bg-[#F6BA18] rounded-t-lg top-0 left-0"></div>
 
               {/* Form content wrapper */}
-              <div className="h-[700px] md:h-[800px] lg:h-[700px] flex flex-col">
+              <div className="h-[700px] md:h-[800px] lg:h-[550px] flex flex-col">
                 {/* Common header */}
                 <div className="mb-4 md:mb-6 lg:mb-4">
-                  <h2 className="text-[6vw] md:text-[3vw] lg:text-[2vw] font-bold text-left text-[#212529]">
+                  <h2 className="text-[6vw] md:text-[3vw] lg:text-[3vw] font-bold text-left text-[#212529]">
                     Log In
                   </h2>
                   <p className="text-[3vw] md:text-[1.5vw] lg:text-[1vw] text-[#64748B] text-left">
@@ -304,7 +304,7 @@ function Login() {
                         <div>
                           <label
                             htmlFor="email"
-                            className="text-[3vw] block text-[#64748B] lg:text-[0.8vw] max-lg:text-[2.5vw]"
+          className="text-[3vw] block text-[#64748B] lg:text-[1.2vw] max-lg:text-[2.5vw]"
                           >
                             Email
                           </label>
@@ -315,9 +315,7 @@ function Login() {
                             onChange={(e) => setEmail(e.target.value)}
                             onBlur={() => handleBlur("email")}
                             required
-                            className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] 
-                              md:mt-[0.5vw] md:text-[1.5vw] md:px-[2vw] md:py-[1.5vw]
-                              lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw]
+                            className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[1vw] 
                               w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                             placeholder="Enter your email"
                             data-testid="email-input"
@@ -336,7 +334,7 @@ function Login() {
                         <div>
                           <label
                             htmlFor="password"
-                            className="mt-[5vw] text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:mt-[0vw] block text-[#64748B]"
+          className="text-[3vw] block text-[#64748B] lg:text-[1.2vw] max-lg:text-[2.5vw]"
                           >
                             Password
                           </label>
@@ -348,9 +346,7 @@ function Login() {
                               onChange={(e) => setPassword(e.target.value)}
                               onBlur={() => handleBlur("password")}
                               required
-                              className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] 
-                                md:mt-[0.5vw] md:text-[1.5vw] md:px-[2vw] md:py-[1.5vw]
-                                lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw]
+                              className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[1vw] 
                                 w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529] pr-[10vw] lg:pr-[3vw]"
                               placeholder="Enter your password"
                               data-testid="password-input"
@@ -449,7 +445,9 @@ function Login() {
                                 </span>
                               </div>
                             ) : (
-                              <span>Log In</span>
+                              <span className="text-[5vw] md:text-[3vw] lg:text-[1vw]">
+                                Log In
+                              </span>
                             )}
                           </button>
                         </div>
@@ -480,14 +478,14 @@ function Login() {
 
                 {/* Login method toggle */}
                 <div className="mt-auto pt-4">
-                  <p className="text-[3vw] lg:text-[1vw] mb-2 text-[#64748B] text-left">
+                  <p className="text-[3vw] lg:text-[0.8vw] mb-2 text-[#64748B] text-left">
                     Or choose another login method:
                   </p>
                   <div className="grid grid-cols-2 gap-2 border rounded overflow-hidden">
                     <button
                       onClick={() => setLoginMethod("password")}
-                      className={`py-[2vw] md:py-[1.5vw] lg:py-3 
-                        text-[3vw] md:text-[1.5vw] lg:text-base font-medium 
+                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 
+                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] font-medium 
                         ${
                           loginMethod === "password"
                             ? "bg-[#F6BA18] text-[#212529]"
@@ -498,8 +496,8 @@ function Login() {
                     </button>
                     <button
                       onClick={() => setLoginMethod("magic-link")}
-                      className={`py-[2vw] md:py-[1.5vw] lg:py-3 
-                        text-[3vw] md:text-[1.5vw] lg:text-base font-medium 
+                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 
+                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] font-medium 
                         ${
                           loginMethod === "magic-link"
                             ? "bg-[#F6BA18] text-[#212529]"
@@ -510,8 +508,8 @@ function Login() {
                     </button>
                     <button
                       onClick={() => setLoginMethod("numeric-code")}
-                      className={`py-[2vw] md:py-[1.5vw] lg:py-3 
-                        text-[3vw] md:text-[1.5vw] lg:text-base font-medium 
+                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 
+                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] font-medium 
                         ${
                           loginMethod === "numeric-code"
                             ? "bg-[#F6BA18] text-[#212529]"
@@ -522,8 +520,8 @@ function Login() {
                     </button>
                     <button
                       onClick={() => setLoginMethod("picture-code")}
-                      className={`py-[2vw] md:py-[1.5vw] lg:py-3 
-                        text-[3vw] md:text-[1.5vw] lg:text-base font-medium 
+                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 
+                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] font-medium 
                         ${
                           loginMethod === "picture-code"
                             ? "bg-[#F6BA18] text-[#212529]"

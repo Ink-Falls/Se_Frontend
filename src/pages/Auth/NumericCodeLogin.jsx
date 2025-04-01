@@ -116,7 +116,7 @@ function NumericCodeLogin() {
       )}
 
       <div>
-        <label className="text-[3vw] block text-center text-[#64748B] lg:text-[0.8vw] max-lg:text-[2.5vw] mb-4">
+        <label className="text-[3vw] block text-center text-[#64748B] lg:text-[1.2vw] max-lg:text-[2.5vw] mb-4">
           Enter the 6-digit code from your teacher
         </label>
 
@@ -130,7 +130,7 @@ function NumericCodeLogin() {
               value={digit}
               onChange={(e) => handleChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
-              className="w-[10vw] h-[12vw] lg:w-[3vw] lg:h-[4vw] max-lg:text-[5vw] text-[1.5vw] border-2 border-[#64748B] rounded-md text-center font-bold focus:outline-none focus:ring-2 focus:ring-[#F6BA18] focus:border-[#F6BA18]"
+              className="w-[10vw] h-[12vw] lg:w-[3vw] lg:h-[4vw] text-[3vw] lg:text-[1vw] max-lg:text-[2.5vw] border-2 border-[#64748B] rounded-md text-center font-bold focus:outline-none focus:ring-2 focus:ring-[#F6BA18] focus:border-[#F6BA18]"
             />
           ))}
         </div>
@@ -175,7 +175,7 @@ function NumericCodeLogin() {
               </span>
             </div>
           ) : (
-            <span className="text-xs sm:text-sm md:text-base lg:text-base">
+            <span className="text-[5vw] md:text-[3vw] lg:text-[1vw]">
               Log In
             </span>
           )}
