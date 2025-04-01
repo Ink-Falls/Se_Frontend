@@ -41,7 +41,53 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
     setError('');
 
     try {
-      const response = await editQuestion(assessmentId, question.id, formData);
+      const requestData = {
+        question_text: formData.question_text.trim(),
+        question_type: formData.question_type,
+        points: parseInt(formData.points),
+        media_url: formData.media_url || "",
+      };
+
+      // Handle different question types
+      switch (formData.question_type) {
+        case "multiple_choice":
+          if (!formData.options.some((opt) => opt.is_correct)) {
+            throw new Error("Please select a correct answer");
+          }
+          requestData.options = formData.options
+            .filter((opt) => opt.text.trim())
+            .map((opt) => ({
+              text: opt.text.trim(),
+              is_correct: opt.is_correct,
+            }));
+          delete requestData.answer_key;
+          break;
+
+        case "true_false":
+          requestData.options = [
+            { text: "True", is_correct: formData.answer_key === "true" },
+            { text: "False", is_correct: formData.answer_key === "false" }
+          ];
+          delete requestData.answer_key;
+          break;
+
+        case "short_answer":
+        case "essay":
+          if (!formData.answer_key?.trim()) {
+            throw new Error("Please provide the correct answer/guidelines");
+          }
+          requestData.answer_key = formData.answer_key.trim();
+          if (formData.question_type === "essay") {
+            requestData.word_limit = parseInt(formData.word_limit) || 500;
+          }
+          break;
+
+        default:
+          throw new Error("Invalid question type");
+      }
+
+      const response = await editQuestion(assessmentId, question.id, requestData);
+      
       if (response.success) {
         onSuccess(response.question);
         onClose();
@@ -76,6 +122,99 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
         i === index ? { ...opt, [field]: value } : opt
       )
     }));
+  };
+
+  const renderQuestionFields = () => {
+    switch (formData.question_type) {
+      case "multiple_choice":
+        return (
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700">Options</label>
+            {formData.options.map((option, index) => (
+              <div key={index} className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  value={option.text}
+                  onChange={(e) => updateOption(index, 'text', e.target.value)}
+                  className="flex-1 rounded-md border border-gray-300 px-3 py-2"
+                  placeholder="Option text"
+                />
+                <input
+                  type="checkbox"
+                  checked={option.is_correct}
+                  onChange={(e) => updateOption(index, 'is_correct', e.target.checked)}
+                  className="h-4 w-4 text-yellow-600 rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeOption(index)}
+                  aria-label="Remove Option"
+                  className="p-2 text-red-500 hover:text-red-700"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addOption}
+              className="px-3 py-2 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <Plus size={16} />
+              Add Option
+            </button>
+          </div>
+        );
+
+      case "true_false":
+        return (
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700">Correct Answer</label>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  id="true"
+                  name="correct_answer"
+                  checked={formData.options.find(opt => opt.text === "True")?.is_correct || false}
+                  onChange={() => {
+                    setFormData(prev => ({
+                      ...prev,
+                      options: [
+                        { text: "True", is_correct: true },
+                        { text: "False", is_correct: false }
+                      ]
+                    }));
+                  }}
+                  className="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300"
+                />
+                <label htmlFor="true" className="text-sm text-gray-700">True</label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  id="false"
+                  name="correct_answer"
+                  checked={formData.options.find(opt => opt.text === "False")?.is_correct || false}
+                  onChange={() => {
+                    setFormData(prev => ({
+                      ...prev,
+                      options: [
+                        { text: "True", is_correct: false },
+                        { text: "False", is_correct: true }
+                      ]
+                    }));
+                  }}
+                  className="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300"
+                />
+                <label htmlFor="false" className="text-sm text-gray-700">False</label>
+              </div>
+            </div>
+          </div>
+        );
+
+      // ...rest of the question types (short_answer, essay)...
+    }
   };
 
   if (!isOpen) return null;
@@ -137,44 +276,7 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
               </div>
             </div>
 
-            {['multiple_choice', 'true_false'].includes(formData.question_type) && (
-              <div className="space-y-3">
-                <label className="block text-sm font-medium text-gray-700">Options</label>
-                {formData.options.map((option, index) => (
-                  <div key={index} className="flex gap-2 items-center">
-                    <input
-                      type="text"
-                      value={option.text}
-                      onChange={(e) => updateOption(index, 'text', e.target.value)}
-                      className="flex-1 rounded-md border border-gray-300 px-3 py-2"
-                      placeholder="Option text"
-                    />
-                    <input
-                      type="checkbox"
-                      checked={option.is_correct}
-                      onChange={(e) => updateOption(index, 'is_correct', e.target.checked)}
-                      className="h-4 w-4 text-yellow-600 rounded"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeOption(index)}
-                      aria-label="Remove Option"
-                      className="p-2 text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={addOption}
-                  className="px-3 py-2 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                >
-                  <Plus size={16} />
-                  Add Option
-                </button>
-              </div>
-            )}
+            {renderQuestionFields()}
 
             {['short_answer', 'essay'].includes(formData.question_type) && (
               <div>

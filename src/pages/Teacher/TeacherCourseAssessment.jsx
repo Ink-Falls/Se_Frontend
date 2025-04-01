@@ -28,6 +28,7 @@ import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // 
 import {
   getCourseAssessments,
   deleteAssessment,
+  editAssessment  // Add this import
 } from "../../services/assessmentService";
 import { getModulesByCourseId } from "../../services/moduleService";
 
@@ -46,6 +47,7 @@ const TeacherCourseAssessment = () => {
   const [moduleAssessments, setModuleAssessments] = useState({});
   const [modules, setModules] = useState([]);
   const [expandedModules, setExpandedModules] = useState(new Set());
+  const [publishingId, setPublishingId] = useState(null);
   const navItems = [
     {
       text: "Home",
@@ -273,21 +275,12 @@ const TeacherCourseAssessment = () => {
     return "Submitted";
   };
 
-  const getStatusColor = (submission, assessment) => {
-    const status = getSubmissionStatus(submission, assessment);
-
-    switch (status) {
-      case "Not Submitted":
-        return "bg-gray-100 text-gray-600";
-      case "Late":
-        return "bg-red-100 text-red-800";
-      case "Submitted":
-        return "bg-yellow-100 text-yellow-800";
-      case "Graded":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-blue-100 text-blue-800";
-    }
+  const getStatusColor = (type, isPublished) => {
+    const color = typeColors[type?.toLowerCase()] || typeColors.quiz;
+    return {
+      backgroundColor: isPublished ? color.light : 'rgb(243 244 246)',
+      color: isPublished ? color.bg : 'rgb(107 114 128)',
+    };
   };
 
   const renderSubmissionStatus = (submission, assessment) => (
@@ -347,6 +340,53 @@ const TeacherCourseAssessment = () => {
       setError("Failed to update assessment"); // Add error handling
     }
   };
+
+  const handlePublishToggle = async (e, assessment) => {
+    e.stopPropagation();
+    try {
+      setPublishingId(assessment.id);
+      
+      // Create complete request body with all required fields
+      const updatedData = {
+        title: assessment.title,
+        description: assessment.description,
+        type: assessment.type,
+        max_score: assessment.max_score,
+        passing_score: assessment.passing_score,
+        duration_minutes: assessment.duration_minutes,
+        due_date: assessment.due_date,
+        is_published: !assessment.is_published,
+        instructions: assessment.instructions || "",
+        allowed_attempts: assessment.allowed_attempts || 1
+      };
+  
+      const response = await editAssessment(assessment.id, updatedData);
+  
+      if (response.success) {
+        setModuleAssessments(prev => {
+          const updated = { ...prev };
+          Object.keys(updated).forEach(moduleId => {
+            updated[moduleId] = updated[moduleId].map(a => 
+              a.id === assessment.id 
+                ? { ...a, is_published: !a.is_published }
+                : a
+            );
+          });
+          return updated;
+        });
+        
+        setSuccessMessage(
+          `Assessment ${!assessment.is_published ? 'published' : 'unpublished'} successfully`
+        );
+      }
+    } catch (error) {
+      console.error('Error toggling publish state:', error);
+      setError(`Failed to ${assessment.is_published ? 'unpublish' : 'publish'} assessment`);
+    } finally {
+      setPublishingId(null);
+    }
+  };
+  
 
   const typeColors = {
     quiz: {
@@ -461,12 +501,27 @@ const TeacherCourseAssessment = () => {
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t">
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-semibold`}
-              style={{ backgroundColor: color.light, color: color.bg }}
+            <button
+              onClick={(e) => handlePublishToggle(e, assessment)}
+              disabled={publishingId === assessment.id}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-300 ${
+                assessment.is_published
+                  ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+              }`}
             >
-              {assessment.is_published ? "Published" : "Draft"}
-            </span>
+              <span className={`h-2 w-2 rounded-full ${
+                assessment.is_published ? 'bg-green-500' : 'bg-gray-400'
+              }`} />
+              <span className="text-sm font-medium">
+                {publishingId === assessment.id
+                  ? 'Updating...'
+                  : assessment.is_published
+                  ? 'Published'
+                  : 'Draft'}
+              </span>
+            </button>
+            
             <button
               className="text-sm font-semibold flex items-center gap-1 transition-colors"
               style={{ color: color.bg }}
