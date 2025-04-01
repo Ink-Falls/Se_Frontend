@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
@@ -19,16 +18,18 @@ import {
   MoreVertical,
   Edit2,
   Trash2,
+  ChevronDown,
 } from "lucide-react";
-import { CourseProvider, useCourse } from "../../contexts/CourseContext"; // Import CourseProvider
+import { useCourse } from "../../contexts/CourseContext";
 import { useNavigate } from "react-router-dom";
 import CreateAssessmentModal from "../../components/common/Modals/Create/CreateAssessmentModal";
 import EditAssessmentModal from "../../components/common/Modals/Edit/EditAssessmentModal";
 import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // Update this import
 import {
-  getModuleAssessments,
+  getCourseAssessments,
   deleteAssessment,
 } from "../../services/assessmentService";
+import { getModulesByCourseId } from "../../services/moduleService";
 
 const TeacherCourseAssessment = () => {
   const { selectedCourse } = useCourse();
@@ -42,6 +43,9 @@ const TeacherCourseAssessment = () => {
   const [assessmentToDelete, setAssessmentToDelete] = useState(null);
   const [showMenu, setShowMenu] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [moduleAssessments, setModuleAssessments] = useState({});
+  const [modules, setModules] = useState([]);
+  const [expandedModules, setExpandedModules] = useState(new Set());
   const navItems = [
     {
       text: "Home",
@@ -75,44 +79,120 @@ const TeacherCourseAssessment = () => {
     },
   ];
 
-  const fetchAssessments = async (moduleId) => {
+  const fetchAssessments = async () => {
     try {
-      if (!moduleId) {
-        throw new Error("Module ID is required to fetch assessments");
+      setLoading(true);
+      console.log(
+        "1. Starting fetchAssessments for Course ID:",
+        selectedCourse.id
+      );
+
+      const modulesResponse = await getModulesByCourseId(selectedCourse.id);
+      console.log("2. Modules fetched:", modulesResponse);
+
+      if (!modulesResponse) {
+        console.error("3. No modules response received");
+        throw new Error("Failed to fetch modules data");
       }
 
-      setLoading(true);
-      const assessments = await getModuleAssessments(moduleId, true); // Fetch assessments using moduleId
-      setAssessments(assessments);
+      setModules(modulesResponse);
+      console.log("4. Modules set in state:", modulesResponse);
+
+      const assessmentsByModule = {};
+      let allAssessments = [];
+
+      console.log("5. Starting to fetch assessments for each module");
+
+      for (const module of modulesResponse) {
+        try {
+          console.log(`6. Fetching assessments for module ${module.module_id}`);
+          const response = await getCourseAssessments(module.module_id, true);
+          console.log(
+            `7. Raw assessment response for module ${module.module_id}:`,
+            response
+          );
+
+          if (response.success && response.assessments) {
+            console.log(
+              "8. Processing assessments for module:",
+              response.assessments
+            );
+
+            // Filter assessments for this module
+            const moduleAssessments = response.assessments.filter(
+              (assessment) => assessment.module_id === module.module_id
+            );
+
+            console.log(
+              `9. Filtered assessments for module ${module.module_id}:`,
+              moduleAssessments
+            );
+
+            if (moduleAssessments.length > 0) {
+              assessmentsByModule[module.module_id] = moduleAssessments.map(
+                (assessment) => ({
+                  ...assessment,
+                  max_score: assessment.max_score || 100, // Default to 100 if NaN
+                })
+              );
+              allAssessments = [...allAssessments, ...moduleAssessments];
+              console.log(
+                `10. Added ${moduleAssessments.length} assessments to module ${module.module_id}`
+              );
+            } else {
+              assessmentsByModule[module.module_id] = [];
+              console.log(
+                `11. No assessments found for module ${module.module_id}`
+              );
+            }
+          } else {
+            assessmentsByModule[module.module_id] = [];
+            console.log(
+              `11. No assessments found for module ${module.module_id}`
+            );
+          }
+        } catch (err) {
+          console.error(
+            `12. Error processing module ${module.module_id}:`,
+            err
+          );
+          assessmentsByModule[module.module_id] = [];
+        }
+      }
+
+      console.log("13. Final assessmentsByModule:", assessmentsByModule);
+      console.log("14. Total assessments:", allAssessments.length);
+
+      setModuleAssessments(assessmentsByModule);
+      setAssessments(allAssessments);
     } catch (err) {
+      console.error("Error in fetchAssessments:", err);
       setError(err.message || "Failed to fetch assessments");
-      console.error("Error fetching assessments:", err);
     } finally {
-      setLoading(false); // Ensure loading is stopped even if an error occurs
+      setLoading(false);
     }
+  };
+
+  const toggleModule = (moduleId) => {
+    setExpandedModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(moduleId)) {
+        next.delete(moduleId);
+      } else {
+        next.add(moduleId);
+      }
+      return next;
+    });
   };
 
   useEffect(() => {
     if (!selectedCourse?.id) {
-      console.error("No course selected. Redirecting to dashboard.");
-      navigate("/Teacher/Dashboard"); // Redirect to dashboard if no course is selected
+      navigate("/Teacher/Dashboard");
       return;
     }
 
-    const moduleId = selectedCourse?.moduleId;
-
-    console.log("Debug - Selected Course:", selectedCourse); // Debug log for selectedCourse
-    console.log("Debug - Module ID:", moduleId); // Debug log for moduleId
-
-    if (!moduleId) {
-      console.error("Module ID is missing or invalid");
-      setError("Module ID is required to fetch assessments");
-      setLoading(false); // Stop loading if moduleId is invalid
-      return;
-    }
-
-    fetchAssessments(moduleId); // Fetch assessments using moduleId
-  }, [selectedCourse, navigate]); // Ensure this runs only when selectedCourse changes
+    fetchAssessments();
+  }, [selectedCourse, navigate]);
 
   // Add this effect to auto-clear success messages
   useEffect(() => {
@@ -126,27 +206,16 @@ const TeacherCourseAssessment = () => {
 
   const handleAssessmentCreated = async (newAssessment) => {
     try {
-      if (
-        newAssessment.allowed_attempts == null ||
-        newAssessment.allowed_attempts <= 0
-      ) {
-        throw new Error("Invalid allowed attempts");
-      }
-
-      if (newAssessment.passing_score > newAssessment.max_score) {
-        throw new Error("Passing score cannot exceed maximum score");
-      }
-
       // Add the new assessment to the list immediately
       setAssessments((prev) => [newAssessment, ...prev]);
       setIsCreateModalOpen(false);
-      setSuccessMessage("Assessment created successfully");
+      setSuccessMessage("Assessment created successfully"); // Add success message
 
       // Optionally refresh the full list
       await fetchAssessments();
     } catch (err) {
       console.error("Error handling new assessment:", err);
-      setError(err.message || "Failed to create assessment");
+      setError("Failed to create assessment"); // Add error handling
     }
   };
 
@@ -155,7 +224,7 @@ const TeacherCourseAssessment = () => {
       state: {
         assessment,
         // Add any additional data needed for submissions view
-        moduleId: selectedCourse?.moduleId,
+        courseId: selectedCourse?.id,
       },
     });
   };
@@ -200,17 +269,8 @@ const TeacherCourseAssessment = () => {
   const getSubmissionStatus = (submission, assessment) => {
     if (!submission) return "Not Submitted";
     if (submission.is_late) return "Late";
-
-    const hasManualQuestions = assessment.questions?.some(
-      (q) => q.question_type === "short_answer" || q.question_type === "essay"
-    );
-
-    // Force 'submitted' status if there are manual grading questions
-    if (hasManualQuestions) {
-      return "Submitted";
-    }
-
-    return submission.status;
+    if (submission.status) return submission.status;
+    return "Submitted";
   };
 
   const getStatusColor = (submission, assessment) => {
@@ -276,36 +336,288 @@ const TeacherCourseAssessment = () => {
 
   const handleEditSubmit = async (updatedAssessment) => {
     try {
-      if (
-        updatedAssessment.allowed_attempts == null ||
-        updatedAssessment.allowed_attempts <= 0
-      ) {
-        throw new Error("Invalid allowed attempts");
-      }
-
-      if (updatedAssessment.passing_score > updatedAssessment.max_score) {
-        throw new Error("Passing score cannot exceed maximum score");
-      }
-
       // Update local state
       setAssessments((prev) =>
         prev.map((a) => (a.id === updatedAssessment.id ? updatedAssessment : a))
       );
       setEditingAssessment(null);
-      setSuccessMessage("Assessment updated successfully");
+      setSuccessMessage("Assessment updated successfully"); // Add success message
     } catch (err) {
       console.error("Error updating assessment:", err);
-      setError(err.message || "Failed to update assessment");
+      setError("Failed to update assessment"); // Add error handling
     }
   };
+
+  const typeColors = {
+    quiz: {
+      bg: "#3B82F6", // Blue
+      text: "white",
+      hover: "#2563EB",
+      badge: "bg-blue-100 text-blue-800",
+      light: "rgba(59, 130, 246, 0.1)",
+    },
+    exam: {
+      bg: "#EC4899", // Pink
+      text: "white",
+      hover: "#DB2777",
+      badge: "bg-pink-100 text-pink-800",
+      light: "rgba(236, 72, 153, 0.1)",
+    },
+    assignment: {
+      bg: "#10B981", // Green
+      text: "white",
+      hover: "#059669",
+      badge: "bg-green-100 text-green-800",
+      light: "rgba(16, 185, 129, 0.1)",
+    },
+  };
+
+  const getTypeColor = (type) => {
+    return typeColors[type?.toLowerCase()] || typeColors.quiz;
+  };
+
+  const toggleMenu = (e, assessmentId) => {
+    e.stopPropagation();
+    setShowMenu((current) => (current === assessmentId ? null : assessmentId));
+  };
+
+  const renderAssessmentCard = (assessment) => {
+    const color = getTypeColor(assessment.type);
+
+    return (
+      <div
+        key={assessment.id}
+        onClick={() => handleAssessmentClick(assessment)}
+        className="w-full rounded-xl shadow-md bg-white hover:shadow-lg transition-all duration-200 overflow-hidden group relative"
+      >
+        <div
+          style={{ backgroundColor: color.bg }}
+          className="px-6 py-4 text-white relative overflow-hidden"
+        >
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-32 h-32 transform translate-x-16 -translate-y-16 rotate-45 bg-white opacity-10 rounded-full" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 transform -translate-x-12 translate-y-12 rotate-45 bg-white opacity-10 rounded-full" />
+
+          <div className="flex justify-between items-start relative z-10">
+            <div>
+              <span
+                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${color.badge}`}
+              >
+                {assessment.type?.toUpperCase() || "QUIZ"}
+              </span>
+              <h3 className="text-2xl font-bold tracking-tight mt-2">
+                {assessment.title}
+              </h3>
+            </div>
+            <button
+              onClick={(e) => toggleMenu(e, assessment.id)}
+              className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
+            >
+              <MoreVertical size={20} />
+            </button>
+          </div>
+        </div>
+
+        <div className="px-6 py-4">
+          <p className="text-gray-600 text-sm line-clamp-2 mb-4">
+            {assessment.description}
+          </p>
+
+          <div className="grid grid-cols-2 gap-6 mb-4">
+            <div className="space-y-3">
+              <div className="flex items-center text-sm">
+                <Clock className="w-4 h-4 mr-2" style={{ color: color.bg }} />
+                <span className="text-gray-600 font-medium">
+                  {assessment.duration_minutes} minutes
+                </span>
+              </div>
+              <div className="flex items-center text-sm">
+                <Award className="w-4 h-4 mr-2" style={{ color: color.bg }} />
+                <span className="text-gray-600 font-medium">
+                  Passing: {assessment.passing_score}/{assessment.max_score}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center text-sm">
+                <Calendar
+                  className="w-4 h-4 mr-2"
+                  style={{ color: color.bg }}
+                />
+                <span className="text-gray-600 font-medium">
+                  Due: {formatDate(assessment.due_date)}
+                </span>
+              </div>
+              <div className="flex items-center text-sm">
+                <ClipboardList
+                  className="w-4 h-4 mr-2"
+                  style={{ color: color.bg }}
+                />
+                <span className="text-gray-600 font-medium">
+                  {assessment.questions?.length || 0} Questions
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-4 border-t">
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-semibold`}
+              style={{ backgroundColor: color.light, color: color.bg }}
+            >
+              {assessment.is_published ? "Published" : "Draft"}
+            </span>
+            <button
+              className="text-sm font-semibold flex items-center gap-1 transition-colors"
+              style={{ color: color.bg }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = color.hover)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = color.bg)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAssessmentClick(assessment);
+              }}
+            >
+              View Details
+              <ChevronDown className="w-4 h-4 transform -rotate-90" />
+            </button>
+          </div>
+        </div>
+
+        {/* Simplified menu dropdown */}
+        {showMenu === assessment.id && (
+          <div
+            className="absolute right-4 top-16 bg-white rounded-lg shadow-lg z-10 border overflow-hidden min-w-[160px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(e, assessment);
+              }}
+              className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+            >
+              <Edit2 size={14} className="text-gray-500" />
+              <span>Edit Assessment</span>
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(e, assessment);
+              }}
+              className="w-full px-4 py-2.5 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-600 border-t"
+            >
+              <Trash2 size={14} />
+              <span>Delete Assessment</span>
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderModulesWithAssessments = () => {
+    console.log("17. Starting to render modules with assessments");
+    console.log("18. Current module state:", modules);
+    console.log("19. Current assessments state:", moduleAssessments);
+
+    return (
+      <div className="space-y-6">
+        {modules.map((module) => {
+          console.log(`20. Rendering module ${module.module_id}:`, {
+            module,
+            assessments: moduleAssessments[module.module_id],
+          });
+
+          return (
+            <div
+              key={module.module_id}
+              className="bg-white rounded-lg shadow-sm overflow-hidden"
+            >
+              <div
+                className="p-6 bg-gray-50 border-l-4 border-yellow-500 flex justify-between items-center cursor-pointer hover:bg-gray-100"
+                onClick={() => toggleModule(module.module_id)}
+              >
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-800">
+                    {module.name}
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {module.description}
+                  </p>
+                  <span className="text-xs text-gray-500 mt-2 inline-block">
+                    {moduleAssessments[module.module_id]?.length || 0}{" "}
+                    Assessment(s)
+                  </span>
+                </div>
+                <ChevronDown
+                  className={`w-6 h-6 text-gray-400 transform transition-transform duration-200 ${
+                    expandedModules.has(module.module_id) ? "rotate-180" : ""
+                  }`}
+                />
+              </div>
+
+              {expandedModules.has(module.module_id) && (
+                <div className="p-6 bg-gray-50 border-t border-gray-100">
+                  {moduleAssessments[module.module_id]?.length > 0 ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {moduleAssessments[module.module_id].map(
+                        renderAssessmentCard
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-200">
+                      <ClipboardList
+                        size={24}
+                        className="mx-auto mb-3 text-gray-400"
+                      />
+                      <p className="text-gray-600 font-medium mb-3">
+                        No assessments in this module yet
+                      </p>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsCreateModalOpen(true);
+                        }}
+                        className="text-yellow-600 hover:text-yellow-700 text-sm font-medium inline-flex items-center gap-1.5"
+                      >
+                        <Plus size={16} />
+                        Add your first assessment
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCreateModalOpen(true);
+                    }}
+                    className="mt-6 w-full py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-yellow-500 hover:text-yellow-600 transition-colors flex items-center justify-center gap-2 bg-white"
+                  >
+                    <Plus size={20} />
+                    Add Assessment to {module.name}
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Update the condition for showing "No Assessments" message
+  const hasAnyAssessments = Object.values(moduleAssessments).some(
+    (moduleArray) => {
+      console.log("21. Checking module array:", moduleArray);
+      return Array.isArray(moduleArray) && moduleArray.length > 0;
+    }
+  );
+  console.log("22. Final hasAnyAssessments check:", hasAnyAssessments);
 
   return (
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar navItems={navItems} />
-      <div
-        className="flex-1 p-6 overflow
-      -   auto"
-      >
+      <div className="flex-1 p-6 overflow-auto">
         <Header
           title={selectedCourse?.name || "Course Assessment"}
           subtitle={selectedCourse?.code}
@@ -348,7 +660,7 @@ const TeacherCourseAssessment = () => {
           </div>
         )}
 
-        {!loading && !error && assessments.length === 0 && (
+        {!loading && !error && !hasAnyAssessments && (
           <div className="text-center py-12 bg-white rounded-lg shadow-sm">
             <div className="text-gray-400 mb-4">
               <ClipboardList size={48} className="mx-auto" />
@@ -371,97 +683,10 @@ const TeacherCourseAssessment = () => {
           </div>
         )}
 
-        {!loading && !error && assessments.length > 0 && (
+        {!loading && !error && hasAnyAssessments && (
           <>
             <div className="flex flex-col gap-4 mt-4">
-              {assessments.map((assessment) => (
-                <div
-                  key={assessment.id}
-                  onClick={() => handleAssessmentClick(assessment)}
-                  className={`relative bg-white rounded-lg md:p-[1vw] p-[2vw] border-l-[2vw] md:border-l-[0.5vw] ${
-                    assessment.is_published
-                      ? "border-yellow-500"
-                      : "border-gray-300"
-                  } transition-all shadow-sm hover:shadow-lg cursor-pointer`}
-                >
-                  <div
-                    className="absolute top-4 right-4"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      onClick={() =>
-                        setShowMenu(
-                          showMenu === assessment.id ? null : assessment.id
-                        )
-                      }
-                      className="p-1 hover:bg-gray-100 rounded-full"
-                    >
-                      <MoreVertical size={20} className="text-gray-500" />
-                    </button>
-                    {showMenu === assessment.id && (
-                      <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-xl z-20 border">
-                        <button
-                          onClick={(e) => handleEdit(e, assessment)}
-                          className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                        >
-                          <Edit2 size={16} />
-                          Edit Assessment
-                        </button>
-                        <button
-                          onClick={(e) => handleDelete(e, assessment)}
-                          className="w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center gap-2"
-                        >
-                          <Trash2 size={16} />
-                          Delete Assessment
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            assessment.type === "quiz"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-purple-100 text-purple-800"
-                          }`}
-                        >
-                          {assessment.type?.toUpperCase() || "QUIZ"}
-                        </span>
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          In Progress
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-lg text-gray-800">
-                        {assessment.title}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {assessment.description}
-                      </p>
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-2">
-                        <div className="flex items-center gap-1">
-                          <Clock size={16} />
-                          {assessment.duration_minutes || 0} minutes
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Award size={16} />
-                          Score: {assessment.passing_score || 0}/
-                          {assessment.max_score || 100}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar size={16} />
-                          Due:{" "}
-                          {assessment.due_date
-                            ? formatDate(assessment.due_date)
-                            : "Not set"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              {renderModulesWithAssessments()}
             </div>
 
             {/* Floating Action Button - Only shown when there are existing assessments */}
@@ -477,7 +702,7 @@ const TeacherCourseAssessment = () => {
         <CreateAssessmentModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
-          moduleId={selectedCourse?.moduleId} // Pass moduleId directly
+          courseId={selectedCourse?.id}
           onSuccess={handleAssessmentCreated}
         />
         {editingAssessment && (
@@ -501,10 +726,4 @@ const TeacherCourseAssessment = () => {
   );
 };
 
-export default function TeacherCourseAssessmentPage() {
-  return (
-    <CourseProvider>
-      <TeacherCourseAssessment />
-    </CourseProvider>
-  );
-}
+export default TeacherCourseAssessment;
