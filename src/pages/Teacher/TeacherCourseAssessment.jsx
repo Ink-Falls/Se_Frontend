@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
@@ -19,13 +20,13 @@ import {
   Edit2,
   Trash2,
 } from "lucide-react";
-import { useCourse } from "../../contexts/CourseContext";
+import { CourseProvider, useCourse } from "../../contexts/CourseContext"; // Import CourseProvider
 import { useNavigate } from "react-router-dom";
 import CreateAssessmentModal from "../../components/common/Modals/Create/CreateAssessmentModal";
 import EditAssessmentModal from "../../components/common/Modals/Edit/EditAssessmentModal";
 import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // Update this import
 import {
-  getCourseAssessments,
+  getModuleAssessments,
   deleteAssessment,
 } from "../../services/assessmentService";
 
@@ -74,31 +75,44 @@ const TeacherCourseAssessment = () => {
     },
   ];
 
-  const fetchAssessments = async () => {
+  const fetchAssessments = async (moduleId) => {
     try {
-      setLoading(true);
-      const response = await getCourseAssessments(selectedCourse.id, true);
-      if (response.success) {
-        setAssessments(response.assessments || []);
-      } else {
-        throw new Error(response.message || "Failed to fetch assessments");
+      if (!moduleId) {
+        throw new Error("Module ID is required to fetch assessments");
       }
+
+      setLoading(true);
+      const assessments = await getModuleAssessments(moduleId, true); // Fetch assessments using moduleId
+      setAssessments(assessments);
     } catch (err) {
-      setError("Failed to fetch assessments");
+      setError(err.message || "Failed to fetch assessments");
       console.error("Error fetching assessments:", err);
     } finally {
-      setLoading(false);
+      setLoading(false); // Ensure loading is stopped even if an error occurs
     }
   };
 
   useEffect(() => {
     if (!selectedCourse?.id) {
-      navigate("/Teacher/Dashboard");
+      console.error("No course selected. Redirecting to dashboard.");
+      navigate("/Teacher/Dashboard"); // Redirect to dashboard if no course is selected
       return;
     }
 
-    fetchAssessments();
-  }, [selectedCourse, navigate]);
+    const moduleId = selectedCourse?.moduleId;
+
+    console.log("Debug - Selected Course:", selectedCourse); // Debug log for selectedCourse
+    console.log("Debug - Module ID:", moduleId); // Debug log for moduleId
+
+    if (!moduleId) {
+      console.error("Module ID is missing or invalid");
+      setError("Module ID is required to fetch assessments");
+      setLoading(false); // Stop loading if moduleId is invalid
+      return;
+    }
+
+    fetchAssessments(moduleId); // Fetch assessments using moduleId
+  }, [selectedCourse, navigate]); // Ensure this runs only when selectedCourse changes
 
   // Add this effect to auto-clear success messages
   useEffect(() => {
@@ -112,16 +126,27 @@ const TeacherCourseAssessment = () => {
 
   const handleAssessmentCreated = async (newAssessment) => {
     try {
+      if (
+        newAssessment.allowed_attempts == null ||
+        newAssessment.allowed_attempts <= 0
+      ) {
+        throw new Error("Invalid allowed attempts");
+      }
+
+      if (newAssessment.passing_score > newAssessment.max_score) {
+        throw new Error("Passing score cannot exceed maximum score");
+      }
+
       // Add the new assessment to the list immediately
       setAssessments((prev) => [newAssessment, ...prev]);
       setIsCreateModalOpen(false);
-      setSuccessMessage("Assessment created successfully"); // Add success message
+      setSuccessMessage("Assessment created successfully");
 
       // Optionally refresh the full list
       await fetchAssessments();
     } catch (err) {
       console.error("Error handling new assessment:", err);
-      setError("Failed to create assessment"); // Add error handling
+      setError(err.message || "Failed to create assessment");
     }
   };
 
@@ -130,7 +155,7 @@ const TeacherCourseAssessment = () => {
       state: {
         assessment,
         // Add any additional data needed for submissions view
-        courseId: selectedCourse?.id,
+        moduleId: selectedCourse?.moduleId,
       },
     });
   };
@@ -251,22 +276,36 @@ const TeacherCourseAssessment = () => {
 
   const handleEditSubmit = async (updatedAssessment) => {
     try {
+      if (
+        updatedAssessment.allowed_attempts == null ||
+        updatedAssessment.allowed_attempts <= 0
+      ) {
+        throw new Error("Invalid allowed attempts");
+      }
+
+      if (updatedAssessment.passing_score > updatedAssessment.max_score) {
+        throw new Error("Passing score cannot exceed maximum score");
+      }
+
       // Update local state
       setAssessments((prev) =>
         prev.map((a) => (a.id === updatedAssessment.id ? updatedAssessment : a))
       );
       setEditingAssessment(null);
-      setSuccessMessage("Assessment updated successfully"); // Add success message
+      setSuccessMessage("Assessment updated successfully");
     } catch (err) {
       console.error("Error updating assessment:", err);
-      setError("Failed to update assessment"); // Add error handling
+      setError(err.message || "Failed to update assessment");
     }
   };
 
   return (
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar navItems={navItems} />
-      <div className="flex-1 p-6 overflow-auto">
+      <div
+        className="flex-1 p-6 overflow
+      -   auto"
+      >
         <Header
           title={selectedCourse?.name || "Course Assessment"}
           subtitle={selectedCourse?.code}
@@ -438,7 +477,7 @@ const TeacherCourseAssessment = () => {
         <CreateAssessmentModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
-          courseId={selectedCourse?.id}
+          moduleId={selectedCourse?.moduleId} // Pass moduleId directly
           onSuccess={handleAssessmentCreated}
         />
         {editingAssessment && (
@@ -462,4 +501,10 @@ const TeacherCourseAssessment = () => {
   );
 };
 
-export default TeacherCourseAssessment;
+export default function TeacherCourseAssessmentPage() {
+  return (
+    <CourseProvider>
+      <TeacherCourseAssessment />
+    </CourseProvider>
+  );
+}

@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { X, Loader } from "lucide-react";
 import { createAssessment } from "../../../../services/assessmentService";
+import { getModulesByCourseId } from "../../../../services/moduleService";
+import { useCourse } from "../../../../contexts/CourseContext"; // Add this import
 
-const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
+const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
+  const { selectedCourse } = useCourse(); // Add this line
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    module_id: "",
     type: "quiz",
     max_score: 100,
     passing_score: 60,
@@ -13,9 +18,12 @@ const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
     due_date: "",
     is_published: false,
     instructions: "",
+    allowed_attempts: 1,
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [moduleOptions, setModuleOptions] = useState([]);
+  const [loadingModules, setLoadingModules] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -33,10 +41,12 @@ const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
     try {
       const assessmentData = {
         ...formData,
-        course_id: courseId,
+        module_id: parseInt(formData.module_id),
+        course_id: selectedCourse.id, // Add course_id from context
         max_score: parseInt(formData.max_score),
         passing_score: parseInt(formData.passing_score),
         duration_minutes: parseInt(formData.duration_minutes),
+        allowed_attempts: parseInt(formData.allowed_attempts),
       };
 
       const response = await createAssessment(assessmentData);
@@ -59,6 +69,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
       setFormData({
         title: "",
         description: "",
+        module_id: "",
         type: "quiz",
         max_score: 100,
         passing_score: 60,
@@ -66,10 +77,41 @@ const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
         due_date: "",
         is_published: false,
         instructions: "",
+        allowed_attempts: 1,
       });
       setError("");
     }
   }, [isOpen]);
+
+  // Add useEffect to fetch modules when modal opens
+  useEffect(() => {
+    const fetchModules = async () => {
+      if (!isOpen || !selectedCourse?.id) return;
+
+      try {
+        setLoadingModules(true);
+        const modulesResponse = await getModulesByCourseId(selectedCourse.id);
+        console.log('Modules response:', modulesResponse); // Debug log
+
+        // Check if modulesResponse is array and has items
+        if (Array.isArray(modulesResponse) && modulesResponse.length > 0) {
+          setModuleOptions(modulesResponse.map(module => ({
+            module_id: module.module_id,
+            name: module.name
+          })));
+        } else {
+          setError('No modules available for this course');
+        }
+      } catch (error) {
+        console.error('Error fetching modules:', error);
+        setError('Failed to load modules');
+      } finally {
+        setLoadingModules(false);
+      }
+    };
+
+    fetchModules();
+  }, [isOpen, selectedCourse?.id]);
 
   if (!isOpen) return null;
 
@@ -99,6 +141,29 @@ const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
+              {/* Add Module Selection Dropdown */}
+              <div className="col-span-2">
+                <label htmlFor="module_id" className="block text-sm font-medium text-gray-700">
+                  Module
+                </label>
+                <select
+                  id="module_id"
+                  name="module_id"
+                  value={formData.module_id}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                  required
+                  disabled={loadingModules}
+                >
+                  <option value="">Select a module</option>
+                  {moduleOptions.map((module) => (
+                    <option key={module.module_id} value={module.module_id}>
+                      {module.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="col-span-2">
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700">
                   Title
@@ -234,6 +299,22 @@ const CreateAssessmentModal = ({ isOpen, onClose, courseId, onSuccess }) => {
                   value={formData.instructions}
                   onChange={handleInputChange}
                   rows={3}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="allowed_attempts" className="block text-sm font-medium text-gray-700">
+                  Allowed Attempts
+                </label>
+                <input
+                  id="allowed_attempts"
+                  type="number"
+                  name="allowed_attempts"
+                  min="1"
+                  value={formData.allowed_attempts}
+                  onChange={handleInputChange}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   required
                 />

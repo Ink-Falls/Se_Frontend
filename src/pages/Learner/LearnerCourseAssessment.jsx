@@ -19,6 +19,36 @@ import {
   getCourseAssessments,
   getUserSubmission,
 } from "../../services/assessmentService";
+import { getModulesByCourseId } from "../../services/moduleService";
+import { ChevronDown } from "lucide-react";
+
+const typeColors = {
+  quiz: {
+    bg: "#3B82F6", // Blue
+    text: "white",
+    hover: "#2563EB",
+    badge: "bg-blue-100 text-blue-800",
+    light: "rgba(59, 130, 246, 0.1)",
+  },
+  exam: {
+    bg: "#EC4899", // Pink
+    text: "white",
+    hover: "#DB2777",
+    badge: "bg-pink-100 text-pink-800",
+    light: "rgba(236, 72, 153, 0.1)",
+  },
+  assignment: {
+    bg: "#10B981", // Green
+    text: "white",
+    hover: "#059669",
+    badge: "bg-green-100 text-green-800",
+    light: "rgba(16, 185, 129, 0.1)",
+  },
+};
+
+const getTypeColor = (type) => {
+  return typeColors[type?.toLowerCase()] || typeColors.quiz;
+};
 
 const LearnerCourseAssessment = () => {
   const { selectedCourse } = useCourse();
@@ -27,6 +57,9 @@ const LearnerCourseAssessment = () => {
   const [submissions, setSubmissions] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [moduleAssessments, setModuleAssessments] = useState({});
+  const [modules, setModules] = useState([]);
+  const [expandedModules, setExpandedModules] = useState(new Set());
 
   const navItems = [
     { text: "Home", icon: <Home size={20} />, route: "/Learner/Dashboard" },
@@ -56,30 +89,60 @@ const LearnerCourseAssessment = () => {
     const fetchAssessmentsAndSubmissions = async () => {
       try {
         setLoading(true);
-        const assessmentsData = await getCourseAssessments(
-          selectedCourse.id,
-          true
-        );
+        const modulesResponse = await getModulesByCourseId(selectedCourse.id);
 
-        // Filter to only include published assessments
-        const courseAssessments = (assessmentsData.assessments || []).filter(
-          (assessment) => assessment.is_published
-        );
+        if (!modulesResponse) {
+          throw new Error("Failed to fetch modules data");
+        }
 
-        // Fetch user's submission for each assessment with full details
+        setModules(modulesResponse);
+
+        const assessmentsByModule = {};
+        let allAssessments = [];
+
+        for (const module of modulesResponse) {
+          try {
+            const response = await getCourseAssessments(module.module_id, true);
+
+            if (response.success && response.assessments) {
+              const moduleAssessments = response.assessments.filter(
+                (assessment) =>
+                  assessment.module_id === module.module_id &&
+                  assessment.is_published
+              );
+
+              if (moduleAssessments.length > 0) {
+                assessmentsByModule[module.module_id] = moduleAssessments;
+                allAssessments = [...allAssessments, ...moduleAssessments];
+              } else {
+                assessmentsByModule[module.module_id] = [];
+              }
+            } else {
+              assessmentsByModule[module.module_id] = [];
+            }
+          } catch (err) {
+            console.error(`Error processing module ${module.module_id}:`, err);
+            assessmentsByModule[module.module_id] = [];
+          }
+        }
+
+        setModuleAssessments(assessmentsByModule);
+        setAssessments(allAssessments);
+
+        // Fetch submissions for all assessments
         const submissionsMap = {};
         await Promise.all(
-          courseAssessments.map(async (assessment) => {
+          allAssessments.map(async (assessment) => {
             try {
               const submissionData = await getUserSubmission(
                 assessment.id,
                 true
-              ); // Add true to include answers
+              );
               if (submissionData.success && submissionData.submission) {
                 submissionsMap[assessment.id] = {
                   ...submissionData.submission,
                   total_score: submissionData.submission.total_score,
-                  assessment: assessment, // Include assessment details with questions
+                  assessment: assessment,
                 };
               }
             } catch (err) {
@@ -91,9 +154,9 @@ const LearnerCourseAssessment = () => {
           })
         );
 
-        setAssessments(courseAssessments);
         setSubmissions(submissionsMap);
       } catch (err) {
+        console.error("Error in fetchAssessments:", err);
         setError(err.message || "Failed to fetch assessments");
       } finally {
         setLoading(false);
@@ -119,12 +182,11 @@ const LearnerCourseAssessment = () => {
         answer.points_awarded !== null && answer.points_awarded !== undefined
     ).length;
 
-    // Determine status based on graded questions count
     if (gradedQuestions === 0) return "Submitted";
     if (gradedQuestions < totalQuestions) return "Partially Graded";
     if (gradedQuestions === totalQuestions) return "Graded";
 
-    return "Submitted"; // Default fallback
+    return "Submitted";
   };
 
   const getStatusColor = (status) => {
@@ -177,16 +239,6 @@ const LearnerCourseAssessment = () => {
     const totalPoints = calculateTotalPoints(submission);
     const score =
       submission.answers?.reduce((sum, answer) => {
-        // For multiple choice and true/false
-        if (answer.is_auto_graded && answer.selected_option_id) {
-          const question = assessment.questions?.find(
-            (q) => q.id === answer.question_id
-          );
-          const selectedOption = question?.options?.find(
-            (opt) => opt.id === answer.selected_option_id
-          );
-          return sum + (selectedOption?.is_correct ? question?.points || 0 : 0);
-        }
         // For manual graded questions (short_answer and essay)
         return sum + (parseInt(answer.points_awarded) || 0);
       }, 0) || 0;
@@ -201,6 +253,155 @@ const LearnerCourseAssessment = () => {
       </div>
     );
   };
+
+  const toggleModule = (moduleId) => {
+    setExpandedModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(moduleId)) {
+        next.delete(moduleId);
+      } else {
+        next.add(moduleId);
+      }
+      return next;
+    });
+  };
+
+  const renderModuleAssessments = () => (
+    <div className="space-y-6">
+      {modules.map((module) => (
+        <div
+          key={module.module_id}
+          className="bg-white rounded-lg shadow-sm overflow-hidden"
+        >
+          <div
+            className="p-6 bg-gray-50 border-l-4 border-yellow-500 flex justify-between items-center cursor-pointer hover:bg-gray-100"
+            onClick={() => toggleModule(module.module_id)}
+          >
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800">
+                {module.name}
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">{module.description}</p>
+              <span className="text-xs text-gray-500 mt-2 inline-block">
+                {moduleAssessments[module.module_id]?.length || 0} Assessment(s)
+              </span>
+            </div>
+            <ChevronDown
+              className={`w-6 h-6 text-gray-400 transform transition-transform duration-200 ${
+                expandedModules.has(module.module_id) ? "rotate-180" : ""
+              }`}
+            />
+          </div>
+
+          {expandedModules.has(module.module_id) && (
+            <div className="p-6 bg-gray-50 border-t border-gray-100">
+              {moduleAssessments[module.module_id]?.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {moduleAssessments[module.module_id].map((assessment) => {
+                    const color = getTypeColor(assessment.type);
+                    return (
+                      <div
+                        key={assessment.id}
+                        onClick={() => handleAssessmentClick(assessment)}
+                        className="w-full rounded-xl shadow-md bg-white hover:shadow-lg transition-all duration-200 overflow-hidden group relative"
+                      >
+                        <div
+                          style={{ backgroundColor: color.bg }}
+                          className="px-6 py-4 text-white relative overflow-hidden"
+                        >
+                          <div className="absolute top-0 right-0 w-32 h-32 transform translate-x-16 -translate-y-16 rotate-45 bg-white opacity-10 rounded-full" />
+                          <div className="absolute bottom-0 left-0 w-24 h-24 transform -translate-x-12 translate-y-12 rotate-45 bg-white opacity-10 rounded-full" />
+
+                          <div className="flex flex-col gap-2 relative z-10">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${color.badge}`}
+                              >
+                                {assessment.type?.toUpperCase() || "QUIZ"}
+                              </span>
+                              {submissions[assessment.id] && (
+                                <span
+                                  className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                                    getStatus(submissions[assessment.id])
+                                  )}`}
+                                >
+                                  {getStatus(submissions[assessment.id])}
+                                </span>
+                              )}
+                            </div>
+                            <h3 className="text-2xl font-bold tracking-tight">
+                              {assessment.title}
+                            </h3>
+                          </div>
+                        </div>
+
+                        <div className="px-6 py-4">
+                          <p className="text-gray-600 text-sm line-clamp-2 mb-4">
+                            {assessment.description}
+                          </p>
+
+                          <div className="grid grid-cols-2 gap-6 mb-4">
+                            <div className="space-y-3">
+                              <div className="flex items-center text-sm">
+                                <Clock
+                                  className="w-4 h-4 mr-2"
+                                  style={{ color: color.bg }}
+                                />
+                                <span className="text-gray-600 font-medium">
+                                  {assessment.duration_minutes} minutes
+                                </span>
+                              </div>
+                              <div className="flex items-center text-sm">
+                                <Award
+                                  className="w-4 h-4 mr-2"
+                                  style={{ color: color.bg }}
+                                />
+                                <span className="text-gray-600 font-medium">
+                                  Passing: {assessment.passing_score}%
+                                </span>
+                              </div>
+                            </div>
+                            <div className="space-y-3">
+                              <div className="flex items-center text-sm">
+                                <Calendar
+                                  className="w-4 h-4 mr-2"
+                                  style={{ color: color.bg }}
+                                />
+                                <span className="text-gray-600 font-medium">
+                                  Due: {formatDate(assessment.due_date)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-end pt-4 border-t">
+                            {renderSubmissionScore(
+                              submissions[assessment.id],
+                              assessment
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-200">
+                  <ClipboardList
+                    size={24}
+                    className="mx-auto mb-3 text-gray-400"
+                  />
+                  <p className="text-gray-600 font-medium">
+                    No assessments in this module yet
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div className="flex h-screen bg-gray-100 relative">
@@ -236,7 +437,7 @@ const LearnerCourseAssessment = () => {
 
         {!loading && !error && (
           <div className="flex flex-col gap-4 mt-4">
-            {assessments.length === 0 ? (
+            {modules.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-lg shadow-sm">
                 <div className="text-gray-400 mb-4">
                   <ClipboardList size={48} className="mx-auto" />
@@ -249,66 +450,7 @@ const LearnerCourseAssessment = () => {
                 </p>
               </div>
             ) : (
-              assessments.map((assessment) => (
-                <div
-                  key={assessment.id}
-                  className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg cursor-pointer"
-                  onClick={() => handleAssessmentClick(assessment)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            assessment.type === "quiz"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-purple-100 text-purple-800"
-                          }`}
-                        >
-                          {assessment.type?.toUpperCase() || "QUIZ"}
-                        </span>
-                        {submissions[assessment.id] && (
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                              getStatus(submissions[assessment.id]),
-                              submissions[assessment.id].is_late
-                            )}`}
-                          >
-                            {getStatus(submissions[assessment.id])}
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="font-bold text-lg text-gray-800">
-                        {assessment.title}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {assessment.description}
-                      </p>
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <Clock size={16} />
-                          {assessment.duration_minutes} minutes
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Award size={16} />
-                          Passing: {assessment.passing_score}%
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar size={16} />
-                          Due: {formatDate(assessment.due_date)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      {renderSubmissionScore(
-                        submissions[assessment.id],
-                        assessment
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
+              renderModuleAssessments()
             )}
           </div>
         )}

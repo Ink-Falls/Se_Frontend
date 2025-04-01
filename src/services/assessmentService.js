@@ -8,15 +8,45 @@ import fetchWithInterceptor from './apiService';
  */
 export const createAssessment = async (assessmentData) => {
   try {
+    // Format request body to match new API requirements
+    const requestBody = {
+      title: assessmentData.title.trim(),
+      description: assessmentData.description.trim(),
+      module_id: parseInt(assessmentData.module_id),
+      type: assessmentData.type,
+      max_score: parseInt(assessmentData.max_score),
+      passing_score: parseInt(assessmentData.passing_score),
+      duration_minutes: parseInt(assessmentData.duration_minutes),
+      due_date: new Date(assessmentData.due_date).toISOString(),
+      is_published: Boolean(assessmentData.is_published),
+      instructions: assessmentData.instructions?.trim() || "",
+      allowed_attempts: parseInt(assessmentData.allowed_attempts) || 1
+    };
+
     const response = await fetchWithInterceptor(`${API_BASE_URL}/assessments`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(assessmentData),
+      body: JSON.stringify(requestBody),
     });
 
-    return await response.json();
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to create assessment');
+    }
+
+    return {
+      success: true,
+      message: data.message || "Assessment created successfully",
+      assessment: {
+        ...data.assessment,
+        due_date: new Date(data.assessment.due_date),
+        createdAt: new Date(data.assessment.createdAt),
+        updatedAt: new Date(data.assessment.updatedAt)
+      }
+    };
   } catch (error) {
     console.error('Error creating assessment:', error);
     throw error;
@@ -24,20 +54,54 @@ export const createAssessment = async (assessmentData) => {
 };
 
 /**
- * Gets all assessments for a course
- * @param {number} courseId - The course ID
+ * Gets all assessments for a module ----------- DONT REFACTOR
+ * @param {number} moduleId - The module ID
  * @param {boolean} includeQuestions - Whether to include question details
- * @returns {Promise<Array>} Array of assessment objects
+ * @param {number} page - Page number for pagination
+ * @param {number} limit - Number of items per page
+ * @returns {Promise<Object>} Assessment data with pagination info
  */
-export const getCourseAssessments = async (courseId, includeQuestions = false) => {
+export const getCourseAssessments = async (moduleId, includeQuestions = false, page = 1, limit = 10) => {
   try {
-    const url = new URL(`${API_BASE_URL}/assessments/course/${courseId}`);
+    const url = new URL(`${API_BASE_URL}/assessments/module/${moduleId}`);
     url.searchParams.append('includeQuestions', includeQuestions);
+    url.searchParams.append('page', page);
+    url.searchParams.append('limit', limit);
+
+    console.log('Fetching assessments with URL:', url.toString());
 
     const response = await fetchWithInterceptor(url.toString());
-    return await response.json();
+    const data = await response.json();
+
+    console.log('Raw assessment response:', data);
+    console.log('Response structure:', JSON.stringify(data, null, 2));
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch assessments');
+    }
+
+    // Handle the nested assessments structure
+    const assessmentsArray = data.assessments?.assessments || [];
+    const courseId = data.assessments?.course_id;
+
+    return {
+      success: true,
+      assessments: assessmentsArray.map(assessment => ({
+        ...assessment,
+        course_id: courseId,
+        due_date: new Date(assessment.due_date),
+        createdAt: new Date(assessment.createdAt),
+        updatedAt: new Date(assessment.updatedAt),
+        max_score: parseInt(assessment.max_score),
+        passing_score: parseInt(assessment.passing_score),
+        duration_minutes: parseInt(assessment.duration_minutes),
+      })),
+      pagination: data.pagination || { total: 0, pages: 1, page: 1, limit: 10 }
+    };
+
   } catch (error) {
-    console.error('Error fetching course assessments:', error);
+    console.error('Error fetching module assessments:', error);
+    console.error('Error stack:', error.stack);
     throw error;
   }
 };
@@ -279,38 +343,10 @@ export const submitAssessment = async (submissionId, assessmentId = null) => {
       throw new Error('Assessment ID not found for submission');
     }
     
-    // Ensure current timestamp is always set for the submission
+    // Set status to 'submitted' for all submissions
+    const status = 'submitted';
     const submit_time = new Date().toISOString();
-    
-    // Set default status to 'graded' initially
-    let status = 'graded';
-    
-    // Try to determine if we need manual grading by checking the submission details
-    try {
-      const submissionDetails = await getUserSubmission(assessmentIdToUse, true);
-      
-      // If we successfully got submission details, check for manual grading questions
-      if (submissionDetails.success && submissionDetails.submission?.assessment?.questions) {
-        const hasManualQuestions = hasManualGradingQuestions(submissionDetails.submission.assessment.questions);
-        
-        // If there are manual grading questions, force status to 'submitted'
-        if (hasManualQuestions) {
-          status = 'submitted';
-        }
-      }
-    } catch (err) {
-      // If we can't get the submission details, proceed with default 'graded' status
-      console.warn('Could not determine question types, using default status:', err);
-    }
-    
-    console.log('Submitting assessment with payload:', {
-      status,
-      submit_time,
-      assessmentId: assessmentIdToUse,
-      submissionId
-    });
 
-    // Send the submission request
     const response = await fetchWithInterceptor(
       `${API_BASE_URL}/assessments/submissions/${submissionId}/submit`,
       {
@@ -320,7 +356,7 @@ export const submitAssessment = async (submissionId, assessmentId = null) => {
         },
         body: JSON.stringify({
           status,
-          submit_time  // Always include submit_time in payload
+          submit_time
         })
       }
     );
@@ -330,31 +366,15 @@ export const submitAssessment = async (submissionId, assessmentId = null) => {
       throw new Error(data.message || 'Failed to submit assessment');
     }
 
-    // Store the submission time in localStorage for reference
     try {
       localStorage.setItem(`submission_${submissionId}_time`, submit_time);
     } catch (e) {
       console.warn('Could not store submission time in localStorage:', e);
     }
-    
-    // Try to get the latest submission data
-    try {
-      const latestSubmissionData = await getUserSubmission(assessmentIdToUse, true);
-      if (latestSubmissionData.success) {
-        return {
-          ...data,
-          submission: latestSubmissionData.submission,
-          submit_time  // Ensure submit_time is included in the return value
-        };
-      }
-    } catch (err) {
-      console.warn('Error fetching updated submission:', err);
-    }
 
-    // If we couldn't get updated data, just return the original response with submit_time
     return {
       ...data,
-      submit_time  // Ensure submit_time is included in the return value
+      submit_time
     };
   } catch (error) {
     console.error('Error submitting assessment:', error);
@@ -459,29 +479,13 @@ export const getSubmissionDetails = async (submissionId) => {
     const data = await response.json();
 
     if (data.success && data.submission) {
-      // Process auto-grading for multiple choice and true/false questions
       const processedSubmission = {
         ...data.submission,
-        answers: data.submission.answers.map(answer => {
-          const question = data.submission.assessment.questions.find(q => q.id === answer.question_id);
-          
-          if (question?.question_type === 'multiple_choice' || question?.question_type === 'true_false') {
-            // Find the selected option
-            const selectedOption = question.options.find(opt => opt.id === answer.selected_option_id);
-            
-            // Auto-grade based on correctness
-            if (!answer.points_awarded) { // Only auto-grade if not already graded
-              return {
-                ...answer,
-                points_awarded: selectedOption?.is_correct ? question.points : 0,
-                is_auto_graded: true,
-                feedback: selectedOption?.is_correct ? 'Correct answer' : 'Incorrect answer'
-              };
-            }
-          }
-          
-          return answer;
-        })
+        answers: data.submission.answers.map(answer => ({
+          ...answer,
+          points_awarded: answer.points_awarded,
+          feedback: answer.feedback || ''
+        }))
       };
 
       return {
