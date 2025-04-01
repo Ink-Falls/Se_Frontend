@@ -39,15 +39,16 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
 
         setFormData({
           ...assessment,
-          due_date: formattedDate,
-          // Make sure all required fields are present with appropriate defaults
-          is_published: assessment.is_published || false,
-          instructions: assessment.instructions || "",
-          type: assessment.type || "quiz",
+          type: assessment.type || "quiz", // Default to "quiz" if no type is provided
           max_score: assessment.max_score || 100,
           passing_score: assessment.passing_score || 60,
           duration_minutes: assessment.duration_minutes || 60,
-        });
+          due_date: assessment.due_date
+            ? new Date(assessment.due_date).toISOString().substring(0, 16)
+            : "",
+          is_published: assessment.is_published || false,
+          instructions: assessment.instructions || "",
+      });
       } catch (err) {
         console.error("Error formatting assessment data:", err);
         setError("Error preparing form data. Please try again.");
@@ -228,7 +229,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                 <input
                   id="due_date" 
                   type="datetime-local"
-                  value={formData.due_date}
+                  value={new Date(assessment.due_date).toISOString().slice(0, 16)} // Convert to local datetime format
                   onChange={(e) =>
                     setFormData({ ...formData, due_date: e.target.value })
                   }

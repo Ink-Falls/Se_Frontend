@@ -117,7 +117,7 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
 
         <div className="p-6 overflow-y-auto">
           {error && (
-            <div className="bg-red-50 text-red-500 p-4 rounded mb-4">
+            <div role="alert" className="bg-red-50 text-red-500 p-4 rounded mb-4">
               {error}
             </div>
           )}
@@ -132,6 +132,7 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
               <label
                 htmlFor="name"
                 className="block text-sm font-medium text-gray-700"
+                data-testid="course-name-label"
               >
                 Course Name
               </label>
@@ -143,6 +144,7 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                 required
+                data-testid="course-name-input" 
               />
             </div>
 
@@ -171,6 +173,13 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
               >
                 Select Teacher
               </label>
+              <select
+                id="user_id" // Ensure this matches the htmlFor attribute of the label
+                name="user_id"
+                value={formData.user_id}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+              ></select>
               <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
                 {availableTeachers.map((teacher) => (
                   <div

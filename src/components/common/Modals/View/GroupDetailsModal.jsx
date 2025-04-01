@@ -293,7 +293,7 @@ const GroupDetailsModal = ({ onClose }) => {
                     Existing Groups ({existingGroups?.length || 0})
                   </h3>
                 </div>
-                {selectedGroups.length > 0 && (
+                {selectedGroups.length> 0 && (
                   <button
                     onClick={handleDeleteSelected}
                     className="flex items-center gap-2 px-3 py-1 text-red-600 hover:text-red-800"
