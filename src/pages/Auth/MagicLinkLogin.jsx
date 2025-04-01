@@ -72,7 +72,7 @@ function MagicLinkLogin() {
       <div className="w-full">
         <label
           htmlFor="email"
-          className="text-[3vw] block text-[#64748B] lg:text-[1.2vw] max-lg:text-[2.5vw]"
+          className="text-[3vw] block text-[#64748B] lg:text-[1.2vw] xl:text-[0.9vw] max-lg:text-[2.5vw]"
         >
           Email
         </label>
@@ -82,7 +82,7 @@ function MagicLinkLogin() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[1vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+          className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[1vw] xl:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[1vw] xl:px-[0.8vw] xl:py-[0.8vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
           placeholder="Enter your email"
         />
       </div>
@@ -93,10 +93,16 @@ function MagicLinkLogin() {
       <div className="flex justify-center">
         <button
           type="submit"
-          className="flex items-center justify-center w-[45vw] lg:w-[15vw] px-[3vw] py-[2vw] lg:px-[1vw] lg:py-[0.8vw]
-          text-[3.5vw] lg:text-[1vw] font-semibold rounded-md transition-colors duration-300 
-          text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529]
-          disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300"
+                            className="flex items-center justify-center 
+                              w-[45vw] md:w-[25vw] lg:w-[15vw] xl:w-[12vw]
+                              px-[3vw] py-[2vw] 
+                              md:px-[2vw] md:py-[1.5vw]
+                              lg:px-[1vw] lg:py-[0.8vw]
+                              xl:px-[0.8vw] xl:py-[0.6vw]
+                              text-[3.5vw] md:text-[1.5vw] lg:text-[1vw] xl:text-[0.8vw]
+                              font-semibold rounded-md transition-colors duration-300 
+                              text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529]
+                              disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300"
           disabled={isLoading}
         >
           {isLoading ? (
@@ -126,7 +132,7 @@ function MagicLinkLogin() {
               </span>
             </div>
           ) : (
-            <span className="text-[5vw] md:text-[3vw] lg:text-[1vw]">
+            <span className="text-[5vw] md:text-[3vw] lg:text-[1vw] xl:text-[0.8vw]">
               Send Magic Link
             </span>
           )}

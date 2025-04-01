@@ -266,18 +266,18 @@ function Login() {
             </div>
 
             {/* Right side: Login form */}
-            <div className="p-4 mt-[15vh] sm:mt-[10vh] md:mt-0 lg:mt-0 lg:p-8 w-[90vw] md:w-[600px] lg:w-[500px] bg-white rounded-lg shadow-2xl relative">
+            <div className="p-4 mt-[15vh] sm:mt-[10vh] md:mt-0 lg:p-8 w-[90vw] md:w-[600px] lg:w-[500px] xl:w-[550px] bg-white rounded-lg shadow-2xl relative">
               {/* Yellow top border */}
-              <div className="h-2 lg:h-2 absolute w-full bg-[#F6BA18] rounded-t-lg top-0 left-0"></div>
+              <div className="h-2 lg:h-2 xl:h-2 absolute w-full bg-[#F6BA18] rounded-t-lg top-0 left-0"></div>
 
               {/* Form content wrapper */}
-              <div className="h-[700px] md:h-[800px] lg:h-[550px] flex flex-col">
+              <div className="h-[700px] md:h-[800px] lg:h-[550px] 2xl:h-[700px] flex flex-col">
                 {/* Common header */}
                 <div className="mb-4 md:mb-6 lg:mb-4">
-                  <h2 className="text-[6vw] md:text-[3vw] lg:text-[3vw] font-bold text-left text-[#212529]">
+                  <h2 className="text-[6vw] md:text-[3vw] lg:text-[3vw] xl:text-[2vw] font-bold text-left text-[#212529]">
                     Log In
                   </h2>
-                  <p className="text-[3vw] md:text-[1.5vw] lg:text-[1vw] text-[#64748B] text-left">
+                  <p className="text-[3vw] md:text-[1.5vw] lg:text-[1vw] xl:text-[0.8vw] text-[#64748B] text-left">
                     {loginMethod === "password" && "Please enter your credentials to proceed"}
                     {loginMethod === "magic-link" && "Please enter your email to receive a magic link"}
                     {loginMethod === "numeric-code" && "Please enter your numeric code to proceed"}
@@ -304,7 +304,7 @@ function Login() {
                         <div>
                           <label
                             htmlFor="email"
-          className="text-[3vw] block text-[#64748B] lg:text-[1.2vw] max-lg:text-[2.5vw]"
+                            className="text-[3vw] block text-[#64748B] lg:text-[1.2vw] max-lg:text-[2.5vw] 2xl:text-[0.9vw]"
                           >
                             Email
                           </label>
@@ -316,6 +316,7 @@ function Login() {
                             onBlur={() => handleBlur("email")}
                             required
                             className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[1vw] 
+                              2xl:text-[0.8vw] 2xl:px-[0.8vw] 2xl:py-[0.6vw]
                               w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                             placeholder="Enter your email"
                             data-testid="email-input"
@@ -332,9 +333,9 @@ function Login() {
 
                         {/* Password input */}
                         <div>
-                          <label
+                          <label  
                             htmlFor="password"
-          className="text-[3vw] block text-[#64748B] lg:text-[1.2vw] max-lg:text-[2.5vw]"
+                            className="text-[3vw] block text-[#64748B] lg:text-[1.2vw] max-lg:text-[2.5vw] 2xl:text-[0.9vw]"
                           >
                             Password
                           </label>
@@ -347,6 +348,7 @@ function Login() {
                               onBlur={() => handleBlur("password")}
                               required
                               className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[1vw] 
+                                2xl:text-[0.8vw] 2xl:px-[0.8vw] 2xl:py-[0.6vw]
                                 w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529] pr-[10vw] lg:pr-[3vw]"
                               placeholder="Enter your password"
                               data-testid="password-input"
@@ -407,11 +409,12 @@ function Login() {
                           <button
                             type="submit"
                             className="flex items-center justify-center 
-                              w-[45vw] md:w-[25vw] lg:w-[15vw] 
+                              w-[45vw] md:w-[25vw] lg:w-[15vw] xl:w-[12vw]
                               px-[3vw] py-[2vw] 
                               md:px-[2vw] md:py-[1.5vw]
                               lg:px-[1vw] lg:py-[0.8vw]
-                              text-[3.5vw] md:text-[1.5vw] lg:text-[1vw] 
+                              xl:px-[0.8vw] xl:py-[0.6vw]
+                              text-[3.5vw] md:text-[1.5vw] lg:text-[1vw] xl:text-[0.8vw]
                               font-semibold rounded-md transition-colors duration-300 
                               text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529]
                               disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300"
@@ -445,7 +448,7 @@ function Login() {
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-[5vw] md:text-[3vw] lg:text-[1vw]">
+                              <span className="text-[5vw] md:text-[3vw] lg:text-[1vw] xl:text-[0.8vw]">
                                 Log In
                               </span>
                             )}
@@ -478,55 +481,43 @@ function Login() {
 
                 {/* Login method toggle */}
                 <div className="mt-auto pt-4">
-                  <p className="text-[3vw] lg:text-[0.8vw] mb-2 text-[#64748B] text-left">
+                  <p className="text-[3vw] lg:text-[0.8vw] xl:text-[0.7vw] mb-2 text-[#64748B] text-left">
                     Or choose another login method:
                   </p>
                   <div className="grid grid-cols-2 gap-2 border rounded overflow-hidden">
                     <button
                       onClick={() => setLoginMethod("password")}
-                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 
-                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] font-medium 
-                        ${
-                          loginMethod === "password"
-                            ? "bg-[#F6BA18] text-[#212529]"
-                            : "bg-gray-100 text-gray-500"
-                        } transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
+                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 xl:py-1.5 
+                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] xl:text-[0.7vw] font-medium 
+                        ${loginMethod === "password" ? "bg-[#F6BA18] text-[#212529]" : "bg-gray-100 text-gray-500"}
+                        transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
                     >
                       Password
                     </button>
                     <button
                       onClick={() => setLoginMethod("magic-link")}
-                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 
-                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] font-medium 
-                        ${
-                          loginMethod === "magic-link"
-                            ? "bg-[#F6BA18] text-[#212529]"
-                            : "bg-gray-100 text-gray-500"
-                        } transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
+                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 xl:py-1.5 
+                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] xl:text-[0.7vw] font-medium 
+                        ${loginMethod === "magic-link" ? "bg-[#F6BA18] text-[#212529]" : "bg-gray-100 text-gray-500"}
+                        transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
                     >
                       Magic Link
                     </button>
                     <button
                       onClick={() => setLoginMethod("numeric-code")}
-                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 
-                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] font-medium 
-                        ${
-                          loginMethod === "numeric-code"
-                            ? "bg-[#F6BA18] text-[#212529]"
-                            : "bg-gray-100 text-gray-500"
-                        } transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
+                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 xl:py-1.5 
+                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] xl:text-[0.7vw] font-medium 
+                        ${loginMethod === "numeric-code" ? "bg-[#F6BA18] text-[#212529]" : "bg-gray-100 text-gray-500"}
+                        transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
                     >
                       Number Code
                     </button>
                     <button
                       onClick={() => setLoginMethod("picture-code")}
-                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 
-                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] font-medium 
-                        ${
-                          loginMethod === "picture-code"
-                            ? "bg-[#F6BA18] text-[#212529]"
-                            : "bg-gray-100 text-gray-500"
-                        } transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
+                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 xl:py-1.5 
+                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] xl:text-[0.7vw] font-medium 
+                        ${loginMethod === "picture-code" ? "bg-[#F6BA18] text-[#212529]" : "bg-gray-100 text-gray-500"}
+                        transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
                     >
                       Picture Login
                     </button>
