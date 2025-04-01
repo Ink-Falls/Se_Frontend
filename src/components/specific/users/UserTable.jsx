@@ -17,22 +17,20 @@ const UserTable = ({
   selectedIds,
   setSelectedIds,
   onCreateGroup,
-  onShowGroupList, // Add new prop
-  onSearch, // Add onSearch prop
-  onFilterChange, // Add this prop
-  currentFilter, // Add this prop
-  currentPage, // Add this prop
-  totalPages, // Add this prop
-  onPageChange, // Add this prop
-  onGenerateReport, // Add this prop
+  onShowGroupList,
+  onSearch,
+  onFilterChange,
+  currentFilter,
+  currentPage,
+  totalPages,
+  onPageChange,
+  onGenerateReport,
 }) => {
-  // Remove local selectedIds state since it's now passed as prop
-
   const ROWS_PER_PAGE = 10;
 
-  const [sortOption, setSortOption] = useState("none"); // Add this state
+  const [sortOption, setSortOption] = useState("none");
+  const [pageInput, setPageInput] = useState(currentPage.toString());
 
-  // Updated sorting function
   const getSortedUsers = (users) => {
     if (!users) return [];
     const sortedUsers = [...users];
@@ -75,10 +73,9 @@ const UserTable = ({
     }
   };
 
-  // Update pagination logic to use total count from API
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
-      onPageChange(newPage); // Call parent handler to fetch new page data
+      onPageChange(newPage);
     }
   };
 
@@ -88,10 +85,8 @@ const UserTable = ({
     );
   };
 
-  // Ensure users is always an array
   const usersList = Array.isArray(users) ? users : [];
 
-  // Update handleSelectAll to use usersList
   const handleSelectAll = () => {
     setSelectedIds(
       selectedIds.length === usersList.length
@@ -102,14 +97,31 @@ const UserTable = ({
 
   const handleSearchChange = (e) => {
     const query = e.target.value;
-    onSearch(query); // Call the search handler from parent
+    onSearch(query);
+  };
+
+  const handlePageInputChange = (e) => {
+    setPageInput(e.target.value);
+  };
+
+  const handlePageInputSubmit = (e) => {
+    if (e.key === "Enter") {
+      const newPage = parseInt(pageInput);
+      if (!isNaN(newPage) && newPage >= 1 && newPage <= totalPages) {
+        onPageChange(newPage);
+      } else {
+        setPageInput(currentPage.toString());
+      }
+    }
+  };
+
+  const handlePageInputBlur = () => {
+    setPageInput(currentPage.toString());
   };
 
   return (
     <div>
-      {/* Controls Section */}
       <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
-        {/* Delete Selected button */}
         {selectedIds.length > 0 && (
           <button
             onClick={onDelete}
@@ -120,11 +132,8 @@ const UserTable = ({
           </button>
         )}
 
-        {/* Controls that stack on mobile */}
         <div className="flex flex-col w-full md:flex-row gap-4">
-          {/* Left side controls */}
           <div className="flex flex-col md:flex-row w-full md:w-auto gap-4 md:items-center">
-            {/* Filter dropdown */}
             <div className="relative py-2 md:py-[0.2vw]">
               <select
                 value={currentFilter}
@@ -147,7 +156,6 @@ const UserTable = ({
               </div>
             </div>
 
-            {/* Sort dropdown */}
             <div className="relative py-2 md:py-[0.2vw]">
               <select
                 value={sortOption}
@@ -168,7 +176,6 @@ const UserTable = ({
               </div>
             </div>
 
-            {/* Search input */}
             <div className="relative w-full md:w-auto py-2 md:py-[0.2vw]">
               <input
                 type="text"
@@ -180,7 +187,6 @@ const UserTable = ({
             </div>
           </div>
 
-          {/* Right side buttons */}
           <div className="flex flex-col md:flex-row w-full md:w-auto gap-2 md:ml-auto">
             <button
               onClick={onAddUser}
@@ -217,7 +223,6 @@ const UserTable = ({
         </div>
       </div>
 
-      {/* Table Section */}
       <div className="overflow-x-auto bg-white rounded-lg shadow">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -304,7 +309,7 @@ const UserTable = ({
                   <button
                     aria-label="Edit"
                     onClick={() => onEdit(user)}
-                    className="text-black hover:text-gray-700" // Changed color to black
+                    className="text-black hover:text-gray-700"
                   >
                     <SquarePen size={20} />
                   </button>
@@ -314,12 +319,11 @@ const UserTable = ({
           </tbody>
         </table>
 
-        {/* Add Pagination Controls */}
         <div className="px-6 py-4 flex items-center justify-between border-t">
           <div className="text-sm text-gray-700">
             Showing page {currentPage} of {totalPages}
           </div>
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 items-center">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
@@ -328,9 +332,18 @@ const UserTable = ({
             >
               Previous
             </button>
-            <span className="px-4 py-1 text-gray-600">
-              Page {currentPage} of {totalPages}
-            </span>
+            <p className="text-sm text-gray-700">
+              Page{" "}
+              <input
+                type="text"
+                value={pageInput}
+                onChange={handlePageInputChange}
+                onKeyDown={handlePageInputSubmit}
+                onBlur={handlePageInputBlur}
+                className="w-12 px-2 py-1 text-center border rounded-md focus:outline-none focus:border-[#F6BA18]"
+              />{" "}
+              of {totalPages}
+            </p>
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage >= totalPages}
