@@ -19,7 +19,7 @@ import {
   getCourseAssessments,
   getUserSubmission,
 } from "../../services/assessmentService";
-import { getModulesByCourseId } from "../../services/moduleService";
+import { getModulesByCourseId, getModuleGrade } from "../../services/moduleService";
 import { ChevronDown } from "lucide-react";
 
 const typeColors = {
@@ -60,6 +60,7 @@ const LearnerCourseAssessment = () => {
   const [moduleAssessments, setModuleAssessments] = useState({});
   const [modules, setModules] = useState([]);
   const [expandedModules, setExpandedModules] = useState(new Set());
+  const [moduleGrades, setModuleGrades] = useState({});
 
   const navItems = [
     { text: "Home", icon: <Home size={20} />, route: "/Learner/Dashboard" },
@@ -166,35 +167,38 @@ const LearnerCourseAssessment = () => {
     fetchAssessmentsAndSubmissions();
   }, [selectedCourse, navigate]);
 
+  useEffect(() => {
+    const fetchModuleGrades = async () => {
+      try {
+        const gradePromises = modules.map(module => 
+          getModuleGrade(module.module_id, selectedCourse.userId)
+            .then(data => [module.module_id, data])
+            .catch(() => [module.module_id, null])
+        );
+        
+        const grades = await Promise.all(gradePromises);
+        const gradesMap = Object.fromEntries(grades);
+        setModuleGrades(gradesMap);
+      } catch (err) {
+        console.error('Error fetching module grades:', err);
+      }
+    };
+
+    if (modules.length > 0 && selectedCourse?.userId) {
+      fetchModuleGrades();
+    }
+  }, [modules, selectedCourse?.userId]);
+
   const getStatus = (submission) => {
-    // First check if submission exists and has submit_time
-    if (!submission || !submission.submit_time) return "Not Started";
+    if (!submission) return "Not Started";
     if (submission.is_late) return "Late";
-
-    // Check if submission has answers
-    if (!submission.answers || submission.answers.length === 0)
-      return "Not Started";
-
-    // Count questions with points_awarded and total questions
-    const totalQuestions = submission.answers.length;
-    const gradedQuestions = submission.answers.filter(
-      (answer) =>
-        answer.points_awarded !== null && answer.points_awarded !== undefined
-    ).length;
-
-    if (gradedQuestions === 0) return "Submitted";
-    if (gradedQuestions < totalQuestions) return "Partially Graded";
-    if (gradedQuestions === totalQuestions) return "Graded";
-
-    return "Submitted";
+    return submission.status?.charAt(0).toUpperCase() + submission.status?.slice(1) || "Not Started";
   };
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case "graded":
         return "bg-green-100 text-green-800";
-      case "partially graded":
-        return "bg-orange-100 text-orange-800";
       case "submitted":
         return "bg-yellow-100 text-yellow-800";
       case "late":
@@ -217,8 +221,13 @@ const LearnerCourseAssessment = () => {
   };
 
   const handleAssessmentClick = (assessment) => {
+    const submission = submissions[assessment.id];
     navigate(`/Learner/Assessment/View/${assessment.id}`, {
-      state: { assessment },
+      state: { 
+        assessment,
+        submission,
+        status: submission ? getStatus(submission) : "Not Started"
+      }
     });
   };
 
@@ -278,9 +287,27 @@ const LearnerCourseAssessment = () => {
             onClick={() => toggleModule(module.module_id)}
           >
             <div>
-              <h3 className="text-xl font-semibold text-gray-800">
-                {module.name}
-              </h3>
+              <div className="flex items-center gap-4">
+                <h3 className="text-xl font-semibold text-gray-800">
+                  {module.name}
+                </h3>
+                {moduleGrades[module.module_id] && (
+                  <div className="flex gap-2">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Average: {moduleGrades[module.module_id].averageScore}%
+                    </span>
+                    {moduleGrades[module.module_id].allGraded && (
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        moduleGrades[module.module_id].allPassed 
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {moduleGrades[module.module_id].allPassed ? 'All Passed' : 'Some Failed'}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
               <p className="text-sm text-gray-600 mt-1">{module.description}</p>
               <span className="text-xs text-gray-500 mt-2 inline-block">
                 {moduleAssessments[module.module_id]?.length || 0} Assessment(s)
@@ -374,7 +401,17 @@ const LearnerCourseAssessment = () => {
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-end pt-4 border-t">
+                          <div className="flex items-center justify-between pt-4 border-t">
+                            <button
+                              className="px-4 py-2 text-sm font-medium text-white rounded-md"
+                              style={{ backgroundColor: color.bg }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAssessmentClick(assessment);
+                              }}
+                            >
+                              View Assessment
+                            </button>
                             {renderSubmissionScore(
                               submissions[assessment.id],
                               assessment

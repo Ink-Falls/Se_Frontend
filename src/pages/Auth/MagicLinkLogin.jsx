@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { requestMagicLink } from "../../services/authService";
 
 function MagicLinkLogin() {
@@ -6,16 +6,45 @@ function MagicLinkLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [isValidEmail, setIsValidEmail] = useState(true);
+  const [touched, setTouched] = useState(false);
+
+  // Validate email on every change
+  useEffect(() => {
+    if (touched) {
+      const emailError = validateEmail(email);
+      setIsValidEmail(!emailError);
+      setError(emailError);
+    }
+  }, [email, touched]);
 
   const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Array of common TLDs - add more as needed
+    const validTLDs = ["com", "edu", "ph", "org", "net", "gov", "edu.ph"];
+
     if (!email) {
       return "Email is required";
     }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return "Please enter a valid email address";
     }
+
+    // Extract domain and check TLD
+    const domain = email.split("@")[1];
+    if (!validTLDs.some((tld) => domain.toLowerCase().endsWith(`.${tld}`))) {
+      return "Please enter a valid email domain";
+    }
+
     return null;
+  };
+
+  const handleEmailChange = (e) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    setTouched(true);
   };
 
   const handleSubmit = async (e) => {
@@ -24,6 +53,7 @@ function MagicLinkLogin() {
 
     if (emailError) {
       setError(emailError);
+      setIsValidEmail(false);
       return;
     }
 
@@ -35,7 +65,16 @@ function MagicLinkLogin() {
       setSuccess(true);
     } catch (err) {
       console.error("Magic link request failed:", err);
-      setError(err.message || "Failed to send magic link. Please try again.");
+      if (err.response?.status === 404 || err.message.includes("not found")) {
+        setError("Email address not found");
+      } else if (
+        err.response?.status === 409 ||
+        err.message.includes("already exists")
+      ) {
+        setError("Email already registered");
+      } else {
+        setError(err.message || "Failed to send magic link. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -62,13 +101,10 @@ function MagicLinkLogin() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-[1vw] w-full flex flex-col justify-center flex-1">
-      {error && (
-        <p className="text-red-500 text-left text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw]">
-          {error}
-        </p>
-      )}
-
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-[1vw] w-full flex flex-col justify-center flex-1"
+    >
       <div className="w-full">
         <label
           htmlFor="email"
@@ -80,11 +116,17 @@ function MagicLinkLogin() {
           type="email"
           id="magic-link-email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={handleEmailChange}
+          onBlur={() => setTouched(true)}
           required
           className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[1vw] xl:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[1vw] xl:px-[0.8vw] xl:py-[0.8vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
           placeholder="Enter your email"
         />
+        {error && touched && (
+          <p className="text-red-500 text-left text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] mt-1">
+            {error}
+          </p>
+        )}
       </div>
 
       {/* Spacer div that only appears on mobile */}

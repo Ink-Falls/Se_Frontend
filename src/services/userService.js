@@ -106,7 +106,7 @@ export const getTeachers = async (options = {}) => {
     return usersList.filter((user) => user.role === "teacher");
   } catch (error) {
     console.error("Error fetching teachers:", error);
-    throw error;
+    throw new Error("Failed to fetch users");
   }
 };
 

@@ -101,7 +101,7 @@ function Login() {
 
     const newValidationErrors = {
       email: emailError,
-      password: passwordError
+      password: passwordError,
     };
 
     setValidationErrors(newValidationErrors);
@@ -128,7 +128,9 @@ function Login() {
         email,
         password,
         captchaResponse ||
-          (window.captchaResponse ? window.captchaResponse : "test-captcha-response")
+          (window.captchaResponse
+            ? window.captchaResponse
+            : "test-captcha-response")
       );
 
       if (!loginData.token || !loginData.user) {
@@ -219,7 +221,7 @@ function Login() {
         <div className="absolute inset-0 bg-black opacity-30"></div>
 
         {/* Header section with navigation and title */}
-        <header className="relative z-10 py-[3vw] px-[4vw] lg:py-[1vw] lg:px-[2vw] bg-[#121212] text-[#F6BA18] flex justify-between items-center shadow-xl">
+        <header className="relative z-10 py-[3vw] px-[4vw] lg:py-[1.5vw] lg:px-[2vw] bg-[#121212] text-[#F6BA18] flex justify-between items-center shadow-xl">
           <div className="flex items-center">
             <img
               src={logo}
@@ -388,22 +390,10 @@ function Login() {
                           </button>
                         </div>
 
-                        {/* CAPTCHA verification */}
-                        <div className="mt-[1vw] overflow-visible h-auto">
-                          <div
-                            style={{
-                              transformOrigin: "left",
-                              transform: "scale(0.8)",
-                            }}
-                          >
-                            <ReCAPTCHA
-                              ref={recaptchaRef}
-                              sitekey={RECAPTCHA_SITE_KEY}
-                              onChange={handleCaptchaChange}
-                            />
-                          </div>
-                        </div>
-
+              {/* Form instruction text */}
+              <p className="text-[3vw] mb-[4vw] lg:mb-[1.5vw] lg:text-[0.8vw] max-lg:text-[2.5vw] text-[#64748B] text-left">
+                Please choose your login method to proceed
+              </p>
                         {/* Submit button */}
                         <div className="flex justify-center mt-[0.5vw]">
                           <button
@@ -455,26 +445,47 @@ function Login() {
                           </button>
                         </div>
                       </form>
-                    )}
+                      )}
 
-                    {loginMethod === "magic-link" && (
-                      <div className="flex-1 flex items-center justify-center">
-                        <div className="w-full flex flex-col items-center">
-                          <MagicLinkLogin />
-                        </div>
-                      </div>
-                    )}
-                    
-                    {loginMethod === "numeric-code" && (
-                      <div className="flex-1 flex items-center justify-center">
-                        <NumericCodeLogin />
-                      </div>
-                    )}
-                    
-                    {loginMethod === "picture-code" && (
-                      <div className="flex-1 flex items-center justify-center">
-                        <PictureCodeLogin />
-                      </div>
+              {/* Login forms */}
+              {loginMethod === "password" && (
+                // Password Login Form
+                <form onSubmit={handleSubmit} className="space-y-[1vw]">
+                  {/* Display error message */}
+                  {error && (
+                    <p
+                      className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw]"
+                      data-testid="error-message"
+                    >
+                      {error}
+                    </p>
+                  )}
+                  {/* Email input */}
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="text-[3vw] block text-[#64748B] lg:text-[0.8vw] max-lg:text-[2.5vw]"
+                    >
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onBlur={() => handleBlur("email")}
+                      required
+                      className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                      placeholder="Enter your email"
+                      data-testid="email-input"
+                    />
+                    {validationErrors.email && (
+                      <p
+                        className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw] mt-1"
+                        data-testid="email-error"
+                      >
+                        {validationErrors.email}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -493,7 +504,45 @@ function Login() {
                         transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
                     >
                       Password
-                    </button>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        id="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onBlur={() => handleBlur("password")}
+                        required
+                        className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529] pr-[10vw] lg:pr-[3vw]"
+                        placeholder="Enter your password"
+                        data-testid="password-input"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleTogglePassword}
+                        className="absolute right-[3vw] lg:right-[1vw] top-1/2 transform -translate-y-1/2 text-gray-500"
+                        aria-label="Toggle password visibility"
+                        data-testid="password-toggle"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
+                        ) : (
+                          <Eye className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
+                        )}
+                      </button>
+                    </div>
+                    {validationErrors.password && (
+                      <p
+                        className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw] mt-1"
+                        data-testid="password-error"
+                      >
+                        {validationErrors.password}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Forgot password button */}
+                  <div className="text-right mt-[0.5vw]">
                     <button
                       onClick={() => setLoginMethod("magic-link")}
                       className={`py-[2vw] md:py-[1.5vw] lg:py-2 xl:py-1.5 
@@ -501,7 +550,7 @@ function Login() {
                         ${loginMethod === "magic-link" ? "bg-[#F6BA18] text-[#212529]" : "bg-gray-100 text-gray-500"}
                         transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
                     >
-                      Magic Link
+                      Forgot Password?
                     </button>
                     <button
                       onClick={() => setLoginMethod("numeric-code")}
@@ -510,8 +559,16 @@ function Login() {
                         ${loginMethod === "numeric-code" ? "bg-[#F6BA18] text-[#212529]" : "bg-gray-100 text-gray-500"}
                         transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
                     >
-                      Number Code
-                    </button>
+                      <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={RECAPTCHA_SITE_KEY}
+                        onChange={handleCaptchaChange}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Submit button */}
+                  <div className="flex justify-center mt-[0.5vw]">
                     <button
                       onClick={() => setLoginMethod("picture-code")}
                       className={`py-[2vw] md:py-[1.5vw] lg:py-2 xl:py-1.5 
@@ -519,11 +576,56 @@ function Login() {
                         ${loginMethod === "picture-code" ? "bg-[#F6BA18] text-[#212529]" : "bg-gray-100 text-gray-500"}
                         transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
                     >
-                      Picture Login
+                      {loading ? (
+                        <div className="flex items-center space-x-2">
+                          <svg
+                            className="animate-spin h-5 w-5 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          <span className="animate-pulse text-sm md:text-base">
+                            Loading...
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs sm:text-sm md:text-base lg:text-base">
+                          Log In
+                        </span>
+                      )}
                     </button>
                   </div>
-                </div>
-              </div>
+                </form>
+              )}
+
+              {loginMethod === "magic-link" && (
+                // Magic Link Login Form
+                <MagicLinkLogin />
+              )}
+
+              {loginMethod === "numeric-code" && (
+                // Numeric Code Login Form
+                <NumericCodeLogin />
+              )}
+
+              {loginMethod === "picture-code" && (
+                // Picture Code Login Form
+                <PictureCodeLogin />
+              )}
             </div>
           </div>
         </div>
