@@ -7,12 +7,43 @@ function Enrollment() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("Unknown");
   const [statusColor, setStatusColor] = useState("#F6BA18");
-  const [errorMessage, setErrorMessage] = useState(""); // Add error message state
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isValidEmail, setIsValidEmail] = useState(true); // Add this state
   const navigate = useNavigate();
+
+  const validateEmail = (email) => {
+    // Array of common TLDs - add more as needed
+    const validTLDs = ["com", "edu", "ph", "org", "net", "gov", "edu.ph"];
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return false;
+    }
+
+    // Extract domain and check TLD
+    const domain = email.split("@")[1];
+    return validTLDs.some((tld) => domain.toLowerCase().endsWith(`.${tld}`));
+  };
+
+  const handleEmailChange = (e) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    setIsValidEmail(validateEmail(newEmail));
+    setErrorMessage(""); // Clear error when email changes
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMessage(""); // Clear any previous error message
+    setErrorMessage("");
+
+    // First validate email format
+    if (!validateEmail(email)) {
+      setErrorMessage("Please enter a valid email address");
+      setStatus("Error");
+      setStatusColor("gray");
+      return;
+    }
 
     try {
       const data = await checkEnrollmentStatus(email);
@@ -35,15 +66,22 @@ function Enrollment() {
       console.error("Error fetching enrollment status:", error);
       setStatus("Error");
       setStatusColor("gray");
-      if (error.message === "Email not found") {
-        setErrorMessage("Email not found");
-        setStatus("Unknown");
-        setStatusColor("#F6BA18");
+
+      // Check for specific HTTP status codes
+      if (
+        error.response?.status === 404 ||
+        error.message.includes("404") ||
+        error.message.includes("not found")
+      ) {
+        setErrorMessage("Enrollment not found");
       } else {
-        setErrorMessage("An unexpected error occurred.");
+        setErrorMessage(
+          "An unexpected error occurred. Please try again later."
+        );
       }
     }
   };
+
   return (
     <>
       {/* Page container with a background image */}
@@ -136,12 +174,22 @@ function Enrollment() {
                     type="email"
                     id="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={handleEmailChange}
                     required
-                    className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                    className={`mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border ${
+                      !isValidEmail && email
+                        ? "border-red-500"
+                        : "border-[#64748B]"
+                    } rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]`}
                     placeholder="Enter your email"
                   />
-                  {/* Display error message */}
+                  {/* Email format error message */}
+                  {!isValidEmail && email && (
+                    <p className="text-red-500 mt-2 text-[2.5vw] lg:text-[0.8vw]">
+                      Please enter a valid email address
+                    </p>
+                  )}
+                  {/* API error message */}
                   {errorMessage && (
                     <p className="text-red-500 mt-2 text-[2.5vw] lg:text-[0.8vw]">
                       {errorMessage}

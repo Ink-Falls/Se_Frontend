@@ -224,3 +224,27 @@ export const deleteModuleContent = async (contentId) => {
     throw error;
   }
 };
+
+/**
+ * Gets the module grade for a specific user
+ * @param {number} moduleId - The ID of the module
+ * @param {number} userId - The ID of the user
+ * @returns {Promise<Object>} Grade information including average score and completion status
+ */
+export const getModuleGrade = async (moduleId, userId) => {
+  try {
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/modules/${moduleId}/${userId}/module-grade`
+    );
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch module grade');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching module grade:', error);
+    throw error;
+  }
+};
