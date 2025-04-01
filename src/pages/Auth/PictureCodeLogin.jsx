@@ -185,12 +185,12 @@ function PictureCodeLogin() {
       )}
 
       {/* Selected pictures preview */}
-      <div className="mb-6">
-        <p className="text-[3vw] text-center mb-2 text-[#64748B] lg:text-[0.9vw] max-lg:text-[2.5vw]">
+      <div>
+        <p className="text-[3vw] text-[#64748B] lg:text-[0.9vw] max-lg:text-[2.5vw]">
           Select your picture sequence to log in:
         </p>
 
-        <div className="flex justify-center items-center space-x-2 h-20 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-2">
+        <div className="mt-2 flex justify-center items-center space-x-2 h-20 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-2">
           {selectedPictures.length === 0 ? (
             <span className="text-gray-400 text-sm">Select pictures below</span>
           ) : (
@@ -206,7 +206,7 @@ function PictureCodeLogin() {
                   onClick={() => handleRemovePicture(idx)}
                   className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
                 >
-                  ×
+                  X
                 </button>
               </div>
             ))
@@ -215,7 +215,7 @@ function PictureCodeLogin() {
       </div>
 
       {/* Picture grid */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         {pictures.map((pic) => (
           <button
             key={pic.id}
@@ -231,7 +231,7 @@ function PictureCodeLogin() {
             <img
               src={pic.url}
               alt={pic.name}
-              className="w-full h-14 lg:h-20 object-contain"
+              className="w-full h-12 lg:h-15 object-contain"
             />
           </button>
         ))}
