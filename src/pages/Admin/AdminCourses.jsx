@@ -29,6 +29,7 @@ import AddCourse from "../../components/common/Modals/Add/AddCourse";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import BlackHeader from "../../components/common/layout/BlackHeader";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import EditCourseModal from "../../components/common/Modals/Edit/EditCourseModal";
 
 function AdminCourses() {
   const [courses, setCourses] = useState([]);
@@ -37,7 +38,8 @@ function AdminCourses() {
   const [editingCourse, setEditingCourse] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const [isAddCourseOpen, setIsAddCourseOpen] = useState(false);
-  const [newCourse, setNewCourse] = useState({ //never read 
+  const [newCourse, setNewCourse] = useState({
+    //never read
     name: "",
     description: "",
     teacher: "",
@@ -156,7 +158,7 @@ function AdminCourses() {
       if (editingCourse) {
         try {
           const [teachers, learners, studentTeachers] = await Promise.all([
-            getTeachers({page: 1,limit: 0}),
+            getTeachers({ page: 1, limit: 0 }),
             getGroupsByType("learner"),
             getGroupsByType("student_teacher"),
           ]);
@@ -261,8 +263,8 @@ function AdminCourses() {
   const saveCourseChanges = async (updatedCourse) => {
     try {
       await updateCourse(updatedCourse.id, {
-        name: updatedCourse.name,
-        description: updatedCourse.description,
+        name: updatedCourse.name.trim(),
+        description: updatedCourse.description?.trim() || "",
         user_id: parseInt(updatedCourse.user_id),
         learner_group_id: parseInt(updatedCourse.learner_group_id),
         student_teacher_group_id: parseInt(
@@ -274,10 +276,38 @@ function AdminCourses() {
       const allCourses = await getAllCourses();
       setCourses(allCourses);
       setEditingCourse(null);
-      setSuccessMessage("Course updated successfully"); // Add success message
+      setSuccessMessage("Course updated successfully");
+    } catch (err) {
+      console.error("Error updating course:", err);
+      throw err; // Re-throw to be handled by the modal
+    }
+  };
+
+  // Add this new function to handle edit course errors
+  const handleEditCourse = async (course) => {
+    try {
+      const editData = {
+        ...course,
+        user_id: course.user_id || course.teacher_id || "",
+        learner_group_id: course.learner_group_id || "",
+        student_teacher_group_id: course.student_teacher_group_id || "",
+      };
+
+      // Fetch required data for editing
+      const [teachers, learners, studentTeachers] = await Promise.all([
+        getTeachers({ page: 1, limit: 0 }),
+        getGroupsByType("learner"),
+        getGroupsByType("student_teacher"),
+      ]);
+
+      setAvailableTeachers(teachers);
+      setLearnerGroups(learners);
+      setStudentTeacherGroups(studentTeachers);
+      setEditingCourse(editData);
+      setDropdownOpen(null);
     } catch (error) {
-      console.error("Error updating course:", error);
-      // Handle error (you might want to show an error message to the user)
+      console.error("Error preparing edit:", error);
+      setError("Failed to load edit data");
     }
   };
 
@@ -307,6 +337,19 @@ function AdminCourses() {
       console.error("Error refreshing courses:", error);
       // If the immediate refresh fails, at least add the new course
       setCourses((prev) => [...prev, newCourse]);
+    }
+  };
+
+  // Update the form submission handler
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setError(null); // Clear any existing errors
+    try {
+      await saveCourseChanges(editingCourse);
+    } catch (err) {
+      // Error is handled in saveCourseChanges
+      // We just prevent the form from closing
+      console.error("Form submission failed:", err);
     }
   };
 
@@ -486,144 +529,14 @@ function AdminCourses() {
         )}
         {/* Remove the floating plus button since we now have it in the header */}
         {editingCourse && (
-          <Modal
-            isOpen={!!editingCourse}
+          <EditCourseModal
+            course={editingCourse}
             onClose={() => setEditingCourse(null)}
-          >
-            <h2 className="text-xl font-semibold mb-4">Edit Course</h2>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                saveCourseChanges(editingCourse);
-              }}
-            >
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    value={editingCourse.name}
-                    onChange={(e) =>
-                      setEditingCourse({
-                        ...editingCourse,
-                        name: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Description
-                  </label>
-                  <textarea
-                    value={editingCourse.description}
-                    onChange={(e) =>
-                      setEditingCourse({
-                        ...editingCourse,
-                        description: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                    rows={3}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Teacher
-                  </label>
-                  <select
-                    value={editingCourse.user_id}
-                    onChange={(e) =>
-                      setEditingCourse({
-                        ...editingCourse,
-                        user_id: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                    required
-                  >
-                    <option value="">Select a teacher</option>
-                    {availableTeachers?.map((teacher) => (
-                      <option key={teacher.id} value={teacher.id}>
-                        {`${teacher.first_name} ${teacher.last_name}`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Learner Group
-                  </label>
-                  <select
-                    value={editingCourse.learner_group_id}
-                    onChange={(e) =>
-                      setEditingCourse({
-                        ...editingCourse,
-                        learner_group_id: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                    required
-                  >
-                    <option value="">Select a learner group</option>
-                    {learnerGroups?.map((group) => (
-                      <option key={group.id} value={group.id}>
-                        {group.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Student Teacher Group
-                  </label>
-                  <select
-                    value={editingCourse.student_teacher_group_id}
-                    onChange={(e) =>
-                      setEditingCourse({
-                        ...editingCourse,
-                        student_teacher_group_id: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                    required
-                  >
-                    <option value="">Select a student teacher group</option>
-                    {studentTeacherGroups?.map((group) => (
-                      <option key={group.id} value={group.id}>
-                        {group.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setEditingCourse(null)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </Modal>
+            onSave={saveCourseChanges}
+            availableTeachers={availableTeachers}
+            learnerGroups={learnerGroups}
+            studentTeacherGroups={studentTeacherGroups}
+          />
         )}
         {courseToDelete && (
           <DeleteModal
