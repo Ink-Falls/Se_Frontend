@@ -599,14 +599,15 @@ function AdminDashboard() {
   const handleSaveUser = async (updatedUser) => {
     try {
       const { password, ...userWithoutPassword } = updatedUser;
-      await updateUser(updatedUser.id, userWithoutPassword);
+      const response = await updateUser(updatedUser.id, userWithoutPassword);
       await refreshUsers();
       setIsEditModalOpen(false);
       setSelectedUser(null);
       setSuccessMessage("Successfully edited user");
     } catch (error) {
       console.error("Error saving user:", error);
-      setError(error.message || "Failed to save user");
+      // Instead of showing alert, throw the error back to EditUserModal
+      throw error;
     }
   };
 
