@@ -116,7 +116,7 @@ function NumericCodeLogin() {
       )}
 
       <div>
-        <label className="text-[3vw] block text-center text-[#64748B] lg:text-[1.2vw] xl:text-[0.9vw] max-lg:text-[2.5vw] mb-4">
+        <label className="text-[3vw] block text-center text-[#64748B] lg:text-[1.2vw] max-lg:text-[2.5vw] mb-4">
           Enter the 6-digit code from your teacher
         </label>
 
@@ -130,7 +130,7 @@ function NumericCodeLogin() {
               value={digit}
               onChange={(e) => handleChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
-              className="w-[10vw] h-[12vw] lg:w-[3vw] lg:h-[4vw] xl:w-[2.5vw] xl:h-[3.5vw] text-[3vw] lg:text-[1vw] xl:text-[0.8vw] max-lg:text-[2.5vw] border-2 border-[#64748B] rounded-md text-center font-bold focus:outline-none focus:ring-2 focus:ring-[#F6BA18] focus:border-[#F6BA18]"
+              className="w-[10vw] h-[12vw] lg:w-[3vw] lg:h-[4vw] text-[3vw] lg:text-[1vw] max-lg:text-[2.5vw] border-2 border-[#64748B] rounded-md text-center font-bold focus:outline-none focus:ring-2 focus:ring-[#F6BA18] focus:border-[#F6BA18]"
             />
           ))}
         </div>
@@ -142,16 +142,10 @@ function NumericCodeLogin() {
       <div className="flex justify-center mt-[4vw] lg:mt-[2vw]">
         <button
           type="submit"
-                            className="flex items-center justify-center 
-                              w-[45vw] md:w-[25vw] lg:w-[15vw] xl:w-[12vw]
-                              px-[3vw] py-[2vw] 
-                              md:px-[2vw] md:py-[1.5vw]
-                              lg:px-[1vw] lg:py-[0.8vw]
-                              xl:px-[0.8vw] xl:py-[0.6vw]
-                              text-[3.5vw] md:text-[1.5vw] lg:text-[1vw] xl:text-[0.8vw]
-                              font-semibold rounded-md transition-colors duration-300 
-                              text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529]
-                              disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300"
+          className="flex items-center justify-center w-[45vw] lg:w-[15vw] px-[3vw] py-[2vw] lg:px-[1vw] lg:py-[0.8vw]
+          text-[3.5vw] lg:text-[1vw] font-semibold rounded-md transition-colors duration-300 
+          text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529]
+          disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300"
           disabled={isLoading}
         >
           {isLoading ? (
@@ -181,7 +175,7 @@ function NumericCodeLogin() {
               </span>
             </div>
           ) : (
-            <span className="text-[5vw] md:text-[3vw] lg:text-[1vw] xl:text-[0.8vw]">
+            <span className="text-[5vw] md:text-[3vw] lg:text-[1vw]">
               Log In
             </span>
           )}
