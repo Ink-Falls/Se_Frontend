@@ -186,17 +186,67 @@ function Profile() {
     setIsEditMode(true);
   };
 
+  const validateEmail = (email) => {
+    // Array of common TLDs - add more as needed
+    const validTLDs = ["com", "edu", "ph", "org", "net", "gov", "edu.ph"];
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return false;
+    }
+
+    // Extract domain and check TLD
+    const domain = email.split("@")[1];
+    return validTLDs.some((tld) => domain.toLowerCase().endsWith(`.${tld}`));
+  };
+
   const handleEditSubmit = async () => {
     try {
       setEditError("");
+
+      // Validate email format first
+      if (!validateEmail(editFormData.email)) {
+        setEditError("Please enter a valid email address");
+        return;
+      }
+
       const updatedUser = await updateUser(user.id, editFormData);
       setUser(updatedUser);
       setIsEditMode(false);
-      // Add success message and auto-hide after 3 seconds
       setSuccessMessage("Profile updated successfully!");
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
-      setEditError(err.message || "Failed to update profile");
+      console.error("Profile update error:", err);
+
+      // Handle specific API errors
+      if (
+        err.response?.status === 409 ||
+        err.message.includes("already exists")
+      ) {
+        setEditError("This email address is already in use");
+      } else if (
+        err.response?.status === 400 ||
+        err.message.includes("invalid")
+      ) {
+        setEditError("Please enter a valid email address");
+      } else {
+        setEditError(err.message || "Failed to update profile");
+      }
+    }
+  };
+
+  // Add email validation to handleInputChange
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    // Clear error when email is changed
+    if (name === "email") {
+      setEditError("");
     }
   };
 
@@ -221,7 +271,9 @@ function Profile() {
         >
           &times;
         </button>
-        <h2 aria-label="edit_profile"className="text-xl font-semibold mb-4">Edit Profile</h2>
+        <h2 aria-label="edit_profile" className="text-xl font-semibold mb-4">
+          Edit Profile
+        </h2>
 
         {successMessage && (
           <div className="mb-4 p-2 bg-green-100 text-green-600 rounded">

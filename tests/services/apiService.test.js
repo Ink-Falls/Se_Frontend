@@ -15,15 +15,29 @@ vi.mock('../../src/services/tokenService', () => ({
 // Mock fetch
 global.fetch = vi.fn();
 
+// Expose resetCircuitBreaker for testing
+const resetCircuitBreaker = () => {
+  // Direct access to internal state via function call
+  if (typeof fetchWithInterceptor.resetCircuitBreaker === 'function') {
+    fetchWithInterceptor.resetCircuitBreaker();
+  }
+};
+
 describe('API Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     global.fetch.mockClear();
     
+    // Reset circuit breaker state before each test
+    resetCircuitBreaker();
+    
     // Setup mock implementations correctly
     tokenService.getAccessToken.mockReturnValue('test-token');
     tokenService.isTokenExpired.mockReturnValue(false);
     tokenService.refreshToken.mockResolvedValue('new-test-token');
+    
+    // Reset fetch mock behavior
+    global.fetch.mockReset();
   });
 
   it('should add authorization header when token exists', async () => {
@@ -157,36 +171,69 @@ describe('API Service', () => {
     });
 
     it('should handle server errors (500 range)', async () => {
-      global.fetch.mockResolvedValueOnce({
+      // Reset circuit breaker state
+      fetchWithInterceptor.resetCircuitBreaker();
+      
+      // Create a mock response for a 500 server error
+      const mockResponse = {
         ok: false,
         status: 500,
-        json: () => Promise.resolve({ message: 'Server error' })
-      });
-
+        json: () => Promise.resolve({ message: 'Internal server error' })
+      };
+      
+      // Setup the mock implementation
+      global.fetch.mockReset();
+      global.fetch.mockResolvedValue(mockResponse);
+      
+      // Spy on the custom event dispatch
       const eventSpy = vi.fn();
       window.addEventListener('serverError', eventSpy);
-
-      await expect(fetchWithInterceptor('test-url'))
-        .rejects.toThrow('Server error');
-        
+      
+      // Execute the test
+      await expect(fetchWithInterceptor('test-url')).rejects.toThrow('Server error');
+      
+      // Verify the event was triggered
       expect(eventSpy).toHaveBeenCalled();
+      
+      // Cleanup
+      window.removeEventListener('serverError', eventSpy);
     });
   });
 
   describe('Request Debouncing', () => {
     it('should debounce non-critical requests', async () => {
+      // Reset circuit breaker
+      fetchWithInterceptor.resetCircuitBreaker();
+      
+      // Use fake timers to control setTimeout behavior
       vi.useFakeTimers();
       
-      const debouncedFetch = fetchWithInterceptor.debouncedFetch;
-      const requests = Array(3).fill(null).map(() => 
-        debouncedFetch('test-url')
-      );
-
-      await vi.runAllTimersAsync();
-      await Promise.all(requests);
-
-      expect(global.fetch).toHaveBeenCalledTimes(1);
+      // Mock successful response
+      global.fetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ data: 'test' })
+      });
       
+      // Track fetch calls
+      const fetchSpy = vi.spyOn(global, 'fetch');
+      
+      // Call debounced function multiple times
+      const debouncedFetch = fetchWithInterceptor.debouncedFetch;
+      debouncedFetch('test-url');
+      debouncedFetch('test-url');
+      debouncedFetch('test-url');
+      
+      // Advance timer past the debounce delay (300ms)
+      vi.advanceTimersByTime(350);
+      
+      // Need to flush promises to allow async resolution
+      await vi.runAllTimersAsync();
+      
+      // Verify fetch was only called once
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      expect(fetchSpy).toHaveBeenCalledWith('test-url', expect.anything());
+      
+      // Restore real timers
       vi.useRealTimers();
     });
   });
