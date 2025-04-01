@@ -85,9 +85,7 @@ const LearnerPages = {
     import("./pages/Learner/LearnerCourseAssessment")
   ),
   AssessmentView: lazy(() => import("./pages/Learner/LearnerAssessmentView")),
-  LearnerSubmission: lazy(() =>
-    import("./pages/Teacher/StudentSubmissionView")
-  ),
+  AssessmentAttempt: lazy(() => import("./pages/Learner/LearnerAssessmentAttempt")),
 };
 
 const ErrorPages = {
@@ -356,8 +354,12 @@ function AppRoutes() {
                         element={<LearnerPages.AssessmentView />}
                       />
                       <Route
+                        path="Assessment/Attempt/:id"
+                        element={<LearnerPages.AssessmentAttempt />}
+                      />
+                      <Route
                         path="Assessment/Submission/:id"
-                        element={<LearnerPages.LearnerSubmission />}
+                        element={<TeacherPages.StudentSubmissionView />}
                       />
                       <Route path="*" element={<ErrorPages.Error404 />} />
                     </Routes>

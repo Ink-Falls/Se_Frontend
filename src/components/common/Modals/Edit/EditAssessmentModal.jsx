@@ -46,7 +46,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
           max_score: assessment.max_score || 100,
           passing_score: assessment.passing_score || 60,
           duration_minutes: assessment.duration_minutes || 60,
-          allowed_attempts: assessment.allowed_attempts || 1
+          allowed_attempts: assessment.allowed_attempts || 1, // Use existing value or default to 1
         });
       } catch (err) {
         console.error("Error formatting assessment data:", err);
@@ -232,11 +232,13 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                   min="1"
                   max="10"
                   value={formData.allowed_attempts}
-                  onChange={(e) => setFormData({ ...formData, allowed_attempts: parseInt(e.target.value) || 1 })}
+                  onChange={(e) => setFormData({ ...formData, allowed_attempts: Math.max(1, parseInt(e.target.value) || 1) })}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   required
                 />
-                <p className="mt-1 text-xs text-gray-500">Number of times students can take this assessment</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Current setting: {formData.allowed_attempts} attempt{formData.allowed_attempts !== 1 ? 's' : ''}
+                </p>
               </div>
               
               <div>

@@ -68,13 +68,8 @@ export const getCourseAssessments = async (moduleId, includeQuestions = false, p
     url.searchParams.append('page', page);
     url.searchParams.append('limit', limit);
 
-    console.log('Fetching assessments with URL:', url.toString());
-
     const response = await fetchWithInterceptor(url.toString());
     const data = await response.json();
-
-    console.log('Raw assessment response:', data);
-    console.log('Response structure:', JSON.stringify(data, null, 2));
 
     if (!response.ok) {
       throw new Error(data.message || 'Failed to fetch assessments');
@@ -164,7 +159,6 @@ export const getAssessmentById = async (assessmentId, includeQuestions = false, 
  */
 export const createAssessmentQuestion = async (assessmentId, questionData) => {
   try {
-    console.log('Creating question with data:', questionData);
     
     let requestBody = {
       question_text: questionData.question_text,
@@ -182,8 +176,6 @@ export const createAssessmentQuestion = async (assessmentId, questionData) => {
     if (questionData.options) {
       requestBody.options = questionData.options;
     }
-
-    console.log('Formatted request body:', requestBody);
 
     const response = await fetchWithInterceptor(
       `${API_BASE_URL}/assessments/${assessmentId}/questions`,
@@ -347,7 +339,6 @@ export const saveQuestionAnswer = async (submissionId, questionId, answerData) =
   }
 };
 
-
 export const submitAssessment = async (submissionId, assessmentId = null) => {
   try {
     // First try to get the assessment ID from the provided parameter
@@ -370,7 +361,7 @@ export const submitAssessment = async (submissionId, assessmentId = null) => {
       throw new Error('Assessment ID not found for submission');
     }
     
-    // Set status to 'submitted' for all submissions
+    // Always set status to 'submitted' for learner submissions
     const status = 'submitted';
     const submit_time = new Date().toISOString();
 
