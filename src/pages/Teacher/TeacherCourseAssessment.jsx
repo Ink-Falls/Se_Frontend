@@ -84,86 +84,44 @@ const TeacherCourseAssessment = () => {
   const fetchAssessments = async () => {
     try {
       setLoading(true);
-      console.log(
-        "1. Starting fetchAssessments for Course ID:",
-        selectedCourse.id
-      );
-
       const modulesResponse = await getModulesByCourseId(selectedCourse.id);
-      console.log("2. Modules fetched:", modulesResponse);
 
       if (!modulesResponse) {
-        console.error("3. No modules response received");
         throw new Error("Failed to fetch modules data");
       }
 
       setModules(modulesResponse);
-      console.log("4. Modules set in state:", modulesResponse);
-
       const assessmentsByModule = {};
       let allAssessments = [];
 
-      console.log("5. Starting to fetch assessments for each module");
-
       for (const module of modulesResponse) {
         try {
-          console.log(`6. Fetching assessments for module ${module.module_id}`);
           const response = await getCourseAssessments(module.module_id, true);
-          console.log(
-            `7. Raw assessment response for module ${module.module_id}:`,
-            response
-          );
 
           if (response.success && response.assessments) {
-            console.log(
-              "8. Processing assessments for module:",
-              response.assessments
-            );
-
-            // Filter assessments for this module
             const moduleAssessments = response.assessments.filter(
               (assessment) => assessment.module_id === module.module_id
-            );
-
-            console.log(
-              `9. Filtered assessments for module ${module.module_id}:`,
-              moduleAssessments
             );
 
             if (moduleAssessments.length > 0) {
               assessmentsByModule[module.module_id] = moduleAssessments.map(
                 (assessment) => ({
                   ...assessment,
-                  max_score: assessment.max_score || 100, // Default to 100 if NaN
+                  max_score: assessment.max_score || 100,
                 })
               );
               allAssessments = [...allAssessments, ...moduleAssessments];
-              console.log(
-                `10. Added ${moduleAssessments.length} assessments to module ${module.module_id}`
-              );
             } else {
               assessmentsByModule[module.module_id] = [];
-              console.log(
-                `11. No assessments found for module ${module.module_id}`
-              );
             }
           } else {
             assessmentsByModule[module.module_id] = [];
-            console.log(
-              `11. No assessments found for module ${module.module_id}`
-            );
           }
         } catch (err) {
-          console.error(
-            `12. Error processing module ${module.module_id}:`,
-            err
-          );
+          console.error(`Error processing module ${module.module_id}:`, err);
           assessmentsByModule[module.module_id] = [];
         }
       }
-
-      console.log("13. Final assessmentsByModule:", assessmentsByModule);
-      console.log("14. Total assessments:", allAssessments.length);
 
       setModuleAssessments(assessmentsByModule);
       setAssessments(allAssessments);
@@ -571,103 +529,88 @@ const TeacherCourseAssessment = () => {
   };
 
   const renderModulesWithAssessments = () => {
-    console.log("17. Starting to render modules with assessments");
-    console.log("18. Current module state:", modules);
-    console.log("19. Current assessments state:", moduleAssessments);
-
     return (
       <div className="space-y-6">
-        {modules.map((module) => {
-          console.log(`20. Rendering module ${module.module_id}:`, {
-            module,
-            assessments: moduleAssessments[module.module_id],
-          });
-
-          return (
+        {modules.map((module) => (
+          <div
+            key={module.module_id}
+            className="bg-white rounded-lg shadow-sm overflow-hidden"
+          >
             <div
-              key={module.module_id}
-              className="bg-white rounded-lg shadow-sm overflow-hidden"
+              className="p-6 bg-gray-50 border-l-4 border-yellow-500 flex justify-between items-center cursor-pointer hover:bg-gray-100"
+              onClick={() => toggleModule(module.module_id)}
             >
-              <div
-                className="p-6 bg-gray-50 border-l-4 border-yellow-500 flex justify-between items-center cursor-pointer hover:bg-gray-100"
-                onClick={() => toggleModule(module.module_id)}
-              >
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-800">
-                    {module.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {module.description}
-                  </p>
-                  <span className="text-xs text-gray-500 mt-2 inline-block">
-                    {moduleAssessments[module.module_id]?.length || 0}{" "}
-                    Assessment(s)
-                  </span>
-                </div>
-                <ChevronDown
-                  className={`w-6 h-6 text-gray-400 transform transition-transform duration-200 ${
-                    expandedModules.has(module.module_id) ? "rotate-180" : ""
-                  }`}
-                />
+              <div>
+                <h3 className="text-xl font-semibold text-gray-800">
+                  {module.name}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  {module.description}
+                </p>
+                <span className="text-xs text-gray-500 mt-2 inline-block">
+                  {moduleAssessments[module.module_id]?.length || 0}{" "}
+                  Assessment(s)
+                </span>
               </div>
-
-              {expandedModules.has(module.module_id) && (
-                <div className="p-6 bg-gray-50 border-t border-gray-100">
-                  {moduleAssessments[module.module_id]?.length > 0 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {moduleAssessments[module.module_id].map(
-                        renderAssessmentCard
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-200">
-                      <ClipboardList
-                        size={24}
-                        className="mx-auto mb-3 text-gray-400"
-                      />
-                      <p className="text-gray-600 font-medium mb-3">
-                        No assessments in this module yet
-                      </p>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsCreateModalOpen(true);
-                        }}
-                        className="text-yellow-600 hover:text-yellow-700 text-sm font-medium inline-flex items-center gap-1.5"
-                      >
-                        <Plus size={16} />
-                        Add your first assessment
-                      </button>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsCreateModalOpen(true);
-                    }}
-                    className="mt-6 w-full py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-yellow-500 hover:text-yellow-600 transition-colors flex items-center justify-center gap-2 bg-white"
-                  >
-                    <Plus size={20} />
-                    Add Assessment to {module.name}
-                  </button>
-                </div>
-              )}
+              <ChevronDown
+                className={`w-6 h-6 text-gray-400 transform transition-transform duration-200 ${
+                  expandedModules.has(module.module_id) ? "rotate-180" : ""
+                }`}
+              />
             </div>
-          );
-        })}
+
+            {expandedModules.has(module.module_id) && (
+              <div className="p-6 bg-gray-50 border-t border-gray-100">
+                {moduleAssessments[module.module_id]?.length > 0 ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {moduleAssessments[module.module_id].map(
+                      renderAssessmentCard
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-200">
+                    <ClipboardList
+                      size={24}
+                      className="mx-auto mb-3 text-gray-400"
+                    />
+                    <p className="text-gray-600 font-medium mb-3">
+                      No assessments in this module yet
+                    </p>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsCreateModalOpen(true);
+                      }}
+                      className="text-yellow-600 hover:text-yellow-700 text-sm font-medium inline-flex items-center gap-1.5"
+                    >
+                      <Plus size={16} />
+                      Add your first assessment
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsCreateModalOpen(true);
+                  }}
+                  className="mt-6 w-full py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-yellow-500 hover:text-yellow-600 transition-colors flex items-center justify-center gap-2 bg-white"
+                >
+                  <Plus size={20} />
+                  Add Assessment to {module.name}
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     );
   };
 
   // Update the condition for showing "No Assessments" message
   const hasAnyAssessments = Object.values(moduleAssessments).some(
-    (moduleArray) => {
-      console.log("21. Checking module array:", moduleArray);
-      return Array.isArray(moduleArray) && moduleArray.length > 0;
-    }
+    (moduleArray) => Array.isArray(moduleArray) && moduleArray.length > 0
   );
-  console.log("22. Final hasAnyAssessments check:", hasAnyAssessments);
 
   return (
     <div className="flex h-screen bg-gray-100 relative">
