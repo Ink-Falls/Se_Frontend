@@ -63,16 +63,16 @@ function MagicLinkLogin() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-[1vw]">
+    <form onSubmit={handleSubmit} className="space-y-[1vw] w-full flex flex-col justify-center flex-1">
       {error && (
         <p className="text-red-500 text-left text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw]">
           {error}
         </p>
       )}
 
-      <div>
+      <div className="w-full">
         <label
-          htmlFor="magic-link-email"
+          htmlFor="email"
           className="text-[3vw] block text-[#64748B] lg:text-[0.8vw] max-lg:text-[2.5vw]"
         >
           Email
@@ -88,13 +88,16 @@ function MagicLinkLogin() {
         />
       </div>
 
-      <div className="flex justify-center mt-[4vw] lg:mt-[2vw]">
+      {/* Spacer div that only appears on mobile */}
+      <div className="h-[3vw] md:h-[0vw]"></div>
+
+      <div className="flex justify-center">
         <button
           type="submit"
           className="flex items-center justify-center min-w-[14rem] max-w-[14rem] px-6 py-3 
-      font-semibold rounded-md transition-colors duration-300 ease-in-out flex-shrink-0
-      text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529] dark:bg-gray-900 dark:hover:bg-yellow-400
-      disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300"
+          font-semibold rounded-md transition-colors duration-300 ease-in-out flex-shrink-0
+          text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529]
+          disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300"
           disabled={isLoading}
         >
           {isLoading ? (
