@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import CreateGroupModal from 'Se_Frontend/src/components/common/Modals/Create/CreateGroupModal.jsx'; // Adjust the import according to your file structure
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getAvailableMembers, createGroup, getAllGroups } from 'Se_Frontend/src/services/groupService.js'; // Adjust the import according to your file structure
@@ -55,32 +55,40 @@ describe('CreateGroupModal Component', () => {
 
   it('should submit the form and call onSave on success', async () => {
     createGroup.mockResolvedValueOnce({ id: 1, name: 'Test Group', message: 'Group created successfully!' });
-
-    renderComponent();
-
+  
+    // Render the component and wait for it to load
+    await act(async () => {
+      renderComponent();
+    });
+  
+    // Wait for the available members to load
+    await waitFor(() => {
+      expect(screen.getByText(/Available Learners/i)).toBeInTheDocument();
+    });
+  
     // Fill out the form
     fireEvent.change(screen.getByPlaceholderText(/Enter group name/i), { target: { value: 'Test Group' } });
     fireEvent.change(screen.getByLabelText(/Group type/i), { target: { value: 'learner' } });
-
+  
     // Add a member
-    const addButtons = screen.getAllByRole('button', { name: /add member/i });
-    fireEvent.click(addButtons[0]);
-
+    const addMemberButton = screen.getByRole('button', { name: /add member/i });
+    fireEvent.click(addMemberButton);
+  
     // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /create group/i }));
-
+  
     // Check if the createGroup function was called with the correct data
     await waitFor(() => {
       expect(createGroup).toHaveBeenCalledWith({
         name: 'Test Group',
         type: 'learner',
-        memberIds: [1],
+        memberIds: [1], // ID of the added member
       });
     });
-
+  
     // Check if the onSave function was called
     expect(mockOnSave).toHaveBeenCalledWith({ id: 1, name: 'Test Group', message: 'Group created successfully!' });
-
+  
     // Check if the onClose function was called
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });

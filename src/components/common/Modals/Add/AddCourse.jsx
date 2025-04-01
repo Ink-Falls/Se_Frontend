@@ -118,7 +118,7 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
 
         <div className="p-6 overflow-y-auto">
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-center gap-2">
+            <div role="alert" className="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-center gap-2">
               <AlertTriangle size={20} />
               <span>{error}</span>
             </div>
@@ -134,6 +134,7 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
               <label
                 htmlFor="name"
                 className="block text-sm font-medium text-gray-700"
+                data-testid="course-name-label"
               >
                 Course Name
               </label>
@@ -145,6 +146,7 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                 required
+                data-testid="course-name-input" 
               />
             </div>
 
@@ -173,6 +175,13 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
               >
                 Select Teacher
               </label>
+              <select
+                id="user_id" // Ensure this matches the htmlFor attribute of the label
+                name="user_id"
+                value={formData.user_id}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+              ></select>
               <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
                 {availableTeachers.map((teacher) => (
                   <div
