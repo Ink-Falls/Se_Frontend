@@ -162,30 +162,32 @@ describe('AddUserModal Component', () => {
     expect(createUser).not.toHaveBeenCalled();
   });
 
- /* it('should display validation errors for student teacher specific fields', async () => {
-    renderComponent();
+ it('should display validation errors for student teacher specific fields', async () => {
+  renderComponent();
 
-    // Fill out the form with role as student teacher but without section and department
-    fireEvent.change(screen.getByPlaceholderText(/enter first name/i), { target: { value: 'John' } });
-    fireEvent.change(screen.getByPlaceholderText(/enter last name/i), { target: { value: 'Doe' } });
-    fireEvent.change(screen.getByPlaceholderText(/enter middle initial/i), { target: { value: 'A' } });
-    fireEvent.change(screen.getByPlaceholderText(/enter email/i), { target: { value: 'test@example.com' } });
-    fireEvent.change(screen.getByPlaceholderText(/enter contact number/i), { target: { value: '09123456789' } });
-    fireEvent.change(screen.getByPlaceholderText(/enter password/i), { target: { value: 'Password1!' } });
-    fireEvent.change(screen.getByPlaceholderText(/Select birth date/i), { target: { value: '2000-01-01' } });
-    fireEvent.change(screen.getByPlaceholderText(/Select a school/i), { target: { value: '1001' } });
-    fireEvent.change(screen.getByPlaceholderText(/Select a role/i), { target: { value: 'student' } });
+  // Fill out the form with role as student teacher but without section and department
+  fireEvent.change(screen.getByPlaceholderText(/enter first name/i), { target: { value: 'John' } });
+  fireEvent.change(screen.getByPlaceholderText(/enter last name/i), { target: { value: 'Doe' } });
+  fireEvent.change(screen.getByPlaceholderText(/enter middle initial/i), { target: { value: 'A' } });
+  fireEvent.change(screen.getByPlaceholderText(/enter email/i), { target: { value: 'test@example.com' } });
+  fireEvent.change(screen.getByPlaceholderText(/enter contact number/i), { target: { value: '09123456789' } });
+  fireEvent.change(screen.getByPlaceholderText(/enter password/i), { target: { value: 'Password1!' } });
+  fireEvent.change(screen.getByPlaceholderText(/select birth date/i), { target: { value: '2000-01-01' } });
+  fireEvent.change(screen.getByPlaceholderText(/select a school/i), { target: { value: '1001' } });
+  fireEvent.change(screen.getByPlaceholderText(/select a role/i), { target: { value: 'student_teacher' } });
 
-    // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /add user/i }));
+  // Submit the form
+  fireEvent.click(screen.getByRole('button', { name: /add user/i }));
 
-    // Check if validation errors for section and department are displayed
-    await waitFor(() => {
-      expect(screen.getByText(/^section must be at least 2 characters$/i)).toBeInTheDocument();
-      expect(screen.getByText(/department must be at least 2 characters/i)).toBeInTheDocument();
-    });
+  // Debug the DOM to inspect the rendered output
+  screen.debug();
 
-    // Check if the createUser function was not called
-    expect(createUser).not.toHaveBeenCalled();
-  });*/
+  // Check if validation errors for section and department are displayed
+  await screen.findByText((content) => content.includes("Section must be at least 2 characters"));
+  await screen.findByText((content) => content.includes("Department must be at least 2 characters"));
+  expect(screen.getByText(/section must be at least 2 characters/i)).toBeInTheDocument();
+
+  // Check if the createUser function was not called
+  expect(createUser).not.toHaveBeenCalled();
+});
 });

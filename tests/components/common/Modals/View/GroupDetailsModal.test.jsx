@@ -86,24 +86,24 @@ describe('GroupDetailsModal Component', () => {
 
   it('should delete selected groups when the delete button is clicked', async () => {
     deleteGroups.mockResolvedValueOnce();
-
+  
     renderComponent();
-
-    // Select a group
-    fireEvent.click(screen.getByLabelText(/^select group a$/i));
-
+  
+    // Select a group by finding the checkbox near the group name
+    const groupCheckbox = screen.getByRole('checkbox', { name: /group a/i });
+    fireEvent.click(groupCheckbox);
+  
     // Click the delete button
-    fireEvent.click(screen.getByRole('button', { name: /delete selected/i }));
-
-    // Check if the deleteGroups function was called with the correct data
+    const deleteButton = screen.getByRole('button', { name: /delete selected/i });
+    fireEvent.click(deleteButton);
+  
+    // Verify that the deleteGroups function was called with the correct group ID
     await waitFor(() => {
-      expect(deleteGroups).toHaveBeenCalledWith([1]);
+      expect(deleteGroups).toHaveBeenCalledWith([1]); // Replace `1` with the actual group ID
     });
-
-    // Check if the groups list is refreshed
-    await waitFor(() => {
-      expect(screen.queryByText(/group a/i)).not.toBeInTheDocument();
-    });
+  
+    // Verify that the group is no longer in the DOM
+    expect(screen.queryByText(/group a/i)).not.toBeInTheDocument();
   });
 
   it('should update a group when the edit button is clicked', async () => {
