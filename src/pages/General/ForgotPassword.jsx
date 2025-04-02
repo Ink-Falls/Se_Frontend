@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "/src/assets/images/ARALKADEMYLOGO.png";
 import { forgotPassword } from "../../services/authService"; // Adjust the path accordingly
@@ -7,19 +7,73 @@ function ForgotPassword() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [isValidEmail, setIsValidEmail] = useState(true);
+  const [touched, setTouched] = useState(false);
+
+  // Add validation effect
+  useEffect(() => {
+    if (touched) {
+      const emailError = validateEmail(email);
+      setIsValidEmail(!emailError);
+      setMessage(emailError || "");
+    }
+  }, [email, touched]);
+
+  const validateEmail = (email) => {
+    const validTLDs = ["com", "edu", "ph", "org", "net", "gov", "edu.ph"];
+
+    if (!email) {
+      return "Email is required";
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return "Please enter a valid email address";
+    }
+
+    // Extract domain and check TLD
+    const domain = email.split("@")[1];
+    if (!validTLDs.some((tld) => domain.toLowerCase().endsWith(`.${tld}`))) {
+      return "Please enter a valid email domain";
+    }
+
+    return null;
+  };
+
+  const handleEmailChange = (e) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    setTouched(true);
+  };
 
   const handleForgotPassword = async () => {
-    if (!email) {
-      setMessage("Please enter your email.");
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setMessage(emailError);
+      setIsValidEmail(false);
       return;
     }
 
     try {
       await forgotPassword(email);
       setMessage("Password reset code sent! Check your email.");
+      setIsValidEmail(true);
       navigate("/VerifyCode", { state: { email } });
     } catch (error) {
-      setMessage(error.message || "Something went wrong. Please try again.");
+      setIsValidEmail(false);
+      // Handle specific error cases
+      if (
+        error.response?.status === 404 ||
+        error.message.includes("not found")
+      ) {
+        setMessage("Email address not found.");
+      } else if (error.response?.status === 429) {
+        setMessage("Too many attempts. Please try again later.");
+      } else if (error.response?.status === 400) {
+        setMessage("Invalid email format. Please enter a valid email address.");
+      } else {
+        setMessage("Something went wrong. Please try again later.");
+      }
       console.error("Forgot password error:", error);
     }
   };
@@ -33,7 +87,11 @@ function ForgotPassword() {
       }}
     >
       <header className="py-[3vw] px-[4vw] lg:py-[1.5vw] lg:px-[2vw] bg-[#121212] text-[#F6BA18] flex justify-between items-center shadow-xl">
-        <img src={logo} alt="ARALKADEMY Logo" className="h-[5vw] lg:h-[2.5vw]" />
+        <img
+          src={logo}
+          alt="ARALKADEMY Logo"
+          className="h-[5vw] lg:h-[2.5vw]"
+        />
         <button
           onClick={() => navigate("/enrollment")}
           className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-white transition duration-300"
@@ -54,11 +112,22 @@ function ForgotPassword() {
           <input
             type="email"
             placeholder="Email"
-            className="w-full px-[3vw] py-[1.5vw] lg:py-[1vw] max-lg:text-[2.5vw] border border-gray-300 rounded-md focus:ring-2 focus:ring-[#F6BA18]"
+            className={`w-full px-[3vw] py-[1.5vw] lg:py-[1vw] max-lg:text-[2.5vw] border ${
+              !isValidEmail && touched ? "border-red-500" : "border-gray-300"
+            } rounded-md focus:ring-2 focus:ring-[#F6BA18]`}
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={handleEmailChange}
+            onBlur={() => setTouched(true)}
           />
-          {message && <p className="text-red-500 mt-2">{message}</p>}
+          {touched && message && (
+            <p
+              className={`mt-2 text-sm ${
+                !isValidEmail ? "text-red-500" : "text-green-500"
+              }`}
+            >
+              {message}
+            </p>
+          )}
           <div className="flex justify-end mt-[4vw] lg:mt-[2vw]">
             <button
               onClick={handleForgotPassword}

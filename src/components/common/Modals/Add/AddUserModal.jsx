@@ -23,6 +23,26 @@ const AddUserModal = ({ onClose, onSubmit }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const validateEmail = (email) => {
+    const validTLDs = ["com", "edu", "ph", "org", "net", "gov", "edu.ph"];
+
+    if (!email) {
+      return "Email is required";
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return "Please enter a valid email address";
+    }
+
+    const domain = email.split("@")[1];
+    if (!validTLDs.some((tld) => domain.toLowerCase().endsWith(`.${tld}`))) {
+      return "Please enter a valid email domain";
+    }
+
+    return null;
+  };
+
   const validateForm = () => {
     const errors = {};
 
@@ -93,6 +113,13 @@ const AddUserModal = ({ onClose, onSubmit }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validate email before submission
+    const emailError = validateEmail(formData.email);
+    if (emailError) {
+      setFieldErrors((prev) => ({ ...prev, email: emailError }));
+      return;
+    }
+
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setFieldErrors(validationErrors);
@@ -142,6 +169,17 @@ const AddUserModal = ({ onClose, onSubmit }) => {
       ...prev,
       [name]: value,
     }));
+
+    // Clear field error when user types
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+
+    // Validate email as user types
+    if (name === "email") {
+      const emailError = validateEmail(value);
+      if (emailError) {
+        setFieldErrors((prev) => ({ ...prev, email: emailError }));
+      }
+    }
   };
 
   return (
