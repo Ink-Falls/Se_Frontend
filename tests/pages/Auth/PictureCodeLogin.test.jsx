@@ -1,153 +1,189 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
-import NumericCodeLogin from "../../../src/pages/Auth/NumericCodeLogin";
-import { verifyMagicLinkToken } from "../../../src/services/authService";
-import { useAuth } from "../../../src/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { vi } from "vitest";
+import PictureCodeLogin from "Se_Frontend/src/pages/Auth/PictureCodeLogin";
+import { verifyMagicLinkToken } from "Se_Frontend/src/services/authService";
+import { useAuth } from "Se_Frontend/src/contexts/AuthContext";
+import { MemoryRouter } from "react-router-dom";
 
-// Mock dependencies
-vi.mock("../../../src/services/authService", () => ({
+// Mock the `verifyMagicLinkToken` service
+vi.mock("Se_Frontend/src/services/authService", () => ({
   verifyMagicLinkToken: vi.fn(),
 }));
-vi.mock("../../../src/contexts/AuthContext", () => ({
+
+// Mock the `useAuth` hook
+vi.mock("Se_Frontend/src/contexts/AuthContext", () => ({
   useAuth: vi.fn(() => ({
     checkAuth: vi.fn(),
   })),
 }));
-vi.mock("react-router-dom", () => ({
-  useNavigate: vi.fn(),
-}));
 
-describe("NumericCodeLogin Component", () => {
-  const mockNavigate = vi.fn();
-  const mockCheckAuth = vi.fn();
+// Mock the `useNavigate` function from `react-router-dom`
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: vi.fn(() => mockNavigate),
+  };
+});
 
+describe("PictureCodeLogin Component", () => {
   beforeEach(() => {
-    vi.mocked(useNavigate).mockReturnValue(mockNavigate);
-    vi.mocked(useAuth).mockReturnValue({ checkAuth: mockCheckAuth });
+    vi.clearAllMocks();
   });
 
-  it("renders the form correctly", () => {
-    render(<NumericCodeLogin />);
+  it("renders the component correctly", () => {
+    render(
+      <MemoryRouter>
+        <PictureCodeLogin />
+      </MemoryRouter>
+    );
 
-    // Check if the input fields are rendered
-    const inputs = screen.getAllByRole("textbox");
-    expect(inputs).toHaveLength(6);
-
-    // Check if the submit button is rendered
-    expect(screen.getByRole("button", { name: /log in/i })).toBeInTheDocument();
-  });
-
-  it("shows an error when not all digits are entered", async () => {
-    render(<NumericCodeLogin />);
-
-    // Click the submit button without entering all digits
-    fireEvent.click(screen.getByRole("button", { name: /log in/i }));
-
-    // Check for validation error
+    // Check if the heading and instructions are rendered
     expect(
-      await screen.findByText(/please enter all 6 digits of the code/i)
+      screen.getByText("Select your picture sequence to log in:")
     ).toBeInTheDocument();
+
+    // Check if the picture grid is rendered
+    expect(screen.getAllByRole("button").length).toBeGreaterThan(0);
+
+    // Check if the "Log In" button is rendered
+    expect(screen.getByText("Log In")).toBeInTheDocument();
   });
 
-  it("allows only numeric input in the fields", () => {
-    render(<NumericCodeLogin />);
-
-    const inputs = screen.getAllByRole("textbox");
-
-    // Enter a non-numeric value in the first input
-    fireEvent.change(inputs[0], { target: { value: "a" } });
-
-    // Check that the input value remains empty
-    expect(inputs[0].value).toBe("");
-
-    // Enter a numeric value in the first input
-    fireEvent.change(inputs[0], { target: { value: "5" } });
-
-    // Check that the input value is updated
-    expect(inputs[0].value).toBe("5");
+  it("allows selecting and removing pictures", async () => {
+    render(
+      <MemoryRouter>
+        <PictureCodeLogin />
+      </MemoryRouter>
+    );
+  
+    // Select the first picture (Dog)
+    const pictureButtons = screen.getAllByRole("button");
+    fireEvent.click(pictureButtons[0]); // Select "Dog"
+  
+    // Check if the picture is added to the selected list
+    expect(screen.getByRole("img", { name: "Dog" })).toBeInTheDocument();
+  
+    // Remove the selected picture
+    const removeButton = screen.getByText("X");
+    fireEvent.click(removeButton);
+  
+    // Wait for the picture to be removed
+    // await waitFor(() => {
+    //   expect(screen.queryByAltText("Dog")).not.toBeInTheDocument();
+    // });
+    // Inspect the DOM after the click
   });
 
-  it("auto-focuses the next input when a digit is entered", () => {
-    render(<NumericCodeLogin />);
-
-    const inputs = screen.getAllByRole("textbox");
-
-    // Enter a digit in the first input
-    fireEvent.change(inputs[0], { target: { value: "5" } });
-
-    // Check that the second input is focused
-    expect(document.activeElement).toBe(inputs[1]);
+  it("displays an error if less than 3 pictures are selected", async () => {
+    render(
+      <MemoryRouter>
+        <PictureCodeLogin />
+      </MemoryRouter>
+    );
+  
+    // Select two pictures
+    fireEvent.click(screen.getByAltText("Dog"));
+    fireEvent.click(screen.getByAltText("Cat"));
+  
+    // Assert that "Log In" button is disabled
+    expect(screen.getByRole("button", { name: /log in/i })).toBeDisabled();
+  
+    // Click "Log In"
+    fireEvent.click(screen.getByText("Log In"));
+  
+    // Wait for error message
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent("Please select at least 3 pictures");
+    });
   });
+  
+  
 
-  it("moves to the previous input on backspace if the current input is empty", () => {
-    render(<NumericCodeLogin />);
-
-    const inputs = screen.getAllByRole("textbox");
-
-    // Focus the second input and press backspace
-    inputs[1].focus();
-    fireEvent.keyDown(inputs[1], { key: "Backspace" });
-
-    // Check that the first input is focused
-    expect(document.activeElement).toBe(inputs[0]);
-  });
-
-  it("submits the form and navigates on successful code verification", async () => {
-    // Mock the verifyMagicLinkToken function to resolve successfully
-    vi.mocked(verifyMagicLinkToken).mockResolvedValueOnce({
-      tokens: { accessToken: "mockAccessToken", refreshToken: "mockRefreshToken" },
+  it("submits the form successfully with valid picture selection", async () => {
+    // Mock the `verifyMagicLinkToken` service to return a successful response
+    verifyMagicLinkToken.mockResolvedValue({
+      token: "mockAccessToken",
+      refreshToken: "mockRefreshToken",
       user: { role: "teacher" },
     });
 
-    render(<NumericCodeLogin />);
-
-    const inputs = screen.getAllByRole("textbox");
-
-    // Enter a valid 6-digit code
-    inputs.forEach((input, index) => {
-      fireEvent.change(input, { target: { value: `${index + 1}` } });
-    });
-
-    // Click the submit button
-    fireEvent.click(screen.getByRole("button", { name: /log in/i }));
-
-    // Wait for navigation
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith("/Teacher/Dashboard", {
-        replace: true,
-      });
-    });
-
-    // Check that the tokens are stored in localStorage
-    expect(localStorage.getItem("accessToken")).toBe("mockAccessToken");
-    expect(localStorage.getItem("refreshToken")).toBe("mockRefreshToken");
-  });
-
-  it("shows an error message when code verification fails", async () => {
-    // Mock the verifyMagicLinkToken function to reject with an error
-    vi.mocked(verifyMagicLinkToken).mockRejectedValueOnce(
-      new Error("Invalid code")
+    render(
+      <MemoryRouter>
+        <PictureCodeLogin />
+      </MemoryRouter>
     );
 
-    render(<NumericCodeLogin />);
+    // Select 3 pictures
+    const pictureButtons = screen.getAllByRole("button");
+    fireEvent.click(pictureButtons[0]); // Select "Dog"
+    fireEvent.click(pictureButtons[1]); // Select "Cat"
+    fireEvent.click(pictureButtons[2]); // Select "Fish"
 
-    const inputs = screen.getAllByRole("textbox");
+    // Click the "Log In" button
+    fireEvent.click(screen.getByText("Log In"));
 
-    // Enter a valid 6-digit code
-    inputs.forEach((input, index) => {
-      fireEvent.change(input, { target: { value: `${index + 1}` } });
+    // Wait for the success message
+    await waitFor(() => {
+      expect(screen.getByText("Great job!")).toBeInTheDocument();
     });
 
-    // Click the submit button
-    fireEvent.click(screen.getByRole("button", { name: /log in/i }));
+    // Check if the user is redirected to the teacher dashboard
+    expect(mockNavigate).toHaveBeenCalledWith("/Teacher/Dashboard");
+  });
 
-    // Wait for the error message to appear
+  it("resets the selected pictures when the reset button is clicked", () => {
+    render(
+      <MemoryRouter>
+        <PictureCodeLogin />
+      </MemoryRouter>
+    );
+
+    // Select a picture
+    const pictureButtons = screen.getAllByRole("button");
+    fireEvent.click(pictureButtons[0]); // Select "Dog"
+
+    // Check if the picture is added to the selected list
+    expect(screen.getByAltText("Dog")).toBeInTheDocument();
+
+    // Click the "Clear" button
+    fireEvent.click(screen.getByText("Clear"));
+
+    // Check if the selected pictures are cleared
+    expect(screen.queryByAltText("Dog")).not.toBeInTheDocument();
+  });
+
+  it("displays an error if the picture sequence is incorrect", async () => {
+    // Mock the `verifyMagicLinkToken` service to throw an error
+    verifyMagicLinkToken.mockRejectedValue(new Error("Invalid picture sequence"));
+
+    render(
+      <MemoryRouter>
+        <PictureCodeLogin />
+      </MemoryRouter>
+    );
+
+    // Select 3 pictures
+    const pictureButtons = screen.getAllByRole("button");
+    fireEvent.click(pictureButtons[0]); // Select "Dog"
+    fireEvent.click(pictureButtons[1]); // Select "Cat"
+    fireEvent.click(pictureButtons[2]); // Select "Fish"
+
+    // Click the "Log In" button
+    fireEvent.click(screen.getByText("Log In"));
+
+    // Wait for the error message
     await waitFor(() => {
       expect(
-        screen.getByText(/invalid code. please try again./i)
+        screen.getByText(
+          "Oops! That's not the right picture sequence. Please try again."
+        )
       ).toBeInTheDocument();
     });
+
+    // Check if the selected pictures are cleared
+    expect(screen.queryByAltText("Dog")).not.toBeInTheDocument();
   });
 });

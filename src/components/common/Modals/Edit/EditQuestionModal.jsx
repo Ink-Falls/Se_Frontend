@@ -1,36 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Loader } from 'lucide-react';
-import { editQuestion } from '../../../../services/assessmentService';
+import React, { useState, useEffect } from "react";
+import { X, Plus, Trash2, Loader } from "lucide-react";
+import { editQuestion } from "../../../../services/assessmentService";
 
-const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess }) => {
+const EditQuestionModal = ({
+  isOpen,
+  onClose,
+  question,
+  assessmentId,
+  onSuccess,
+}) => {
   const [formData, setFormData] = useState({
-    question_text: '',
-    question_type: 'multiple_choice',
+    question_text: "",
+    question_type: "multiple_choice",
     points: 0,
     order_index: 0,
-    media_url: '',
+    media_url: "",
     options: [],
-    answer_key: '',
-    word_limit: 0
+    answer_key: "",
+    word_limit: 0,
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (question) {
       setFormData({
-        question_text: question.question_text || '',
-        question_type: question.question_type || 'multiple_choice',
+        question_text: question.question_text || "",
+        question_type: question.question_type || "multiple_choice",
         points: question.points || 0,
         order_index: question.order_index || 0,
-        media_url: question.media_url || '',
-        options: question.options?.map(opt => ({
-          id: opt.id,
-          text: opt.option_text || opt.text,
-          is_correct: opt.is_correct
-        })) || [],
-        answer_key: question.answer_key || '',
-        word_limit: question.word_limit || 0
+        media_url: question.media_url || "",
+        options:
+          question.options?.map((opt) => ({
+            id: opt.id,
+            text: opt.option_text || opt.text,
+            is_correct: opt.is_correct,
+          })) || [],
+        answer_key: question.answer_key || "",
+        word_limit: question.word_limit || 0,
       });
     }
   }, [question]);
@@ -38,7 +45,7 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
       const requestData = {
@@ -66,7 +73,7 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
         case "true_false":
           requestData.options = [
             { text: "True", is_correct: formData.answer_key === "true" },
-            { text: "False", is_correct: formData.answer_key === "false" }
+            { text: "False", is_correct: formData.answer_key === "false" },
           ];
           delete requestData.answer_key;
           break;
@@ -86,13 +93,17 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
           throw new Error("Invalid question type");
       }
 
-      const response = await editQuestion(assessmentId, question.id, requestData);
-      
+      const response = await editQuestion(
+        assessmentId,
+        question.id,
+        requestData
+      );
+
       if (response.success) {
         onSuccess(response.question);
         onClose();
       } else {
-        throw new Error(response.message || 'Failed to update question');
+        throw new Error(response.message || "Failed to update question");
       }
     } catch (err) {
       setError(err.message);
@@ -102,25 +113,25 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
   };
 
   const addOption = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      options: [...prev.options, { text: '', is_correct: false }]
+      options: [...prev.options, { text: "", is_correct: false }],
     }));
   };
 
   const removeOption = (index) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      options: prev.options.filter((_, i) => i !== index)
+      options: prev.options.filter((_, i) => i !== index),
     }));
   };
 
   const updateOption = (index, field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      options: prev.options.map((opt, i) => 
+      options: prev.options.map((opt, i) =>
         i === index ? { ...opt, [field]: value } : opt
-      )
+      ),
     }));
   };
 
@@ -129,21 +140,34 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
       case "multiple_choice":
         return (
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700">Options</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Options
+            </label>
             {formData.options.map((option, index) => (
               <div key={index} className="flex gap-2 items-center">
+                <div className="flex items-center h-5">
+                  <input
+                    type="radio"
+                    checked={option.is_correct}
+                    onChange={() => {
+                      const updatedOptions = formData.options.map((opt, i) => ({
+                        ...opt,
+                        is_correct: i === index,
+                      }));
+                      setFormData((prev) => ({
+                        ...prev,
+                        options: updatedOptions,
+                      }));
+                    }}
+                    className="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300"
+                  />
+                </div>
                 <input
                   type="text"
                   value={option.text}
-                  onChange={(e) => updateOption(index, 'text', e.target.value)}
+                  onChange={(e) => updateOption(index, "text", e.target.value)}
                   className="flex-1 rounded-md border border-gray-300 px-3 py-2"
-                  placeholder="Option text"
-                />
-                <input
-                  type="checkbox"
-                  checked={option.is_correct}
-                  onChange={(e) => updateOption(index, 'is_correct', e.target.checked)}
-                  className="h-4 w-4 text-yellow-600 rounded"
+                  placeholder={`Option ${index + 1}`}
                 />
                 <button
                   type="button"
@@ -169,45 +193,57 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
       case "true_false":
         return (
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700">Correct Answer</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Correct Answer
+            </label>
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <input
                   type="radio"
                   id="true"
                   name="correct_answer"
-                  checked={formData.options.find(opt => opt.text === "True")?.is_correct || false}
+                  checked={
+                    formData.options.find((opt) => opt.text === "True")
+                      ?.is_correct || false
+                  }
                   onChange={() => {
-                    setFormData(prev => ({
+                    setFormData((prev) => ({
                       ...prev,
                       options: [
                         { text: "True", is_correct: true },
-                        { text: "False", is_correct: false }
-                      ]
+                        { text: "False", is_correct: false },
+                      ],
                     }));
                   }}
                   className="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300"
                 />
-                <label htmlFor="true" className="text-sm text-gray-700">True</label>
+                <label htmlFor="true" className="text-sm text-gray-700">
+                  True
+                </label>
               </div>
               <div className="flex items-center gap-2">
                 <input
                   type="radio"
                   id="false"
                   name="correct_answer"
-                  checked={formData.options.find(opt => opt.text === "False")?.is_correct || false}
+                  checked={
+                    formData.options.find((opt) => opt.text === "False")
+                      ?.is_correct || false
+                  }
                   onChange={() => {
-                    setFormData(prev => ({
+                    setFormData((prev) => ({
                       ...prev,
                       options: [
                         { text: "True", is_correct: false },
-                        { text: "False", is_correct: true }
-                      ]
+                        { text: "False", is_correct: true },
+                      ],
                     }));
                   }}
                   className="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300"
                 />
-                <label htmlFor="false" className="text-sm text-gray-700">False</label>
+                <label htmlFor="false" className="text-sm text-gray-700">
+                  False
+                </label>
               </div>
             </div>
           </div>
@@ -224,7 +260,9 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
       <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
         <div className="p-6 border-b flex justify-between items-center">
           <h2 className="text-xl font-semibold">Edit Question</h2>
-          <button onClick={onClose}><X size={24} /></button>
+          <button onClick={onClose}>
+            <X size={24} />
+          </button>
         </div>
 
         <div className="p-6 overflow-y-auto">
@@ -236,11 +274,21 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="question_text"className="block text-sm font-medium text-gray-700">Question Text</label>
+              <label
+                htmlFor="question_text"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Question Text
+              </label>
               <textarea
                 id="question_text"
                 value={formData.question_text}
-                onChange={(e) => setFormData(prev => ({ ...prev, question_text: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    question_text: e.target.value,
+                  }))
+                }
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                 rows={3}
                 required
@@ -249,11 +297,21 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="question_type" className="block text-sm font-medium text-gray-700">Question Type</label>
+                <label
+                  htmlFor="question_type"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Question Type
+                </label>
                 <select
                   id="question_type"
                   value={formData.question_type}
-                  onChange={(e) => setFormData(prev => ({ ...prev, question_type: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      question_type: e.target.value,
+                    }))
+                  }
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                 >
                   <option value="multiple_choice">Multiple Choice</option>
@@ -264,12 +322,22 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
               </div>
 
               <div>
-                <label htmlFor="points" className="block text-sm font-medium text-gray-700">Points</label>
+                <label
+                  htmlFor="points"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Points
+                </label>
                 <input
                   id="points"
                   type="number"
                   value={formData.points}
-                  onChange={(e) => setFormData(prev => ({ ...prev, points: parseInt(e.target.value) }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      points: parseInt(e.target.value),
+                    }))
+                  }
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   required
                 />
@@ -278,12 +346,19 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
 
             {renderQuestionFields()}
 
-            {['short_answer', 'essay'].includes(formData.question_type) && (
+            {["short_answer", "essay"].includes(formData.question_type) && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">Answer Key</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Answer Key
+                </label>
                 <textarea
                   value={formData.answer_key}
-                  onChange={(e) => setFormData(prev => ({ ...prev, answer_key: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      answer_key: e.target.value,
+                    }))
+                  }
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   rows={3}
                 />
@@ -312,7 +387,7 @@ const EditQuestionModal = ({ isOpen, onClose, question, assessmentId, onSuccess 
                 Saving...
               </>
             ) : (
-              'Save Changes'
+              "Save Changes"
             )}
           </button>
         </div>

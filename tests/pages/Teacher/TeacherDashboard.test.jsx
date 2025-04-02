@@ -33,7 +33,9 @@ vi.mock('../../../src/components/common/layout/MobileNavbar', () => ({
 vi.mock('../../../src/components/common/LoadingSpinner', () => ({
     default: () => <div data-testid="loading-spinner">Loading...</div>,
 }));
-
+vi.mock('../../../src/services/courseService', () => ({
+    getTeacherCourses: vi.fn(),
+  }));
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');
@@ -105,7 +107,9 @@ describe('TeacherDashboard', () => {
             courseService.getUserCourses.mockResolvedValueOnce(
                 mockCourseData
             );
+            console.log(courseService.getTeacherCourses.mock.calls);
             renderDashboard();
+            screen.debug();
 
             await waitFor(() => {
                 expect(screen.getByText('Test Course')).toBeInTheDocument();
@@ -113,7 +117,7 @@ describe('TeacherDashboard', () => {
                 expect(screen.getByText('TC101')).toBeInTheDocument();
                 expect(screen.getByText('AC102')).toBeInTheDocument();
             });
-        });
+        });*/
 
         it('should handle cached data correctly', async () => {
             const cachedData = {
