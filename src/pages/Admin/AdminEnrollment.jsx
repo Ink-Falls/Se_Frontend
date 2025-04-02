@@ -40,6 +40,8 @@ function AdminEnrollment() {
     pending: 0,
     rejected: 0
   });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [allEnrolleesData, setAllEnrolleesData] = useState([]);
 
   const navItems = [
     { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
@@ -79,9 +81,11 @@ function AdminEnrollment() {
     setCurrentPage(newPage);
   };
 
-  const handleFilterChange = (status) => {
+  // Update handleFilterChange to accept search parameter
+  const handleFilterChange = (status, search = '') => {
     setFilterStatus(status);
-    setCurrentPage(1); // Reset to first page when filter changes
+    setCurrentPage(1);
+    fetchEnrollments(1, itemsPerPage, status, search);
   };
 
   const handleApprove = async (enrolleeId) => {
@@ -248,6 +252,31 @@ function AdminEnrollment() {
     }
   };
 
+  const handleSearch = async (query, filteredResults) => {
+    setSearchQuery(query);
+    if (query.trim() === '') {
+      // If search is cleared, show original data
+      await fetchEnrollments();
+    } else {
+      // Update enrollees with filtered results
+      setEnrollees(filteredResults);
+      setTotalItems(filteredResults.length);
+      setTotalPages(Math.ceil(filteredResults.length / itemsPerPage));
+    }
+  };
+
+  const handleSearchCancel = () => {
+    setSearchQuery("");
+    setCurrentPage(1);
+    if (allEnrolleesData.length > 0) {
+      const totalItems = allEnrolleesData.length;
+      const totalPagesCount = Math.ceil(totalItems / 10);
+      setTotalPages(totalPagesCount);
+      setTotalItems(totalItems);
+      setEnrollees(allEnrolleesData.slice(0, 10));
+    }
+  };
+
   const EmptyState = () => (
     <div className="flex flex-col items-center justify-center py-16 px-4">
       <InboxIcon size={64} className="text-gray-300 mb-4" />
@@ -345,6 +374,9 @@ function AdminEnrollment() {
               currentFilter={filterStatus}
               itemsPerPage={itemsPerPage}
               totalItems={totalItems}
+              onSearch={handleSearch}
+              onSearchCancel={handleSearchCancel}
+              searchQuery={searchQuery}
             />
           )}
         </div>

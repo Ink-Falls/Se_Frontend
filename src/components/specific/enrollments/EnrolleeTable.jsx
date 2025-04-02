@@ -6,6 +6,7 @@ import {
   Search,
   FileText,
   SquarePen,
+  X, // Add X icon import
 } from "lucide-react";
 import EnrolleeStatusModal from "/src/components/common/Modals/Edit/EnrolleeStatusModal.jsx";
 import ReportViewerModal from "../../common/Modals/View/ReportViewerModal";
@@ -17,17 +18,19 @@ function EnrolleeTable({
   onDeleteSelected,
   onApprove,
   onReject,
-    currentPage,
+  currentPage,
   totalPages,
   onPageChange,
   onFilterChange,
   currentFilter,
   itemsPerPage,
   totalItems,
+  onSearch,
+  onSearchCancel,
+  searchQuery,
 }) {
   const [selectedIds, setSelectedIds] = useState([]);
   const [filterStatus, setFilterStatus] = useState("All");
-  const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState(null); // Add this line
 
   // State for modals
@@ -179,6 +182,20 @@ function EnrolleeTable({
     }
   };
 
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    // Filter enrollees based on first name and last name only
+    const filtered = enrollees.filter(enrollee => {
+      const searchTerm = query.toLowerCase();
+      const firstName = enrollee.fullName.split(' ')[0].toLowerCase();
+      const lastName = enrollee.fullName.split(' ').pop().toLowerCase();
+      
+      return firstName.includes(searchTerm) || lastName.includes(searchTerm);
+    });
+    
+    onSearch(query, filtered);
+  };
+
   // Add the getStatusStyle function
   const getStatusStyle = (status) => {
     switch (status.toLowerCase()) {
@@ -225,18 +242,24 @@ function EnrolleeTable({
             </div>
           </div>
 
-          {/* Search Bar */}
+          {/* Updated Search Bar */}
           <div className="relative w-full md:w-auto py-2 md:py-[0.2vw]">
             <input
               type="text"
-              placeholder="Search by name..."
+              placeholder="Search enrollees..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
               className="w-full md:w-[15vw] pl-10 md:pl-[2vw] pr-4 md:pr-[1vw] py-2 md:py-[0.5vw] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
             />
-            <div className="absolute inset-y-0 left-0 pl-3 md:pl-[0.5vw] flex items-center pointer-events-none">
-              <Search size={16} className="text-[#475569] md:w-[1vw] md:h-[1vw]" />
-            </div>
+            <Search className="absolute left-3 md:left-[0.5vw] top-1/2 -translate-y-1/2 text-[#475569] w-5 h-5 md:w-[1vw] md:h-[1vw]" />
+            {searchQuery && (
+              <button
+                onClick={onSearchCancel}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
         </div>
 
