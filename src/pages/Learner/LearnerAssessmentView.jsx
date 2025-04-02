@@ -174,15 +174,15 @@ const LearnerAssessmentView = () => {
         setError(null);
 
         // Get submission data which includes assessment details
-        const submissionResponse = await getUserSubmission(assessment.id, showAnswers);
+        const submissionResponse = await getUserSubmission(assessment.id, true);
         
         if (submissionResponse?.success) {
-          // Set submission data
-          if (submissionResponse.submission) {
+          // Check specifically for in-progress submission
+          if (submissionResponse.submission?.status === 'in_progress') {
             setExistingSubmission(submissionResponse.submission);
+            console.log('Found in-progress submission:', submissionResponse.submission);
           }
           
-          // Set assessment data from the submission response
           if (submissionResponse.assessment) {
             const assessmentData = {
               ...submissionResponse.assessment,
@@ -323,10 +323,40 @@ const LearnerAssessmentView = () => {
     setIsEditing(false);
   };
 
-  const handleStartNewAttempt = () => {
-    navigate(`/Learner/Assessment/Attempt/${assessment.id}`, {
-      state: { assessment }
-    });
+  const handleStartNewAttempt = async () => {
+    try {
+      const storedSubmissionData = localStorage.getItem(`ongoing_assessment_${assessment.id}`);
+      let storedSubmissionId = null;
+      
+      if (storedSubmissionData) {
+        const parsedData = JSON.parse(storedSubmissionData);
+        storedSubmissionId = parsedData.submissionId;
+        console.log('Found stored submission before start:', storedSubmissionId);
+      }
+  
+      const submissionResponse = await getUserSubmission(assessment.id, true);
+      let existingSubmission = null;
+  
+      if (submissionResponse.success && submissionResponse.submission?.status === 'in_progress') {
+        existingSubmission = submissionResponse.submission;
+        console.log('Submission validation:', {
+          storedId: storedSubmissionId,
+          existingId: existingSubmission.id,
+          matches: storedSubmissionId === existingSubmission.id,
+          status: existingSubmission.status
+        });
+      }
+  
+      navigate(`/Learner/Assessment/Attempt/${assessment.id}`, {
+        state: { 
+          assessment,
+          submission: existingSubmission 
+        }
+      });
+    } catch (error) {
+      console.error('Error validating submission:', error);
+      setError('Failed to start assessment. Please try again.');
+    }
   };
 
   const renderHeader = () => (
@@ -373,12 +403,12 @@ const LearnerAssessmentView = () => {
   );
 
   const renderSubmissionStatus = () => {
-    if (error) {
+    if (error || routeError === 'Maximum attempts reached') {
       return (
         <div className="text-center py-8">
           <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
           <h3 className="text-xl font-medium text-gray-900 mt-4 mb-2">
-            {error}
+            {location.state?.errorDetails || error || "Maximum number of attempts has been reached"}
           </h3>
           <button
             onClick={() => navigate("/Learner/Assessment")}
@@ -390,30 +420,35 @@ const LearnerAssessmentView = () => {
       );
     }
 
-    if (!initialSubmission) {
-      const pendingSubmission = submissions?.find(s => s.status === 'in_progress');
-      if (pendingSubmission) {
-        return (
-          <div className="text-center py-8">
-            <Clock className="mx-auto h-12 w-12 text-yellow-500" />
-            <h3 className="text-xl font-medium text-gray-900 mb-4">
-              Assessment In Progress
-            </h3>
-            <p className="text-gray-500 mb-6">
-              You have an unfinished attempt that needs to be completed.
-            </p>
-            <button
-              onClick={() => navigate(`/Learner/Assessment/Attempt/${assessment.id}`, {
-                state: { assessment, submission: pendingSubmission }
-              })}
-              className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
-            >
-              Resume Attempt
-            </button>
+    // Check for resumable submission from various sources
+    const { isResumable: hasStoredSubmission } = location.state || {};
+    const isInProgress = initialSubmission?.status === 'in_progress';
+    const hasNotSubmitted = isInProgress && !initialSubmission?.submit_time;
+    const canResume = hasStoredSubmission || hasNotSubmitted || existingSubmission?.status === 'in_progress';
+    
+    if (canResume) {
+      return (
+        <div className="text-center py-8">
+          <div className="text-gray-400 mb-4">
+            <Clock size={48} className="mx-auto" />
           </div>
-        );
-      }
-      
+          <h3 className="text-xl font-medium text-gray-900 mb-4">
+            Assessment In Progress
+          </h3>
+          <p className="text-gray-500 mb-6">
+            You have an unfinished attempt. Would you like to resume?
+          </p>
+          <button
+            onClick={handleStartNewAttempt}
+            className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
+          >
+            Resume Attempt
+          </button>
+        </div>
+      );
+    }
+
+    if (!initialSubmission) {
       return (
         <div className="text-center py-8">
           <div className="text-gray-400 mb-4">
@@ -435,69 +470,44 @@ const LearnerAssessmentView = () => {
       );
     }
 
-    // Check if there's a resumable attempt
-    const isResumable = initialSubmission.status === 'in_progress' && !initialSubmission.submit_time;
-
+    // Show completed submission
     return (
       <div className="space-y-6">
         <div className="text-center">
-          {isResumable ? (
-            <>
-              <Clock className="mx-auto h-12 w-12 text-yellow-500" />
-              <h3 className="mt-2 text-lg font-medium">Assessment In Progress</h3>
-              <p className="text-sm text-gray-500">
-                Started on: {new Date(initialSubmission.start_time).toLocaleString()}
-              </p>
-              <div className="mt-6 flex justify-center gap-4">
-                <button
-                  onClick={() => navigate(`/Learner/Assessment/Attempt/${assessment.id}`, {
-                    state: { assessment, submission: initialSubmission }
-                  })}
-                  className="px-6 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
-                >
-                  Resume Attempt
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <Check className="mx-auto h-12 w-12 text-green-500" />
-              <h3 className="mt-2 text-lg font-medium">Latest Attempt</h3>
-              <p className="text-sm text-gray-500">
-                Submitted on: {new Date(initialSubmission.submit_time).toLocaleString()}
-              </p>
-              
-              {/* Show score if available */}
-              {initialSubmission.total_score !== undefined && (
-                <div className="mt-4 text-2xl font-bold">
-                  Score: {calculateTotalPoints(initialSubmission.answers).earned}/{calculateTotalPoints(initialSubmission.answers).total}
-                </div>
-              )}
-
-              <div className="mt-6 flex justify-center gap-4">
-                <button
-                  onClick={() => setShowAnswers(!showAnswers)}
-                  className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
-                >
-                  {showAnswers ? 'Hide My Answers' : 'Show My Answers'}
-                </button>
-                <button
-                  onClick={handleStartNewAttempt}
-                  className="px-4 py-2 border-2 border-[#212529] text-[#212529] rounded-md hover:bg-[#F6BA18] hover:border-[#F6BA18]"
-                >
-                  Start New Attempt
-                </button>
-              </div>
-            </>
+          <Check className="mx-auto h-12 w-12 text-green-500" />
+          <h3 className="mt-2 text-lg font-medium">Latest Attempt</h3>
+          <p className="text-sm text-gray-500">
+            Submitted on: {new Date(initialSubmission.submit_time).toLocaleString()}
+          </p>
+          
+          {initialSubmission.total_score !== undefined && (
+            <div className="mt-4 text-2xl font-bold">
+              Score: {calculateTotalPoints(initialSubmission.answers).earned}/{calculateTotalPoints(initialSubmission.answers).total}
+            </div>
           )}
+
+          <div className="mt-6 flex justify-center gap-4">
+            <button
+              onClick={() => setShowAnswers(!showAnswers)}
+              className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
+            >
+              {showAnswers ? 'Hide My Answers' : 'Show My Answers'}
+            </button>
+            <button
+              onClick={handleStartNewAttempt}
+              className="px-4 py-2 border-2 border-[#212529] text-[#212529] rounded-md hover:bg-[#F6BA18] hover:border-[#F6BA18]"
+            >
+              Start New Attempt
+            </button>
+          </div>
         </div>
 
         {/* Show answers section */}
-        {showAnswers && (
+        {showAnswers && initialSubmission.answers && (
           <div className="mt-6 space-y-6">
             <h4 className="text-lg font-medium text-gray-900">Your Answers</h4>
             {questions.map((question, index) => {
-              const answer = initialSubmission.answers?.find(a => a.question_id === question.id);
+              const answer = initialSubmission.answers.find(a => a.question_id === question.id);
               return (
                 <div key={question.id} className="bg-white p-6 rounded-lg shadow-sm">
                   <div className="flex justify-between items-start mb-4">
