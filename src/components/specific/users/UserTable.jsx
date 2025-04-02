@@ -25,53 +25,12 @@ const UserTable = ({
   totalPages,
   onPageChange,
   onGenerateReport,
+  sortConfig,
+  onSort,
 }) => {
   const ROWS_PER_PAGE = 10;
 
-  const [sortOption, setSortOption] = useState("none");
   const [pageInput, setPageInput] = useState(currentPage.toString());
-
-  const getSortedUsers = (users) => {
-    if (!users) return [];
-    const sortedUsers = [...users];
-
-    switch (sortOption) {
-      case "name-asc":
-        return sortedUsers.sort((a, b) => {
-          const nameA = `${a.first_name || ""} ${a.middle_initial || ""} ${
-            a.last_name || ""
-          }`
-            .trim()
-            .toLowerCase();
-          const nameB = `${b.first_name || ""} ${b.middle_initial || ""} ${
-            b.last_name || ""
-          }`
-            .trim()
-            .toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
-      case "name-desc":
-        return sortedUsers.sort((a, b) => {
-          const nameA = `${a.first_name || ""} ${a.middle_initial || ""} ${
-            a.last_name || ""
-          }`
-            .trim()
-            .toLowerCase();
-          const nameB = `${b.first_name || ""} ${b.middle_initial || ""} ${
-            b.last_name || ""
-          }`
-            .trim()
-            .toLowerCase();
-          return nameB.localeCompare(nameA);
-        });
-      case "id-asc":
-        return sortedUsers.sort((a, b) => a.id - b.id);
-      case "id-desc":
-        return sortedUsers.sort((a, b) => b.id - a.id);
-      default:
-        return sortedUsers;
-    }
-  };
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -158,15 +117,18 @@ const UserTable = ({
 
             <div className="relative py-2 md:py-[0.2vw]">
               <select
-                value={sortOption}
-                onChange={(e) => setSortOption(e.target.value)}
+                value={`${sortConfig.key || 'none'}-${sortConfig.direction}`}
+                onChange={(e) => {
+                  const [key, direction] = e.target.value.split("-");
+                  onSort(key === "none" ? null : key, direction);
+                }}
                 className="pl-10 md:pl-[2vw] pr-4 md:pr-[1vw] py-2 md:py-[0.5vw] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none w-full md:w-[12vw]"
               >
-                <option value="none">Sort By</option>
-                <option value="name-asc">Name (A-Z)</option>
-                <option value="name-desc">Name (Z-A)</option>
-                <option value="id-asc">User ID (Ascending)</option>
-                <option value="id-desc">User ID (Descending)</option>
+                <option value="none-asc">Sort By</option>
+                <option value="id-asc">ID (Ascending)</option>
+                <option value="id-desc">ID (Descending)</option>
+                <option value="fullName-asc">Name (A-Z)</option>
+                <option value="fullName-desc">Name (Z-A)</option>
               </select>
               <div className="absolute inset-y-0 left-0 pl-3 md:pl-[0.5vw] flex items-center pointer-events-none">
                 <Filter
@@ -268,7 +230,7 @@ const UserTable = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {getSortedUsers(users).map((user, index) => (
+            {users.map((user, index) => (
               <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <input
