@@ -7,13 +7,38 @@ function EditUserModal({ user, onClose, onSave }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({});
 
   useEffect(() => {
     setEditedUser(user);
   }, [user]);
 
+  // Add email validation function
+  const validateEmail = (email) => {
+    const validTLDs = ["com", "edu", "ph", "org", "net", "gov", "edu.ph"];
+
+    if (!email) {
+      return "Email is required";
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return "Please enter a valid email address";
+    }
+
+    const domain = email.split("@")[1];
+    if (!validTLDs.some((tld) => domain.toLowerCase().endsWith(`.${tld}`))) {
+      return "Please enter a valid email domain";
+    }
+
+    return null;
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    // Set touched state for the field
+    setTouched((prev) => ({ ...prev, [name]: true }));
 
     if (name === "contact_no") {
       // Clean and format contact number
@@ -50,12 +75,31 @@ function EditUserModal({ user, onClose, onSave }) {
         [name]: value,
       }));
     }
+
+    // Clear field error when user types
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+
+    // Validate email as user types
+    if (name === "email") {
+      const emailError = validateEmail(value);
+      if (emailError) {
+        setFieldErrors((prev) => ({ ...prev, email: emailError }));
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setFieldErrors({});
+
+    // Validate email before submission
+    const emailError = validateEmail(editedUser.email);
+    if (emailError) {
+      setFieldErrors((prev) => ({ ...prev, email: emailError }));
+      setLoading(false);
+      return;
+    }
 
     try {
       const { password, ...userWithoutPassword } = editedUser;
@@ -78,6 +122,8 @@ function EditUserModal({ user, onClose, onSave }) {
         });
       } else if (err.response?.data?.errors) {
         setFieldErrors(err.response.data.errors);
+      } else {
+        setError(errorMessage);
       }
     } finally {
       setLoading(false);
