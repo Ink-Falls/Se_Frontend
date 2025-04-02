@@ -16,7 +16,7 @@ import fetchWithInterceptor from "./apiService";
  * @returns {Promise<Array<object>>} Array of enrollment objects.
  * @throws {Error} If the API request fails or authentication is missing.
  */
-export const getAllEnrollments = async (options = {}) => {
+const getAllEnrollments = async (options = {}) => {
   try {
     const token = localStorage.getItem("token");
     if (!token) {

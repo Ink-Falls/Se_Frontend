@@ -332,10 +332,10 @@ function AdminEnrollment() {
             statusCounts.find((status) => status.status === "pending")?.count ||
             0;
           
-          setTotalItems(totalItems);
-          setApprovedCount(approvedCount);
-          setPendingCount(pendingCount);
-          setRejectedCount(rejectedCount);
+          setTotalItems(totalEnrollments);
+          setApprovedCount(totalApproved);
+          setPendingCount(totalPending);
+          setRejectedCount(totalRejected);
         }
       } catch (error) {
         console.error("Error fetching total counts:", error);
@@ -416,10 +416,10 @@ function AdminEnrollment() {
               approvedEnrollees={approvedCount}
               pendingEnrollees={pendingCount}
               rejectedEnrollees={rejectedCount}*/
-              totalEnrollees={totalEnrollments}
-              approvedEnrollees={totalApproved}
-              pendingEnrollees={totalPending}
-              rejectedEnrollees={totalRejected}
+              totalEnrollees={totalItems}
+              approvedEnrollees={approvedCount}
+              pendingEnrollees={pendingCount}
+              rejectedEnrollees={rejectedCount}
             />
           </div>
         )}
