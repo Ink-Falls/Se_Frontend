@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/images/ARALKADEMYLOGO.png";
 import { createEnrollment } from "../../services/enrollmentService";
+import { Eye, EyeOff } from "lucide-react";
 
 function NewEnrollment() {
   const [formData, setFormData] = useState({
@@ -20,6 +21,8 @@ function NewEnrollment() {
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const navigate = useNavigate();
 
@@ -302,16 +305,62 @@ function NewEnrollment() {
                       >
                         {field.label}
                       </label>
-                      <input
-                        type={field.type}
-                        id={field.name}
-                        name={field.name}
-                        value={formData[field.name]}
-                        onChange={handleInputChange}
-                        required={field.required}
-                        className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] max-lg:text-[2.5vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
-                        placeholder={`Enter your ${field.label.toLowerCase()}`}
-                      />
+                      {field.name === "password" ||
+                      field.name === "confirm_password" ? (
+                        <div className="relative">
+                          <input
+                            type={
+                              field.name === "password"
+                                ? showPassword
+                                  ? "text"
+                                  : "password"
+                                : showConfirmPassword
+                                ? "text"
+                                : "password"
+                            }
+                            id={field.name}
+                            name={field.name}
+                            value={formData[field.name]}
+                            onChange={handleInputChange}
+                            required={field.required}
+                            className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] max-lg:text-[2.5vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529] pr-[10vw] lg:pr-[3vw]"
+                            placeholder={`Enter your ${field.label.toLowerCase()}`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              field.name === "password"
+                                ? setShowPassword(!showPassword)
+                                : setShowConfirmPassword(!showConfirmPassword)
+                            }
+                            className="absolute right-[3vw] lg:right-[1vw] top-1/2 transform -translate-y-1/2 text-gray-500"
+                            aria-label={`Toggle ${field.label.toLowerCase()} visibility`}
+                          >
+                            {field.name === "password" ? (
+                              showPassword ? (
+                                <EyeOff className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
+                              ) : (
+                                <Eye className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
+                              )
+                            ) : showConfirmPassword ? (
+                              <EyeOff className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
+                            ) : (
+                              <Eye className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <input
+                          type={field.type}
+                          id={field.name}
+                          name={field.name}
+                          value={formData[field.name]}
+                          onChange={handleInputChange}
+                          required={field.required}
+                          className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] max-lg:text-[2.5vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                          placeholder={`Enter your ${field.label.toLowerCase()}`}
+                        />
+                      )}
                       <div className="min-h-[0vw]">
                         {errors[field.name] && (
                           <p className="text-red-500 mt-1 text-xs">
