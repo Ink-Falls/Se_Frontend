@@ -101,7 +101,7 @@ function NumericCodeLogin() {
       }
     } catch (err) {
       console.error("Code verification failed:", err);
-      setError(err.message || "Invalid code. Please try again.");
+      setError("Invalid code. Please try again.");
     } finally {
       setIsLoading(false);
     }

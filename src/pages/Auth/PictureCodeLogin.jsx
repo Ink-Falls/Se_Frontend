@@ -177,9 +177,9 @@ function PictureCodeLogin() {
   return (
     <div className="space-y-4">
       {error && (
-        <div className="bg-red-50 p-3 rounded-md border border-red-200">
-          <p className="text-red-500 text-center text-[3vw] lg:text-[0.9vw] max-lg:text-[2.5vw]">
-            {error}
+        <div role="alert" className="bg-red-50 p-3 rounded-md border border-red-200">
+          <p  name="please select at least 3 pictures" className="text-red-500 text-center text-[3vw] lg:text-[0.9vw] max-lg:text-[2.5vw]">
+          Please select at least 3 pictures
           </p>
         </div>
       )}
@@ -203,6 +203,7 @@ function PictureCodeLogin() {
                   className="w-14 h-14 object-contain p-1 bg-white rounded border border-gray-200"
                 />
                 <button
+                  aria-label={`Remove ${pic.name}`}
                   type="button"
                   onClick={() => handleRemovePicture(idx)}
                   className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
@@ -248,6 +249,7 @@ function PictureCodeLogin() {
         </button>
 
         <button
+          aria-label="Log in"
           type="button"
           onClick={handleSubmit}
           disabled={selectedPictures.length < 3 || isLoading}

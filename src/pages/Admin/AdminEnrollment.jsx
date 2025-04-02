@@ -35,6 +35,16 @@ function AdminEnrollment() {
   const [rejectedCount, setRejectedCount] = useState(0);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+  const [itemsPerPage] = useState(10);
+  const [filterStatus, setFilterStatus] = useState('');
+  const [overallStats, setOverallStats] = useState({
+    total: 0,
+    approved: 0,
+    pending: 0,
+    rejected: 0
+  });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [allEnrolleesData, setAllEnrolleesData] = useState([]);
 
   const navItems = [
     { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
@@ -51,81 +61,15 @@ function AdminEnrollment() {
     },
   ];
 
+  // Fetch overall stats
+  useEffect(() => {
+    fetchOverallStats();
+  }, [filterStatus]); // Only re-fetch when filter changes
+
   // Fetch enrollments data
   useEffect(() => {
-    const fetchEnrollments = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await getAllEnrollments(currentPage);
-
-        // Handle direct array response or object with enrollments property
-        let enrollmentsList = [];
-        if (Array.isArray(response)) {
-          // Response is directly an array of enrollments
-          enrollmentsList = response;
-        } else if (response?.data && Array.isArray(response.data)) {
-          // Response may be wrapped in data property (common with axios)
-          enrollmentsList = response.data;
-        } else if (
-          response?.enrollments &&
-          Array.isArray(response.enrollments)
-        ) {
-          // Response has an enrollments property
-          enrollmentsList = response.enrollments;
-        }
-
-        // Transform the data to match the expected format for the components
-        const transformedEnrollees = enrollmentsList.map((enrollment) => ({
-          id: enrollment.enrollment_id,
-          fullName: `${enrollment.first_name} ${
-            enrollment.middle_initial || ""
-          } ${enrollment.last_name}`,
-          status:
-            enrollment.status.charAt(0).toUpperCase() +
-            enrollment.status.slice(1),
-          enrollmentDate: new Date(enrollment.createdAt).toLocaleDateString(),
-          email: enrollment.email,
-          contactNo: enrollment.contact_no,
-          birthDate: enrollment.birth_date,
-          schoolId: enrollment.school_id,
-          yearLevel: enrollment.year_level,
-        }));
-
-        setEnrollees(transformedEnrollees);
-
-        // Set pagination info - either from response or calculate based on data length
-        setTotalItems(response?.totalItems || enrollmentsList.length);
-        setTotalPages(
-          response?.totalPages || Math.ceil(enrollmentsList.length / 10) || 1
-        );
-        setCurrentPage(response?.currentPage || currentPage);
-
-        // Count approved, pending and rejected enrollments
-        const approved = enrollmentsList.filter(
-          (e) => e.status === "approved"
-        ).length;
-        const pending = enrollmentsList.filter(
-          (e) => e.status === "pending"
-        ).length;
-        const rejected = enrollmentsList.filter(
-          (e) => e.status === "rejected"
-        ).length;
-
-        setApprovedCount(approved);
-        setPendingCount(pending);
-        setRejectedCount(rejected);
-      } catch (error) {
-        console.error("Error fetching enrollments:", error);
-        setError(error.message || "Failed to fetch enrollments");
-        setEnrollees([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchEnrollments();
-  }, [currentPage]);
+  }, [currentPage, itemsPerPage, filterStatus]);
 
   useEffect(() => {
     if (successMessage) {
@@ -140,73 +84,70 @@ function AdminEnrollment() {
     setCurrentPage(newPage);
   };
 
+  // Update handleFilterChange to accept search parameter
+  const handleFilterChange = (status, search = '') => {
+    setFilterStatus(status);
+    setCurrentPage(1);
+    fetchEnrollments(1, itemsPerPage, status, search);
+  };
+
   const handleApprove = async (enrolleeId) => {
     try {
+      const response = await approveEnrollment(enrolleeId);
+      
+      if (response.message === "Enrollment approved successfully") {
+        setSuccessMessage("Enrollment successfully approved!");
+        
+        // Refresh both the paginated data and overall stats
+        await Promise.all([
+          fetchEnrollments(),
+          fetchOverallStats()
+        ]);
 
-      await approveEnrollment(enrolleeId);
-      setSuccessMessage("Enrollment successfully approved!");
-
-      // After successful approval, refresh the data
-      const updatedData = await getAllEnrollments();
-      const enrollmentsList = Array.isArray(updatedData) ? updatedData : [];
-
-      // Transform and update enrollees list
-      const transformedEnrollees = enrollmentsList.map((enrollment) => ({
-        id: enrollment.enrollment_id,
-        fullName: `${enrollment.first_name} ${
-          enrollment.middle_initial || ""
-        } ${enrollment.last_name}`,
-        status:
-          enrollment.status.charAt(0).toUpperCase() +
-          enrollment.status.slice(1),
-        enrollmentDate: new Date(enrollment.createdAt).toLocaleDateString(),
-        email: enrollment.email,
-        contactNo: enrollment.contact_no,
-        birthDate: enrollment.birth_date,
-        schoolId: enrollment.school_id,
-        yearLevel: enrollment.year_level,
-      }));
-
-      setEnrollees(transformedEnrollees);
-
-      // Update counts
-      const approved = enrollmentsList.filter(
-        (e) => e.status === "approved"
-      ).length;
-      const pending = enrollmentsList.filter(
-        (e) => e.status === "pending"
-      ).length;
-      const rejected = enrollmentsList.filter(
-        (e) => e.status === "rejected"
-      ).length;
-
-      setApprovedCount(approved);
-      setPendingCount(pending);
-      setRejectedCount(rejected);
+        return response; // Return response so modal knows operation succeeded
+      }
     } catch (error) {
       console.error("Approval error:", error);
       setError(error.message || "Failed to approve enrollment");
+      throw error; // Rethrow to let modal know operation failed
     }
   };
 
   const handleReject = async (enrolleeId) => {
     try {
       await rejectEnrollment(enrolleeId);
-      setSuccessMessage("Enrollment rejected successfully");
+      // Always set success message and refresh data if no error was thrown
+      setSuccessMessage("Enrollment has been rejected successfully");
+      
+      // Refresh both paginated data and overall stats
+      await Promise.all([
+        fetchEnrollments(),
+        fetchOverallStats()
+      ]);
 
-      // Refresh data after rejection
-      const updatedData = await getAllEnrollments(currentPage);
-      const enrollmentsList = Array.isArray(updatedData) ? updatedData : [];
+      return { success: true }; // Return simplified response for modal
+    } catch (error) {
+      console.error("Error rejecting enrollment:", error);
+      setError(error.message || "Failed to reject enrollment");
+      throw error;
+    }
+  };
 
-      // Transform the refreshed data
-      const transformedEnrollees = enrollmentsList.map((enrollment) => ({
+  // Extract fetch functions to be reusable
+  const fetchEnrollments = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllEnrollments(currentPage, itemsPerPage, filterStatus);
+      
+      const enrollmentsData = response.data || response.enrollments || response;
+      if (!enrollmentsData || !Array.isArray(enrollmentsData)) {
+        throw new Error("Invalid response format: enrollments data not found");
+      }
+
+      const transformedEnrollees = enrollmentsData.map((enrollment) => ({
         id: enrollment.enrollment_id,
-        fullName: `${enrollment.first_name} ${
-          enrollment.middle_initial || ""
-        } ${enrollment.last_name}`,
-        status:
-          enrollment.status.charAt(0).toUpperCase() +
-          enrollment.status.slice(1),
+        fullName: `${enrollment.first_name} ${enrollment.middle_initial || ""} ${enrollment.last_name}`,
+        status: enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1),
         enrollmentDate: new Date(enrollment.createdAt).toLocaleDateString(),
         email: enrollment.email,
         contactNo: enrollment.contact_no,
@@ -215,27 +156,32 @@ function AdminEnrollment() {
         yearLevel: enrollment.year_level,
       }));
 
-      // Update all relevant state
       setEnrollees(transformedEnrollees);
-      setTotalItems(enrollmentsList.length);
-
-      // Update counts
-      const approved = enrollmentsList.filter(
-        (e) => e.status === "approved"
-      ).length;
-      const pending = enrollmentsList.filter(
-        (e) => e.status === "pending"
-      ).length;
-      const rejected = enrollmentsList.filter(
-        (e) => e.status === "rejected"
-      ).length;
-
-      setApprovedCount(approved);
-      setPendingCount(pending);
-      setRejectedCount(rejected);
+      setTotalItems(response.totalItems || enrollmentsData.length);
+      setTotalPages(response.totalPages || Math.ceil(enrollmentsData.length / itemsPerPage));
     } catch (error) {
-      console.error("Error rejecting enrollment:", error);
-      setError(error.message || "Failed to reject enrollment");
+      console.error("Error fetching enrollments:", error);
+      setError(error.message || "Failed to fetch enrollments");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchOverallStats = async () => {
+    try {
+      const response = await getAllEnrollments(1, 999999);
+      const allEnrollments = response.data || response.enrollments || response;
+      
+      if (Array.isArray(allEnrollments)) {
+        setOverallStats({
+          total: allEnrollments.length,
+          approved: allEnrollments.filter(e => e.status === 'approved').length,
+          pending: allEnrollments.filter(e => e.status === 'pending').length,
+          rejected: allEnrollments.filter(e => e.status === 'rejected').length
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching overall stats:", error);
     }
   };
 
@@ -309,6 +255,68 @@ function AdminEnrollment() {
     }
   };
 
+  // Add this function to fetch all enrollees for search
+  const fetchAllEnrollees = async () => {
+    try {
+      const response = await getAllEnrollments(1, 999999); // Fetch all enrollees
+      const enrollmentsData = response.data || response.enrollments || response;
+      if (Array.isArray(enrollmentsData)) {
+        const transformedEnrollees = enrollmentsData.map((enrollment) => ({
+          id: enrollment.enrollment_id,
+          fullName: `${enrollment.first_name} ${enrollment.middle_initial || ""} ${enrollment.last_name}`,
+          status: enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1),
+          enrollmentDate: new Date(enrollment.createdAt).toLocaleDateString(),
+          email: enrollment.email,
+          contactNo: enrollment.contact_no,
+          birthDate: enrollment.birth_date,
+          schoolId: enrollment.school_id,
+          yearLevel: enrollment.year_level,
+        }));
+        setAllEnrolleesData(transformedEnrollees);
+      }
+    } catch (error) {
+      console.error("Error fetching all enrollees:", error);
+    }
+  };
+
+  // Add useEffect to fetch all enrollees on component mount
+  useEffect(() => {
+    fetchAllEnrollees();
+  }, []);
+
+  // Modify handleSearch to use allEnrolleesData
+  const handleSearch = async (query, filtered) => {
+    setSearchQuery(query);
+    if (query.trim() === '') {
+      await fetchEnrollments(); // Reset to original paginated data
+    } else {
+      // Filter from all enrollees data
+      const allFiltered = allEnrolleesData.filter(enrollee => {
+        const searchTerm = query.toLowerCase();
+        const firstName = enrollee.fullName.split(' ')[0].toLowerCase();
+        const lastName = enrollee.fullName.split(' ').pop().toLowerCase();
+        return firstName.includes(searchTerm) || lastName.includes(searchTerm);
+      });
+
+      setEnrollees(allFiltered.slice(0, itemsPerPage));
+      setTotalItems(allFiltered.length);
+      setTotalPages(Math.ceil(allFiltered.length / itemsPerPage));
+      setCurrentPage(1);
+    }
+  };
+
+  const handleSearchCancel = () => {
+    setSearchQuery("");
+    setCurrentPage(1);
+    if (allEnrolleesData.length > 0) {
+      const totalItems = allEnrolleesData.length;
+      const totalPagesCount = Math.ceil(totalItems / 10);
+      setTotalPages(totalPagesCount);
+      setTotalItems(totalItems);
+      setEnrollees(allEnrolleesData.slice(0, 10));
+    }
+  };
+
   const EmptyState = () => (
     <div className="flex flex-col items-center justify-center py-16 px-4">
       <InboxIcon size={64} className="text-gray-300 mb-4" />
@@ -365,23 +373,35 @@ function AdminEnrollment() {
           </div>
         )}
 
-        <div className="mt-4">
-          <EnrolleeStats
-            totalEnrollees={totalItems}
-            approvedEnrollees={approvedCount}
-            pendingEnrollees={pendingCount}
-            rejectedEnrollees={rejectedCount}
-          />
-        </div>
-        <div className="bg-white shadow rounded-lg overflow-hidden mt-4">
+        {/* EnrolleeStats section */}
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="bg-white p-6 rounded-lg shadow animate-pulse"
+              >
+                <div className="h-4 bg-gray-200 rounded-full w-20 mb-3"></div>
+                <div className="h-8 bg-gray-200 rounded-full w-16"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-4">
+            <EnrolleeStats
+              totalEnrollees={overallStats.total}
+              approvedEnrollees={overallStats.approved}
+              pendingEnrollees={overallStats.pending}
+              rejectedEnrollees={overallStats.rejected}
+            />
+          </div>
+        )}
+
+        <div className="bg-white shadow rounded-lg p-6">
           {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#212529]"></div>
-            </div>
+            <LoadingSpinner />
           ) : error ? (
             <ErrorState />
-          ) : enrollees.length === 0 ? (
-            <EmptyState />
           ) : (
             <EnrolleeTable
               enrollees={enrollees}
@@ -392,6 +412,13 @@ function AdminEnrollment() {
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
+              onFilterChange={handleFilterChange}
+              currentFilter={filterStatus}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onSearch={handleSearch}
+              onSearchCancel={handleSearchCancel}
+              searchQuery={searchQuery}
             />
           )}
         </div>

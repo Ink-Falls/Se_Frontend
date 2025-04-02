@@ -6,6 +6,7 @@ import {
   Search,
   FileText,
   SquarePen,
+  X, // Add X icon import
 } from "lucide-react";
 import EnrolleeStatusModal from "/src/components/common/Modals/Edit/EnrolleeStatusModal.jsx";
 import ReportViewerModal from "../../common/Modals/View/ReportViewerModal";
@@ -17,14 +18,19 @@ function EnrolleeTable({
   onDeleteSelected,
   onApprove,
   onReject,
-  onDetailsClick,
   currentPage,
   totalPages,
   onPageChange,
+  onFilterChange,
+  currentFilter,
+  itemsPerPage,
+  totalItems,
+  onSearch,
+  onSearchCancel,
+  searchQuery,
 }) {
   const [selectedIds, setSelectedIds] = useState([]);
   const [filterStatus, setFilterStatus] = useState("All");
-  const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState(null); // Add this line
   const [pageInput, setPageInput] = useState(currentPage.toString());
 
@@ -113,9 +119,14 @@ function EnrolleeTable({
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
+  const handleCloseModal = async (wasActionTaken = false) => {
     setIsModalOpen(false);
     setSelectedEnrollee(null);
+    // If an action was taken (approve/reject), trigger a data refresh
+    if (wasActionTaken) {
+      // This will trigger the parent's refresh logic
+      onFilterChange(currentFilter || '');
+    }
   };
 
   const handleGenerateReport = async () => {
@@ -168,23 +179,40 @@ function EnrolleeTable({
     }
   };
 
-  const ROWS_PER_PAGE = 10;
+  // Remove ROWS_PER_PAGE constant since we're using itemsPerPage from props
+  
+  // Remove client-side filtering and pagination logic
+  // const filteredEnrollees = enrollees.filter((enrollee) => {
+  //   if (filterStatus === "All") return true;
+  //   return enrollee.status === filterStatus;
+  // })
+  // .filter((enrollee) =>
+  //   enrollee.fullName.toLowerCase().includes(searchQuery.toLowerCase())
+  // );
 
-  // Filter enrollees by status and search query
-  const filteredEnrollees = enrollees
-    .filter((enrollee) => {
-      if (filterStatus === "All") return true;
-      return enrollee.status === filterStatus;
-    })
-    .filter((enrollee) =>
-      enrollee.fullName.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  // const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
+  // const endIndex = startIndex + ROWS_PER_PAGE;
+  // const paginatedEnrollees = filteredEnrollees.slice(startIndex, endIndex);
 
-  // Calculate pagination numbers
-  const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
-  const endIndex = startIndex + ROWS_PER_PAGE;
-  const paginatedEnrollees = filteredEnrollees.slice(startIndex, endIndex);
+  // Instead, use the enrollees directly since they're already paginated from the server
+  const filteredEnrollees = enrollees;
 
+  // Update handleFilterChange to use the parent's filter change handler
+  const handleFilterChange = (e) => {
+    const status = e.target.value;
+    setFilterStatus(status);
+    if (onFilterChange) {
+      onFilterChange(status === 'All' ? '' : status);
+    }
+  };
+
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    // Remove local filtering and just pass the query to parent
+    onSearch(query);
+  };
+
+  // Add the getStatusStyle function
   const getStatusStyle = (status) => {
     switch (status.toLowerCase()) {
       case "approved":
@@ -213,35 +241,41 @@ function EnrolleeTable({
             </button>
           )}
 
-          {/* Filter Dropdown */}
+          {/* Updated Filter Dropdown */}
           <div className="relative py-2 md:py-[0.2vw]">
             <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
+              value={currentFilter || 'All'}
+              onChange={handleFilterChange}
               className="pl-10 md:pl-[2vw] pr-4 md:pr-[1vw] py-2 md:py-[0.5vw] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none w-full md:w-[12vw]"
             >
-              <option value="All">Filter by: All</option>
-              <option value="Approved">Filter by: Approved</option>
-              <option value="Pending">Filter by: Pending</option>
-              <option value="Rejected">Filter by: Rejected</option>
+              <option value="">All</option>
+              <option value="approved">Approved</option>
+              <option value="pending">Pending</option>
+              <option value="rejected">Rejected</option>
             </select>
             <div className="absolute inset-y-0 left-0 pl-3 md:pl-[0.5vw] flex items-center pointer-events-none">
               <Filter size={16} className="text-[#475569] md:w-[1vw] md:h-[1vw]" />
             </div>
           </div>
 
-          {/* Search Bar */}
+          {/* Updated Search Bar */}
           <div className="relative w-full md:w-auto py-2 md:py-[0.2vw]">
             <input
               type="text"
-              placeholder="Search by name..."
+              placeholder="Search enrollees..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
               className="w-full md:w-[15vw] pl-10 md:pl-[2vw] pr-4 md:pr-[1vw] py-2 md:py-[0.5vw] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
             />
-            <div className="absolute inset-y-0 left-0 pl-3 md:pl-[0.5vw] flex items-center pointer-events-none">
-              <Search size={16} className="text-[#475569] md:w-[1vw] md:h-[1vw]" />
-            </div>
+            <Search className="absolute left-3 md:left-[0.5vw] top-1/2 -translate-y-1/2 text-[#475569] w-5 h-5 md:w-[1vw] md:h-[1vw]" />
+            {searchQuery && (
+              <button
+                onClick={onSearchCancel}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -293,7 +327,7 @@ function EnrolleeTable({
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {paginatedEnrollees.map((enrollee) => (
+          {filteredEnrollees.map((enrollee) => (
             <tr
               key={enrollee.id}
               className="hover:bg-gray-50 transition-colors"
@@ -341,12 +375,10 @@ function EnrolleeTable({
         </tbody>
       </table>
 
-      {/* Pagination Controls */}
+      {/* Updated Pagination Controls */}
       <div className="px-6 py-4 flex items-center justify-between border-t">
         <div className="text-sm text-gray-700">
-          Showing page {startIndex + 1} of{" "}
-          {Math.min(endIndex, filteredEnrollees.length)} of{" "}
-          {filteredEnrollees.length} entries
+          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
         </div>
         <div className="flex space-x-2 items-center">
           <button
@@ -357,23 +389,12 @@ function EnrolleeTable({
           >
             Previous
           </button>
-          <p className="text-sm text-gray-700">
-            Page{" "}
-            <input
-              type="text"
-              value={pageInput}
-              onChange={handlePageInputChange}
-              onKeyDown={handlePageInputSubmit}
-              onBlur={handlePageInputBlur}
-              className="w-12 px-2 py-1 text-center border rounded-md focus:outline-none focus:border-[#F6BA18]"
-            />{" "}
-            of {Math.ceil(filteredEnrollees.length / ROWS_PER_PAGE)}
-          </p>
+          <span className="px-4 py-1 text-gray-600">
+            Page {currentPage} of {totalPages}
+          </span>
           <button
             onClick={() => onPageChange(currentPage + 1)}
-            disabled={
-              currentPage >= Math.ceil(filteredEnrollees.length / ROWS_PER_PAGE)
-            }
+            disabled={currentPage >= totalPages}
             className="px-3 py-1 rounded border bg-white text-gray-600 
                      hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -408,12 +429,29 @@ function EnrolleeTable({
           enrolleeId={selectedEnrollee.id}
           onClose={handleCloseModal}
           onApprove={async () => {
-            await onApprove(selectedEnrollee.id);
-            handleCloseModal();
+            try {
+              const result = await onApprove(selectedEnrollee.id);
+              if (result?.message?.includes('approved') || result?.enrollment?.status === 'approved') {
+                handleCloseModal(true);
+              }
+              return result;
+            } catch (error) {
+              console.error('Error in approval:', error);
+              throw error;
+            }
           }}
           onReject={async () => {
-            await onReject(selectedEnrollee.id);
-            handleCloseModal();
+            try {
+              const result = await onReject(selectedEnrollee.id);
+              // Force refresh regardless of response format
+              if (result) {
+                handleCloseModal(true);
+              }
+              return result;
+            } catch (error) {
+              console.error('Error in rejection:', error);
+              throw error;
+            }
           }}
         />
       )}

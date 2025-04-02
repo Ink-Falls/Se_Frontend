@@ -530,6 +530,7 @@ const StudentSubmissionView = () => {
               Cancel
             </button>
             <button
+              aria-label="submit-grades"
               onClick={handleSubmitGrade}
               className="px-6 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#F6BA18] hover:text-[#212529]"
               disabled={loading}

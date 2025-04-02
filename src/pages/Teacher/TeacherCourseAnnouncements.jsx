@@ -122,6 +122,7 @@ const TeacherCourseAnnouncements = () => {
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-6">
         <Header
+           data-testid="course-title"
           title={selectedCourse?.name || "Course"}
           subtitle={selectedCourse?.code}
         />
@@ -130,6 +131,8 @@ const TeacherCourseAnnouncements = () => {
         <div className="bg-white rounded-lg shadow-md">
           <BlackHeader title="Announcements" count={announcements.length}>
             <button
+              data-testid="open-add-announcement-modal"
+              aria-label="Add Announcement"
               onClick={() => setIsModalOpen(true)}
               className="p-2 rounded hover:bg-gray-700"
             >
@@ -161,27 +164,32 @@ const TeacherCourseAnnouncements = () => {
       {/* Modals */}
       {isModalOpen && (
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-          <h2 className="text-xl font-semibold mb-4">Add New Announcement</h2>
+          <h2 data-testid="modal-title" className="text-xl font-semibold mb-4">Add New Announcement</h2>
           <form className="flex flex-col">
-            <label className="font-medium mb-2 text-gray-700">
+            <label htmlFor="announcement_title" className="font-medium mb-2 text-gray-700">
               Announcement Title
             </label>
             <input
+              id= "announcement_title"
+              name="announcement_title"
               type="text"
               placeholder="Enter title"
               className="border p-2 rounded mb-4"
             />
 
-            <label className="font-medium mb-2 text-gray-700">
+            <label htmlFor="description" className="font-medium mb-2 text-gray-700">
               Description
             </label>
             <textarea
+              id="description"
+              name="description"
               placeholder="Enter description"
               className="border p-2 rounded mb-4 h-32"
             ></textarea>
 
             <div className="flex justify-end">
               <button
+                aria-label="Cancel"
                 type="button"
                 onClick={() => setIsModalOpen(false)}
                 className="mr-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
@@ -189,6 +197,9 @@ const TeacherCourseAnnouncements = () => {
                 Cancel
               </button>
               <button
+                onClick={() => setIsModalOpen(true)}
+                data-testid="add-announcement-button"
+                aria-label="Add Announcement"
                 type="submit"
                 className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600"
               >

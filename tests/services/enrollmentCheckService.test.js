@@ -1,9 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { checkEnrollmentStatus } from '../../src/services/enrollmentCheckService';
 import { API_BASE_URL } from '../../src/utils/constants';
+import * as apiService from '../../src/services/apiService';
 
-// Mock fetch globally
-global.fetch = vi.fn();
+// Mock the fetchWithInterceptor function instead of global fetch
+vi.mock('../../src/services/apiService', () => ({
+  default: vi.fn()
+}));
 
 describe('Enrollment Check Service', () => {
   const mockEnrollments = {
@@ -13,8 +16,7 @@ describe('Enrollment Check Service', () => {
   };
 
   beforeEach(() => {
-    localStorage.clear();
-    global.fetch.mockClear();
+    vi.clearAllMocks();
   });
 
   describe('checkEnrollmentStatus', () => {
@@ -24,14 +26,14 @@ describe('Enrollment Check Service', () => {
         message: 'Enrollment is pending'
       };
 
-      global.fetch.mockResolvedValueOnce({
+      apiService.default.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResponse)
       });
 
       const result = await checkEnrollmentStatus('alice.smith@example.com');
       
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(apiService.default).toHaveBeenCalledWith(
         `${API_BASE_URL}/enrollments/check-status`,
         expect.objectContaining({
           method: 'POST',
@@ -43,7 +45,7 @@ describe('Enrollment Check Service', () => {
     });
 
     it('should handle non-existent email', async () => {
-      global.fetch.mockResolvedValueOnce({
+      apiService.default.mockResolvedValueOnce({
         ok: false,
         status: 404,
         json: () => Promise.resolve({ message: 'Enrollment not found for this email' })
@@ -55,7 +57,7 @@ describe('Enrollment Check Service', () => {
     });
 
     it('handles server errors', async () => {
-      global.fetch.mockResolvedValueOnce({
+      apiService.default.mockResolvedValueOnce({
         ok: false,
         status: 500,
         json: () => Promise.resolve({ message: 'Internal server error' })
@@ -63,11 +65,11 @@ describe('Enrollment Check Service', () => {
 
       await expect(checkEnrollmentStatus('test@example.com'))
         .rejects
-        .toThrow('HTTP error!');
+        .toThrow(/HTTP error! status: 500/);
     });
 
     it('should return approved status for alice', async () => {
-      global.fetch.mockResolvedValueOnce({
+      apiService.default.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockEnrollments['alice.smith@example.com'])
       });
@@ -77,7 +79,7 @@ describe('Enrollment Check Service', () => {
     });
 
     it('should return approved status for bob', async () => {
-      global.fetch.mockResolvedValueOnce({
+      apiService.default.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockEnrollments['bob.jones@example.com'])
       });
@@ -87,7 +89,7 @@ describe('Enrollment Check Service', () => {
     });
 
     it('should return rejected status for carol', async () => {
-      global.fetch.mockResolvedValueOnce({
+      apiService.default.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockEnrollments['carol.white@example.com'])
       });

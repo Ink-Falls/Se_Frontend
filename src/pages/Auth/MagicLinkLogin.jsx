@@ -53,7 +53,8 @@ function MagicLinkLogin() {
         </p>
         <button
           onClick={() => setSuccess(false)}
-          className="mt-4 py-[1vw] px-[3vw] text-[3vw] lg:text-[0.9vw] max-lg:text-[2.5vw] bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition colors"
+          className="mt-4 py-[1vw] px-[3vw] text-[3vw] lg:text-[0.9vw] max-lg:text-[2.5vw] bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
+          aria-label="Back"
         >
           Back
         </button>
@@ -64,7 +65,7 @@ function MagicLinkLogin() {
   return (
     <form onSubmit={handleSubmit} className="space-y-[1vw] w-full flex flex-col justify-center flex-1">
       {error && (
-        <p className="text-red-500 text-left text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw]">
+        <p className="text-red-500 text-left text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw]" data-testid="error-message">
           {error}
         </p>
       )}
@@ -78,7 +79,7 @@ function MagicLinkLogin() {
         </label>
         <input
           type="email"
-          id="magic-link-email"
+          id="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -93,7 +94,7 @@ function MagicLinkLogin() {
       <div className="flex justify-center">
         <button
           type="submit"
-                            className="flex items-center justify-center 
+          className="flex items-center justify-center 
                               w-[45vw] md:w-[25vw] lg:w-[15vw] xl:w-[12vw]
                               px-[3vw] py-[2vw] 
                               md:px-[2vw] md:py-[1.5vw]

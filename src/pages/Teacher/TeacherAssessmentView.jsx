@@ -17,11 +17,12 @@ import {
   Clock,
   Plus, // Add this import
   Trash2,
+  MoreVertical, // Add this import
 } from "lucide-react";
 import {
   getAssessmentById, // for getting all the questions
   createAssessmentQuestion, // done
-  getAssessmentSubmissions, 
+  getAssessmentSubmissions,
   getSubmissionDetails,
   deleteQuestion,
   deleteAssessment,
@@ -39,7 +40,7 @@ const SortButton = ({ field, currentSort, onSort, children }) => (
     {children}
     {currentSort.field === field && (
       <span className="text-xs">
-        {currentSort.direction === 'asc' ? '↑' : '↓'}
+        {currentSort.direction === "asc" ? "↑" : "↓"}
       </span>
     )}
   </button>
@@ -60,12 +61,13 @@ const TeacherAssessmentView = () => {
   const [submissionDetailsMap, setSubmissionDetailsMap] = useState({});
   const [isDeletingAssessment, setIsDeletingAssessment] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null); // Add this line
-  const [sortField, setSortField] = useState('submissionDate'); // Changed from 'studentName'
-  const [sortDirection, setSortDirection] = useState('desc'); // Changed from 'asc'
-  const [sortConfig, setSortConfig] = useState({ 
-    field: 'submissionDate',  // Changed from 'studentName'
-    direction: 'desc'  // Changed from 'asc'
+  const [sortField, setSortField] = useState("submissionDate"); // Changed from 'studentName'
+  const [sortDirection, setSortDirection] = useState("desc"); // Changed from 'asc'
+  const [sortConfig, setSortConfig] = useState({
+    field: "submissionDate", // Changed from 'studentName'
+    direction: "desc", // Changed from 'asc'
   });
+  const [showMenu, setShowMenu] = useState(null); // Add this line
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -101,8 +103,6 @@ const TeacherAssessmentView = () => {
       route: "/TeacherProgress",
     },
   ];
-
-  console.log 
 
   const getStatusColor = (status, score) => {
     switch (status?.toLowerCase()) {
@@ -185,7 +185,6 @@ const TeacherAssessmentView = () => {
               hour: "2-digit",
               minute: "2-digit",
             });
-
             setAssessmentData((prev) => ({
               ...prev,
               formattedDueDate,
@@ -281,7 +280,6 @@ const TeacherAssessmentView = () => {
               return null;
             })
           );
-
           setSubmissions(detailedSubmissions.filter(Boolean));
         } else {
           throw new Error(
@@ -334,13 +332,18 @@ const TeacherAssessmentView = () => {
 
   const handleCreateQuestion = async (questionData) => {
     try {
-      console.log('Creating question with data:', questionData);
-
-      const response = await createAssessmentQuestion(assessment.id, questionData);
+      console.log("Creating question with data:", questionData);
+      const response = await createAssessmentQuestion(
+        assessment.id,
+        questionData
+      );
 
       if (response.success) {
-        // Immediately fetch updated questions after creating a new one
-        const updatedAssessment = await getAssessmentById(assessment.id, true, true);
+        const updatedAssessment = await getAssessmentById(
+          assessment.id,
+          true,
+          true
+        );
         if (updatedAssessment.success) {
           setQuestions(updatedAssessment.assessment.questions || []);
           setIsCreateQuestionOpen(false);
@@ -351,7 +354,8 @@ const TeacherAssessmentView = () => {
       }
     } catch (err) {
       console.error("Error creating question:", err);
-      setError(err.message || "Failed to create question");
+      // Pass the error message to the modal through onSubmit rejection
+      throw new Error(err.message || "Failed to create question");
     }
   };
 
@@ -364,7 +368,6 @@ const TeacherAssessmentView = () => {
     const answer = submissionData.answers.find(
       (a) => a.question_id === question.id
     );
-
     if (!answer) return "Not answered";
 
     switch (question.question_type) {
@@ -445,93 +448,160 @@ const TeacherAssessmentView = () => {
   const renderQuestionItem = (question, index) => (
     <div
       key={question.id}
-      className="p-4 border rounded-lg hover:shadow-md transition-shadow"
+      className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-200"
     >
-      <div className="flex justify-between items-start">
-        <div className="flex-1">
-          <span className="text-sm text-gray-500">Question {index + 1}</span>
-          <p className="font-medium mt-1">{question.question_text}</p>
-
-          {/* Show correct answer based on question type */}
-          {question.question_type === "multiple_choice" && (
-            <div className="mt-3 p-3 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-green-700">
-                Correct Answer:
-              </p>
-              <div className="mt-1 space-y-1">
-                {question.options?.map((option) => (
-                  <div
-                    key={option.id}
-                    className={`${
-                      option.is_correct
-                        ? "text-green-600 font-medium"
-                        : "text-gray-600"
-                    }`}
-                  >
-                    {option.is_correct && "✓ "}
-                    {option.option_text}
+      <div className="p-6">
+        <div className="flex justify-between items-start gap-4">
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-3 mb-3">
+              <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                Question {index + 1}
+              </span>
+              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                {question.points} Points
+              </span>
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  question.question_type === "multiple_choice"
+                    ? "bg-purple-100 text-purple-800"
+                    : question.question_type === "true_false"
+                    ? "bg-indigo-100 text-indigo-800"
+                    : question.question_type === "short_answer"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-pink-100 text-pink-800"
+                }`}
+              >
+                {question.question_type
+                  .split("_")
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(" ")}
+              </span>
+            </div>
+            <p className="text-gray-800 font-medium text-lg">
+              {question.question_text}
+            </p>
+            {question.media_url && (
+              <div className="mt-4">
+                {question.media_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                  <img
+                    src={question.media_url}
+                    alt="Question media"
+                    className="max-w-sm rounded-lg border border-gray-200"
+                  />
+                ) : (
+                  <div className="p-2 bg-gray-50 rounded-lg text-sm text-gray-600 border border-gray-200">
+                    Media URL: {question.media_url}
                   </div>
-                ))}
+                )}
               </div>
-            </div>
-          )}
-
-          {question.question_type === "true_false" && (
-            <div className="mt-3 p-3 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-green-700">
-                Correct Answer:
-              </p>
-              <div className="mt-1">
-                {question.options?.map((option) => (
-                  <div
-                    key={option.id}
-                    className={`${
-                      option.is_correct
-                        ? "text-green-600 font-medium"
-                        : "text-gray-600"
-                    }`}
-                  >
-                    {option.is_correct && "✓ "}
-                    {option.text || option.option_text}
-                  </div>
-                ))}
+            )}
+          </div>
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu(showMenu === question.id ? null : question.id);
+              }}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <MoreVertical size={16} className="text-gray-600" />
+            </button>
+            {showMenu === question.id && (
+              <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg z-10 min-w-[120px] overflow-hidden border">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingQuestion({
+                      ...question,
+                      options: question.options?.map((opt) => ({
+                        ...opt,
+                        text: opt.option_text || opt.text || "", // Add this mapping
+                        is_correct: Boolean(opt.is_correct),
+                      })),
+                    });
+                    setShowMenu(null);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <Edit2 size={14} className="text-gray-500" />
+                  <span>Edit</span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeletingQuestion(question);
+                    setShowMenu(null);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-600 border-t"
+                >
+                  <Trash2 size={14} />
+                  <span>Delete</span>
+                </button>
               </div>
-            </div>
-          )}
-
-          {(question.question_type === "short_answer" ||
-            question.question_type === "essay") && (
-            <div className="mt-3 p-3 bg-green-50 rounded-lg">
-              <p className="text-sm font-medium text-green-700">
-                Correct Answer / Guidelines:
-              </p>
-              <p className="mt-1 text-green-600">
-                {question.answer_key || "No answer key provided"}
-              </p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
+      </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setEditingQuestion(question);
-            }}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <Edit2 size={16} className="text-gray-600" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setDeletingQuestion(question);
-            }}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <Trash2 size={16} className="text-red-500" />
-          </button>
-        </div>
+      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+        {question.question_type === "multiple_choice" && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-gray-700 mb-2">Options:</p>
+            {question.options?.map((option) => (
+              <div
+                key={option.id}
+                className={`flex items-center gap-3 p-3 rounded-lg ${
+                  option.is_correct
+                    ? "bg-green-50 text-green-700 border border-green-200"
+                    : "bg-white text-gray-700 border border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                {option.is_correct && (
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                )}
+                <span>{option.option_text}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {question.question_type === "true_false" && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-gray-700 mb-2">Options:</p>
+            {question.options?.map((option) => (
+              <div
+                key={option.id}
+                className={`flex items-center gap-3 p-2 rounded-lg ${
+                  option.is_correct
+                    ? "bg-green-50 text-green-700 border border-green-200"
+                    : "bg-white border border-gray-200"
+                }`}
+              >
+                {option.is_correct && (
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                )}
+                <span>{option.text}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {(question.question_type === "short_answer" ||
+          question.question_type === "essay") && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-gray-700 mb-2">
+              Answer Key / Guidelines:
+            </p>
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700">
+              {question.answer_key || "No answer key provided"}
+            </div>
+            {question.question_type === "essay" && question.word_limit && (
+              <p className="text-sm text-gray-500 mt-2">
+                Word limit: {question.word_limit} words
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -570,36 +640,40 @@ const TeacherAssessmentView = () => {
 
   const handleSort = (field) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
   const getSortedSubmissions = () => {
     if (!submissions) return [];
-    
+
     return [...submissions].sort((a, b) => {
       let compareA, compareB;
-      
+
       switch (sortField) {
-        case 'studentName':
+        case "studentName":
           // Add fallback empty string if studentName is undefined
-          compareA = (a?.studentName || '').toLowerCase();
-          compareB = (b?.studentName || '').toLowerCase();
+          compareA = (a?.studentName || "").toLowerCase();
+          compareB = (b?.studentName || "").toLowerCase();
           break;
-        case 'submissionDate':
+        case "submissionDate":
           // Get timestamps, using 0 for missing dates to handle them consistently
-          compareA = new Date(submissionDetailsMap[a?.id]?.submit_time || 0).getTime();
-          compareB = new Date(submissionDetailsMap[b?.id]?.submit_time || 0).getTime();
+          compareA = new Date(
+            submissionDetailsMap[a?.id]?.submit_time || 0
+          ).getTime();
+          compareB = new Date(
+            submissionDetailsMap[b?.id]?.submit_time || 0
+          ).getTime();
           break;
         default:
           return 0;
       }
 
-      if (compareA < compareB) return sortDirection === 'asc' ? -1 : 1;
-      if (compareA > compareB) return sortDirection === 'asc' ? 1 : -1;
+      if (compareA < compareB) return sortDirection === "asc" ? -1 : 1;
+      if (compareA > compareB) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
   };
@@ -612,21 +686,21 @@ const TeacherAssessmentView = () => {
         </h3>
         <div className="flex gap-4">
           <button
-            onClick={() => handleSort('studentName')}
+            onClick={() => handleSort("studentName")}
             className="flex items-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50"
           >
             Sort by Name
-            {sortField === 'studentName' && (
-              <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
+            {sortField === "studentName" && (
+              <span>{sortDirection === "asc" ? "↑" : "↓"}</span>
             )}
           </button>
           <button
-            onClick={() => handleSort('submissionDate')}
+            onClick={() => handleSort("submissionDate")}
             className="flex items-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50"
           >
             Sort by Date
-            {sortField === 'submissionDate' && (
-              <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
+            {sortField === "submissionDate" && (
+              <span>{sortDirection === "asc" ? "↑" : "↓"}</span>
             )}
           </button>
         </div>
@@ -759,7 +833,6 @@ const TeacherAssessmentView = () => {
         </button>
       </div>
 
-      {/* Rest of the header content */}
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold mb-2">{assessmentData?.title}</h1>
@@ -867,6 +940,8 @@ const TeacherAssessmentView = () => {
         isOpen={isCreateQuestionOpen}
         onClose={() => setIsCreateQuestionOpen(false)}
         onSubmit={handleCreateQuestion}
+        maxScore={assessmentData?.max_score}
+        questions={questions}
       />
 
       {editingQuestion && (
