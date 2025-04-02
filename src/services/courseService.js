@@ -7,6 +7,50 @@ import { API_BASE_URL } from "../utils/constants";
 import tokenService from "./tokenService";
 import fetchWithInterceptor from "./apiService";
 
+// Internal helper function for generating course codes
+const generateCourseCode = (courseName, courseId) => {
+  const courseTags = {
+    FIL: /\b(?:FILIPINO|FIL|FILIPINO\s+SUBJECT|FILIPINO\s+STUDIES)\b/i,
+    ENG: /\b(?:ENGLISH|ENG|ENGLISH\s+SUBJECT|ENGLISH\s+STUDIES)\b/i,
+    MATH: /\b(?:MATHEMATICS|MATH|MATHS|MATEMATIKA)\b/i,
+    SCI: /\b(?:SCIENCE|SCI|NATURAL\s+SCIENCE|GENERAL\s+SCIENCE)\b/i,
+    AP: /\b(?:ARALING\s+PANLIPUNAN|AP|SOCIAL\s+STUDIES)\b/i,
+    EsP: /\b(?:EDUKASYON\s+SA\s+PAGPAPAKATAO|ESP|EsP|VALUES\s+EDUCATION)\b/i,
+  };
+
+  const name = courseName.toUpperCase();
+  const id = String(courseId).padStart(3, "0");
+
+  for (const [prefix, pattern] of Object.entries(courseTags)) {
+    if (pattern.test(name)) {
+      return `${prefix}-${id}`;
+    }
+  }
+
+  return `COURSE-${id}`;
+};
+
+// Internal helper for formatting courses
+const formatCourses = (courses) => {
+  return courses.map((course) => ({
+    id: course.id,
+    name: course.name,
+    code: generateCourseCode(course.name, course.id),
+    description: course.description,
+    teacher: course.teacher_name || "Not assigned",
+    learner_group_id: course.learner_group_id, 
+    student_teacher_group_id: course.student_teacher_group_id,
+    studentCount: course.studentCount || 0,
+    imageUrl: course.imageUrl || "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+  }));
+};
+
+// For testing purposes only - not for production use
+if (process.env.NODE_ENV === 'test') {
+  exports.generateCourseCode = generateCourseCode;
+  exports.formatCourses = formatCourses;
+}
+
 /**
  * Fetches all courses with their associated groups
  * @returns {Promise<Array>} Array of course objects with group information
@@ -288,41 +332,4 @@ export const deleteCourse = async (courseId) => {
     console.error("Error deleting course:", error);
     throw error;
   }
-};
-
-const generateCourseCode = (courseName, courseId) => {
-  const courseTags = {
-    FIL: /\b(?:FILIPINO|FIL|FILIPINO\s+SUBJECT|FILIPINO\s+STUDIES)\b/i,
-    ENG: /\b(?:ENGLISH|ENG|ENGLISH\s+SUBJECT|ENGLISH\s+STUDIES)\b/i,
-    MATH: /\b(?:MATHEMATICS|MATH|MATHS|MATEMATIKA)\b/i,
-    SCI: /\b(?:SCIENCE|SCI|NATURAL\s+SCIENCE|GENERAL\s+SCIENCE)\b/i,
-    AP: /\b(?:ARALING\s+PANLIPUNAN|AP|SOCIAL\s+STUDIES)\b/i,
-    EsP: /\b(?:EDUKASYON\s+SA\s+PAGPAPAKATAO|ESP|EsP|VALUES\s+EDUCATION)\b/i,
-  };
-
-  const name = courseName.toUpperCase();
-  const id = String(courseId).padStart(3, "0");
-
-  for (const [prefix, pattern] of Object.entries(courseTags)) {
-    if (pattern.test(name)) {
-      return `${prefix}-${id}`;
-    }
-  }
-
-  return `COURSE-${id}`;
-};
-
-// Helper function to format course data consistently
-const formatCourses = (courses) => {
-  return courses.map((course) => ({
-    id: course.id,
-    name: course.name,
-    code: generateCourseCode(course.name, course.id),
-    description: course.description,
-    teacher: course.teacher_name || "Not assigned",
-    learner_group_id: course.learner_group_id, 
-    student_teacher_group_id: course.student_teacher_group_id,
-    studentCount: course.studentCount || 0, // Use actual count instead of random
-    imageUrl: course.imageUrl || "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
-  }));
 };

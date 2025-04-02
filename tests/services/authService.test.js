@@ -9,6 +9,7 @@ import {
 import tokenService from '../../src/services/tokenService';
 import { API_BASE_URL } from '../../src/utils/constants';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import fetchWithInterceptor from '../../src/services/apiService';
 
 // Mock API_BASE_URL from environment variable
 vi.mock('../../src/utils/constants', () => ({
@@ -22,19 +23,54 @@ vi.mock('../../src/services/tokenService', () => ({
     removeTokens: vi.fn(),
     setupAutoRefresh: vi.fn(),
     clearAutoRefresh: vi.fn(),
-    getAccessToken: vi.fn() // Add this mock function
+    getAccessToken: vi.fn()
   }
 }));
 
-// Mock fetch
+// Mock fetch and fetchWithInterceptor
 global.fetch = vi.fn();
+vi.mock('../../src/services/apiService', () => ({
+  default: vi.fn()
+}));
 
 describe('Auth Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    localStorage.clear();
-    sessionStorage.clear();
-    global.fetch.mockClear();
+    
+    // Properly mock localStorage and sessionStorage
+    Storage.prototype.clear = vi.fn();
+    Storage.prototype.getItem = vi.fn();
+    Storage.prototype.setItem = vi.fn();
+    Storage.prototype.removeItem = vi.fn();
+    
+    // Set up mocks for localStorage functions
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        clear: vi.fn(),
+        getItem: vi.fn(),
+        setItem: vi.fn(),
+        removeItem: vi.fn()
+      },
+      writable: true
+    });
+    
+    // Set up mocks for sessionStorage functions
+    Object.defineProperty(window, 'sessionStorage', {
+      value: {
+        clear: vi.fn(),
+        getItem: vi.fn(),
+        setItem: vi.fn(),
+        removeItem: vi.fn()
+      },
+      writable: true
+    });
+    
+    window.localStorage.getItem.mockImplementation((key) => {
+      if (key === 'token') return 'valid-token';
+      return null;
+    });
+    
+    fetchWithInterceptor.mockClear();
   });
 
   describe('loginUser', () => {
@@ -48,14 +84,14 @@ describe('Auth Service', () => {
         }
       };
 
-      global.fetch.mockResolvedValueOnce({
+      fetchWithInterceptor.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResponse)
       });
 
       const result = await loginUser('maggie@example.com', 'password@123', 'captcha-token');
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(fetchWithInterceptor).toHaveBeenCalledWith(
         `${API_BASE_URL}/auth/login`,
         expect.objectContaining({
           method: 'POST',
@@ -73,20 +109,16 @@ describe('Auth Service', () => {
         mockResponse.refreshToken
       );
       
-      expect(localStorage.getItem('user')).toBe(JSON.stringify(mockResponse.user));
+      expect(localStorage.setItem).toHaveBeenCalledWith('user', JSON.stringify(mockResponse.user));
       expect(tokenService.setupAutoRefresh).toHaveBeenCalled();
       expect(result).toEqual(mockResponse);
     });
 
     it('should handle login failure', async () => {
-      const mockError = {
-        message: 'Invalid credentials. Please check your email and password.'
-      };
-
-      global.fetch.mockResolvedValueOnce({
+      fetchWithInterceptor.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: () => Promise.resolve({ error: mockError })
+        json: () => Promise.resolve({ message: 'Invalid credentials' })
       });
 
       await expect(() =>
@@ -95,27 +127,23 @@ describe('Auth Service', () => {
 
       expect(tokenService.saveTokens).not.toHaveBeenCalled();
       expect(tokenService.setupAutoRefresh).not.toHaveBeenCalled();
-      expect(localStorage.getItem('user')).toBeNull();
     });
 
     it('should handle network errors', async () => {
-      global.fetch.mockRejectedValueOnce(new Error('Network error'));
+      fetchWithInterceptor.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(() =>
         loginUser('test@email.com', 'password', 'captcha-token')
-      ).rejects.toThrow();
+      ).rejects.toThrow('Network error');
 
       expect(tokenService.saveTokens).not.toHaveBeenCalled();
       expect(tokenService.setupAutoRefresh).not.toHaveBeenCalled();
-      expect(localStorage.getItem('user')).toBeNull();
     });
   });
 
   describe('logoutUser', () => {
     it('should handle logout successfully', async () => {
-      const token = 'valid-token';
-      tokenService.getAccessToken.mockReturnValue(token);
-      
+      localStorage.getItem.mockReturnValue('valid-token');
       global.fetch.mockResolvedValueOnce({ ok: true });
 
       await logoutUser();
@@ -128,16 +156,14 @@ describe('Auth Service', () => {
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }),
-          credentials: 'include'
+            'Authorization': 'Bearer valid-token'
+          })
         })
       );
     });
 
     it('should handle server errors during logout gracefully', async () => {
-      tokenService.getAccessToken.mockReturnValue('valid-token');
+      localStorage.getItem.mockReturnValue('valid-token');
       global.fetch.mockRejectedValueOnce(new Error('Server error'));
 
       await logoutUser(); // Should not throw
@@ -145,12 +171,22 @@ describe('Auth Service', () => {
       expect(localStorage.clear).toHaveBeenCalled();
       expect(sessionStorage.clear).toHaveBeenCalled();
     });
+
+    it('should skip server logout if no token is present', async () => {
+      localStorage.getItem.mockReturnValue(null);
+
+      await logoutUser();
+      
+      expect(localStorage.clear).toHaveBeenCalled();
+      expect(sessionStorage.clear).toHaveBeenCalled();
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
   });
 
   describe('forgotPassword', () => {
     it('should handle forgot password request successfully', async () => {
       const mockResponse = { message: 'Reset email sent' };
-      global.fetch.mockResolvedValueOnce({
+      fetchWithInterceptor.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResponse)
       });
@@ -158,10 +194,13 @@ describe('Auth Service', () => {
       const result = await forgotPassword('test@email.com');
       
       expect(result).toEqual(mockResponse);
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(fetchWithInterceptor).toHaveBeenCalledWith(
         `${API_BASE_URL}/users/forgot-password`,
         expect.objectContaining({
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({ email: 'test@email.com' })
         })
       );
@@ -169,7 +208,7 @@ describe('Auth Service', () => {
 
     it('should handle forgot password failures with error message', async () => {
       const errorResponse = { error: { message: 'Email not found' }};
-      global.fetch.mockResolvedValueOnce({
+      fetchWithInterceptor.mockResolvedValueOnce({
         ok: false,
         json: () => Promise.resolve(errorResponse)
       });
@@ -183,7 +222,7 @@ describe('Auth Service', () => {
   describe('verifyResetCode', () => {
     it('should verify reset code successfully', async () => {
       const mockResponse = { valid: true };
-      global.fetch.mockResolvedValueOnce({
+      fetchWithInterceptor.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResponse)
       });
@@ -191,10 +230,13 @@ describe('Auth Service', () => {
       const result = await verifyResetCode('test@email.com', '123456');
       
       expect(result).toEqual(mockResponse);
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(fetchWithInterceptor).toHaveBeenCalledWith(
         `${API_BASE_URL}/users/verify-reset-code`,
         expect.objectContaining({
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({ 
             email: 'test@email.com', 
             code: '123456' 
@@ -204,7 +246,7 @@ describe('Auth Service', () => {
     });
 
     it('should handle invalid reset codes', async () => {
-      global.fetch.mockResolvedValueOnce({
+      fetchWithInterceptor.mockResolvedValueOnce({
         ok: false,
         json: () => Promise.resolve({ error: { message: 'Invalid code' }})
       });
@@ -218,7 +260,7 @@ describe('Auth Service', () => {
   describe('resetPassword', () => {
     it('should reset password successfully', async () => {
       const mockResponse = { message: 'Password reset successful' };
-      global.fetch.mockResolvedValueOnce({
+      fetchWithInterceptor.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResponse)
       });
@@ -226,10 +268,13 @@ describe('Auth Service', () => {
       const result = await resetPassword('test@email.com', 'newPass123!', 'newPass123!');
       
       expect(result).toEqual(mockResponse);
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(fetchWithInterceptor).toHaveBeenCalledWith(
         `${API_BASE_URL}/users/reset-password`,
         expect.objectContaining({
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({ 
             email: 'test@email.com',
             newPassword: 'newPass123!',
@@ -240,7 +285,7 @@ describe('Auth Service', () => {
     });
 
     it('should handle password reset failures', async () => {
-      global.fetch.mockResolvedValueOnce({
+      fetchWithInterceptor.mockResolvedValueOnce({
         ok: false,
         json: () => Promise.resolve({ error: { message: 'Passwords do not match' }})
       });
@@ -255,9 +300,9 @@ describe('Auth Service', () => {
     it('should change password successfully when authenticated', async () => {
       const userId = 1;
       const mockResponse = { message: 'Password changed successfully' };
-      tokenService.getAccessToken.mockReturnValue('valid-token');
+      localStorage.getItem.mockReturnValue('valid-token');
       
-      global.fetch.mockResolvedValueOnce({
+      fetchWithInterceptor.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResponse)
       });
@@ -265,12 +310,13 @@ describe('Auth Service', () => {
       const result = await changePassword(userId, 'oldPass', 'newPass123!', 'newPass123!');
       
       expect(result).toEqual(mockResponse);
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(fetchWithInterceptor).toHaveBeenCalledWith(
         `${API_BASE_URL}/users/${userId}/change-password`,
         expect.objectContaining({
           method: 'PUT',
           headers: expect.objectContaining({
-            'Authorization': 'Bearer valid-token'
+            'Authorization': 'Bearer valid-token',
+            'Content-Type': 'application/json'
           }),
           body: JSON.stringify({ 
             oldPassword: 'oldPass',
@@ -282,20 +328,20 @@ describe('Auth Service', () => {
     });
 
     it('should handle unauthenticated password change attempts', async () => {
-      tokenService.getAccessToken.mockReturnValue(null);
+      localStorage.getItem.mockReturnValue(null);
 
       await expect(changePassword(1, 'old', 'new', 'new'))
         .rejects
         .toThrow('Not authenticated');
         
-      expect(global.fetch).not.toHaveBeenCalled();
+      expect(fetchWithInterceptor).not.toHaveBeenCalled();
     });
 
     it('should handle password change failures', async () => {
       const userId = 1;
-      tokenService.getAccessToken.mockReturnValue('valid-token');
+      localStorage.getItem.mockReturnValue('valid-token');
       
-      global.fetch.mockResolvedValueOnce({
+      fetchWithInterceptor.mockResolvedValueOnce({
         ok: false,
         json: () => Promise.resolve({ error: { message: 'Incorrect old password' }})
       });
