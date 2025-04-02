@@ -1,10 +1,14 @@
 // src/pages/Admin/AdminEnrollment.jsx
 import React, { useState, useEffect } from "react";
-import Sidebar from "/src/components/common/layout/Sidebar.jsx";
+import { useNavigate } from "react-router-dom";
+import Sidebar, {
+  SidebarItem,
+} from "/src/components/common/layout/Sidebar.jsx";
 import Header from "/src/components/common/layout/Header.jsx";
 import EnrolleeStats from "/src/components/specific/enrollments/EnrolleeStats.jsx";
 import EnrolleeTable from "/src/components/specific/enrollments/EnrolleeTable.jsx";
 import {
+  Users,
   Book,
   Bell,
   FileText,
@@ -19,7 +23,6 @@ import {
   deleteEnrollment,
 } from "/src/services/enrollmentService.js";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
-import LoadingSpinner from "../../components/common/LoadingSpinner"; 
 
 function AdminEnrollment() {
   const [enrollees, setEnrollees] = useState([]);
@@ -139,6 +142,7 @@ function AdminEnrollment() {
 
   const handleApprove = async (enrolleeId) => {
     try {
+
       await approveEnrollment(enrolleeId);
       setSuccessMessage("Enrollment successfully approved!");
 
@@ -344,10 +348,12 @@ function AdminEnrollment() {
   );
 
   return (
-    <div className="flex h-screen bg-gray-100 relative pb-16">
+    <div className="flex h-screen bg-gray-100 relative pb-16"> {/* Added pb-16 */}
       <Sidebar navItems={navItems} />
-      <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto pb-16">
+      <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto pb-16"> {/* Added pb-16 */}
         <Header title="Manage Enrollments" />
+
+        {/* Add success/error message display */}
         {successMessage && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
             {successMessage}
@@ -359,42 +365,18 @@ function AdminEnrollment() {
           </div>
         )}
 
-        {/* Loading skeleton for EnrolleeStats */}
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="bg-white p-6 rounded-lg shadow animate-pulse"
-              >
-                <div className="h-4 bg-gray-200 rounded-full w-20 mb-3"></div>
-                <div className="h-8 bg-gray-200 rounded-full w-16"></div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-4">
-            <EnrolleeStats
-              totalEnrollees={totalItems}
-              approvedEnrollees={approvedCount}
-              pendingEnrollees={pendingCount}
-              rejectedEnrollees={rejectedCount}
-            />
-          </div>
-        )}
-
-        <div className="bg-white shadow rounded-lg p-6">
+        <div className="mt-4">
+          <EnrolleeStats
+            totalEnrollees={totalItems}
+            approvedEnrollees={approvedCount}
+            pendingEnrollees={pendingCount}
+            rejectedEnrollees={rejectedCount}
+          />
+        </div>
+        <div className="bg-white shadow rounded-lg overflow-hidden mt-4">
           {loading ? (
-            <div className="space-y-4">
-              <div className="h-8 bg-gray-200 rounded-full w-1/4 animate-pulse"></div>
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-16 bg-gray-200 rounded-lg animate-pulse"
-                  ></div>
-                ))}
-              </div>
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#212529]"></div>
             </div>
           ) : error ? (
             <ErrorState />
@@ -413,7 +395,7 @@ function AdminEnrollment() {
             />
           )}
         </div>
-      </div>
+      </div>x
       <MobileNavBar navItems={navItems} />
     </div>
   );
