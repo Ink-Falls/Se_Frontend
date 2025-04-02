@@ -28,7 +28,7 @@ import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // 
 import {
   getCourseAssessments,
   deleteAssessment,
-  editAssessment  // Add this import
+  editAssessment, // Add this import
 } from "../../services/assessmentService";
 import { getModulesByCourseId } from "../../services/moduleService";
 
@@ -236,8 +236,8 @@ const TeacherCourseAssessment = () => {
   const getStatusColor = (type, isPublished) => {
     const color = typeColors[type?.toLowerCase()] || typeColors.quiz;
     return {
-      backgroundColor: isPublished ? color.light : 'rgb(243 244 246)',
-      color: isPublished ? color.bg : 'rgb(107 114 128)',
+      backgroundColor: isPublished ? color.light : "rgb(243 244 246)",
+      color: isPublished ? color.bg : "rgb(107 114 128)",
     };
   };
 
@@ -287,15 +287,27 @@ const TeacherCourseAssessment = () => {
 
   const handleEditSubmit = async (updatedAssessment) => {
     try {
-      // Update local state
+      // Update moduleAssessments state
+      setModuleAssessments((prev) => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach((moduleId) => {
+          updated[moduleId] = updated[moduleId].map((a) =>
+            a.id === updatedAssessment.id ? updatedAssessment : a
+          );
+        });
+        return updated;
+      });
+
+      // Update assessments array
       setAssessments((prev) =>
         prev.map((a) => (a.id === updatedAssessment.id ? updatedAssessment : a))
       );
+
       setEditingAssessment(null);
-      setSuccessMessage("Assessment updated successfully"); // Add success message
+      setSuccessMessage("Assessment updated successfully");
     } catch (err) {
       console.error("Error updating assessment:", err);
-      setError("Failed to update assessment"); // Add error handling
+      setError("Failed to update assessment");
     }
   };
 
@@ -303,48 +315,54 @@ const TeacherCourseAssessment = () => {
     e.stopPropagation();
     try {
       setPublishingId(assessment.id);
-      
-      // Create complete request body with all required fields
+
       const updatedData = {
-        title: assessment.title,
-        description: assessment.description,
-        type: assessment.type,
-        max_score: assessment.max_score,
-        passing_score: assessment.passing_score,
-        duration_minutes: assessment.duration_minutes,
-        due_date: assessment.due_date,
+        ...assessment,
         is_published: !assessment.is_published,
-        instructions: assessment.instructions || "",
-        allowed_attempts: assessment.allowed_attempts || 1
       };
-  
+
       const response = await editAssessment(assessment.id, updatedData);
-  
+
       if (response.success) {
-        setModuleAssessments(prev => {
+        // Update local state with the returned assessment
+        const updatedAssessment = {
+          ...assessment,
+          is_published: !assessment.is_published,
+        };
+
+        // Update moduleAssessments
+        setModuleAssessments((prev) => {
           const updated = { ...prev };
-          Object.keys(updated).forEach(moduleId => {
-            updated[moduleId] = updated[moduleId].map(a => 
-              a.id === assessment.id 
-                ? { ...a, is_published: !a.is_published }
-                : a
+          Object.keys(updated).forEach((moduleId) => {
+            updated[moduleId] = updated[moduleId].map((a) =>
+              a.id === assessment.id ? updatedAssessment : a
             );
           });
           return updated;
         });
-        
+
+        // Update assessments array
+        setAssessments((prev) =>
+          prev.map((a) => (a.id === assessment.id ? updatedAssessment : a))
+        );
+
         setSuccessMessage(
-          `Assessment ${!assessment.is_published ? 'published' : 'unpublished'} successfully`
+          `Assessment ${
+            !assessment.is_published ? "published" : "unpublished"
+          } successfully`
         );
       }
     } catch (error) {
-      console.error('Error toggling publish state:', error);
-      setError(`Failed to ${assessment.is_published ? 'unpublish' : 'publish'} assessment`);
+      console.error("Error toggling publish state:", error);
+      setError(
+        `Failed to ${
+          assessment.is_published ? "unpublish" : "publish"
+        } assessment`
+      );
     } finally {
       setPublishingId(null);
     }
   };
-  
 
   const typeColors = {
     quiz: {
@@ -464,22 +482,24 @@ const TeacherCourseAssessment = () => {
               disabled={publishingId === assessment.id}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-300 ${
                 assessment.is_published
-                  ? 'bg-green-50 text-green-700 hover:bg-green-100'
-                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  ? "bg-green-50 text-green-700 hover:bg-green-100"
+                  : "bg-gray-50 text-gray-600 hover:bg-gray-100"
               }`}
             >
-              <span className={`h-2 w-2 rounded-full ${
-                assessment.is_published ? 'bg-green-500' : 'bg-gray-400'
-              }`} />
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  assessment.is_published ? "bg-green-500" : "bg-gray-400"
+                }`}
+              />
               <span className="text-sm font-medium">
                 {publishingId === assessment.id
-                  ? 'Updating...'
+                  ? "Updating..."
                   : assessment.is_published
-                  ? 'Published'
-                  : 'Draft'}
+                  ? "Published"
+                  : "Draft"}
               </span>
             </button>
-            
+
             <button
               className="text-sm font-semibold flex items-center gap-1 transition-colors"
               style={{ color: color.bg }}
