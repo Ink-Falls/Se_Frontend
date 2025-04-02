@@ -34,7 +34,7 @@ describe('Module Service', () => {
       const result = await getModulesByCourseId(courseId);
       
       expect(global.fetch).toHaveBeenCalledWith(
-        `${API_BASE_URL}/modules/course/${courseId}`,
+        `${API_BASE_URL}/modules/course/${courseId}?page=1`,
         expect.objectContaining({
           headers: expect.objectContaining({
             'Authorization': 'Bearer test-token'
@@ -57,33 +57,39 @@ describe('Module Service', () => {
 
   describe('createModule', () => {
     it('should create a new module', async () => {
+      const courseId = 1;
       const mockModuleData = {
         name: 'New Module',
-        description: 'New module description',
-        course_id: 1
+        description: 'New module description'
       };
 
       const mockResponse = {
         id: 3,
-        ...mockModuleData
+        course_id: courseId,
+        name: mockModuleData.name,
+        description: mockModuleData.description
       };
 
       global.fetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(mockResponse)
+        json: () => Promise.resolve({ module: mockResponse })
       });
 
-      const result = await createModule(mockModuleData);
+      const result = await createModule(courseId, mockModuleData);
       
       expect(global.fetch).toHaveBeenCalledWith(
-        `${API_BASE_URL}/modules`,
+        `${API_BASE_URL}/modules/course/${courseId}`,
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
             'Authorization': 'Bearer test-token',
             'Content-Type': 'application/json'
           }),
-          body: JSON.stringify(mockModuleData)
+          body: JSON.stringify({
+            course_id: courseId,
+            name: mockModuleData.name,
+            description: mockModuleData.description
+          })
         })
       );
       expect(result).toEqual(mockResponse);
@@ -93,31 +99,37 @@ describe('Module Service', () => {
   describe('getModuleContents', () => {
     it('should fetch module contents', async () => {
       const moduleId = 1;
-      const mockContents = {
-        id: moduleId,
-        name: 'Module 1',
-        contents: [
-          { id: 1, type: 'text', content: 'Text content' },
-          { id: 2, type: 'video', content: 'Video URL' }
-        ]
+      const mockContents = [
+        { id: 1, type: 'text', content: 'Text content' },
+        { id: 2, type: 'video', content: 'Video URL' }
+      ];
+
+      const mockResponse = {
+        contents: mockContents,
+        totalCount: 2,
+        currentPage: 1
       };
 
       global.fetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(mockContents)
+        json: () => Promise.resolve(mockResponse)
       });
 
       const result = await getModuleContents(moduleId);
       
       expect(global.fetch).toHaveBeenCalledWith(
-        `${API_BASE_URL}/modules/${moduleId}/contents`,
+        `${API_BASE_URL}/modules/${moduleId}/contents?page=1`,
         expect.objectContaining({
           headers: expect.objectContaining({
             'Authorization': 'Bearer test-token'
           })
         })
       );
-      expect(result).toEqual(mockContents);
+      expect(result).toEqual({
+        contents: mockContents,
+        totalCount: 2,
+        currentPage: 1
+      });
     });
   });
 

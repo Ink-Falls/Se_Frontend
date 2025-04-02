@@ -169,7 +169,10 @@ describe('Group Service', () => {
     it('should update group details', async () => {
       const updateData = {
         name: 'Updated Group',
-        groupType: 'learner'
+        groupType: 'learner',
+        // Include these fields to match the actual implementation
+        addUserIds: [],
+        removeUserIds: []
       };
 
       global.fetch.mockResolvedValueOnce({
@@ -236,7 +239,7 @@ describe('Group Service', () => {
   describe('getGroupsByType', () => {
     it('should fetch groups by type', async () => {
       const mockGroups = [
-        { id: 1, name: 'Group 1', group_type: 'learner', group_id: 1 }, // Fix: added group_type and group_id
+        { id: 1, name: 'Group 1', group_type: 'learner', group_id: 1 },
         { id: 2, name: 'Group 2', group_type: 'learner', group_id: 2 }
       ];
 
@@ -248,7 +251,7 @@ describe('Group Service', () => {
       const result = await getGroupsByType('learner');
       
       expect(global.fetch).toHaveBeenCalledWith(
-        `${API_BASE_URL}/groups?group_type=learner`, // Fix: Updated endpoint
+        `${API_BASE_URL}/groups?group_type=learner`,
         expect.objectContaining({
           headers: expect.objectContaining({
             'Authorization': 'Bearer test-token'
@@ -300,11 +303,9 @@ describe('Group Service', () => {
 
   describe('getGroupById', () => {
     it('should fetch a group by ID', async () => {
+      // Mock with what the API actually returns
       const mockGroup = {
-        id: 1,
-        name: 'Group 1',
-        description: 'A test group',
-        members: [{ id: 1, name: 'Member 1' }]
+        group_type: 'learner'
       };
 
       global.fetch.mockResolvedValueOnce({
@@ -322,6 +323,7 @@ describe('Group Service', () => {
           })
         })
       );
+      // Just check that we're getting the response without modifying it
       expect(result).toEqual(mockGroup);
     });
   });
