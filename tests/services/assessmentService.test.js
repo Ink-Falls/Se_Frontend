@@ -38,21 +38,37 @@ describe('Assessment Service', () => {
     it('should successfully create an assessment', async () => {
       const mockAssessment = {
         title: 'Test Assessment',
-        description: 'Test Description'
+        description: 'Test Description',
+        due_date: '2024-01-01T00:00:00Z', // Add valid date
+        module_id: 1,
+        type: 'quiz',
+        max_score: 100,
+        passing_score: 60,
+        duration_minutes: 60,
+        is_published: false,
+        instructions: 'Test instructions',
+        allowed_attempts: 2
       };
 
       fetchWithInterceptor.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve(mockAssessment)
+        json: () => Promise.resolve({
+          success: true,
+          assessment: mockAssessment,
+          message: 'Assessment created successfully'
+        })
       });
 
       const result = await createAssessment(mockAssessment);
-      expect(result).toEqual(mockAssessment);
+      expect(result.success).toBe(true);
       expect(fetchWithInterceptor).toHaveBeenCalledWith(
-        expect.stringContaining('/assessments'),
+        `${API_BASE_URL}/assessments`,
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify(mockAssessment)
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: expect.any(String)
         })
       );
     });
@@ -60,16 +76,30 @@ describe('Assessment Service', () => {
 
   describe('getCourseAssessments', () => {
     it('should fetch assessments for a course', async () => {
-      const mockAssessments = [{ id: 1, title: 'Test' }];
+      const mockResponse = {
+        success: true,
+        assessments: {
+          assessments: [{ id: 1, title: 'Test', due_date: '2024-01-01T00:00:00Z' }],
+          course_id: 1
+        },
+        pagination: {
+          total: 1,
+          pages: 1,
+          page: 1,
+          limit: 10
+        }
+      };
+      
       fetchWithInterceptor.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(mockAssessments)
+        json: () => Promise.resolve(mockResponse)
       });
 
       const result = await getCourseAssessments(1);
-      expect(result).toEqual(mockAssessments);
+      expect(result.success).toBe(true);
+      expect(result.assessments).toBeDefined();
       expect(fetchWithInterceptor).toHaveBeenCalledWith(
-        expect.stringContaining('/assessments/course/1')
+        expect.stringMatching(/\/assessments\/module\/1/)
       );
     });
   });

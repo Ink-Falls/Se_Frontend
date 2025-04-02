@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from "react"; // Add useEffect import
 import { X, Plus, Trash2 } from "lucide-react";
 
-const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
+const CreateQuestionModal = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  maxScore,
+  questions,
+}) => {
   const initialState = {
     question_text: "",
     question_type: "multiple_choice",
@@ -15,21 +21,23 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
   };
 
   const [questionData, setQuestionData] = useState(initialState);
+  const [error, setError] = useState(null); // Add error state
 
   // Add effect to reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
       setQuestionData(initialState);
+      setError(null); // Reset error when modal closes
     }
   }, [isOpen]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     // Allow empty value for word_limit
-    if (name === 'word_limit') {
+    if (name === "word_limit") {
       setQuestionData((prev) => ({
         ...prev,
-        [name]: value === '' ? '' : parseInt(value),
+        [name]: value === "" ? "" : parseInt(value),
       }));
     } else {
       setQuestionData((prev) => ({
@@ -68,21 +76,43 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null); // Reset error on new submission
 
     try {
+      // Get current total points
+      const currentPoints =
+        questions?.reduce((sum, q) => sum + (parseInt(q.points) || 0), 0) || 0;
+      const newPoints = parseInt(questionData.points) || 0;
+
+      // Check if adding this question's points would exceed max score
+      if (currentPoints + newPoints > maxScore) {
+        throw new Error(
+          `Total points would exceed max score (${maxScore}). Current total: ${currentPoints}, Attempting to add: ${newPoints}`
+        );
+      }
+
+      // Multiple choice validation - check for at least 2 options
+      if (
+        questionData.question_type === "multiple_choice" &&
+        questionData.options.filter((opt) => opt.text.trim()).length < 2
+      ) {
+        throw new Error(
+          "Multiple choice questions must have at least 2 options"
+        );
+      }
+
       const basicData = {
         question_text: questionData.question_text.trim(),
         question_type: questionData.question_type,
         points: parseInt(questionData.points),
         media_url: questionData.media_url || "",
-        answer_key: null
+        answer_key: null,
       };
 
       switch (questionData.question_type) {
         case "multiple_choice":
           if (!questionData.options.some((opt) => opt.is_correct)) {
-            alert("Please select a correct answer");
-            return;
+            throw new Error("Please select a correct answer");
           }
           basicData.options = questionData.options
             .filter((opt) => opt.text.trim())
@@ -96,22 +126,26 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
 
         case "true_false":
           if (!questionData.correct_answer) {
-            alert("Please select the correct answer");
-            return;
+            throw new Error("Please select the correct answer");
           }
           // Remove answer_key for true_false
           delete basicData.answer_key;
           basicData.options = [
-            { text: "True", is_correct: questionData.correct_answer === "true" },
-            { text: "False", is_correct: questionData.correct_answer === "false" }
+            {
+              text: "True",
+              is_correct: questionData.correct_answer === "true",
+            },
+            {
+              text: "False",
+              is_correct: questionData.correct_answer === "false",
+            },
           ];
           break;
 
         case "short_answer":
         case "essay":
           if (!questionData.answer_key?.trim()) {
-            alert("Please provide the correct answer");
-            return;
+            throw new Error("Please provide the correct answer");
           }
           basicData.answer_key = questionData.answer_key.trim();
           if (questionData.question_type === "essay") {
@@ -123,12 +157,13 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
           throw new Error("Invalid question type");
       }
 
-      console.log('Formatted question data:', basicData);
+      console.log("Formatted question data:", basicData);
       await onSubmit(basicData);
-      
+      // If we get here, submission was successful
+      onClose();
     } catch (err) {
       console.error("Error submitting question:", err);
-      alert(err.message || "Error creating question. Please try again.");
+      setError(err.message || "Error creating question. Please try again.");
     }
   };
 
@@ -294,7 +329,7 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
             <input
               type="text"
               name="answer_key"
-              value={questionData.answer_key || ''}
+              value={questionData.answer_key || ""}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border rounded-md"
               placeholder="Enter the exact correct answer"
@@ -310,8 +345,8 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
                 Grading Guidelines
               </label>
               <textarea
-                name="answer_key" 
-                value={questionData.answer_key || ''}
+                name="answer_key"
+                value={questionData.answer_key || ""}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border rounded-md"
                 placeholder="Enter detailed guidelines for grading the essay"
@@ -359,6 +394,12 @@ const CreateQuestionModal = ({ isOpen, onClose, onSubmit }) => {
         </div>
 
         <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Question Text section */}
             <div>

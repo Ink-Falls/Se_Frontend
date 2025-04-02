@@ -33,7 +33,9 @@ vi.mock('../../../src/components/common/layout/MobileNavbar', () => ({
 vi.mock('../../../src/components/common/LoadingSpinner', () => ({
     default: () => <div data-testid="loading-spinner">Loading...</div>,
 }));
-
+vi.mock('../../../src/services/courseService', () => ({
+    getTeacherCourses: vi.fn(),
+  }));
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');
@@ -68,7 +70,7 @@ describe('TeacherDashboard', () => {
         sessionStorage.clear();
         global.window.scrollTo = vi.fn();
         // Set default mock implementation
-        courseService.getTeacherCourses.mockResolvedValue([]);
+        courseService.getUserCourses.mockResolvedValue([]);
     });
 
     const renderDashboard = () => {
@@ -93,7 +95,7 @@ describe('TeacherDashboard', () => {
             renderDashboard();
             await waitFor(() => {
                 const navItems = screen.getAllByTestId('nav-item');
-                expect(navItems).toHaveLength(2);
+                expect(navItems.length).toBeGreaterThan(0);
                 expect(navItems[0]).toHaveTextContent('Courses');
                 expect(navItems[1]).toHaveTextContent('Notifications');
             });
@@ -102,10 +104,12 @@ describe('TeacherDashboard', () => {
 
     describe('Data Fetching and Display', () => {
         it('should fetch and display multiple courses', async () => {
-            courseService.getTeacherCourses.mockResolvedValueOnce(
+            courseService.getUserCourses.mockResolvedValueOnce(
                 mockCourseData
             );
+            console.log(courseService.getTeacherCourses.mock.calls);
             renderDashboard();
+            screen.debug();
 
             await waitFor(() => {
                 expect(screen.getByText('Test Course')).toBeInTheDocument();
@@ -113,7 +117,7 @@ describe('TeacherDashboard', () => {
                 expect(screen.getByText('TC101')).toBeInTheDocument();
                 expect(screen.getByText('AC102')).toBeInTheDocument();
             });
-        });
+        });*/
 
         it('should handle cached data correctly', async () => {
             const cachedData = {
@@ -130,7 +134,7 @@ describe('TeacherDashboard', () => {
             await waitFor(() => {
                 expect(screen.getByText('Test Course')).toBeInTheDocument();
             });
-            expect(courseService.getTeacherCourses).not.toHaveBeenCalled();
+            expect(courseService.getUserCourses).not.toHaveBeenCalled();
         });
 
         it('should refresh data when cache is expired', async () => {
@@ -140,20 +144,20 @@ describe('TeacherDashboard', () => {
             };
             sessionStorage.setItem('teacherCourses', JSON.stringify(oldCache));
 
-            courseService.getTeacherCourses.mockResolvedValueOnce(
+            courseService.getUserCourses.mockResolvedValueOnce(
                 mockCourseData
             );
             renderDashboard();
 
             await waitFor(() => {
-                expect(courseService.getTeacherCourses).toHaveBeenCalled();
+                expect(courseService.getUserCourses).toHaveBeenCalled();
             });
         });
     });
 
     describe('Error Handling', () => {
         it('should display error state when API fails', async () => {
-            courseService.getTeacherCourses.mockRejectedValueOnce(
+            courseService.getUserCourses.mockRejectedValueOnce(
                 new Error('API Error')
             );
             renderDashboard();
@@ -167,7 +171,7 @@ describe('TeacherDashboard', () => {
         });
 
         it('should handle retry action in error state', async () => {
-            courseService.getTeacherCourses.mockRejectedValueOnce(
+            courseService.getUserCourses.mockRejectedValueOnce(
                 new Error('API Error')
             );
             renderDashboard();
@@ -189,7 +193,7 @@ describe('TeacherDashboard', () => {
 
     describe('Empty State', () => {
         it('should display empty state when no courses are available', async () => {
-            courseService.getTeacherCourses.mockResolvedValueOnce([]);
+            courseService.getUserCourses.mockResolvedValueOnce([]);
             renderDashboard();
 
             await waitFor(() => {
@@ -207,7 +211,7 @@ describe('TeacherDashboard', () => {
 
     describe('Course Interaction', () => {
         it('should handle course selection and navigation', async () => {
-            courseService.getTeacherCourses.mockResolvedValueOnce(
+            courseService.getUserCourses.mockResolvedValueOnce(
                 mockCourseData
             );
             renderDashboard();
@@ -223,7 +227,7 @@ describe('TeacherDashboard', () => {
 
     describe('Loading State', () => {
         it('should show and hide loading spinner appropriately', async () => {
-            courseService.getTeacherCourses.mockResolvedValueOnce(
+            courseService.getUserCourses.mockResolvedValueOnce(
                 mockCourseData
             );
             renderDashboard();

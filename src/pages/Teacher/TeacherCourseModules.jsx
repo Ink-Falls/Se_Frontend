@@ -658,6 +658,8 @@ const TeacherCourseModules = () => {
               creating your first module.
             </p>
             <button
+              role="button"
+              aria-label="create-first-module"
               onClick={() => setIsCreateModuleOpen(true)}
               className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
             >
@@ -769,8 +771,9 @@ const TeacherCourseModules = () => {
               }}
             >
               <div className="mb-4">
-                <label className="block font-medium text-gray-700">Title</label>
+                <label htmlFor="title" className="block font-medium text-gray-700">Title</label>
                 <input
+                  id="title"
                   type="text"
                   name="title"
                   placeholder="Enter title"
@@ -779,10 +782,11 @@ const TeacherCourseModules = () => {
                 />
               </div>
               <div className="mb-4">
-                <label className="block font-medium text-gray-700">
+                <label htmlFor="description" className="block font-medium text-gray-700">
                   Description
                 </label>
                 <textarea
+                  id="description"
                   name="description"
                   placeholder="Enter description"
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-yellow-500 focus:border-yellow-500"
