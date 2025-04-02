@@ -184,16 +184,8 @@ function EnrolleeTable({
 
   const handleSearchChange = (e) => {
     const query = e.target.value;
-    // Filter enrollees based on first name and last name only
-    const filtered = enrollees.filter(enrollee => {
-      const searchTerm = query.toLowerCase();
-      const firstName = enrollee.fullName.split(' ')[0].toLowerCase();
-      const lastName = enrollee.fullName.split(' ').pop().toLowerCase();
-      
-      return firstName.includes(searchTerm) || lastName.includes(searchTerm);
-    });
-    
-    onSearch(query, filtered);
+    // Remove local filtering and just pass the query to parent
+    onSearch(query);
   };
 
   // Add the getStatusStyle function

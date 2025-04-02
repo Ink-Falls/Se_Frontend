@@ -252,16 +252,53 @@ function AdminEnrollment() {
     }
   };
 
-  const handleSearch = async (query, filteredResults) => {
+  // Add this function to fetch all enrollees for search
+  const fetchAllEnrollees = async () => {
+    try {
+      const response = await getAllEnrollments(1, 999999); // Fetch all enrollees
+      const enrollmentsData = response.data || response.enrollments || response;
+      if (Array.isArray(enrollmentsData)) {
+        const transformedEnrollees = enrollmentsData.map((enrollment) => ({
+          id: enrollment.enrollment_id,
+          fullName: `${enrollment.first_name} ${enrollment.middle_initial || ""} ${enrollment.last_name}`,
+          status: enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1),
+          enrollmentDate: new Date(enrollment.createdAt).toLocaleDateString(),
+          email: enrollment.email,
+          contactNo: enrollment.contact_no,
+          birthDate: enrollment.birth_date,
+          schoolId: enrollment.school_id,
+          yearLevel: enrollment.year_level,
+        }));
+        setAllEnrolleesData(transformedEnrollees);
+      }
+    } catch (error) {
+      console.error("Error fetching all enrollees:", error);
+    }
+  };
+
+  // Add useEffect to fetch all enrollees on component mount
+  useEffect(() => {
+    fetchAllEnrollees();
+  }, []);
+
+  // Modify handleSearch to use allEnrolleesData
+  const handleSearch = async (query, filtered) => {
     setSearchQuery(query);
     if (query.trim() === '') {
-      // If search is cleared, show original data
-      await fetchEnrollments();
+      await fetchEnrollments(); // Reset to original paginated data
     } else {
-      // Update enrollees with filtered results
-      setEnrollees(filteredResults);
-      setTotalItems(filteredResults.length);
-      setTotalPages(Math.ceil(filteredResults.length / itemsPerPage));
+      // Filter from all enrollees data
+      const allFiltered = allEnrolleesData.filter(enrollee => {
+        const searchTerm = query.toLowerCase();
+        const firstName = enrollee.fullName.split(' ')[0].toLowerCase();
+        const lastName = enrollee.fullName.split(' ').pop().toLowerCase();
+        return firstName.includes(searchTerm) || lastName.includes(searchTerm);
+      });
+
+      setEnrollees(allFiltered.slice(0, itemsPerPage));
+      setTotalItems(allFiltered.length);
+      setTotalPages(Math.ceil(allFiltered.length / itemsPerPage));
+      setCurrentPage(1);
     }
   };
 
