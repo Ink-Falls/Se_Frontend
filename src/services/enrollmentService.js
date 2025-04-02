@@ -12,29 +12,51 @@ import fetchWithInterceptor from "./apiService";
  * @async
  * @function getAllEnrollments
  * @param {number} [page=1] - The page number to fetch.
+ * @param {number} [limit=10] - Number of items per page
  * @returns {Promise<Array<object>>} Array of enrollment objects.
  * @throws {Error} If the API request fails or authentication is missing.
  */
-const getAllEnrollments = async () => {
+export const getAllEnrollments = async (options = {}) => {
   try {
     const token = localStorage.getItem("token");
     if (!token) {
-      throw new Error("Not authenticated"); // Or redirect to login
+      console.error("❌ No authentication token found");
+      throw new Error("Not authenticated");
     }
 
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/enrollments`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json", // Good practice to include
-      },
-    });
+    const params = new URLSearchParams({
+      page: Number(options.page) || 1,
+      limit: Number(options.limit) || 10,
+    }).toString();
+
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/enrollments?${params}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.message || "Failed to fetch enrollments");
     }
 
-    return await response.json();
+    const data = await response.json();
+
+    const result = {
+      enrollments: data.rows || data.enrollments || [],
+      totalItems: data.count || data.totalItems || 0,
+      totalPages:
+        data.totalPages ||
+        Math.ceil((data.count || data.totalItems || 0) / (options.limit || 10)),
+      currentPage: Number(options.page) || 1,
+      statusCounts: data.statusCounts || [],
+    };
+
+    return result;
   } catch (error) {
     console.error("Error fetching enrollments:", error);
     throw error; // Re-throw the error so the component can handle it

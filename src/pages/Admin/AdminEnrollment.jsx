@@ -98,7 +98,7 @@ function AdminEnrollment() {
         );
         setCurrentPage(response?.currentPage || currentPage);
 
-        // Count approved, pending and rejected enrollments
+        /* // Count approved, pending and rejected enrollments
         const approved = enrollmentsList.filter(
           (e) => e.status === "approved"
         ).length;
@@ -111,7 +111,9 @@ function AdminEnrollment() {
 
         setApprovedCount(approved);
         setPendingCount(pending);
-        setRejectedCount(rejected);
+        setRejectedCount(rejected);*/
+
+        fetchTotalCounts();
       } catch (error) {
         console.error("Error fetching enrollments:", error);
         setError(error.message || "Failed to fetch enrollments");
@@ -165,7 +167,7 @@ function AdminEnrollment() {
 
       setEnrollees(transformedEnrollees);
 
-      // Update counts
+      /* // Update counts
       const approved = enrollmentsList.filter(
         (e) => e.status === "approved"
       ).length;
@@ -178,7 +180,9 @@ function AdminEnrollment() {
 
       setApprovedCount(approved);
       setPendingCount(pending);
-      setRejectedCount(rejected);
+      setRejectedCount(rejected);*/
+
+      fetchTotalCounts();
     } catch (error) {
       console.error("Approval error:", error);
       setError(error.message || "Failed to approve enrollment");
@@ -215,7 +219,7 @@ function AdminEnrollment() {
       setEnrollees(transformedEnrollees);
       setTotalItems(enrollmentsList.length);
 
-      // Update counts
+      /*// Update counts
       const approved = enrollmentsList.filter(
         (e) => e.status === "approved"
       ).length;
@@ -228,7 +232,9 @@ function AdminEnrollment() {
 
       setApprovedCount(approved);
       setPendingCount(pending);
-      setRejectedCount(rejected);
+      setRejectedCount(rejected);*/
+
+      fetchTotalCounts();
     } catch (error) {
       console.error("Error rejecting enrollment:", error);
       setError(error.message || "Failed to reject enrollment");
@@ -285,7 +291,7 @@ function AdminEnrollment() {
         setCurrentPage(newTotalPages || 1);
       }
 
-      // Update counts
+      /*// Update counts
       const approved = enrollmentsList.filter(
         (e) => e.status === "approved"
       ).length;
@@ -298,12 +304,43 @@ function AdminEnrollment() {
 
       setApprovedCount(approved);
       setPendingCount(pending);
-      setRejectedCount(rejected);
+      setRejectedCount(rejected);*/
+
+      fetchTotalCounts();
     } catch (error) {
       console.error("Error deleting enrollments:", error);
       setError(error.message || "Failed to delete selected enrollments");
     }
   };
+
+  const fetchTotalCounts = async () => {
+      try {
+        // Fetch all users without pagination to get accurate counts
+        const result = await getAllEnrollments({
+          page: 1,
+          limit: 0, // Large number to get all users
+        });
+  
+        if (result) {
+          const statusCounts = result.statusCounts || [];
+          const totalEnrollments = result.totalItems; // Total users from API
+          const totalApproved =
+            statusCounts.find((status) => status.status === "approved")?.count || 0;
+          const totalRejected =
+            statusCounts.find((status) => status.status === "rejected")?.count || 0;
+          const totalPending =
+            statusCounts.find((status) => status.status === "pending")?.count ||
+            0;
+          
+          setTotalItems(totalItems);
+          setApprovedCount(approvedCount);
+          setPendingCount(pendingCount);
+          setRejectedCount(rejectedCount);
+        }
+      } catch (error) {
+        console.error("Error fetching total counts:", error);
+      }
+    };
 
   const EmptyState = () => (
     <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -375,10 +412,14 @@ function AdminEnrollment() {
         ) : (
           <div className="mt-4">
             <EnrolleeStats
-              totalEnrollees={totalItems}
+              /* totalEnrollees={totalItems}
               approvedEnrollees={approvedCount}
               pendingEnrollees={pendingCount}
-              rejectedEnrollees={rejectedCount}
+              rejectedEnrollees={rejectedCount}*/
+              totalEnrollees={totalEnrollments}
+              approvedEnrollees={totalApproved}
+              pendingEnrollees={totalPending}
+              rejectedEnrollees={totalRejected}
             />
           </div>
         )}
