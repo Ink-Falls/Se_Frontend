@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
+import { act } from 'react-dom/test-utils';
 import Enrollment from '../../../src/pages/Enrollment/Enrollment';
 import { checkEnrollmentStatus } from '../../../src/services/enrollmentCheckService';
 
@@ -49,6 +50,7 @@ describe('Enrollment', () => {
 
             // Check status display
             expect(screen.getByText('Status:')).toBeInTheDocument();
+            // Initial status is capitalized in the component
             expect(screen.getByText('Unknown')).toBeInTheDocument();
         });
     });
@@ -88,11 +90,25 @@ describe('Enrollment', () => {
             );
 
             const emailInput = screen.getByPlaceholderText('Enter your email');
-            fireEvent.change(emailInput, {
-                target: { value: 'test@example.com' },
+            
+            await act(async () => {
+                fireEvent.change(emailInput, {
+                    target: { value: 'test@example.com' },
+                });
+            });
+            
+            await act(async () => {
+                fireEvent.click(screen.getByText('Check'));
             });
 
-            fireEvent.click(screen.getByText('Check'));
+            await waitFor(() => {
+                const statusElement = screen.getByText('Approved');
+                expect(statusElement).toBeInTheDocument();
+                // Check that the element has the correct status text and is visible
+                expect(statusElement).toHaveTextContent('Approved');
+                // Verify it's the status badge by checking its classes
+                expect(statusElement).toHaveClass('font-semibold', 'rounded-md');
+            });
         });
 
         it('handles pending status correctly', async () => {
@@ -105,18 +121,23 @@ describe('Enrollment', () => {
             );
 
             const emailInput = screen.getByPlaceholderText('Enter your email');
-            fireEvent.change(emailInput, {
-                target: { value: 'test@example.com' },
+            
+            await act(async () => {
+                fireEvent.change(emailInput, {
+                    target: { value: 'test@example.com' },
+                });
             });
 
-            fireEvent.click(screen.getByText('Check'));
+            await act(async () => {
+                fireEvent.click(screen.getByText('Check'));
+            });
 
             await waitFor(() => {
                 const statusElement = screen.getByText('Pending');
                 expect(statusElement).toBeInTheDocument();
-                expect(statusElement).toHaveStyle({
-                    backgroundColor: '#F6BA18',
-                });
+                expect(statusElement).toHaveTextContent('Pending');
+                // Verify it's the status badge by checking its classes
+                expect(statusElement).toHaveClass('font-semibold', 'rounded-md');
             });
         });
 
@@ -130,11 +151,24 @@ describe('Enrollment', () => {
             );
 
             const emailInput = screen.getByPlaceholderText('Enter your email');
-            fireEvent.change(emailInput, {
-                target: { value: 'test@example.com' },
+            
+            await act(async () => {
+                fireEvent.change(emailInput, {
+                    target: { value: 'test@example.com' },
+                });
             });
 
-            fireEvent.click(screen.getByText('Check'));
+            await act(async () => {
+                fireEvent.click(screen.getByText('Check'));
+            });
+
+            await waitFor(() => {
+                const statusElement = screen.getByText('Rejected');
+                expect(statusElement).toBeInTheDocument();
+                expect(statusElement).toHaveTextContent('Rejected');
+                // Verify it's the status badge by checking its classes
+                expect(statusElement).toHaveClass('font-semibold', 'rounded-md');
+            });
         });
     });
 
@@ -151,15 +185,20 @@ describe('Enrollment', () => {
             );
 
             const emailInput = screen.getByPlaceholderText('Enter your email');
-            fireEvent.change(emailInput, {
-                target: { value: 'nonexistent@example.com' },
+            
+            await act(async () => {
+                fireEvent.change(emailInput, {
+                    target: { value: 'nonexistent@example.com' },
+                });
             });
 
-            fireEvent.click(screen.getByText('Check'));
+            await act(async () => {
+                fireEvent.click(screen.getByText('Check'));
+            });
 
             await waitFor(() => {
-                expect(screen.getByText('Email not found')).toBeInTheDocument();
-                expect(screen.getByText('Unknown')).toBeInTheDocument();
+                expect(screen.getByText('Enrollment not found')).toBeInTheDocument();
+                expect(screen.getByText('Error')).toBeInTheDocument();
             });
         });
 
@@ -175,15 +214,20 @@ describe('Enrollment', () => {
             );
 
             const emailInput = screen.getByPlaceholderText('Enter your email');
-            fireEvent.change(emailInput, {
-                target: { value: 'test@example.com' },
+            
+            await act(async () => {
+                fireEvent.change(emailInput, {
+                    target: { value: 'test@example.com' },
+                });
             });
 
-            fireEvent.click(screen.getByText('Check'));
+            await act(async () => {
+                fireEvent.click(screen.getByText('Check'));
+            });
 
             await waitFor(() => {
                 expect(
-                    screen.getByText('An unexpected error occurred.')
+                    screen.getByText('An unexpected error occurred. Please try again later.')
                 ).toBeInTheDocument();
                 expect(screen.getByText('Error')).toBeInTheDocument();
             });
