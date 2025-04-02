@@ -12,22 +12,33 @@ import fetchWithInterceptor from "./apiService";
  * @async
  * @function getAllEnrollments
  * @param {number} [page=1] - The page number to fetch.
+ * @param {number} [limit=10] - The number of enrollments per page.
+ * @param {string} [status=''] - The status to filter enrollments by.
  * @returns {Promise<Array<object>>} Array of enrollment objects.
  * @throws {Error} If the API request fails or authentication is missing.
  */
-const getAllEnrollments = async () => {
+const getAllEnrollments = async (page = 1, limit = 10, status = '') => {
   try {
     const token = localStorage.getItem("token");
     if (!token) {
-      throw new Error("Not authenticated"); // Or redirect to login
+      throw new Error("Not authenticated");
     }
 
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/enrollments`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json", // Good practice to include
-      },
-    });
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(status && { status: status.toLowerCase() })
+    }).toString();
+
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/enrollments?${queryParams}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -37,7 +48,7 @@ const getAllEnrollments = async () => {
     return await response.json();
   } catch (error) {
     console.error("Error fetching enrollments:", error);
-    throw error; // Re-throw the error so the component can handle it
+    throw error;
   }
 };
 
