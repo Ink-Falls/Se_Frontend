@@ -44,8 +44,10 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
         return;
       }
 
-      await onApprove(enrolleeId);
-      onClose();
+      const result = await onApprove(enrolleeId);
+      if (result?.message === "Enrollment approved successfully") {
+        onClose();
+      }
     } catch (error) {
       console.error("Error in approval process:", error);
       setApprovalError(error.message || "Failed to complete approval process");
@@ -55,10 +57,13 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
 
   const handleReject = async () => {
     try {
+      setApprovalError(null);
       await onReject(enrolleeId);
-      onClose();
+      // Don't check response message, just close if no error was thrown
+      onClose(true);
     } catch (error) {
       console.error("Error rejecting enrollment:", error);
+      setApprovalError("An error occurred while rejecting the enrollment");
     }
   };
 
@@ -271,7 +276,7 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
         {/* Action Buttons */}
         <div className="mt-8 flex justify-end space-x-4 border-t pt-4">
           <button
-            onClick={onClose}
+            onClick={() => onClose(false)} // Pass false to indicate no action taken
             className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
           >
             Close
