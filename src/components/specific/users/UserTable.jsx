@@ -218,6 +218,7 @@ const UserTable = ({
             </button>
 
             <button
+              data-testid="generate-report-button"
               onClick={onGenerateReport}
               className="flex items-center gap-2 md:gap-[0.3vw] px-4 md:px-[0.8vw] py-2 md:py-[0.4vw] bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
             >
