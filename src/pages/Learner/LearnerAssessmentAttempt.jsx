@@ -43,7 +43,16 @@ const LearnerAssessmentAttempt = () => {
       try {
         setLoading(true);
         
-        // Create or fetch existing submission
+        // First get assessment details with questions
+        const assessmentResponse = await getAssessmentById(assessment.id, true, false);
+        if (!assessmentResponse.success) {
+          throw new Error('Failed to fetch assessment details');
+        }
+        
+        setQuestions(assessmentResponse.assessment.questions || []);
+        console.log('Fetched questions:', assessmentResponse.assessment.questions);
+
+        // Then create or fetch existing submission
         const submissionResponse = await createSubmission(assessment.id);
         
         if (submissionResponse.success) {
@@ -81,7 +90,6 @@ const LearnerAssessmentAttempt = () => {
           }
         }
       } catch (err) {
-        // Use the message from createSubmission service
         if (err.message?.includes('Maximum assessment attempts reached:')) {
           const cleanMessage = err.message.split('Maximum assessment attempts reached:')[1].trim();
           navigate(`/Learner/Assessment/View/${assessment.id}`, {

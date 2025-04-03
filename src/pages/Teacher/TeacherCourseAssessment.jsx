@@ -28,7 +28,7 @@ import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // 
 import {
   getCourseAssessments,
   deleteAssessment,
-  editAssessment, // Add this import
+  editAssessment, 
 } from "../../services/assessmentService";
 import { getModulesByCourseId } from "../../services/moduleService";
 
@@ -701,15 +701,20 @@ const TeacherCourseAssessment = () => {
           </div>
         )}
 
-        {/* Floating Action Button - Only shown when there are existing assessments */}
         {!loading && !error && hasAnyAssessments && (
-          <button
-            data-testid="create-assessment-floating-button"
-            onClick={() => setIsCreateModalOpen(true)}
-            className="fixed bottom-8 right-8 w-14 h-14 bg-[#F6BA18] text-[#212529] rounded-full shadow-lg hover:bg-[#212529] hover:text-[#F6BA18] transition-colors z-50 flex items-center justify-center"
-          >
-            <Plus size={24} />
-          </button>
+          <>
+            <div className="flex flex-col gap-4 mt-4">
+              {renderModulesWithAssessments()}
+            </div>
+
+            {/* Floating Action Button - Only shown when there are existing assessments */}
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="fixed bottom-8 right-8 w-14 h-14 bg-[#F6BA18] text-[#212529] rounded-full shadow-lg hover:bg-[#212529] hover:text-[#F6BA18] transition-colors z-50 flex items-center justify-center"
+            >
+              <Plus size={24} />
+            </button>
+          </>
         )}
 
         <CreateAssessmentModal

@@ -5,6 +5,7 @@ import Sidebar, {
   SidebarItem,
 } from "/src/components/common/layout/Sidebar.jsx";
 import Header from "/src/components/common/layout/Header.jsx";
+import LoadingSpinner from "/src/components/common/LoadingSpinner";  // Fixed import
 import EnrolleeStats from "/src/components/specific/enrollments/EnrolleeStats.jsx";
 import EnrolleeTable from "/src/components/specific/enrollments/EnrolleeTable.jsx";
 import LoadingSpinner from "/src/components/common/LoadingSpinner.jsx";
