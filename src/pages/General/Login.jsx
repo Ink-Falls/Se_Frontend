@@ -7,7 +7,7 @@ import { RECAPTCHA_SITE_KEY } from "../../utils/constants";
 import logo from "../../assets/images/ARALKADEMYLOGO.png";
 import icon from "../../assets/images/ARALKADEMYICON.png";
 import nstpLogo from "../../assets/images/NSTPLOGO.png";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Key, Mail, Hash, Image } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import MagicLinkLogin from "../Auth/MagicLinkLogin";
 import NumericCodeLogin from "../Auth/NumericCodeLogin";
@@ -101,7 +101,7 @@ function Login() {
 
     const newValidationErrors = {
       email: emailError,
-      password: passwordError
+      password: passwordError,
     };
 
     setValidationErrors(newValidationErrors);
@@ -128,7 +128,9 @@ function Login() {
         email,
         password,
         captchaResponse ||
-          (window.captchaResponse ? window.captchaResponse : "test-captcha-response")
+          (window.captchaResponse
+            ? window.captchaResponse
+            : "test-captcha-response")
       );
 
       if (!loginData.token || !loginData.user) {
@@ -219,7 +221,7 @@ function Login() {
         <div className="absolute inset-0 bg-black opacity-30"></div>
 
         {/* Header section with navigation and title */}
-        <header className="relative z-10 py-[3vw] px-[4vw] lg:py-[1vw] lg:px-[2vw] bg-[#121212] text-[#F6BA18] flex justify-between items-center shadow-xl">
+        <header className="relative z-10 py-[3vw] px-[4vw] lg:py-[1.5vw] lg:px-[2vw] bg-[#121212] text-[#F6BA18] flex justify-between items-center shadow-xl">
           <div className="flex items-center">
             <img
               src={logo}
@@ -240,7 +242,7 @@ function Login() {
         {/* Main Content */}
         <div className="relative z-10 flex items-center justify-center min-h-screen">
           {/* Wrapper for left and right sections */}
-          <div className="mt-[-10vw] sm:mt-[0vw] lg:mt-[-5vw] flex flex-col lg:flex-row items-center p-[2vw] rounded-lg gap-[15vw]">
+          <div className="mt-[2vw] lg:mt-[2vw] flex flex-col lg:flex-row items-center p-[2vw] rounded-lg gap-[15vw]">
             {/* Left side: Icons, Title, and description */}
             <div className="text-left lg:block hidden lg:mt-[-5vw]">
               <div className="flex items-center space-x-4]">
@@ -266,262 +268,261 @@ function Login() {
             </div>
 
             {/* Right side: Login form */}
-            <div className="p-4 mt-[15vh] sm:mt-[10vh] md:mt-0 lg:p-8 w-[90vw] md:w-[600px] lg:w-[500px] xl:w-[550px] bg-white rounded-lg shadow-2xl relative">
+            <div className="p-[5vw] max-lg:p-[7vw] w-[80vw] lg:p-[3vw] lg:w-[30vw] bg-white rounded-lg shadow-2xl relative">
               {/* Yellow top border */}
-              <div className="h-2 lg:h-2 xl:h-2 absolute w-full bg-[#F6BA18] rounded-t-lg top-0 left-0"></div>
+              <div className="top-[0vw] left-[0vw] h-[1.5vw] lg:top-[0vw] lg:left-[0vw] lg:h-[0.5vw] absolute w-full bg-[#F6BA18] rounded-t-lg"></div>
 
-              {/* Form content wrapper */}
-              <div className="h-[700px] md:h-[800px] lg:h-[550px] 2xl:h-[700px] flex flex-col">
-                {/* Common header */}
-                <div className="mb-4 md:mb-6 lg:mb-4">
-                  <h2 className="text-[6vw] md:text-[3vw] lg:text-[3vw] xl:text-[2vw] font-bold text-left text-[#212529]">
-                    Log In
-                  </h2>
-                  <p className="text-[3vw] md:text-[1.5vw] lg:text-[1vw] xl:text-[0.8vw] text-[#64748B] text-left">
-                    {loginMethod === "password" && "Please enter your credentials to proceed"}
-                    {loginMethod === "magic-link" && "Please enter your email to receive a magic link"}
-                    {loginMethod === "numeric-code" && "Please enter your numeric code to proceed"}
-                    {loginMethod === "picture-code" && "Please select your picture sequence to proceed"}
-                  </p>
-                </div>
+              {/* Login form header */}
+              <h2 className="text-[2vw] lg:text-[2vw] max-lg:text-[6vw] font-bold text-left text-[#212529]">
+                Log In
+              </h2>
+              <p className="text-[3vw] mb-[5vw] lg:mb-[2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] text-[#64748B] text-left">
+                {loginMethod === "password" &&
+                  "Please enter your email and password to proceed"}
+                {loginMethod === "magic-link" &&
+                  "Please enter your email to receive a magic link"}
+                {loginMethod === "numeric-code" &&
+                  "Please enter the 6-digit code provided by your teacher"}
+                {loginMethod === "picture-code" &&
+                  "Please select your picture sequence in the correct order"}
+              </p>
 
-                {/* Login forms with overflow handling */}
-                <div className="flex-1 min-h-0 overflow-y-auto">
-                  <div className="h-full flex flex-col">
-                    {loginMethod === "password" && (
-                      <form onSubmit={handleSubmit} className="space-y-[1vw] flex-1 flex flex-col justify-center">
-                        {/* Display error message */}
-                        {error && (
-                          <p
-                            className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw]"
-                            data-testid="error-message"
-                          >
-                            {error}
-                          </p>
-                        )}
-
-                        {/* Email input */}
-                        <div>
-                          <label
-                            htmlFor="email"
-                            className="text-[3vw] block text-[#64748B] lg:text-[1.2vw] max-lg:text-[2.5vw] 2xl:text-[0.9vw]"
-                          >
-                            Email
-                          </label>
-                          <input
-                            type="email"
-                            id="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            onBlur={() => handleBlur("email")}
-                            required
-                            className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[1vw] 
-                              2xl:text-[0.8vw] 2xl:px-[0.8vw] 2xl:py-[0.6vw]
-                              w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
-                            placeholder="Enter your email"
-                            data-testid="email-input"
-                          />
-                          {validationErrors.email && (
-                            <p
-                              className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw] mt-1"
-                              data-testid="email-error"
-                            >
-                              {validationErrors.email}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Password input */}
-                        <div>
-                          <label  
-                            htmlFor="password"
-                            className="text-[3vw] block text-[#64748B] lg:text-[1.2vw] max-lg:text-[2.5vw] 2xl:text-[0.9vw]"
-                          >
-                            Password
-                          </label>
-                          <div className="relative">
-                            <input
-                              type={showPassword ? "text" : "password"}
-                              id="password"
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
-                              onBlur={() => handleBlur("password")}
-                              required
-                              className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[1vw] 
-                                2xl:text-[0.8vw] 2xl:px-[0.8vw] 2xl:py-[0.6vw]
-                                w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529] pr-[10vw] lg:pr-[3vw]"
-                              placeholder="Enter your password"
-                              data-testid="password-input"
-                            />
-                            <button
-                              type="button"
-                              onClick={handleTogglePassword}
-                              className="absolute right-[1vw] top-[55%] -translate-y-1/2 h-full flex items-center justify-center text-gray-500"
-                              aria-label="Toggle password visibility"
-                              data-testid="password-toggle"
-                            >
-                              {showPassword ? (
-                                <EyeOff className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
-                              ) : (
-                                <Eye className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
-                              )}
-                            </button>
-                          </div>
-                          {validationErrors.password && (
-                            <p
-                              className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw] mt-1"
-                              data-testid="password-error"
-                            >
-                              {validationErrors.password}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Forgot password button */}
-                        <div className="text-right mt-[0.5vw]">
-                          <button
-                            type="button"
-                            onClick={handleForgotPassword}
-                            className="text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] text-[#64748B] hover:underline focus:outline-none"
-                          >
-                            Forgot Password?
-                          </button>
-                        </div>
-
-                        {/* CAPTCHA verification */}
-                        <div className="mt-[1vw] overflow-visible h-auto">
-                          <div
-                            style={{
-                              transformOrigin: "left",
-                              transform: "scale(0.8)",
-                            }}
-                          >
-                            <ReCAPTCHA
-                              ref={recaptchaRef}
-                              sitekey={RECAPTCHA_SITE_KEY}
-                              onChange={handleCaptchaChange}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Submit button */}
-                        <div className="flex justify-center mt-[0.5vw]">
-                          <button
-                            type="submit"
-                            className="flex items-center justify-center 
-                              w-[45vw] md:w-[25vw] lg:w-[15vw] xl:w-[12vw]
-                              px-[3vw] py-[2vw] 
-                              md:px-[2vw] md:py-[1.5vw]
-                              lg:px-[1vw] lg:py-[0.8vw]
-                              xl:px-[0.8vw] xl:py-[0.6vw]
-                              text-[3.5vw] md:text-[1.5vw] lg:text-[1vw] xl:text-[0.8vw]
-                              font-semibold rounded-md transition-colors duration-300 
-                              text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529]
-                              disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300"
-                            disabled={loading}
-                            data-testid="login-button"
-                          >
-                            {loading ? (
-                              <div className="flex items-center space-x-2">
-                                <svg
-                                  className="animate-spin h-5 w-5 text-white"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
-                                  ></circle>
-                                  <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                  ></path>
-                                </svg>
-                                <span className="animate-pulse text-sm md:text-base">
-                                  Loading...
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-[5vw] md:text-[3vw] lg:text-[1vw] xl:text-[0.8vw]">
-                                Log In
-                              </span>
-                            )}
-                          </button>
-                        </div>
-                      </form>
-                    )}
-
-                    {loginMethod === "magic-link" && (
-                      <div className="flex-1 flex items-center justify-center">
-                        <div className="w-full flex flex-col items-center">
-                          <MagicLinkLogin />
-                        </div>
-                      </div>
-                    )}
-                    
-                    {loginMethod === "numeric-code" && (
-                      <div className="flex-1 flex items-center justify-center">
-                        <NumericCodeLogin />
-                      </div>
-                    )}
-                    
-                    {loginMethod === "picture-code" && (
-                      <div className="flex-1 flex items-center justify-center">
-                        <PictureCodeLogin />
-                      </div>
+              {/* Render active login method */}
+              {loginMethod === "password" && (
+                // Password Login Form
+                <form onSubmit={handleSubmit} className="space-y-[1vw]">
+                  {/* Display error message */}
+                  {error && (
+                    <p
+                      className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw]"
+                      data-testid="error-message"
+                    >
+                      {error}
+                    </p>
+                  )}
+                  {/* Email input */}
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="text-[3vw] block text-[#64748B] lg:text-[0.8vw] max-lg:text-[2.5vw]"
+                    >
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onBlur={() => handleBlur("email")}
+                      required
+                      className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                      placeholder="Enter your email"
+                      data-testid="email-input"
+                    />
+                    {validationErrors.email && (
+                      <p
+                        className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw] mt-1"
+                        data-testid="email-error"
+                      >
+                        {validationErrors.email}
+                      </p>
                     )}
                   </div>
-                </div>
 
-                {/* Login method toggle */}
-                <div className="mt-auto pt-4">
-                  <p className="text-[3vw] lg:text-[0.8vw] xl:text-[0.7vw] mb-2 text-[#64748B] text-left">
-                    Or choose another login method:
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 border rounded overflow-hidden">
-                    <button
-                      onClick={() => setLoginMethod("password")}
-                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 xl:py-1.5 
-                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] xl:text-[0.7vw] font-medium 
-                        ${loginMethod === "password" ? "bg-[#F6BA18] text-[#212529]" : "bg-gray-100 text-gray-500"}
-                        transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
+                  {/* Password input */}
+                  <div>
+                    <label
+                      htmlFor="password"
+                      className="mt-[5vw] text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:mt-[0vw] block text-[#64748B]"
                     >
                       Password
-                    </button>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        id="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onBlur={() => handleBlur("password")}
+                        required
+                        className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529] pr-[10vw] lg:pr-[3vw]"
+                        placeholder="Enter your password"
+                        data-testid="password-input"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleTogglePassword}
+                        className="absolute right-[3vw] lg:right-[1vw] top-1/2 transform -translate-y-1/2 text-gray-500"
+                        aria-label="Toggle password visibility"
+                        data-testid="password-toggle"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
+                        ) : (
+                          <Eye className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
+                        )}
+                      </button>
+                    </div>
+                    {validationErrors.password && (
+                      <p
+                        className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw] mt-1"
+                        data-testid="password-error"
+                      >
+                        {validationErrors.password}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Forgot password button */}
+                  <div className="text-right mt-[0.5vw]">
                     <button
-                      onClick={() => setLoginMethod("magic-link")}
-                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 xl:py-1.5 
-                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] xl:text-[0.7vw] font-medium 
-                        ${loginMethod === "magic-link" ? "bg-[#F6BA18] text-[#212529]" : "bg-gray-100 text-gray-500"}
-                        transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
+                      type="button"
+                      onClick={handleForgotPassword}
+                      className="text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] text-[#64748B] hover:underline focus:outline-none"
                     >
-                      Magic Link
-                    </button>
-                    <button
-                      onClick={() => setLoginMethod("numeric-code")}
-                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 xl:py-1.5 
-                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] xl:text-[0.7vw] font-medium 
-                        ${loginMethod === "numeric-code" ? "bg-[#F6BA18] text-[#212529]" : "bg-gray-100 text-gray-500"}
-                        transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
-                    >
-                      Number Code
-                    </button>
-                    <button
-                      onClick={() => setLoginMethod("picture-code")}
-                      className={`py-[2vw] md:py-[1.5vw] lg:py-2 xl:py-1.5 
-                        text-[3vw] md:text-[1.5vw] lg:text-[0.8vw] xl:text-[0.7vw] font-medium 
-                        ${loginMethod === "picture-code" ? "bg-[#F6BA18] text-[#212529]" : "bg-gray-100 text-gray-500"}
-                        transition-colors duration-300 hover:bg-[#F6BA18] hover:text-[#212529]`}
-                    >
-                      Picture Login
+                      Forgot Password?
                     </button>
                   </div>
+
+                  {/* CAPTCHA verification */}
+                  <div className="mt-[1vw] overflow-visible h-auto">
+                    <div
+                      style={{
+                        transformOrigin: "left",
+                        transform: "scale(0.8)",
+                      }}
+                    >
+                      <ReCAPTCHA
+                        ref={recaptchaRef}
+                        sitekey={RECAPTCHA_SITE_KEY}
+                        onChange={handleCaptchaChange}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Submit button */}
+                  <div className="flex justify-center mt-[0.5vw]">
+                    <button
+                      type="submit"
+                      className={`flex items-center justify-center min-w-[10rem] max-w-[10rem] px-6 py-3 
+          font-semibold rounded-md transition-colors duration-300 ease-in-out flex-shrink-0
+          text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529] dark:bg-gray-900 dark:hover:bg-yellow-400
+          disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300`}
+                      disabled={loading}
+                      data-testid="login-button"
+                    >
+                      {loading ? (
+                        <div className="flex items-center space-x-2">
+                          <svg
+                            className="animate-spin h-5 w-5 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          <span className="animate-pulse text-sm md:text-base">
+                            Loading...
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs sm:text-sm md:text-base lg:text-base">
+                          Log In
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {loginMethod === "magic-link" && (
+                // Magic Link Login Form
+                <MagicLinkLogin />
+              )}
+
+              {loginMethod === "numeric-code" && (
+                // Numeric Code Login Form
+                <NumericCodeLogin />
+              )}
+
+              {loginMethod === "picture-code" && (
+                // Picture Code Login Form
+                <PictureCodeLogin />
+              )}
+
+              {/* Login method options at bottom */}
+              <div className="mt-8 pt-4 border-t">
+                <p className="text-[2.5vw] lg:text-[0.8vw] text-gray-500 text-center mb-4">
+                  Or choose another way to log in:
+                </p>
+                <div className="grid grid-cols-4 gap-4">
+                  <button
+                    onClick={() => setLoginMethod("password")}
+                    className={`flex flex-col items-center gap-2 p-2 rounded-lg transition-all ${
+                      loginMethod === "password"
+                        ? "bg-yellow-50 text-[#F6BA18]"
+                        : "hover:bg-gray-50 text-gray-600"
+                    }`}
+                  >
+                    <Key className="w-[6vw] h-[6vw] lg:w-[2vw] lg:h-[2vw]" />
+                    <span className="text-[2vw] lg:text-[0.7vw] text-center">
+                      Password
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setLoginMethod("magic-link")}
+                    className={`flex flex-col items-center gap-2 p-2 rounded-lg transition-all ${
+                      loginMethod === "magic-link"
+                        ? "bg-yellow-50 text-[#F6BA18]"
+                        : "hover:bg-gray-50 text-gray-600"
+                    }`}
+                  >
+                    <Mail className="w-[6vw] h-[6vw] lg:w-[2vw] lg:h-[2vw]" />
+                    <span className="text-[2vw] lg:text-[0.7vw] text-center">
+                      Magic Link
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setLoginMethod("numeric-code")}
+                    className={`flex flex-col items-center gap-2 p-2 rounded-lg transition-all ${
+                      loginMethod === "numeric-code"
+                        ? "bg-yellow-50 text-[#F6BA18]"
+                        : "hover:bg-gray-50 text-gray-600"
+                    }`}
+                  >
+                    <Hash className="w-[6vw] h-[6vw] lg:w-[2vw] lg:h-[2vw]" />
+                    <span className="text-[2vw] lg:text-[0.7vw] text-center">
+                      Number Code
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setLoginMethod("picture-code")}
+                    className={`flex flex-col items-center gap-2 p-2 rounded-lg transition-all ${
+                      loginMethod === "picture-code"
+                        ? "bg-yellow-50 text-[#F6BA18]"
+                        : "hover:bg-gray-50 text-gray-600"
+                    }`}
+                  >
+                    <Image className="w-[6vw] h-[6vw] lg:w-[2vw] lg:h-[2vw]" />
+                    <span className="text-[2vw] lg:text-[0.7vw] text-center">
+                      Picture Code
+                    </span>
+                  </button>
                 </div>
               </div>
             </div>

@@ -4,11 +4,19 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
-import { Book, Bell, FileText, Home } from "lucide-react";
+import {
+  Book,
+  Bell,
+  FileText,
+  Home,
+  PencilIcon,
+  X,
+  Check as CheckIcon,
+} from "lucide-react";
 import { Eye, EyeOff } from "lucide-react";
 import { changePassword } from "../../services/authService"; // Import function
-import profileImg from "/src/assets/images/profile2.jpeg"; // Add this import
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
+import { getUserProfileImage } from "../../utils/profileImages";
 
 const getNavItems = (role) => {
   // Base items for admin
@@ -77,6 +85,9 @@ function Profile() {
   const [editFormData, setEditFormData] = useState(null);
   const [editError, setEditError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [profileImage] = useState(
+    getUserProfileImage(JSON.parse(localStorage.getItem("user"))?.role)
+  );
   const navigate = useNavigate();
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => {
@@ -100,6 +111,12 @@ function Profile() {
 
         // Get user from localStorage
         const storedUser = JSON.parse(localStorage.getItem("user"));
+        const savedProfileImage = localStorage.getItem("userProfileImage");
+
+        if (savedProfileImage) {
+          setCurrentProfileImage(savedProfileImage);
+        }
+
         if (!storedUser || !storedUser.id) {
           console.error("No user data in localStorage");
           setError("User data not found");
@@ -129,6 +146,12 @@ function Profile() {
     };
 
     fetchUserData();
+
+    // Load saved profile image
+    const savedImageSrc = localStorage.getItem("userProfileImage");
+    if (savedImageSrc) {
+      setCurrentProfileImage(savedImageSrc);
+    }
   }, [isAuthenticated, authLoading, navigate]);
 
   const getSchoolName = (schoolId) => {
@@ -249,6 +272,16 @@ function Profile() {
       setEditError("");
     }
   };
+
+  const renderProfilePicture = () => (
+    <div className="relative">
+      <img
+        src={profileImage}
+        alt="Profile"
+        className="w-40 h-40 rounded-full border-4 border-white md:ml-8 object-contain bg-white"
+      />
+    </div>
+  );
 
   // Add null check for user in render
   if (!user || loading) {
@@ -437,11 +470,7 @@ function Profile() {
 
           {/* Profile Picture and User Details */}
           <div className="flex flex-col items-center md:items-start px-8 -mt-16">
-            <img
-              src={profileImg}
-              alt="Profile"
-              className="w-40 h-40 rounded-full border-4 border-white md:ml-8"
-            />
+            {renderProfilePicture()}
             <h2 className="mt-4 text-3xl font-semibold md:ml-8">
               {`${user.first_name} ${user.last_name}`}
             </h2>

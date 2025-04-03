@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import profileImg from "/src/assets/images/profile2.jpeg";
+import { getUserProfileImage } from "../../../utils/profileImages";
 
 const Header = ({ title }) => {
   const [userData, setUserData] = useState(null);
+  const [profileImage, setProfileImage] = useState(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    return getUserProfileImage(user.role);
+  });
+
   const currentDate = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -11,9 +16,11 @@ const Header = ({ title }) => {
   });
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
+    const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUserData(JSON.parse(storedUser));
+      const user = JSON.parse(storedUser);
+      setUserData(user);
+      setProfileImage(getUserProfileImage(user.role));
     }
   }, []);
 
@@ -43,7 +50,7 @@ const Header = ({ title }) => {
             {userData?.first_name} {userData?.last_name}
           </span>
           <img
-            src={profileImg}
+            src={profileImage}
             alt="Profile"
             className="w-8 h-8 md:w-10 md:h-10 rounded-full"
           />
