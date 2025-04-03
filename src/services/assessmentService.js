@@ -254,7 +254,13 @@ export const createSubmission = async (assessmentId) => {
       }
     }
 
-    // If no valid stored submission found, create new one
+    // First check user's submissions to count attempts accurately
+    const userSubmissions = await getUserSubmission(assessmentId, true);
+    const completedAttempts = userSubmissions.submissions?.filter(s => 
+      s.status === 'submitted' || s.status === 'graded'
+    ).length || 0;
+
+    // If no valid stored submission found, create new one if attempts remain
     const response = await fetchWithInterceptor(`${API_BASE_URL}/assessments/${assessmentId}/submissions`, {
       method: 'POST',
       headers: {
@@ -264,10 +270,25 @@ export const createSubmission = async (assessmentId) => {
 
     const data = await response.json();
     if (!response.ok) {
-      if (response.status === 400) {
-        const maxAttemptsMessage = "Maximum assessment attempts reached";
-        const detailMessage = data.message || "You have used all allowed attempts for this assessment";
-        throw new Error(`${maxAttemptsMessage}: ${detailMessage}`);
+      // Check if this is actually the first attempt
+      if (response.status === 400 && completedAttempts === 0) {
+        // Allow the first attempt
+        const firstAttemptResponse = await fetchWithInterceptor(
+          `${API_BASE_URL}/assessments/${assessmentId}/submissions`, 
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ force_first_attempt: true })
+          }
+        );
+        const firstAttemptData = await firstAttemptResponse.json();
+        if (firstAttemptResponse.ok) {
+          return {
+            ...firstAttemptData,
+            isExisting: false,
+            savedAnswers: []
+          };
+        }
       }
       throw new Error(data.message || 'Failed to start submission');
     }
