@@ -225,15 +225,29 @@ const LearnerCourseAssessment = () => {
       // Check localStorage for existing submission
       const storedData = localStorage.getItem(`ongoing_assessment_${assessment.id}`);
       const storedSubmissionId = storedData ? JSON.parse(storedData).submissionId : null;
+      
+      console.log('View Assessment - Initial check:', {
+        assessmentId: assessment.id,
+        storedSubmissionId: storedSubmissionId
+      });
   
-      // Get the current submission from our submissions state
-      const existingSubmission = submissions[assessment.id];
+      // Get current submission from API
+      const submissionResponse = await getUserSubmission(assessment.id, true);
+      const existingSubmission = submissionResponse?.submission;
   
-      // If there's a stored submission ID, verify if it matches a current in-progress submission
+      // Check if stored submission matches server submission
       let isResumable = false;
       if (storedSubmissionId && existingSubmission) {
         isResumable = storedSubmissionId === existingSubmission.id && 
                       existingSubmission.status === 'in_progress';
+        
+        console.log('Submission ID comparison:', {
+          stored: storedSubmissionId,
+          server: existingSubmission.id,
+          matches: storedSubmissionId === existingSubmission.id,
+          status: existingSubmission.status,
+          isResumable: isResumable
+        });
       }
   
       navigate(`/Learner/Assessment/View/${assessment.id}`, {
@@ -246,7 +260,6 @@ const LearnerCourseAssessment = () => {
       });
     } catch (error) {
       console.error('Error checking submission status:', error);
-      // Navigate anyway with basic info
       navigate(`/Learner/Assessment/View/${assessment.id}`, {
         state: { 
           assessment,
