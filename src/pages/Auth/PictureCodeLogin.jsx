@@ -177,20 +177,21 @@ function PictureCodeLogin() {
   return (
     <div className="space-y-4">
       {error && (
-        <div role="alert" className="bg-red-50 p-3 rounded-md border border-red-200">
-          <p  name="please select at least 3 pictures" className="text-red-500 text-center text-[3vw] lg:text-[0.9vw] max-lg:text-[2.5vw]">
-          Please select at least 3 pictures
+        <div
+          role="alert"
+          className="bg-red-50 p-3 rounded-md border border-red-200"
+        >
+          <p
+            name="please select at least 3 pictures"
+            className="text-red-500 text-center text-[3vw] lg:text-[0.9vw] max-lg:text-[2.5vw]"
+          >
+            Please select at least 3 pictures
           </p>
         </div>
       )}
 
       {/* Selected pictures preview */}
       <div>
-        <p 
-          className="text-[3vw] block text-[#64748B] lg:text-[1.2vw] xl:text-[0.9vw] max-lg:text-[2.5vw]">
-          Select your picture sequence to log in:
-        </p>
-
         <div className="mt-2 flex justify-center items-center space-x-2 h-20 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-2">
           {selectedPictures.length === 0 ? (
             <span className="text-gray-400 text-sm">Select pictures below</span>
@@ -216,8 +217,8 @@ function PictureCodeLogin() {
         </div>
       </div>
 
-      {/* Picture grid */}
-      <div className="grid grid-cols-5 gap-4">
+      {/* Picture grid - Updated for better mobile responsiveness */}
+      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4">
         {pictures.map((pic) => (
           <button
             key={pic.id}
@@ -233,7 +234,7 @@ function PictureCodeLogin() {
             <img
               src={pic.url}
               alt={pic.name}
-              className="w-full h-12 lg:h-15 object-contain"
+              className="w-full h-12 md:h-14 lg:h-16 object-contain"
             />
           </button>
         ))}

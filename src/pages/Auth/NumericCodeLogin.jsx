@@ -116,10 +116,6 @@ function NumericCodeLogin() {
       )}
 
       <div>
-        <label className="text-[3vw] block text-center text-[#64748B] lg:text-[1.2vw] xl:text-[0.9vw] max-lg:text-[2.5vw] mb-4">
-          Enter the 6-digit code from your teacher
-        </label>
-
         <div className="flex justify-center gap-2 lg:gap-4">
           {code.map((digit, index) => (
             <input
@@ -142,26 +138,15 @@ function NumericCodeLogin() {
       <div className="flex justify-center mt-[4vw] lg:mt-[2vw]">
         <button
           type="submit"
-                            className="flex items-center justify-center 
-                              w-[45vw] md:w-[25vw] lg:w-[15vw] xl:w-[12vw]
-                              px-[3vw] py-[2vw] 
-                              md:px-[2vw] md:py-[1.5vw]
-                              lg:px-[1vw] lg:py-[0.8vw]
-                              xl:px-[0.8vw] xl:py-[0.6vw]
-                              text-[3.5vw] md:text-[1.5vw] lg:text-[1vw] xl:text-[0.8vw]
-                              font-semibold rounded-md transition-colors duration-300 
-                              text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529]
-                              disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300"
+          className={`flex items-center justify-center min-w-[10rem] max-w-[10rem] px-6 py-3 mt-3 
+          font-semibold rounded-md transition-colors duration-300 flex-shrink-0
+          text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529] dark:bg-gray-900 dark:hover:bg-yellow-400
+          disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300`}
           disabled={isLoading}
         >
           {isLoading ? (
             <div className="flex items-center space-x-2">
-              <svg
-                className="animate-spin h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
+              <svg className="animate-spin h-5 w-5 text-white">
                 <circle
                   className="opacity-25"
                   cx="12"
@@ -181,7 +166,7 @@ function NumericCodeLogin() {
               </span>
             </div>
           ) : (
-            <span className="text-[5vw] md:text-[3vw] lg:text-[1vw] xl:text-[0.8vw]">
+            <span className="text-xs sm:text-sm md:text-base lg:text-base">
               Log In
             </span>
           )}
