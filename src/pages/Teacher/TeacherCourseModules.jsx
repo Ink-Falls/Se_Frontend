@@ -490,25 +490,25 @@ const TeacherCourseModules = () => {
                       key={index}
                       className="flex items-center bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-all duration-200 group"
                     >
-                      <div className="p-2 bg-yellow-100 rounded-lg mr-3">
+                      <div className="p-2 bg-yellow-100 rounded-lg mr-3 flex-shrink-0">
                         <FileText size={18} className="text-yellow-600" />
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <a
                           href={resource.link || resource.content}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="block"
                         >
-                          <h5 className="font-medium text-gray-800 mb-0.5 group-hover:text-yellow-600">
+                          <h5 className="font-medium text-gray-800 mb-0.5 group-hover:text-yellow-600 truncate">
                             {resource.title}
                           </h5>
-                          <p className="text-sm text-gray-500 truncate">
+                          <p className="text-sm text-gray-500 truncate max-w-full">
                             {resource.link}
                           </p>
                         </a>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <a
                           href={resource.link || resource.content}
                           target="_blank"

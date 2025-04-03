@@ -7,6 +7,7 @@ import Sidebar, {
 import Header from "/src/components/common/layout/Header.jsx";
 import EnrolleeStats from "/src/components/specific/enrollments/EnrolleeStats.jsx";
 import EnrolleeTable from "/src/components/specific/enrollments/EnrolleeTable.jsx";
+import LoadingSpinner from "/src/components/common/LoadingSpinner.jsx";
 import {
   Users,
   Book,
