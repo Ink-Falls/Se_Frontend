@@ -33,7 +33,7 @@ const Header = ({ title }) => {
           <p className="text-xs text-[#334155]">{currentDate}</p>
         </div>
         <Link to="/profile">
-          <img src={profileImg} alt="Profile" className="w-8 h-8 rounded-full" />
+          <img src={profileImage} alt="Profile" className="w-8 h-8 rounded-full" />
         </Link>
       </div>
 
