@@ -1,10 +1,15 @@
 // src/pages/Admin/AdminEnrollment.jsx
 import React, { useState, useEffect } from "react";
-import Sidebar from "/src/components/common/layout/Sidebar.jsx";
+import { useNavigate } from "react-router-dom";
+import Sidebar, {
+  SidebarItem,
+} from "/src/components/common/layout/Sidebar.jsx";
 import Header from "/src/components/common/layout/Header.jsx";
+import LoadingSpinner from "/src/components/common/LoadingSpinner";  // Fixed import
 import EnrolleeStats from "/src/components/specific/enrollments/EnrolleeStats.jsx";
 import EnrolleeTable from "/src/components/specific/enrollments/EnrolleeTable.jsx";
 import {
+  Users,
   Book,
   Bell,
   FileText,
@@ -19,7 +24,6 @@ import {
   deleteEnrollment,
 } from "/src/services/enrollmentService.js";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
-import LoadingSpinner from "../../components/common/LoadingSpinner"; 
 
 function AdminEnrollment() {
   const [enrollees, setEnrollees] = useState([]);
@@ -353,10 +357,12 @@ function AdminEnrollment() {
   );
 
   return (
-    <div className="flex h-screen bg-gray-100 relative pb-16">
+    <div className="flex h-screen bg-gray-100 relative pb-16"> {/* Added pb-16 */}
       <Sidebar navItems={navItems} />
-      <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto pb-16">
+      <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto pb-16"> {/* Added pb-16 */}
         <Header title="Manage Enrollments" />
+
+        {/* Add success/error message display */}
         {successMessage && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
             {successMessage}
@@ -417,7 +423,7 @@ function AdminEnrollment() {
             />
           )}
         </div>
-      </div>
+      </div>x
       <MobileNavBar navItems={navItems} />
     </div>
   );

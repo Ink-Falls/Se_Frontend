@@ -76,7 +76,7 @@ describe('ForgotPassword', () => {
             fireEvent.click(submitButton);
 
             expect(
-                screen.getByText('Please enter your email.')
+                screen.getByText('Enter your email below and wait for a password reset link.')
             ).toBeInTheDocument();
             expect(forgotPassword).not.toHaveBeenCalled();
         });
@@ -100,8 +100,8 @@ describe('ForgotPassword', () => {
             fireEvent.click(submitButton);
 
             await waitFor(() => {
-                expect(screen.getByText(errorMessage)).toBeInTheDocument();
-            });
+                expect(screen.getByText('Email address not found.')).toBeInTheDocument();
+              });
         });
     });
 

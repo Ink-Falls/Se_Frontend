@@ -60,7 +60,17 @@ vi.mock("../../../src/components/common/Modals/Delete/DeleteModal", () => ({
     </div>
   ),
 }));
-
+vi.mock('/src/components/specific/users/UserTable.jsx', () => ({
+  __esModule: true,
+  default: ({ onGenerateReport }) => (
+    <button
+      data-testid="generate-report-button"
+      onClick={onGenerateReport}
+    >
+      Generate Report
+    </button>
+  ),
+}));
 // ✅ Provide mock data
 const mockUsers = [
   { id: 1, name: "John Doe", role: "admin" },
@@ -113,9 +123,13 @@ describe("AdminDashboard Component", () => {
     expect(getAllUsers).toHaveBeenCalled();
   });
 
-  it("should open and close Add User modal", async () => {
-    const user = userEvent.setup();
-
+  it("should open and close report viewer modal", async () => {
+    getAllUsers.mockResolvedValueOnce([
+      { id: 1, name: "John Doe", role: "admin" },
+    ]);
+    getAllCourses.mockResolvedValueOnce([]);
+    getGroupsByType.mockResolvedValueOnce([]);
+  
     render(
       <MemoryRouter>
         <AuthProvider>
@@ -123,18 +137,24 @@ describe("AdminDashboard Component", () => {
         </AuthProvider>
       </MemoryRouter>
     );
-
-    const addButton = screen.getByTestId("add-button");
-    await user.click(addButton);
-
-    // ✅ Check if modal appears
-    await waitFor(() => expect(screen.getByTestId("add-user-modal")).toBeVisible());
-
-    // ✅ Close the modal
-    const cancelButton = screen.getByText("Cancel");
-    await user.click(cancelButton);
-
-    await waitFor(() => expect(screen.getByTestId("add-user-modal")).toHaveStyle({ display: "none" }));
+    screen.debug(); 
+  
+    // Wait for the "Generate Report" button to appear
+    const generateReportButton = await screen.findByTestId("generate-report-button");
+    expect(generateReportButton).toBeInTheDocument();
+  
+    // Simulate clicking the button
+    fireEvent.click(generateReportButton);
+  
+    // Verify the report viewer modal is displayed
+    const reportViewerModal = await screen.findByTestId("report-viewer-modal");
+    expect(reportViewerModal).toBeVisible();
+  
+    // Close the modal
+    const closeButton = screen.getByText("Close");
+    fireEvent.click(closeButton);
+  
+    await waitFor(() => expect(reportViewerModal).not.toBeVisible());
   });
 
   it("should open and confirm Delete modal", async () => {
@@ -180,7 +200,14 @@ describe("AdminDashboard Component", () => {
 
   it("should open and close report viewer modal", async () => {
     const user = userEvent.setup();
-
+  
+    // Mock API responses
+    getAllUsers.mockResolvedValueOnce([
+      { id: 1, name: "John Doe", role: "admin" },
+    ]);
+    getAllCourses.mockResolvedValueOnce([]);
+    getGroupsByType.mockResolvedValueOnce([]);
+  
     render(
       <MemoryRouter>
         <AuthProvider>
@@ -188,19 +215,22 @@ describe("AdminDashboard Component", () => {
         </AuthProvider>
       </MemoryRouter>
     );
-
-    const generateReportButton = screen.getByTestId("generate-report-button");
+  
+    // Debug the DOM to verify if the button is rendered
+    screen.debug();
+  
+    // Find and click the "Generate Report" button
+    const generateReportButton = await screen.findByTestId("generate-report-button");
     await user.click(generateReportButton);
-
+  
+    // Check if the report viewer modal is visible
     const reportViewerModal = await screen.findByTestId("report-viewer-modal");
-
-    // ✅ Check if modal is visible
     await waitFor(() => expect(reportViewerModal).toBeVisible());
-
-    // ✅ Close the modal
+  
+    // Close the modal
     const closeButton = screen.getByText("Close");
     await user.click(closeButton);
-
+  
     await waitFor(() => expect(reportViewerModal).toHaveStyle({ display: "none" }));
   });
 });

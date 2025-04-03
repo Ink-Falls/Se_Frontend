@@ -163,32 +163,6 @@ function AdminDashboard() {
     fetchData();
   }, []);
 
-  // Add cache-related state
-  const [cache, setCache] = useState({});
-  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-  const checkCache = (key) => {
-    const cached = cache[key];
-    if (!cached) return null;
-    if (Date.now() - cached.timestamp > CACHE_DURATION) {
-      const newCache = { ...cache };
-      delete newCache[key];
-      setCache(newCache);
-      return null;
-    }
-    return cached.data;
-  };
-
-  const updateCache = (key, data) => {
-    setCache((prev) => ({
-      ...prev,
-      [key]: {
-        data,
-        timestamp: Date.now(),
-      },
-    }));
-  };
-
   const getSchoolName = (schoolId) => {
     const schools = {
       1001: "Asuncion Consunji Elementary School (ACES)",
@@ -240,41 +214,30 @@ function AdminDashboard() {
     }
   };
 
-  // Modified main users fetch effect to not update stats
+  // Replace the paginated fetch effect with one that fetches all users
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchAllUsers = async () => {
       try {
-        const cacheKey = `users_page_${currentPage}`;
-        const cachedData = checkCache(cacheKey);
-
-        if (cachedData) {
-          setUsers(cachedData.users);
-          setFilteredUsers(cachedData.users);
-          setTotalPages(cachedData.totalPages);
-          setTotalUsers(cachedData.totalItems);
-          return;
-        }
-
         setIsLoading(true);
+        setError(null);
 
-        // Only fetch paginated data for the table
-        const result = await getAllUsers({
-          page: currentPage,
-          limit: 10,
-        });
+        // Fetch all users at once
+        const result = await getAllUsers({ page: 1, limit: 99999 });
 
         if (result && Array.isArray(result.users)) {
           const enrichedUsers = enrichUserData(result.users);
-          updateCache(cacheKey, {
-            users: enrichedUsers,
-            totalPages: result.totalPages,
-            totalItems: result.totalItems,
-          });
+          setAllUsersData(enrichedUsers); // Store complete dataset
+          
+          // Calculate initial pagination
+          const totalItems = enrichedUsers.length;
+          const totalPagesCount = Math.ceil(totalItems / 10);
+          const startIndex = (currentPage - 1) * 10;
+          const endIndex = startIndex + 10;
 
           setUsers(enrichedUsers);
-          setFilteredUsers(enrichedUsers);
-          setTotalPages(result.totalPages);
-          setTotalUsers(result.totalItems);
+          setFilteredUsers(enrichedUsers.slice(startIndex, endIndex));
+          setTotalPages(totalPagesCount);
+          setTotalUsers(totalItems);
         }
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -284,99 +247,82 @@ function AdminDashboard() {
       }
     };
 
-    fetchUsers();
-  }, [currentPage]);
+    fetchAllUsers();
+  }, []); // Only run once on component mount
 
   // Add effect to fetch stats on initial load
   useEffect(() => {
     fetchTotalCounts();
   }, []);
 
-  // Add sorting function
-  const handleSort = (key) => {
-    setSortConfig((prevConfig) => ({
-      key,
-      direction:
-        prevConfig.key === key && prevConfig.direction === "asc"
-          ? "desc"
-          : "asc",
-    }));
-    setCurrentPage(1); // Reset to first page when sorting
+  // Modified handleSort function
+  const handleSort = (key, direction) => {
+    let sortedData = [...allUsersData];
+    
+    // Sort the complete dataset
+    if (key) {
+      sortedData.sort((a, b) => {
+        if (key === "id") {
+          return direction === "asc" 
+            ? Number(a.id) - Number(b.id)
+            : Number(b.id) - Number(a.id);
+        }
+        
+        if (key === "fullName") {
+          const aName = `${a.first_name} ${a.last_name}`.toLowerCase();
+          const bName = `${b.first_name} ${b.last_name}`.toLowerCase();
+          return direction === "asc"
+            ? aName.localeCompare(bName)
+            : bName.localeCompare(aName);
+        }
+        
+        const aVal = String(a[key]).toLowerCase();
+        const bVal = String(b[key]).toLowerCase();
+        return direction === "asc"
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal);
+      });
+    }
+
+    // Update the complete dataset with sorted data
+    setAllUsersData(sortedData);
+    setSortConfig({ key, direction: direction || "asc" });
+    setCurrentPage(1);
   };
 
-  // Replace both searchAndFilterUsers effects with this single one
+  // Separate effect for handling filtered and paginated data
   useEffect(() => {
-    const filterAndSortUsers = async () => {
-      try {
-        setIsSearching(true);
+    if (!allUsersData.length) return;
 
-        // Always fetch all users when filtering or searching
-        const result = await getAllUsers({ page: 1, limit: 99999 });
-        if (result && Array.isArray(result.users)) {
-          const enrichedUsers = enrichUserData(result.users);
-          setAllUsersData(enrichedUsers);
+    let processedResults = [...allUsersData];
 
-          let filteredResults = [...enrichedUsers];
+    // Apply search if query exists
+    if (searchQuery) {
+      processedResults = processedResults.filter((user) => {
+        const fullName = `${user.first_name} ${user.middle_initial || ""} ${user.last_name}`.toLowerCase();
+        const email = user.email?.toLowerCase() || "";
+        const searchTerm = searchQuery.toLowerCase();
+        return fullName.includes(searchTerm) || email.includes(searchTerm);
+      });
+    }
 
-          // Apply search if query exists
-          if (searchQuery) {
-            filteredResults = filteredResults.filter((user) => {
-              const fullName = `${user.first_name} ${user.middle_initial || ""} ${
-                user.last_name
-              }`.toLowerCase();
-              const email = user.email?.toLowerCase() || "";
-              const searchTerm = searchQuery.toLowerCase();
-              return fullName.includes(searchTerm) || email.includes(searchTerm);
-            });
-          }
+    // Apply role filter
+    if (roleFilter !== "all") {
+      processedResults = processedResults.filter((user) => user.role === roleFilter);
+    }
 
-          // Apply role filter
-          if (roleFilter !== "all") {
-            filteredResults = filteredResults.filter(
-              (user) => user.role === roleFilter
-            );
-          }
+    // Handle pagination
+    const totalFilteredItems = processedResults.length;
+    const totalFilteredPages = Math.ceil(totalFilteredItems / 10);
+    const startIndex = (currentPage - 1) * 10;
+    const endIndex = startIndex + 10;
 
-          // Apply sorting
-          if (sortConfig.key) {
-            filteredResults.sort((a, b) => {
-              let aVal = a[sortConfig.key];
-              let bVal = b[sortConfig.key];
+    setUsers(processedResults);
+    setFilteredUsers(processedResults.slice(startIndex, endIndex));
+    setTotalPages(totalFilteredPages);
+    setTotalUsers(totalFilteredItems);
 
-              if (sortConfig.key === "name") {
-                aVal = `${a.first_name} ${a.last_name}`;
-                bVal = `${b.first_name} ${b.last_name}`;
-              }
-
-              if (typeof aVal === "string") aVal = aVal.toLowerCase();
-              if (typeof bVal === "string") bVal = bVal.toLowerCase();
-
-              return sortConfig.direction === "asc"
-                ? aVal < bVal ? -1 : 1
-                : aVal > bVal ? -1 : 1;
-            });
-          }
-
-          // Update pagination with filtered results
-          const totalFilteredItems = filteredResults.length;
-          const totalFilteredPages = Math.ceil(totalFilteredItems / 10);
-          const startIndex = (currentPage - 1) * 10;
-          const endIndex = startIndex + 10;
-          
-          setFilteredUsers(filteredResults.slice(startIndex, endIndex));
-          setTotalUsers(totalFilteredItems);
-          setTotalPages(totalFilteredPages);
-        }
-      } catch (error) {
-        console.error("Error in filtering and sorting:", error);
-        setError("Failed to process users");
-      } finally {
-        setIsSearching(false);
-      }
-    };
-
-    filterAndSortUsers();
-  }, [searchQuery, roleFilter, currentPage, sortConfig]);
+  }, [searchQuery, roleFilter, currentPage, allUsersData]);
 
   // Modify handleFilterChange to reset pagination
   const handleFilterChange = (filter) => {
@@ -479,7 +425,6 @@ function AdminDashboard() {
 
   const handleUserCreated = async (newUser) => {
     try {
-      setCache({}); // Clear all cache
       await refreshUsers();
       setIsAddModalOpen(false);
       setSuccessMessage("Successfully added user");
@@ -491,7 +436,6 @@ function AdminDashboard() {
 
   const handleEditUser = async (user) => {
     try {
-      // Add this to handle opening the modal
       setSelectedUser(user);
       setIsEditModalOpen(true);
     } catch (error) {
@@ -500,7 +444,6 @@ function AdminDashboard() {
     }
   };
 
-  // Add handleSaveUser function
   const handleSaveUser = async (updatedUser) => {
     try {
       const { password, ...userWithoutPassword } = updatedUser;
@@ -511,7 +454,6 @@ function AdminDashboard() {
       setSuccessMessage("Successfully edited user");
     } catch (error) {
       console.error("Error saving user:", error);
-      // Instead of showing alert, throw the error back to EditUserModal
       throw error;
     }
   };

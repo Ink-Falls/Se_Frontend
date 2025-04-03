@@ -220,6 +220,41 @@ export const createAssessmentQuestion = async (assessmentId, questionData) => {
  */
 export const createSubmission = async (assessmentId) => {
   try {
+    // Check localStorage first for any existing submission
+    const storedData = localStorage.getItem(`ongoing_assessment_${assessmentId}`);
+    const storedSubmissionId = storedData ? JSON.parse(storedData).submissionId : null;
+    
+    console.log('Creating submission - Initial check:', {
+      assessmentId,
+      storedSubmissionId
+    });
+
+    // If we have a stored submission ID, try to fetch its details first
+    if (storedSubmissionId) {
+      try {
+        const submissionDetails = await getSubmissionDetails(storedSubmissionId);
+        if (submissionDetails.success && 
+            submissionDetails.submission.status === 'in_progress' && 
+            submissionDetails.submission.assessment_id === parseInt(assessmentId)) {
+          
+          console.log('Found existing submission with answers:', {
+            submissionId: storedSubmissionId,
+            hasAnswers: submissionDetails.submission.answers?.length > 0
+          });
+
+          return {
+            success: true,
+            submission: submissionDetails.submission,
+            isExisting: true,
+            savedAnswers: submissionDetails.submission.answers || []
+          };
+        }
+      } catch (error) {
+        console.warn('Failed to fetch stored submission details:', error);
+      }
+    }
+
+    // If no valid stored submission found, create new one
     const response = await fetchWithInterceptor(`${API_BASE_URL}/assessments/${assessmentId}/submissions`, {
       method: 'POST',
       headers: {
@@ -229,20 +264,29 @@ export const createSubmission = async (assessmentId) => {
 
     const data = await response.json();
     if (!response.ok) {
+      if (response.status === 400) {
+        const maxAttemptsMessage = "Maximum assessment attempts reached";
+        const detailMessage = data.message || "You have used all allowed attempts for this assessment";
+        throw new Error(`${maxAttemptsMessage}: ${detailMessage}`);
+      }
       throw new Error(data.message || 'Failed to start submission');
     }
-    
-    // Store the assessment ID with the submission ID for later use
+
+    // Store the new submission data
     try {
-      localStorage.setItem(`submission_${data.submission.id}`, JSON.stringify({
-        assessmentId: assessmentId,
-        startTime: new Date().toISOString()
+      localStorage.setItem(`ongoing_assessment_${assessmentId}`, JSON.stringify({
+        submissionId: data.submission.id,
+        startTime: data.submission.start_time
       }));
     } catch (e) {
       console.warn('Could not store submission data in localStorage:', e);
     }
     
-    return data;
+    return {
+      ...data,
+      isExisting: false,
+      savedAnswers: []
+    };
   } catch (error) {
     console.error('Error creating submission:', error);
     throw error;
@@ -341,26 +385,23 @@ export const saveQuestionAnswer = async (submissionId, questionId, answerData) =
 
 export const submitAssessment = async (submissionId, assessmentId = null) => {
   try {
-    // First try to get the assessment ID from the provided parameter
-    let assessmentIdToUse = assessmentId;
+    if (!submissionId) {
+      throw new Error('Submission ID is required');
+    }
     
-    // If not provided, try to get it from localStorage
-    if (!assessmentIdToUse) {
-      try {
-        const storedSubmissionData = localStorage.getItem(`submission_${submissionId}`);
-        if (storedSubmissionData) {
-          const parsedData = JSON.parse(storedSubmissionData);
-          assessmentIdToUse = parsedData.assessmentId;
-        }
-      } catch (e) {
-        console.error('Error retrieving stored submission data:', e);
+    if (!assessmentId) {
+      // Try to get the assessment ID from localStorage as fallback
+      const storedData = localStorage.getItem(`ongoing_assessment_${assessmentId}`);
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        assessmentId = parsedData.assessmentId;
       }
     }
     
-    if (!assessmentIdToUse) {
+    if (!assessmentId) {
       throw new Error('Assessment ID not found for submission');
     }
-    
+
     // Always set status to 'submitted' for learner submissions
     const status = 'submitted';
     const submit_time = new Date().toISOString();
@@ -374,7 +415,8 @@ export const submitAssessment = async (submissionId, assessmentId = null) => {
         },
         body: JSON.stringify({
           status,
-          submit_time
+          submit_time,
+          assessment_id: assessmentId // Include assessment_id in the request
         })
       }
     );
@@ -384,11 +426,9 @@ export const submitAssessment = async (submissionId, assessmentId = null) => {
       throw new Error(data.message || 'Failed to submit assessment');
     }
 
-    try {
-      localStorage.setItem(`submission_${submissionId}_time`, submit_time);
-    } catch (e) {
-      console.warn('Could not store submission time in localStorage:', e);
-    }
+    // Clean up all related localStorage items
+    localStorage.removeItem(`submission_${submissionId}_time`);
+    localStorage.removeItem(`ongoing_assessment_${assessmentId}`);
 
     return {
       ...data,
@@ -418,8 +458,7 @@ export const getUserSubmission = async (assessmentId, includeAnswers = false, pa
     const response = await fetchWithInterceptor(url.toString());
     const data = await response.json();
 
-    if (data.success && data.submission) {
-      // Transform submission answers to ensure consistent option structure
+    if (data.success && data.submission?.status === 'in_progress') {
       const submission = {
         ...data.submission,
         answers: data.submission.answers?.map(answer => ({
@@ -429,24 +468,25 @@ export const getUserSubmission = async (assessmentId, includeAnswers = false, pa
             option_text: answer.selected_option.option_text || answer.selected_option.text || ''
           } : null,
           text_response: answer.text_response || '',
-          // Include both auto-graded and manual grades
           points_awarded: answer.points_awarded,
           is_auto_graded: answer.is_auto_graded || false,
           manual_grade: answer.manual_grade || null,
           feedback: answer.feedback || ''
-        })),
-        // Calculate total score combining both auto and manual grades
-        total_score: data.submission.answers?.reduce((sum, answer) => 
-          sum + (parseInt(answer.points_awarded) || 0), 0
-        ) || 0
+        }))
       };
 
       return {
         success: true,
-        submission
+        submission,
+        isInProgress: true
       };
     }
-    return data;
+
+    return {
+      success: data.success,
+      submission: data.submission,
+      isInProgress: false
+    };
   } catch (error) {
     console.error('Error fetching user submission:', error);
     throw error;
