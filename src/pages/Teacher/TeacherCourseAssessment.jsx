@@ -28,7 +28,7 @@ import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // 
 import {
   getCourseAssessments,
   deleteAssessment,
-  editAssessment, // Add this import
+  editAssessment,
 } from "../../services/assessmentService";
 import { getModulesByCourseId } from "../../services/moduleService";
 
