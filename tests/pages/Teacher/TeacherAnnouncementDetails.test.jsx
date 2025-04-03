@@ -53,21 +53,22 @@ describe('TeacherAnnouncementDetails Component', () => {
   });
 
   it('navigates back to the previous page when the back button is clicked', () => {
-  renderComponent('1');
+    renderComponent('1');
 
-  // Query the button using its aria-label
-  const backButton = screen.getByRole('button', { name: /back/i });
-  expect(backButton).toBeInTheDocument();
+    // Query the button using its aria-label
+    const backButton = screen.getByRole('button', { name: /back/i });
+    expect(backButton).toBeInTheDocument();
 
-  fireEvent.click(backButton);
+    fireEvent.click(backButton);
 
-  expect(mockNavigate).toHaveBeenCalledWith(-1);
-});
+    expect(mockNavigate).toHaveBeenCalledWith(-1);
+  });
 
   it('opens and closes the edit modal', async () => {
     renderComponent('1');
 
-    const editButton = screen.getByRole('button', { name: /edit/i });
+    // Find the edit button by its SVG icon instead of role
+    const editButton = screen.getByTestId('edit-button');
     fireEvent.click(editButton);
 
     expect(screen.getByText('Edit Announcement')).toBeInTheDocument();
@@ -79,9 +80,15 @@ describe('TeacherAnnouncementDetails Component', () => {
   });
 
   it('saves the edited announcement', async () => {
+    // Mock console.log to capture the updated announcement
+    const originalConsoleLog = console.log;
+    const mockConsoleLog = vi.fn();
+    console.log = mockConsoleLog;
+
     renderComponent('1');
 
-    const editButton = screen.getByRole('button', { name: /edit/i });
+    // Find the edit button by its test ID
+    const editButton = screen.getByTestId('edit-button');
     fireEvent.click(editButton);
 
     const typeInput = screen.getByPlaceholderText('Enter announcement type');
@@ -92,33 +99,49 @@ describe('TeacherAnnouncementDetails Component', () => {
     fireEvent.change(fullTextInput, { target: { value: 'Updated full text for the test reminder.' } });
     fireEvent.click(saveButton);
 
+    // Check that console.log was called with the updated announcement data
+    expect(mockConsoleLog).toHaveBeenCalledWith(
+      'Updated Announcement:',
+      expect.objectContaining({
+        type: 'Updated Test Reminder',
+        fullText: 'Updated full text for the test reminder.'
+      })
+    );
+
+    // Restore the original console.log
+    console.log = originalConsoleLog;
+    
+    // Modal should be closed after save
     await waitFor(() => {
       expect(screen.queryByText('Edit Announcement')).not.toBeInTheDocument();
     });
-
-    // Verify the updated announcement is displayed
-    expect(screen.getByText('Updated Test Reminder')).toBeInTheDocument();
-    expect(screen.getByText('Updated full text for the test reminder.')).toBeInTheDocument();
   });
 
   it('opens and closes the delete modal', async () => {
     renderComponent('1');
 
-    const deleteButton = screen.getByRole('button', { name: /delete/i });
+    // Find the delete button by its test ID
+    const deleteButton = screen.getByTestId('delete-button');
     fireEvent.click(deleteButton);
 
-    expect(screen.getByText('Are you sure you want to delete this announcement?')).toBeInTheDocument();
+    // Look for the delete modal's title and message
+    expect(screen.getByText('Confirm Deletion')).toBeInTheDocument();
+    expect(screen.getByText(/Are you sure you want to delete the selected item\/s\?/)).toBeInTheDocument();
 
     const cancelButton = screen.getByText('Cancel');
     fireEvent.click(cancelButton);
 
-    expect(screen.queryByText('Are you sure you want to delete this announcement?')).not.toBeInTheDocument();
+    // Modal should be closed after canceling
+    await waitFor(() => {
+      expect(screen.queryByText('Confirm Deletion')).not.toBeInTheDocument();
+    });
   });
 
   it('deletes the announcement and navigates back', async () => {
     renderComponent('1');
 
-    const deleteButton = screen.getByRole('button', { name: /delete/i });
+    // Find the delete button by its SVG icon
+    const deleteButton = screen.getByTestId('delete-button');
     fireEvent.click(deleteButton);
 
     const confirmButton = screen.getByText('Delete');

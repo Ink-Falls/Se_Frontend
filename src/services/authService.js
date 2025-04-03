@@ -87,6 +87,14 @@ const logoutUser = async () => {
     localStorage.clear();
     sessionStorage.clear();
 
+    // Clear all ongoing assessment data
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('ongoing_assessment_')) {
+        localStorage.removeItem(key);
+      }
+    });
+
     // Skip server logout if no token
     if (!token) {
       return true;

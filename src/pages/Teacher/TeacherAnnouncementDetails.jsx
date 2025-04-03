@@ -173,14 +173,18 @@ const AnnouncementDetails = () => {
           }
         >
           <button
-            onClick={handleEdit} // Trigger edit modal
+            onClick={handleEdit}
             className="p-2 rounded hover:bg-gray-700"
+            data-testid="edit-button"
+            aria-label="Edit"
           >
             <Edit size={20} />
           </button>
           <button
-            onClick={handleDelete} // Trigger delete modal
+            onClick={handleDelete}
             className="p-2 rounded hover:bg-gray-700"
+            data-testid="delete-button"
+            aria-label="Delete"
           >
             <Trash2 size={20} />
           </button>
