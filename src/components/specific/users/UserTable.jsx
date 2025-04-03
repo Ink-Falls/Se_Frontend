@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   SquarePen,
   Plus,
@@ -30,6 +30,10 @@ const UserTable = ({
 
   const [sortOption, setSortOption] = useState("none");
   const [pageInput, setPageInput] = useState(currentPage.toString());
+
+  useEffect(() => {
+    setPageInput(currentPage.toString());
+  }, [currentPage]);
 
   const getSortedUsers = (users) => {
     if (!users) return [];
@@ -76,7 +80,27 @@ const UserTable = ({
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       onPageChange(newPage);
+      setPageInput(newPage.toString());
     }
+  };
+
+  const handlePageInputChange = (e) => {
+    setPageInput(e.target.value);
+  };
+
+  const handlePageInputSubmit = (e) => {
+    if (e.key === "Enter") {
+      const newPage = parseInt(pageInput);
+      if (!isNaN(newPage) && newPage >= 1 && newPage <= totalPages) {
+        onPageChange(newPage);
+      } else {
+        setPageInput(currentPage.toString());
+      }
+    }
+  };
+
+  const handlePageInputBlur = () => {
+    setPageInput(currentPage.toString());
   };
 
   const handleCheckboxChange = (id) => {
@@ -98,25 +122,6 @@ const UserTable = ({
   const handleSearchChange = (e) => {
     const query = e.target.value;
     onSearch(query);
-  };
-
-  const handlePageInputChange = (e) => {
-    setPageInput(e.target.value);
-  };
-
-  const handlePageInputSubmit = (e) => {
-    if (e.key === "Enter") {
-      const newPage = parseInt(pageInput);
-      if (!isNaN(newPage) && newPage >= 1 && newPage <= totalPages) {
-        onPageChange(newPage);
-      } else {
-        setPageInput(currentPage.toString());
-      }
-    }
-  };
-
-  const handlePageInputBlur = () => {
-    setPageInput(currentPage.toString());
   };
 
   return (

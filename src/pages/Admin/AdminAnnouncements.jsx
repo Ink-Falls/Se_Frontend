@@ -14,6 +14,7 @@ import {
   ArrowUpDown,
   Megaphone,
   Clock,
+  Search, // Add this import
 } from "lucide-react";
 import MobileNavBar from "../../components/common/layout/MobileNavbar"; // Add this import
 import BlackHeader from "../../components/common/layout/BlackHeader";
@@ -59,6 +60,8 @@ function AdminAnnouncements() {
   const [announcementToDelete, setAnnouncementToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false); // Set to false since we're using hardcoded data
   const [successMessage, setSuccessMessage] = useState(""); // Add success message state
+  const [searchTerm, setSearchTerm] = useState(""); // Add search state
+  const [filteredAnnouncements, setFilteredAnnouncements] = useState([]); // Add filteredAnnouncements state
 
   const toggleDropdown = (id, event) => {
     event.stopPropagation();
@@ -90,6 +93,18 @@ function AdminAnnouncements() {
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
+
+  useEffect(() => {
+    if (!announcements) return;
+
+    const filtered = announcements.filter(
+      (announcement) =>
+        announcement.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        announcement.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        announcement.poster.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredAnnouncements(filtered);
+  }, [searchTerm, announcements]);
 
   const navItems = [
     { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
@@ -173,21 +188,41 @@ function AdminAnnouncements() {
     }
   };
 
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+    // You can implement actual search functionality here
+  };
+
   return (
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-6 overflow-auto">
         <Header title="Announcements" />
-        <BlackHeader title="All Announcements" count={announcements.length}>
-          <button
-            onClick={() => setIsAddAnnouncementOpen(true)}
-            className="p-2 rounded hover:bg-gray-700"
-          >
-            <Plus size={20} />
-          </button>
-          <button className="p-2 rounded hover:bg-gray-700">
-            <ArrowUpDown size={20} />
-          </button>
+        <BlackHeader title="All Announcements" count={filteredAnnouncements.length}>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search announcements..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-yellow-500 w-64 text-sm text-black"
+              />
+              <Search
+                size={20}
+                className="absolute right-3 top-2 text-gray-400"
+              />
+            </div>
+            <button
+              onClick={() => setIsAddAnnouncementOpen(true)}
+              className="p-2 rounded hover:bg-gray-700"
+            >
+              <Plus size={20} />
+            </button>
+            <button className="p-2 rounded hover:bg-gray-700">
+              <ArrowUpDown size={20} />
+            </button>
+          </div>
         </BlackHeader>
 
         {successMessage && (
@@ -200,7 +235,7 @@ function AdminAnnouncements() {
           <div className="flex items-center justify-center h-[calc(100vh-200px)]">
             <div className="w-16 h-16 border-4 border-[#F6BA18] border-t-[#212529] rounded-full animate-spin"></div>
           </div>
-        ) : announcements.length === 0 ? (
+        ) : filteredAnnouncements.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow-sm mt-4">
             <div className="text-gray-400 mb-4">
               <Megaphone size={48} className="mx-auto" />
@@ -214,7 +249,7 @@ function AdminAnnouncements() {
           </div>
         ) : (
           <div className="flex flex-col gap-4 mt-4">
-            {announcements.map((announcement) => (
+            {filteredAnnouncements.map((announcement) => (
               <div
                 key={announcement.id}
                 className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg"

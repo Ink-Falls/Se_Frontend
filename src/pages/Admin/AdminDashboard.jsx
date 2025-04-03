@@ -491,7 +491,6 @@ function AdminDashboard() {
 
   const handleEditUser = async (user) => {
     try {
-      // Add this to handle opening the modal
       setSelectedUser(user);
       setIsEditModalOpen(true);
     } catch (error) {
@@ -500,7 +499,6 @@ function AdminDashboard() {
     }
   };
 
-  // Add handleSaveUser function
   const handleSaveUser = async (updatedUser) => {
     try {
       const { password, ...userWithoutPassword } = updatedUser;
@@ -511,7 +509,6 @@ function AdminDashboard() {
       setSuccessMessage("Successfully edited user");
     } catch (error) {
       console.error("Error saving user:", error);
-      // Instead of showing alert, throw the error back to EditUserModal
       throw error;
     }
   };
