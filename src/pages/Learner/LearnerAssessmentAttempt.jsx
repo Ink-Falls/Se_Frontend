@@ -20,7 +20,6 @@ import {
   saveQuestionAnswer,
   submitAssessment,
   getAssessmentById,
-  getUserSubmission
 } from "../../services/assessmentService";
 
 const LearnerAssessmentAttempt = () => {
