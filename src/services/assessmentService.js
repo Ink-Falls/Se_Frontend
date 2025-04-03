@@ -224,11 +224,6 @@ export const createSubmission = async (assessmentId) => {
     const storedData = localStorage.getItem(`ongoing_assessment_${assessmentId}`);
     const storedSubmissionId = storedData ? JSON.parse(storedData).submissionId : null;
     
-    console.log('Creating submission - Initial check:', {
-      assessmentId,
-      storedSubmissionId
-    });
-
     // If we have a stored submission ID, try to fetch its details first
     if (storedSubmissionId) {
       try {
@@ -236,12 +231,6 @@ export const createSubmission = async (assessmentId) => {
         if (submissionDetails.success && 
             submissionDetails.submission.status === 'in_progress' && 
             submissionDetails.submission.assessment_id === parseInt(assessmentId)) {
-          
-          console.log('Found existing submission with answers:', {
-            submissionId: storedSubmissionId,
-            hasAnswers: submissionDetails.submission.answers?.length > 0
-          });
-
           return {
             success: true,
             submission: submissionDetails.submission,
@@ -254,25 +243,39 @@ export const createSubmission = async (assessmentId) => {
       }
     }
 
-    // First check user's submissions to count attempts accurately
+    // Check existing submissions first
     const userSubmissions = await getUserSubmission(assessmentId, true);
-    const completedAttempts = userSubmissions.submissions?.filter(s => 
+    const completedSubmissions = userSubmissions.submissions?.filter(s => 
       s.status === 'submitted' || s.status === 'graded'
-    ).length || 0;
+    ) || [];
 
-    // If no valid stored submission found, create new one if attempts remain
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/assessments/${assessmentId}/submissions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    // Always try to create submission first
+    try {
+      const response = await fetchWithInterceptor(`${API_BASE_URL}/assessments/${assessmentId}/submissions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Store submission data and return success
+        localStorage.setItem(`ongoing_assessment_${assessmentId}`, JSON.stringify({
+          submissionId: data.submission.id,
+          startTime: data.submission.start_time
+        }));
+        
+        return {
+          ...data,
+          isExisting: false,
+          savedAnswers: []
+        };
       }
-    });
 
-    const data = await response.json();
-    if (!response.ok) {
-      // Check if this is actually the first attempt
-      if (response.status === 400 && completedAttempts === 0) {
-        // Allow the first attempt
+      // If error and no completed submissions, force first attempt
+      if (response.status === 400 && completedSubmissions.length === 0) {
         const firstAttemptResponse = await fetchWithInterceptor(
           `${API_BASE_URL}/assessments/${assessmentId}/submissions`, 
           {
@@ -281,8 +284,14 @@ export const createSubmission = async (assessmentId) => {
             body: JSON.stringify({ force_first_attempt: true })
           }
         );
-        const firstAttemptData = await firstAttemptResponse.json();
+
         if (firstAttemptResponse.ok) {
+          const firstAttemptData = await firstAttemptResponse.json();
+          localStorage.setItem(`ongoing_assessment_${assessmentId}`, JSON.stringify({
+            submissionId: firstAttemptData.submission.id,
+            startTime: firstAttemptData.submission.start_time
+          }));
+          
           return {
             ...firstAttemptData,
             isExisting: false,
@@ -290,26 +299,14 @@ export const createSubmission = async (assessmentId) => {
           };
         }
       }
-      throw new Error(data.message || 'Failed to start submission');
-    }
 
-    // Store the new submission data
-    try {
-      localStorage.setItem(`ongoing_assessment_${assessmentId}`, JSON.stringify({
-        submissionId: data.submission.id,
-        startTime: data.submission.start_time
-      }));
-    } catch (e) {
-      console.warn('Could not store submission data in localStorage:', e);
+      throw new Error(data.message || 'Failed to create submission');
+    } catch (error) {
+      console.error('Error creating submission:', error);
+      throw error;
     }
-    
-    return {
-      ...data,
-      isExisting: false,
-      savedAnswers: []
-    };
   } catch (error) {
-    console.error('Error creating submission:', error);
+    console.error('Error in createSubmission:', error);
     throw error;
   }
 };
