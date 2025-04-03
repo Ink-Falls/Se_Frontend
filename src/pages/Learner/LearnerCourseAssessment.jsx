@@ -220,15 +220,41 @@ const LearnerCourseAssessment = () => {
     });
   };
 
-  const handleAssessmentClick = (assessment) => {
-    const submission = submissions[assessment.id];
-    navigate(`/Learner/Assessment/View/${assessment.id}`, {
-      state: { 
-        assessment,
-        submission,
-        status: submission ? getStatus(submission) : "Not Started"
+  const handleAssessmentClick = async (assessment) => {
+    try {
+      // Check localStorage for existing submission
+      const storedData = localStorage.getItem(`ongoing_assessment_${assessment.id}`);
+      const storedSubmissionId = storedData ? JSON.parse(storedData).submissionId : null;
+  
+      // Get the current submission from our submissions state
+      const existingSubmission = submissions[assessment.id];
+  
+      // If there's a stored submission ID, verify if it matches a current in-progress submission
+      let isResumable = false;
+      if (storedSubmissionId && existingSubmission) {
+        isResumable = storedSubmissionId === existingSubmission.id && 
+                      existingSubmission.status === 'in_progress';
       }
-    });
+  
+      navigate(`/Learner/Assessment/View/${assessment.id}`, {
+        state: { 
+          assessment,
+          submission: existingSubmission,
+          status: existingSubmission ? getStatus(existingSubmission) : "Not Started",
+          isResumable: isResumable
+        }
+      });
+    } catch (error) {
+      console.error('Error checking submission status:', error);
+      // Navigate anyway with basic info
+      navigate(`/Learner/Assessment/View/${assessment.id}`, {
+        state: { 
+          assessment,
+          submission: submissions[assessment.id],
+          status: submissions[assessment.id] ? getStatus(submissions[assessment.id]) : "Not Started"
+        }
+      });
+    }
   };
 
   const calculateTotalPoints = (submission) => {

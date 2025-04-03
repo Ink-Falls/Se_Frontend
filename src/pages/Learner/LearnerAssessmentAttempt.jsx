@@ -19,7 +19,8 @@ import {
   createSubmission,
   saveQuestionAnswer,
   submitAssessment,
-  getAssessmentById
+  getAssessmentById,
+  getUserSubmission
 } from "../../services/assessmentService";
 
 const LearnerAssessmentAttempt = () => {
@@ -42,76 +43,65 @@ const LearnerAssessmentAttempt = () => {
       try {
         setLoading(true);
         
-        if (existingSubmission?.status === 'in_progress' && !existingSubmission.submit_time) {
-          // Resume existing attempt
-          setSubmissionId(existingSubmission.id);
+        // Create or fetch existing submission
+        const submissionResponse = await createSubmission(assessment.id);
+        
+        if (submissionResponse.success) {
+          const currentSubmission = submissionResponse.submission;
+          setSubmissionId(currentSubmission.id);
           
-          // Try to get stored start time
-          const storedStartTime = localStorage.getItem(`assessment_start_${existingSubmission.id}`);
-          
-          if (storedStartTime) {
-            const startTime = new Date(storedStartTime);
-            const currentTime = new Date();
-            const elapsedMilliseconds = currentTime - startTime;
-            const totalMilliseconds = assessment.duration_minutes * 60 * 1000;
-            const remainingMilliseconds = Math.max(0, totalMilliseconds - elapsedMilliseconds);
-            const remainingSeconds = Math.floor(remainingMilliseconds / 1000);
-            
-            if (remainingSeconds > 0) {
-              setTimeRemaining(remainingSeconds);
-            } else {
-              // Time has expired, submit automatically
-              handleSubmitAssessment();
-              return;
-            }
-          } else {
-            // No stored time found, store current time and set full duration
-            const newStartTime = new Date().toISOString();
-            localStorage.setItem(`assessment_start_${existingSubmission.id}`, newStartTime);
-            setTimeRemaining(assessment.duration_minutes * 60);
+          // Initialize answers if they exist
+          if (submissionResponse.isExisting && submissionResponse.savedAnswers?.length > 0) {
+            const savedAnswers = {};
+            submissionResponse.savedAnswers.forEach(answer => {
+              savedAnswers[answer.question_id] = answer.selected_option_id 
+                ? { optionId: answer.selected_option_id }
+                : { textResponse: answer.text_response };
+            });
+            setAnswers(savedAnswers);
+            setSavedAnswers(Object.keys(savedAnswers).reduce((acc, key) => {
+              acc[key] = true;
+              return acc;
+            }, {}));
           }
-        } else {
-          // Start new attempt
-          const response = await createSubmission(assessment.id);
-          if (response.success) {
-            setSubmissionId(response.submission.id);
-            
-            // Store start time for new attempt
-            const startTime = new Date().toISOString();
-            localStorage.setItem(`assessment_start_${response.submission.id}`, startTime);
-            setTimeRemaining(assessment.duration_minutes * 60);
-          }
-        }
 
-        // Get assessment questions
-        const assessmentData = await getAssessmentById(assessment.id, true);
-        if (assessmentData.success) {
-          setQuestions(assessmentData.assessment.questions || []);
+          // Setup timer
+          const startTime = new Date(currentSubmission.start_time).getTime();
+          const currentTime = new Date().getTime();
+          const elapsedMilliseconds = currentTime - startTime;
+          const totalMilliseconds = assessment.duration_minutes * 60 * 1000;
+          const remainingMilliseconds = Math.max(0, totalMilliseconds - elapsedMilliseconds);
+          const remainingSeconds = Math.floor(remainingMilliseconds / 1000);
+          
+          if (remainingSeconds > 0) {
+            setTimeRemaining(remainingSeconds);
+          } else {
+            await handleSubmitAssessment();
+            return;
+          }
         }
       } catch (err) {
-        const errorMessage = err?.response?.data?.message || err.message;
-        
-        // Handle max attempts error
-        if (errorMessage === 'Invalid request' || errorMessage.includes('VALIDATION_ERROR')) {
+        // Use the message from createSubmission service
+        if (err.message?.includes('Maximum assessment attempts reached:')) {
+          const cleanMessage = err.message.split('Maximum assessment attempts reached:')[1].trim();
           navigate(`/Learner/Assessment/View/${assessment.id}`, {
             state: { 
               assessment,
-              error: 'Maximum attempts reached'
-            },
-            replace: true // This will replace the current route in history
+              error: 'Maximum attempts reached',
+              errorDetails: cleanMessage,
+              submission: existingSubmission
+            }
           });
           return;
         }
-
-        // Handle other errors
-        setError(errorMessage || 'Failed to start assessment');
+        setError(err.message || 'Failed to start assessment');
       } finally {
         setLoading(false);
       }
     };
 
     initializeAttempt();
-  }, [assessment, existingSubmission, navigate]);
+  }, [assessment, navigate]);
 
   // Timer effect with more precise tracking
   useEffect(() => {
@@ -178,11 +168,11 @@ const LearnerAssessmentAttempt = () => {
   // Clean up localStorage when assessment is submitted
   const handleSubmitAssessment = async () => {
     try {
-      const response = await submitAssessment(submissionId);
+      const response = await submitAssessment(submissionId, assessment.id); // Add assessment.id here
       if (response.success) {
         // Clean up localStorage
-        localStorage.removeItem(`assessment_start_${submissionId}`);
         localStorage.removeItem(`assessment_end_${submissionId}`);
+        localStorage.removeItem(`ongoing_assessment_${assessment.id}`);
         
         navigate(`/Learner/Assessment/View/${assessment.id}`, {
           state: { assessment, submission: response.submission }
@@ -382,7 +372,9 @@ const LearnerAssessmentAttempt = () => {
             <div className="text-center py-8">
               <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
               <h3 className="text-xl font-medium text-gray-900 mt-4 mb-2">
-                {error}
+                {error === "Invalid request" 
+                  ? "Maximum number of attempts has been reached for this assessment"
+                  : error}
               </h3>
               <button
                 onClick={() => navigate("/Learner/Assessment")}
