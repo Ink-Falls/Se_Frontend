@@ -14,13 +14,12 @@ import {
   ArrowUpDown,
   Megaphone,
   Clock,
-  Search, // Add this import
+  Search,
 } from "lucide-react";
-import MobileNavBar from "../../components/common/layout/MobileNavbar"; // Add this import
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import BlackHeader from "../../components/common/layout/BlackHeader";
 
 function AdminAnnouncements() {
-  // Hardcoded data for testing
   const [announcements, setAnnouncements] = useState([
     {
       id: 1,
@@ -58,10 +57,10 @@ function AdminAnnouncements() {
     },
   });
   const [announcementToDelete, setAnnouncementToDelete] = useState(null);
-  const [isLoading, setIsLoading] = useState(false); // Set to false since we're using hardcoded data
-  const [successMessage, setSuccessMessage] = useState(""); // Add success message state
-  const [searchTerm, setSearchTerm] = useState(""); // Add search state
-  const [filteredAnnouncements, setFilteredAnnouncements] = useState([]); // Add filteredAnnouncements state
+  const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredAnnouncements, setFilteredAnnouncements] = useState([]);
 
   const toggleDropdown = (id, event) => {
     event.stopPropagation();
@@ -190,40 +189,47 @@ function AdminAnnouncements() {
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
-    // You can implement actual search functionality here
   };
 
   return (
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-6 overflow-auto">
-        <Header title="Announcements" />
-        <BlackHeader title="All Announcements" count={filteredAnnouncements.length}>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search announcements..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-yellow-500 w-64 text-sm text-black"
-              />
-              <Search
-                size={20}
-                className="absolute right-3 top-2 text-gray-400"
-              />
+        <Header title={<span className="text-xl md:text-2xl">Announcements</span>} />
+        <div className="bg-[#212529] text-white p-4 rounded-lg">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <h2 className="text-lg font-semibold">
+              All Announcements ({filteredAnnouncements.length})
+            </h2>
+            
+            <div className="flex flex-col md:flex-row gap-2">
+              <div className="relative flex-1 md:w-64">
+                <input
+                  type="text"
+                  placeholder="Search announcements..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-yellow-500 w-full text-sm text-black"
+                />
+                <Search
+                  size={20}
+                  className="absolute right-3 top-2 text-gray-400"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setIsAddAnnouncementOpen(true)}
+                  className="p-2 rounded hover:bg-gray-700"
+                >
+                  <Plus size={20} />
+                </button>
+                <button className="p-2 rounded hover:bg-gray-700">
+                  <ArrowUpDown size={20} />
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => setIsAddAnnouncementOpen(true)}
-              className="p-2 rounded hover:bg-gray-700"
-            >
-              <Plus size={20} />
-            </button>
-            <button className="p-2 rounded hover:bg-gray-700">
-              <ArrowUpDown size={20} />
-            </button>
           </div>
-        </BlackHeader>
+        </div>
 
         {successMessage && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg mt-3">
@@ -295,7 +301,6 @@ function AdminAnnouncements() {
           </div>
         )}
 
-        {/* Modals */}
         {isAddAnnouncementOpen && (
           <Modal
             isOpen={isAddAnnouncementOpen}
@@ -365,7 +370,6 @@ function AdminAnnouncements() {
             isOpen={!!editingAnnouncement}
             onClose={() => setEditingAnnouncement(null)}
           >
-            {/* ...existing modal code... */}
           </Modal>
         )}
 

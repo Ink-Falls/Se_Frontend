@@ -5,11 +5,12 @@ const ReportViewerModal = ({ isOpen, onClose, pdfUrl, onPrint, onDelete, error, 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-5xl h-[80vh] flex flex-col">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">{title}</h2>
-          <div className="flex items-center gap-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[100]">
+      <div className="bg-white rounded-lg w-[95%] md:w-[90%] max-w-4xl h-[90vh] flex flex-col relative">
+        {/* Header */}
+        <div className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <div className="flex items-center gap-2">
             {!error && (
               <>
                 <button
@@ -37,18 +38,20 @@ const ReportViewerModal = ({ isOpen, onClose, pdfUrl, onPrint, onDelete, error, 
           </div>
         </div>
         
-        <div className="flex-1 bg-gray-100 rounded-lg overflow-hidden">
+        {/* Content */}
+        <div className="flex-1 bg-gray-100 overflow-hidden">
           {error ? (
-            <div className="flex flex-col items-center justify-center h-full">
-              <AlertCircle size={48} className="text-red-500 mb-4" />
+            <div className="flex flex-col items-center justify-center h-full p-4">
+              <AlertCircle size={40} className="text-red-500 mb-3" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Generating Report</h3>
-              <p className="text-gray-600">{error}</p>
+              <p className="text-gray-600 text-center">{error}</p>
             </div>
           ) : (
             <iframe
               src={pdfUrl}
               className="w-full h-full"
               title="PDF Report"
+              style={{ display: 'block', border: 'none' }}
             />
           )}
         </div>
