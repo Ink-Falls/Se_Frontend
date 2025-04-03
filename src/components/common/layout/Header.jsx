@@ -32,15 +32,8 @@ const Header = ({ title }) => {
           <h1 className="text-xl font-semibold text-[#334155]">{title}</h1>
           <p className="text-xs text-[#334155]">{currentDate}</p>
         </div>
-        <Link to="/profile" className="flex items-center">
-          <span className="mr-2 text-base font-bold text-[#334155]">
-            {userData?.first_name} {userData?.last_name}
-          </span>
-          <img
-            src={profileImage}
-            alt="Profile"
-            className="w-8 h-8 rounded-full"
-          />
+        <Link to="/profile">
+          <img src={profileImg} alt="Profile" className="w-8 h-8 rounded-full" />
         </Link>
       </div>
 
@@ -53,7 +46,7 @@ const Header = ({ title }) => {
           <p className="text-xs text-[#334155]">{currentDate}</p>
         </div>
         <Link to="/profile" className="flex items-center">
-          <span className="mr-4 text-lg font-bold text-[#334155]">
+          <span className="mr-4 text-lg font-bold text-[#334155] hidden md:block">
             {userData?.first_name} {userData?.last_name}
           </span>
           <img

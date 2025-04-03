@@ -225,15 +225,29 @@ const LearnerCourseAssessment = () => {
       // Check localStorage for existing submission
       const storedData = localStorage.getItem(`ongoing_assessment_${assessment.id}`);
       const storedSubmissionId = storedData ? JSON.parse(storedData).submissionId : null;
+      
+      console.log('View Assessment - Initial check:', {
+        assessmentId: assessment.id,
+        storedSubmissionId: storedSubmissionId
+      });
   
-      // Get the current submission from our submissions state
-      const existingSubmission = submissions[assessment.id];
+      // Get current submission from API
+      const submissionResponse = await getUserSubmission(assessment.id, true);
+      const existingSubmission = submissionResponse?.submission;
   
-      // If there's a stored submission ID, verify if it matches a current in-progress submission
+      // Check if stored submission matches server submission
       let isResumable = false;
       if (storedSubmissionId && existingSubmission) {
         isResumable = storedSubmissionId === existingSubmission.id && 
                       existingSubmission.status === 'in_progress';
+        
+        console.log('Submission ID comparison:', {
+          stored: storedSubmissionId,
+          server: existingSubmission.id,
+          matches: storedSubmissionId === existingSubmission.id,
+          status: existingSubmission.status,
+          isResumable: isResumable
+        });
       }
   
       navigate(`/Learner/Assessment/View/${assessment.id}`, {
@@ -246,7 +260,6 @@ const LearnerCourseAssessment = () => {
       });
     } catch (error) {
       console.error('Error checking submission status:', error);
-      // Navigate anyway with basic info
       navigate(`/Learner/Assessment/View/${assessment.id}`, {
         state: { 
           assessment,
@@ -301,168 +314,244 @@ const LearnerCourseAssessment = () => {
     });
   };
 
+  const calculateAssessmentScore = (submission) => {
+    if (!submission?.answers) return 0;
+    
+    const earnedPoints = submission.answers.reduce((total, answer) => 
+      total + (answer.points_awarded || 0), 0);
+    
+    const totalPoints = submission.assessment.questions.reduce((total, question) => 
+      total + (question.points || 0), 0);
+    
+    return totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
+  };
+
+  const checkAssessmentPassed = (assessment, submission) => {
+    if (!submission || submission.status !== 'graded') return false;
+    const score = calculateAssessmentScore(submission);
+    return score >= assessment.passing_score;
+  };
+
+  const checkModuleCompleted = (moduleId) => {
+    const moduleAssessmentList = moduleAssessments[moduleId] || [];
+    return moduleAssessmentList.every(assessment => {
+      const submission = submissions[assessment.id];
+      return submission && checkAssessmentPassed(assessment, submission);
+    });
+  };
+
+  const findFirstFailedAssessment = (moduleId) => {
+    const moduleAssessmentList = moduleAssessments[moduleId] || [];
+    return moduleAssessmentList.find(assessment => {
+      const submission = submissions[assessment.id];
+      return !submission || !checkAssessmentPassed(assessment, submission);
+    });
+  };
+
+  const shouldLockModule = (currentModule) => {
+    // Get all modules up to the current one
+    const moduleIndex = modules.findIndex(m => m.module_id === currentModule.module_id);
+    const previousModules = modules.slice(0, moduleIndex);
+    
+    // Check if all previous modules are completed
+    return previousModules.some(module => !checkModuleCompleted(module.module_id));
+  };
+
   const renderModuleAssessments = () => (
     <div className="space-y-6">
-      {modules.map((module) => (
-        <div
-          key={module.module_id}
-          className="bg-white rounded-lg shadow-sm overflow-hidden"
-        >
+      {modules.map((module) => {
+        const isModuleLocked = shouldLockModule(module);
+        const failedAssessment = isModuleLocked ? 
+          findFirstFailedAssessment(modules[modules.findIndex(m => m.module_id === module.module_id) - 1]?.module_id) : 
+          null;
+
+        return (
           <div
-            className="p-6 bg-gray-50 border-l-4 border-yellow-500 flex justify-between items-center cursor-pointer hover:bg-gray-100"
-            onClick={() => toggleModule(module.module_id)}
+            key={module.module_id}
+            className={`bg-white rounded-lg shadow-sm overflow-hidden ${
+              isModuleLocked ? 'opacity-50' : ''
+            }`}
           >
-            <div>
-              <div className="flex items-center gap-4">
-                <h3 className="text-xl font-semibold text-gray-800">
-                  {module.name}
-                </h3>
-                {moduleGrades[module.module_id] && (
-                  <div className="flex gap-2">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      Average: {moduleGrades[module.module_id].averageScore}%
-                    </span>
-                    {moduleGrades[module.module_id].allGraded && (
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        moduleGrades[module.module_id].allPassed 
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {moduleGrades[module.module_id].allPassed ? 'All Passed' : 'Some Failed'}
+            <div
+              className="p-6 bg-gray-50 border-l-4 border-yellow-500 flex justify-between items-center cursor-pointer hover:bg-gray-100"
+              onClick={() => toggleModule(module.module_id)}
+            >
+              <div>
+                <div className="flex items-center gap-4">
+                  <h3 className="text-xl font-semibold text-gray-800">
+                    {module.name}
+                  </h3>
+                  {moduleGrades[module.module_id] && (
+                    <div className="flex gap-2">
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        Average: {moduleGrades[module.module_id].averageScore}%
                       </span>
-                    )}
+                      {moduleGrades[module.module_id].allGraded && (
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          moduleGrades[module.module_id].allPassed 
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {moduleGrades[module.module_id].allPassed ? 'All Passed' : 'Some Failed'}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 mt-1">{module.description}</p>
+                <span className="text-xs text-gray-500 mt-2 inline-block">
+                  {moduleAssessments[module.module_id]?.length || 0} Assessment(s)
+                </span>
+              </div>
+              <ChevronDown
+                className={`w-6 h-6 text-gray-400 transform transition-transform duration-200 ${
+                  expandedModules.has(module.module_id) ? "rotate-180" : ""
+                }`}
+              />
+            </div>
+
+            {expandedModules.has(module.module_id) && (
+              <div className="p-6 bg-gray-50 border-t border-gray-100">
+                {isModuleLocked ? (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                    <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-3" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Module Locked
+                    </h3>
+                    <p className="text-gray-600 max-w-md mx-auto">
+                      {failedAssessment ? 
+                        `You need to pass "${failedAssessment.title}" with a score of at least ${failedAssessment.passing_score}% to unlock this module.` :
+                        "Complete all assessments in the previous module to unlock this module."}
+                    </p>
+                  </div>
+                ) : moduleAssessments[module.module_id]?.length > 0 ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {moduleAssessments[module.module_id].map((assessment) => {
+                      const color = getTypeColor(assessment.type);
+                      const submission = submissions[assessment.id];
+                      const score = submission ? calculateAssessmentScore(submission) : 0;
+                      const isPassed = checkAssessmentPassed(assessment, submission);
+
+                      return (
+                        <div
+                          key={assessment.id}
+                          onClick={() => handleAssessmentClick(assessment)}
+                          className="w-full rounded-xl shadow-md bg-white hover:shadow-lg transition-all duration-200 overflow-hidden group relative"
+                        >
+                          <div
+                            style={{ backgroundColor: color.bg }}
+                            className="px-6 py-4 text-white relative overflow-hidden"
+                          >
+                            <div className="absolute top-0 right-0 w-32 h-32 transform translate-x-16 -translate-y-16 rotate-45 bg-white opacity-10 rounded-full" />
+                            <div className="absolute bottom-0 left-0 w-24 h-24 transform -translate-x-12 translate-y-12 rotate-45 bg-white opacity-10 rounded-full" />
+
+                            <div className="flex flex-col gap-2 relative z-10">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${color.badge}`}
+                                >
+                                  {assessment.type?.toUpperCase() || "QUIZ"}
+                                </span>
+                                {submissions[assessment.id] && (
+                                  <span
+                                    className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                                      getStatus(submissions[assessment.id])
+                                    )}`}
+                                  >
+                                    {getStatus(submissions[assessment.id])}
+                                  </span>
+                                )}
+                              </div>
+                              <h3 className="text-2xl font-bold tracking-tight">
+                                {assessment.title}
+                              </h3>
+                            </div>
+                          </div>
+
+                          <div className="px-6 py-4">
+                            <p className="text-gray-600 text-sm line-clamp-2 mb-4">
+                              {assessment.description}
+                            </p>
+
+                            <div className="grid grid-cols-2 gap-6 mb-4">
+                              <div className="space-y-3">
+                                <div className="flex items-center text-sm">
+                                  <Clock
+                                    className="w-4 h-4 mr-2"
+                                    style={{ color: color.bg }}
+                                  />
+                                  <span className="text-gray-600 font-medium">
+                                    {assessment.duration_minutes} minutes
+                                  </span>
+                                </div>
+                                <div className="flex items-center text-sm">
+                                  <Award
+                                    className="w-4 h-4 mr-2"
+                                    style={{ color: color.bg }}
+                                  />
+                                  <span className="text-gray-600 font-medium">
+                                    Passing: {assessment.passing_score}%
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="space-y-3">
+                                <div className="flex items-center text-sm">
+                                  <Calendar
+                                    className="w-4 h-4 mr-2"
+                                    style={{ color: color.bg }}
+                                  />
+                                  <span className="text-gray-600 font-medium">
+                                    Due: {formatDate(assessment.due_date)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-4 border-t">
+                              <button
+                                className="px-4 py-2 text-sm font-medium text-white rounded-md"
+                                style={{ backgroundColor: color.bg }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAssessmentClick(assessment);
+                                }}
+                              >
+                                View Assessment
+                              </button>
+                              {renderSubmissionScore(
+                                submissions[assessment.id],
+                                assessment
+                              )}
+                              {submission?.status === 'graded' && (
+                                <div className={`text-sm mt-2 ${
+                                  isPassed ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  Score: {score.toFixed(1)}% 
+                                  {isPassed ? ' (Passed)' : ` (Need ${assessment.passing_score}% to pass)`}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-200">
+                    <ClipboardList
+                      size={24}
+                      className="mx-auto mb-3 text-gray-400"
+                    />
+                    <p className="text-gray-600 font-medium">
+                      No assessments in this module yet
+                    </p>
                   </div>
                 )}
               </div>
-              <p className="text-sm text-gray-600 mt-1">{module.description}</p>
-              <span className="text-xs text-gray-500 mt-2 inline-block">
-                {moduleAssessments[module.module_id]?.length || 0} Assessment(s)
-              </span>
-            </div>
-            <ChevronDown
-              className={`w-6 h-6 text-gray-400 transform transition-transform duration-200 ${
-                expandedModules.has(module.module_id) ? "rotate-180" : ""
-              }`}
-            />
+            )}
           </div>
-
-          {expandedModules.has(module.module_id) && (
-            <div className="p-6 bg-gray-50 border-t border-gray-100">
-              {moduleAssessments[module.module_id]?.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {moduleAssessments[module.module_id].map((assessment) => {
-                    const color = getTypeColor(assessment.type);
-                    return (
-                      <div
-                        key={assessment.id}
-                        onClick={() => handleAssessmentClick(assessment)}
-                        className="w-full rounded-xl shadow-md bg-white hover:shadow-lg transition-all duration-200 overflow-hidden group relative"
-                      >
-                        <div
-                          style={{ backgroundColor: color.bg }}
-                          className="px-6 py-4 text-white relative overflow-hidden"
-                        >
-                          <div className="absolute top-0 right-0 w-32 h-32 transform translate-x-16 -translate-y-16 rotate-45 bg-white opacity-10 rounded-full" />
-                          <div className="absolute bottom-0 left-0 w-24 h-24 transform -translate-x-12 translate-y-12 rotate-45 bg-white opacity-10 rounded-full" />
-
-                          <div className="flex flex-col gap-2 relative z-10">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${color.badge}`}
-                              >
-                                {assessment.type?.toUpperCase() || "QUIZ"}
-                              </span>
-                              {submissions[assessment.id] && (
-                                <span
-                                  className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                                    getStatus(submissions[assessment.id])
-                                  )}`}
-                                >
-                                  {getStatus(submissions[assessment.id])}
-                                </span>
-                              )}
-                            </div>
-                            <h3 className="text-2xl font-bold tracking-tight">
-                              {assessment.title}
-                            </h3>
-                          </div>
-                        </div>
-
-                        <div className="px-6 py-4">
-                          <p className="text-gray-600 text-sm line-clamp-2 mb-4">
-                            {assessment.description}
-                          </p>
-
-                          <div className="grid grid-cols-2 gap-6 mb-4">
-                            <div className="space-y-3">
-                              <div className="flex items-center text-sm">
-                                <Clock
-                                  className="w-4 h-4 mr-2"
-                                  style={{ color: color.bg }}
-                                />
-                                <span className="text-gray-600 font-medium">
-                                  {assessment.duration_minutes} minutes
-                                </span>
-                              </div>
-                              <div className="flex items-center text-sm">
-                                <Award
-                                  className="w-4 h-4 mr-2"
-                                  style={{ color: color.bg }}
-                                />
-                                <span className="text-gray-600 font-medium">
-                                  Passing: {assessment.passing_score}%
-                                </span>
-                              </div>
-                            </div>
-                            <div className="space-y-3">
-                              <div className="flex items-center text-sm">
-                                <Calendar
-                                  className="w-4 h-4 mr-2"
-                                  style={{ color: color.bg }}
-                                />
-                                <span className="text-gray-600 font-medium">
-                                  Due: {formatDate(assessment.due_date)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between pt-4 border-t">
-                            <button
-                              className="px-4 py-2 text-sm font-medium text-white rounded-md"
-                              style={{ backgroundColor: color.bg }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAssessmentClick(assessment);
-                              }}
-                            >
-                              View Assessment
-                            </button>
-                            {renderSubmissionScore(
-                              submissions[assessment.id],
-                              assessment
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-200">
-                  <ClipboardList
-                    size={24}
-                    className="mx-auto mb-3 text-gray-400"
-                  />
-                  <p className="text-gray-600 font-medium">
-                    No assessments in this module yet
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 

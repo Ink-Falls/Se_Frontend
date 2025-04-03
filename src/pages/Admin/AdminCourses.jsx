@@ -27,7 +27,6 @@ import { getTeachers } from "../../services/userService";
 import { getGroupsByType } from "../../services/groupService";
 import AddCourse from "../../components/common/Modals/Add/AddCourse";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
-import BlackHeader from "../../components/common/layout/BlackHeader";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import EditCourseModal from "../../components/common/Modals/Edit/EditCourseModal";
 
@@ -362,29 +361,37 @@ function AdminCourses() {
         {" "}
         {/* Added pb-16 here too */}
         <Header title="Courses" />
-        <BlackHeader title="All Courses" count={filteredCourses.length}>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search courses..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-yellow-500 w-64 text-sm text-black"
-              />
-              <Search
-                size={20}
-                className="absolute right-3 top-2 text-gray-400"
-              />
+        <div className="bg-[#212529] text-white p-4 rounded-lg">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <h2 className="text-lg font-semibold">
+              All Courses ({filteredCourses.length})
+            </h2>
+            
+            <div className="flex flex-col md:flex-row gap-2">
+              <div className="relative flex-1 md:w-64">
+                <input
+                  type="text"
+                  placeholder="Search courses..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-yellow-500 w-full text-sm text-black"
+                />
+                <Search
+                  size={20}
+                  className="absolute right-3 top-2 text-gray-400"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setIsAddCourseOpen(true)}
+                  className="p-2 rounded hover:bg-gray-700"
+                >
+                  <Plus size={20} />
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => setIsAddCourseOpen(true)}
-              className="p-2 rounded hover:bg-gray-700"
-            >
-              <Plus size={20} />
-            </button>
           </div>
-        </BlackHeader>
+        </div>
         {successMessage && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg mt-3">
             {successMessage}

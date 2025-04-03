@@ -4,7 +4,6 @@ import { useCourse } from "../../contexts/CourseContext";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
-import SubmissionHistoryDropdown from "../../components/assessment/SubmissionHistoryDropdown"; 
 import {
   Home,
   Megaphone,
@@ -12,15 +11,11 @@ import {
   ClipboardList,
   Clock,
   ArrowLeft,
-  FileText,
   AlertTriangle,
   Check
 } from "lucide-react";
 import { 
   getAssessmentById, 
-  createSubmission,
-  saveQuestionAnswer,
-  submitAssessment,
   getUserSubmission 
 } from "../../services/assessmentService";
 
@@ -101,6 +96,7 @@ const LearnerAssessmentView = () => {
   const [timer, setTimer] = useState(null);
   const [startTime, setStartTime] = useState(null);
   const [submissions, setSubmissions] = useState([]);
+  const [latestSubmission, setLatestSubmission] = useState(null);
 
   useEffect(() => {
     return () => {
@@ -359,6 +355,29 @@ const LearnerAssessmentView = () => {
     }
   };
 
+  const handleShowAnswers = async () => {
+    try {
+      setLoading(true);
+      const submissionResponse = await getUserSubmission(assessment.id, true);
+      
+      console.log('Latest submission fetch:', {
+        success: submissionResponse.success,
+        hasSubmission: !!submissionResponse.submission,
+        submissionStatus: submissionResponse.submission?.status
+      });
+
+      if (submissionResponse.success && submissionResponse.submission) {
+        setLatestSubmission(submissionResponse.submission);
+      }
+      setShowAnswers(!showAnswers);
+    } catch (err) {
+      console.error('Error fetching latest submission:', err);
+      setError('Failed to load submission details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderHeader = () => (
     <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 p-8 text-white">
       <button
@@ -403,6 +422,39 @@ const LearnerAssessmentView = () => {
   );
 
   const renderSubmissionStatus = () => {
+    // Check localStorage first for ongoing attempt
+    const storedData = localStorage.getItem(`ongoing_assessment_${assessment.id}`);
+    const storedSubmissionId = storedData ? JSON.parse(storedData).submissionId : null;
+    
+    console.log('Submission Status Check:', {
+      storedSubmissionId,
+      hasStoredData: !!storedData,
+      initialSubmission: !!initialSubmission
+    });
+  
+    if (storedSubmissionId) {
+      // Override the completed submission view if there's a stored submission
+      return (
+        <div className="text-center py-8">
+          <div className="text-yellow-500 mb-4">
+            <Clock size={48} className="mx-auto" />
+          </div>
+          <h3 className="text-xl font-medium text-gray-900 mb-4">
+            Ongoing Assessment Attempt
+          </h3>
+          <p className="text-gray-500 mb-6">
+            You have an unfinished attempt in progress.
+          </p>
+          <button
+            onClick={handleStartNewAttempt}
+            className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
+          >
+            Resume Attempt
+          </button>
+        </div>
+      );
+    }
+  
     if (error || routeError === 'Maximum attempts reached') {
       return (
         <div className="text-center py-8">
@@ -419,35 +471,8 @@ const LearnerAssessmentView = () => {
         </div>
       );
     }
-
-    // Check for resumable submission from various sources
-    const { isResumable: hasStoredSubmission } = location.state || {};
-    const isInProgress = initialSubmission?.status === 'in_progress';
-    const hasNotSubmitted = isInProgress && !initialSubmission?.submit_time;
-    const canResume = hasStoredSubmission || hasNotSubmitted || existingSubmission?.status === 'in_progress';
-    
-    if (canResume) {
-      return (
-        <div className="text-center py-8">
-          <div className="text-gray-400 mb-4">
-            <Clock size={48} className="mx-auto" />
-          </div>
-          <h3 className="text-xl font-medium text-gray-900 mb-4">
-            Assessment In Progress
-          </h3>
-          <p className="text-gray-500 mb-6">
-            You have an unfinished attempt. Would you like to resume?
-          </p>
-          <button
-            onClick={handleStartNewAttempt}
-            className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
-          >
-            Resume Attempt
-          </button>
-        </div>
-      );
-    }
-
+  
+    // Show not started state if no submission and no stored attempt
     if (!initialSubmission) {
       return (
         <div className="text-center py-8">
@@ -469,8 +494,8 @@ const LearnerAssessmentView = () => {
         </div>
       );
     }
-
-    // Show completed submission
+  
+    // Show completed submission view only if no stored attempt
     return (
       <div className="space-y-6">
         <div className="text-center">
@@ -485,10 +510,10 @@ const LearnerAssessmentView = () => {
               Score: {calculateTotalPoints(initialSubmission.answers).earned}/{calculateTotalPoints(initialSubmission.answers).total}
             </div>
           )}
-
+  
           <div className="mt-6 flex justify-center gap-4">
             <button
-              onClick={() => setShowAnswers(!showAnswers)}
+              onClick={handleShowAnswers}
               className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
             >
               {showAnswers ? 'Hide My Answers' : 'Show My Answers'}
@@ -501,13 +526,13 @@ const LearnerAssessmentView = () => {
             </button>
           </div>
         </div>
-
-        {/* Show answers section */}
-        {showAnswers && initialSubmission.answers && (
+  
+        {/* Show answers section - use latestSubmission instead of initialSubmission */}
+        {showAnswers && latestSubmission?.answers && (
           <div className="mt-6 space-y-6">
             <h4 className="text-lg font-medium text-gray-900">Your Answers</h4>
             {questions.map((question, index) => {
-              const answer = initialSubmission.answers.find(a => a.question_id === question.id);
+              const answer = latestSubmission.answers.find(a => a.question_id === question.id);
               return (
                 <div key={question.id} className="bg-white p-6 rounded-lg shadow-sm">
                   <div className="flex justify-between items-start mb-4">

@@ -569,7 +569,7 @@ function Profile() {
       {/* Change Password Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-1/3 relative">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] md:w-1/2 lg:w-1/3 relative">
             <button
               className="absolute top-2 right-3 text-3xl font-semibold text-gray-500 hover:text-gray-800"
               onClick={handleCloseModal}
