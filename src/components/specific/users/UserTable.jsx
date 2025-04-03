@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   SquarePen,
   Plus,
@@ -35,7 +35,27 @@ const UserTable = ({
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       onPageChange(newPage);
+      setPageInput(newPage.toString());
     }
+  };
+
+  const handlePageInputChange = (e) => {
+    setPageInput(e.target.value);
+  };
+
+  const handlePageInputSubmit = (e) => {
+    if (e.key === "Enter") {
+      const newPage = parseInt(pageInput);
+      if (!isNaN(newPage) && newPage >= 1 && newPage <= totalPages) {
+        onPageChange(newPage);
+      } else {
+        setPageInput(currentPage.toString());
+      }
+    }
+  };
+
+  const handlePageInputBlur = () => {
+    setPageInput(currentPage.toString());
   };
 
   const handleCheckboxChange = (id) => {
@@ -57,25 +77,6 @@ const UserTable = ({
   const handleSearchChange = (e) => {
     const query = e.target.value;
     onSearch(query);
-  };
-
-  const handlePageInputChange = (e) => {
-    setPageInput(e.target.value);
-  };
-
-  const handlePageInputSubmit = (e) => {
-    if (e.key === "Enter") {
-      const newPage = parseInt(pageInput);
-      if (!isNaN(newPage) && newPage >= 1 && newPage <= totalPages) {
-        onPageChange(newPage);
-      } else {
-        setPageInput(currentPage.toString());
-      }
-    }
-  };
-
-  const handlePageInputBlur = () => {
-    setPageInput(currentPage.toString());
   };
 
   return (
@@ -175,6 +176,7 @@ const UserTable = ({
             </button>
 
             <button
+              data-testid="generate-report-button"
               onClick={onGenerateReport}
               className="flex items-center gap-2 md:gap-[0.3vw] px-4 md:px-[0.8vw] py-2 md:py-[0.4vw] bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
             >

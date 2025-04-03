@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Edit,
   Trash2,
@@ -32,6 +32,30 @@ function EnrolleeTable({
   const [selectedIds, setSelectedIds] = useState([]);
   const [filterStatus, setFilterStatus] = useState("All");
   const [error, setError] = useState(null); // Add this line
+  const [pageInput, setPageInput] = useState(currentPage.toString());
+
+  useEffect(() => {
+    setPageInput(currentPage.toString());
+  }, [currentPage]);
+
+  const handlePageInputChange = (e) => {
+    setPageInput(e.target.value);
+  };
+
+  const handlePageInputSubmit = (e) => {
+    if (e.key === "Enter") {
+      const newPage = parseInt(pageInput);
+      if (!isNaN(newPage) && newPage >= 1 && newPage <= Math.ceil(filteredEnrollees.length / ROWS_PER_PAGE)) {
+        onPageChange(newPage);
+      } else {
+        setPageInput(currentPage.toString());
+      }
+    }
+  };
+
+  const handlePageInputBlur = () => {
+    setPageInput(currentPage.toString());
+  };
 
   // State for modals
   const [selectedEnrollee, setSelectedEnrollee] = useState(null);
@@ -258,7 +282,7 @@ function EnrolleeTable({
         {/* Generate Report Button */}
         <button 
           onClick={handleGenerateReport}
-          className="flex items-center gap-2 md:gap-[0.3vw] px-4 md:px-[0.8vw] py-2 md:py-[0.4vw] bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black"
+          className="flex items-center gap-2 md:gap-[0.3vw] px-4 md:px-[0.8vw] py-2 md:py-[0.5vw] bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black whitespace-nowrap h-[2.5rem] md:h-[2.5vw]"
         >
           <FileText size={16} className="md:w-[1vw] md:h-[1vw]" />
           <span>Generate Report</span>
@@ -356,7 +380,7 @@ function EnrolleeTable({
         <div className="text-sm text-gray-700">
           Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
         </div>
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 items-center">
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
