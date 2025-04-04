@@ -22,6 +22,12 @@ const EditQuestionModal = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const validateMediaUrl = (url) => {
+    if (!url) return true;
+    const imageRegex = /\.(jpg|jpeg|png|gif)$/i;
+    return imageRegex.test(url);
+  };
+
   useEffect(() => {
     if (question) {
       setFormData({
@@ -48,11 +54,15 @@ const EditQuestionModal = ({
     setError("");
 
     try {
+      if (parseInt(formData.points) <= 0) {
+        throw new Error("Points must be greater than 0");
+      }
+
       const requestData = {
         question_text: formData.question_text.trim(),
         question_type: formData.question_type,
         points: parseInt(formData.points),
-        media_url: formData.media_url || "",
+        media_url: formData.media_url?.trim() || "",
       };
 
       // Handle different question types
@@ -62,31 +72,38 @@ const EditQuestionModal = ({
             throw new Error("Please select a correct answer");
           }
           requestData.options = formData.options
-            .filter((opt) => opt.text.trim())
+            .filter((opt) => opt.text?.trim())
             .map((opt) => ({
               text: opt.text.trim(),
-              is_correct: opt.is_correct,
+              is_correct: Boolean(opt.is_correct),
             }));
-          delete requestData.answer_key;
           break;
 
         case "true_false":
+          // For true/false, explicitly format options
+          const trueOption = formData.options.find(
+            (opt) => opt.text === "True" || opt.option_text === "True"
+          );
+          const falseOption = formData.options.find(
+            (opt) => opt.text === "False" || opt.option_text === "False"
+          );
+
           requestData.options = [
-            { text: "True", is_correct: formData.answer_key === "true" },
-            { text: "False", is_correct: formData.answer_key === "false" },
+            { text: "True", is_correct: trueOption?.is_correct || false },
+            { text: "False", is_correct: falseOption?.is_correct || false },
           ];
-          delete requestData.answer_key;
           break;
 
         case "short_answer":
         case "essay":
           if (!formData.answer_key?.trim()) {
-            throw new Error("Please provide the correct answer/guidelines");
+            throw new Error("Please provide answer key or guidelines");
           }
           requestData.answer_key = formData.answer_key.trim();
           if (formData.question_type === "essay") {
             requestData.word_limit = parseInt(formData.word_limit) || 500;
           }
+          delete requestData.options;
           break;
 
         default:
@@ -106,7 +123,8 @@ const EditQuestionModal = ({
         throw new Error(response.message || "Failed to update question");
       }
     } catch (err) {
-      setError(err.message);
+      console.error("Error updating question:", err);
+      setError(err.message || "Failed to update question");
     } finally {
       setIsLoading(false);
     }
@@ -293,6 +311,42 @@ const EditQuestionModal = ({
                 rows={3}
                 required
               />
+            </div>
+
+            <div>
+              <label
+                htmlFor="media_url"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Media URL (Optional)
+              </label>
+              <input
+                id="media_url"
+                type="url"
+                value={formData.media_url || ""}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    media_url: e.target.value,
+                  }))
+                }
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                placeholder="Enter image URL (jpg, jpeg, png, gif)"
+              />
+              {formData.media_url && validateMediaUrl(formData.media_url) && (
+                <div className="mt-2">
+                  <img
+                    src={formData.media_url}
+                    alt="Question media preview"
+                    className="max-w-xs rounded-lg border border-gray-200"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.style.display = "none";
+                      setError("Failed to load image preview");
+                    }}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

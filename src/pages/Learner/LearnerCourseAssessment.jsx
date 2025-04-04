@@ -357,6 +357,52 @@ const LearnerCourseAssessment = () => {
     return previousModules.some(module => !checkModuleCompleted(module.module_id));
   };
 
+  const renderAssessmentCard = (assessment) => (
+    <div key={assessment.id} className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-all">
+      {/* Assessment Type Badge */}
+      <div className="flex items-center gap-3 mb-4">
+        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getTypeColor(assessment.type).badge}`}>
+          {assessment.type.toUpperCase()}
+        </span>
+      </div>
+
+      <h3 className="text-xl font-semibold mb-2">{assessment.title}</h3>
+      <p className="text-gray-600 mb-4">{assessment.description}</p>
+
+      {/* Assessment Details Grid - Updated to include question count */}
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="space-y-3">
+          <div className="flex items-center text-sm">
+            <Clock className="w-4 h-4 mr-2" style={{ color: getTypeColor(assessment.type).bg }} />
+            <span className="text-gray-600 font-medium">
+              Time Limit: {assessment.duration_minutes} minutes
+            </span>
+          </div>
+          <div className="flex items-center text-sm">
+            <Award className="w-4 h-4 mr-2" style={{ color: getTypeColor(assessment.type).bg }} />
+            <span className="text-gray-600 font-medium">
+              Passing: {assessment.passing_score}/{assessment.max_score}
+            </span>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center text-sm">
+            <Calendar className="w-4 h-4 mr-2" style={{ color: getTypeColor(assessment.type).bg }} />
+            <span className="text-gray-600 font-medium">
+              Due: {formatDate(assessment.due_date)}
+            </span>
+          </div>
+          <div className="flex items-center text-sm">
+            <ClipboardList className="w-4 h-4 mr-2" style={{ color: getTypeColor(assessment.type).bg }} />
+            <span className="text-gray-600 font-medium">
+              {assessment.questions?.length || 0} Questions
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderModuleAssessments = () => (
     <div className="space-y-6">
       {modules.map((module) => {
@@ -507,6 +553,15 @@ const LearnerCourseAssessment = () => {
                                   />
                                   <span className="text-gray-600 font-medium">
                                     Due: {formatDate(assessment.due_date)}
+                                  </span>
+                                </div>
+                                <div className="flex items-center text-sm">
+                                  <ClipboardList
+                                    className="w-4 h-4 mr-2"
+                                    style={{ color: color.bg }}
+                                  />
+                                  <span className="text-gray-600 font-medium">
+                                    {assessment.questions?.length || 0} Questions
                                   </span>
                                 </div>
                               </div>

@@ -288,12 +288,19 @@ const TeacherCourseAssessment = () => {
 
   const handleEditSubmit = async (updatedAssessment) => {
     try {
+      // Keep the existing questions count when updating the assessment in state
+      const currentAssessment = assessments.find(a => a.id === updatedAssessment.id);
+      const updatedWithQuestions = {
+        ...updatedAssessment,
+        questions: currentAssessment.questions || []
+      };
+
       // Update moduleAssessments state
       setModuleAssessments((prev) => {
         const updated = { ...prev };
         Object.keys(updated).forEach((moduleId) => {
           updated[moduleId] = updated[moduleId].map((a) =>
-            a.id === updatedAssessment.id ? updatedAssessment : a
+            a.id === updatedAssessment.id ? updatedWithQuestions : a
           );
         });
         return updated;
@@ -301,7 +308,7 @@ const TeacherCourseAssessment = () => {
 
       // Update assessments array
       setAssessments((prev) =>
-        prev.map((a) => (a.id === updatedAssessment.id ? updatedAssessment : a))
+        prev.map((a) => (a.id === updatedAssessment.id ? updatedWithQuestions : a))
       );
 
       setEditingAssessment(null);
@@ -445,7 +452,7 @@ const TeacherCourseAssessment = () => {
               <div className="flex items-center text-sm">
                 <Clock className="w-4 h-4 mr-2" style={{ color: color.bg }} />
                 <span className="text-gray-600 font-medium">
-                  {assessment.duration_minutes} minutes
+                  Time Limit: {assessment.duration_minutes} minutes
                 </span>
               </div>
               <div className="flex items-center text-sm">

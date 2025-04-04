@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Sidebar from "/src/components/common/layout/Sidebar.jsx";
 import Header from "/src/components/common/layout/Header.jsx";
 import DeleteModal from "/src/components/common/Modals/Delete/DeleteModal.jsx";
@@ -60,14 +60,11 @@ function AdminDashboard() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportUrl, setReportUrl] = useState(null);
   const [reportError, setReportError] = useState(null);
-  const [isSearching, setIsSearching] = useState(false);
-  const [allUsersData, setAllUsersData] = useState([]); // Add this new state
-
-  // Add new state for sorting
   const [sortConfig, setSortConfig] = useState({
     key: null,
     direction: "asc",
   });
+  const [allUsersData, setAllUsersData] = useState([]);
 
   const toggleDropdown = (id, event) => {
     event.stopPropagation();
@@ -163,6 +160,21 @@ function AdminDashboard() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      try {
+        const response = await getAllUsers({ limit: 999999 });
+        if (response && Array.isArray(response.users)) {
+          const enrichedUsers = enrichUserData(response.users);
+          setAllUsersData(enrichedUsers);
+        }
+      } catch (error) {
+        console.error("Error fetching all users:", error);
+      }
+    };
+    fetchAllUsers();
+  }, []);
+
   const getSchoolName = (schoolId) => {
     const schools = {
       1001: "Asuncion Consunji Elementary School (ACES)",
@@ -171,7 +183,6 @@ function AdminDashboard() {
     return schools[schoolId] || "N/A";
   };
 
-  // Modify the users data to include school name
   const enrichUserData = (users) => {
     return users.map((user) => ({
       ...user,
@@ -179,18 +190,16 @@ function AdminDashboard() {
     }));
   };
 
-  // Modified fetchTotalCounts to be more robust
   const fetchTotalCounts = async () => {
     try {
-      // Fetch all users without pagination to get accurate counts
       const result = await getAllUsers({
         page: 1,
-        limit: 0, // Large number to get all users
+        limit: 0,
       });
 
       if (result) {
         const roleCounts = result.roleCounts || [];
-        const totalUsers = result.totalItems; // Total users from API
+        const totalUsers = result.totalItems;
         const totalLearners =
           roleCounts.find((role) => role.role === "learner")?.count || 0;
         const totalTeachers =
@@ -214,31 +223,26 @@ function AdminDashboard() {
     }
   };
 
-  // Replace the paginated fetch effect with one that fetches all users
   useEffect(() => {
-    const fetchAllUsers = async () => {
+    const fetchUsers = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // Fetch all users at once
-        const result = await getAllUsers({ page: 1, limit: 99999 });
+        const response = await getAllUsers({
+          page: 1,
+          limit: 999999, // Get all users initially
+        });
 
-        if (result && Array.isArray(result.users)) {
-          const enrichedUsers = enrichUserData(result.users);
-          setAllUsersData(enrichedUsers); // Store complete dataset
-          
-          // Calculate initial pagination
-          const totalItems = enrichedUsers.length;
-          const totalPagesCount = Math.ceil(totalItems / 10);
-          const startIndex = (currentPage - 1) * 10;
-          const endIndex = startIndex + 10;
-
-          setUsers(enrichedUsers);
-          setFilteredUsers(enrichedUsers.slice(startIndex, endIndex));
-          setTotalPages(totalPagesCount);
-          setTotalUsers(totalItems);
+        if (response && response.users) {
+          const enrichedUsers = enrichUserData(response.users);
+          setAllUsersData(enrichedUsers);
+          setFilteredUsers(enrichedUsers.slice(0, 10));
+          setTotalUsers(enrichedUsers.length);
+          setTotalPages(Math.ceil(enrichedUsers.length / 10));
         }
+
+        await fetchTotalCounts();
       } catch (error) {
         console.error("Error fetching users:", error);
         setError("Failed to load users");
@@ -247,106 +251,105 @@ function AdminDashboard() {
       }
     };
 
-    fetchAllUsers();
-  }, []); // Only run once on component mount
+    fetchUsers();
+  }, []); // Only run on mount
 
-  // Add effect to fetch stats on initial load
-  useEffect(() => {
-    fetchTotalCounts();
-  }, []);
-
-  // Modified handleSort function
-  const handleSort = (key, direction) => {
-    let sortedData = [...allUsersData];
-    
-    // Sort the complete dataset
-    if (key) {
-      sortedData.sort((a, b) => {
-        if (key === "id") {
-          return direction === "asc" 
-            ? Number(a.id) - Number(b.id)
-            : Number(b.id) - Number(a.id);
-        }
-        
-        if (key === "fullName") {
-          const aName = `${a.first_name} ${a.last_name}`.toLowerCase();
-          const bName = `${b.first_name} ${b.last_name}`.toLowerCase();
-          return direction === "asc"
-            ? aName.localeCompare(bName)
-            : bName.localeCompare(aName);
-        }
-        
-        const aVal = String(a[key]).toLowerCase();
-        const bVal = String(b[key]).toLowerCase();
-        return direction === "asc"
-          ? aVal.localeCompare(bVal)
-          : bVal.localeCompare(aVal);
-      });
-    }
-
-    // Update the complete dataset with sorted data
-    setAllUsersData(sortedData);
-    setSortConfig({ key, direction: direction || "asc" });
-    setCurrentPage(1);
-  };
-
-  // Separate effect for handling filtered and paginated data
-  useEffect(() => {
-    if (!allUsersData.length) return;
-
-    let processedResults = [...allUsersData];
-
-    // Apply search if query exists
-    if (searchQuery) {
-      processedResults = processedResults.filter((user) => {
-        const fullName = `${user.first_name} ${user.middle_initial || ""} ${user.last_name}`.toLowerCase();
-        const email = user.email?.toLowerCase() || "";
-        const searchTerm = searchQuery.toLowerCase();
-        return fullName.includes(searchTerm) || email.includes(searchTerm);
-      });
-    }
-
-    // Apply role filter
-    if (roleFilter !== "all") {
-      processedResults = processedResults.filter((user) => user.role === roleFilter);
-    }
-
-    // Handle pagination
-    const totalFilteredItems = processedResults.length;
-    const totalFilteredPages = Math.ceil(totalFilteredItems / 10);
-    const startIndex = (currentPage - 1) * 10;
-    const endIndex = startIndex + 10;
-
-    setUsers(processedResults);
-    setFilteredUsers(processedResults.slice(startIndex, endIndex));
-    setTotalPages(totalFilteredPages);
-    setTotalUsers(totalFilteredItems);
-
-  }, [searchQuery, roleFilter, currentPage, allUsersData]);
-
-  // Modify handleFilterChange to reset pagination
-  const handleFilterChange = (filter) => {
+  const handleFilterChange = async (filter) => {
     setRoleFilter(filter);
-    setCurrentPage(1); // Reset to first page when filter changes
-  };
-
-  // Modify handleSearch to reset pagination
-  const handleSearch = (query) => {
-    setSearchQuery(query);
     setCurrentPage(1);
+    
+    // Filter from allUsersData
+    const filtered = allUsersData.filter(user => {
+      if (filter === "all") return true;
+      return user.role === filter;
+    });
+
+    setFilteredUsers(filtered.slice(0, 10));
+    setTotalUsers(filtered.length);
+    setTotalPages(Math.ceil(filtered.length / 10));
   };
 
-  // Add this function to handle search cancellation
+  const handleSearch = async (query) => {
+    setSearchQuery(query);
+    
+    let currentData = allUsersData;
+
+    // First apply role filter if exists
+    if (roleFilter !== "all") {
+      currentData = currentData.filter(user => user.role === roleFilter);
+    }
+
+    // Then apply search filter
+    if (query.trim() !== "") {
+      const searchTerm = query.toLowerCase();
+      currentData = currentData.filter(user => {
+        const fullName = `${user.first_name} ${user.middle_initial || ''} ${user.last_name}`.toLowerCase();
+        const email = user.email.toLowerCase();
+        const contact = user.contact_no || '';
+        return fullName.includes(searchTerm) || 
+               email.includes(searchTerm) || 
+               contact.includes(searchTerm);
+      });
+    }
+
+    // Only update loading state for initial data fetch
+    if (currentData.length === 0 && !isLoading) {
+      setFilteredUsers([]);
+    } else {
+      const startIndex = 0;
+      const endIndex = 10;
+      setFilteredUsers(currentData.slice(startIndex, endIndex));
+      setTotalUsers(currentData.length);
+      setTotalPages(Math.ceil(currentData.length / 10));
+      setCurrentPage(1);
+    }
+  };
+
   const handleSearchCancel = () => {
     setSearchQuery("");
-    setCurrentPage(1);
-    if (allUsersData.length > 0) {
-      const totalItems = allUsersData.length;
-      const totalPagesCount = Math.ceil(totalItems / 10);
-      setTotalPages(totalPagesCount);
-      setTotalUsers(totalItems);
-      setFilteredUsers(allUsersData.slice(0, 10));
+    let currentData = allUsersData;
+    
+    // Maintain current role filter when clearing search
+    if (roleFilter !== "all") {
+      currentData = currentData.filter(user => user.role === roleFilter);
     }
+    
+    setFilteredUsers(currentData.slice(0, 10));
+    setTotalUsers(currentData.length);
+    setTotalPages(Math.ceil(currentData.length / 10));
+    setCurrentPage(1);
+  };
+
+  const handleSort = (key, direction) => {
+    setSortConfig({ key, direction });
+    
+    let sortedUsers = [...filteredUsers];
+    
+    if (key) {
+      sortedUsers.sort((a, b) => {
+        let compareA, compareB;
+        
+        if (key === 'fullName') {
+          compareA = `${a.first_name} ${a.last_name}`.toLowerCase();
+          compareB = `${b.first_name} ${b.last_name}`.toLowerCase();
+        } else if (key === 'id') {
+          compareA = parseInt(a.id);
+          compareB = parseInt(b.id);
+          return direction === 'asc' ? compareA - compareB : compareB - compareA;
+        } else {
+          compareA = (a[key] || '').toLowerCase();
+          compareB = (b[key] || '').toLowerCase();
+        }
+        
+        if (direction === 'asc') {
+          return compareA.localeCompare(compareB);
+        }
+        return compareB.localeCompare(compareA);
+      });
+    }
+
+    // Update filtered results with sort
+    setFilteredUsers(sortedUsers);
   };
 
   const handleAddClick = () => {
@@ -359,17 +362,11 @@ function AdminDashboard() {
       setSuccessMessage(null);
       setError(null);
 
-      // Delete users sequentially to avoid overloading the server
       for (const id of selectedIds) {
         await deleteUser(id);
-        // Remove the deleted user from all relevant state immediately
-        setUsers((prev) => prev.filter((user) => user.id !== id));
         setFilteredUsers((prev) => prev.filter((user) => user.id !== id));
-        setAllUsersData((prev) => prev.filter((user) => user.id !== id));
       }
 
-      // Refresh the complete data after all deletions
-      await refreshUsers();
       setSelectedIds([]);
       setShowDeleteModal(false);
       setSuccessMessage(
@@ -389,45 +386,29 @@ function AdminDashboard() {
     setIsCreateGroupModalOpen(false);
   };
 
-  const refreshUsers = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Fetch both paginated data and complete data
-      const [paginatedResult, allUsersResult] = await Promise.all([
-        getAllUsers({ page: currentPage, limit: 10 }),
-        getAllUsers({ page: 1, limit: 99999 }),
-      ]);
-
-      if (paginatedResult?.users) {
-        const enrichedUsers = enrichUserData(paginatedResult.users);
-        setUsers(enrichedUsers);
-        setFilteredUsers(enrichedUsers);
-        setTotalPages(paginatedResult.totalPages);
-        setTotalUsers(paginatedResult.totalItems);
-      }
-
-      if (allUsersResult?.users) {
-        const enrichedAllUsers = enrichUserData(allUsersResult.users);
-        setAllUsersData(enrichedAllUsers);
-      }
-
-      // Update stats
-      await fetchTotalCounts();
-    } catch (error) {
-      console.error("Error refreshing users:", error);
-      setError("Failed to refresh users");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleUserCreated = async (newUser) => {
     try {
-      await refreshUsers();
       setIsAddModalOpen(false);
       setSuccessMessage("Successfully added user");
+      
+      // Fetch updated stats after adding new user
+      await fetchTotalCounts();
+      
+      // Update the all users data
+      const response = await getAllUsers({ limit: 999999 });
+      if (response && Array.isArray(response.users)) {
+        const enrichedUsers = enrichUserData(response.users);
+        setAllUsersData(enrichedUsers);
+        
+        // Update filtered users with current filters
+        let currentData = enrichedUsers;
+        if (roleFilter !== "all") {
+          currentData = currentData.filter(user => user.role === roleFilter);
+        }
+        setFilteredUsers(currentData.slice(0, 10));
+        setTotalUsers(currentData.length);
+        setTotalPages(Math.ceil(currentData.length / 10));
+      }
     } catch (error) {
       console.error("Error handling new user:", error);
       setError("Failed to refresh user data after adding");
@@ -448,10 +429,72 @@ function AdminDashboard() {
     try {
       const { password, ...userWithoutPassword } = updatedUser;
       const response = await updateUser(updatedUser.id, userWithoutPassword);
-      await refreshUsers();
+      
+      // Close modal and show success message
       setIsEditModalOpen(false);
       setSelectedUser(null);
       setSuccessMessage("Successfully edited user");
+
+      // Refresh user data
+      const refreshedData = await getAllUsers({ limit: 999999 });
+      if (refreshedData && Array.isArray(refreshedData.users)) {
+        const enrichedUsers = enrichUserData(refreshedData.users);
+        setAllUsersData(enrichedUsers);
+        
+        // Update filtered view maintaining current filters
+        let currentData = enrichedUsers;
+        if (roleFilter !== "all") {
+          currentData = currentData.filter(user => user.role === roleFilter);
+        }
+        
+        // Apply current search if exists
+        if (searchQuery.trim() !== "") {
+          const searchTerm = searchQuery.toLowerCase();
+          currentData = currentData.filter(user => {
+            const fullName = `${user.first_name} ${user.middle_initial || ''} ${user.last_name}`.toLowerCase();
+            const email = user.email.toLowerCase();
+            const contact = user.contact_no || '';
+            return fullName.includes(searchTerm) || 
+                   email.includes(searchTerm) || 
+                   contact.includes(searchTerm);
+          });
+        }
+
+        // Apply current sort if exists
+        if (sortConfig.key) {
+          currentData.sort((a, b) => {
+            let compareA, compareB;
+            
+            if (sortConfig.key === 'fullName') {
+              compareA = `${a.first_name} ${a.last_name}`.toLowerCase();
+              compareB = `${b.first_name} ${b.last_name}`.toLowerCase();
+            } else if (sortConfig.key === 'id') {
+              compareA = parseInt(a.id);
+              compareB = parseInt(b.id);
+              return sortConfig.direction === 'asc' ? compareA - compareB : compareB - compareA;
+            } else {
+              compareA = (a[sortConfig.key] || '').toLowerCase();
+              compareB = (b[sortConfig.key] || '').toLowerCase();
+            }
+            
+            if (sortConfig.direction === 'asc') {
+              return compareA.localeCompare(compareB);
+            }
+            return compareB.localeCompare(compareA);
+          });
+        }
+
+        const startIndex = (currentPage - 1) * 10;
+        const endIndex = startIndex + 10;
+        
+        setFilteredUsers(currentData.slice(startIndex, endIndex));
+        setTotalUsers(currentData.length);
+        setTotalPages(Math.ceil(currentData.length / 10));
+      }
+
+      // Refresh stats
+      await fetchTotalCounts();
+
     } catch (error) {
       console.error("Error saving user:", error);
       throw error;
@@ -464,6 +507,55 @@ function AdminDashboard() {
 
   const handlePageChange = async (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
+      // Get current filtered data
+      let currentData = allUsersData;
+      
+      // Apply role filter
+      if (roleFilter !== "all") {
+        currentData = currentData.filter(user => user.role === roleFilter);
+      }
+      
+      // Apply search filter
+      if (searchQuery.trim() !== "") {
+        currentData = currentData.filter(user => {
+          const searchTerm = searchQuery.toLowerCase();
+          const fullName = `${user.first_name} ${user.middle_initial || ''} ${user.last_name}`.toLowerCase();
+          const email = user.email.toLowerCase();
+          const contact = user.contact_no || '';
+          
+          return fullName.includes(searchTerm) || 
+                 email.includes(searchTerm) || 
+                 contact.includes(searchTerm);
+        });
+      }
+      
+      // Apply current sort if exists
+      if (sortConfig.key) {
+        currentData.sort((a, b) => {
+          let compareA, compareB;
+          
+          if (sortConfig.key === 'fullName') {
+            compareA = `${a.first_name} ${a.last_name}`.toLowerCase();
+            compareB = `${b.first_name} ${b.last_name}`.toLowerCase();
+          } else if (sortConfig.key === 'id') {
+            compareA = parseInt(a.id);
+            compareB = parseInt(b.id);
+            return sortConfig.direction === 'asc' ? compareA - compareB : compareB - compareA;
+          } else {
+            compareA = (a[sortConfig.key] || '').toLowerCase();
+            compareB = (b[sortConfig.key] || '').toLowerCase();
+          }
+          
+          if (sortConfig.direction === 'asc') {
+            return compareA.localeCompare(compareB);
+          }
+          return compareB.localeCompare(compareA);
+        });
+      }
+
+      const startIndex = (newPage - 1) * 10;
+      const endIndex = startIndex + 10;
+      setFilteredUsers(currentData.slice(startIndex, endIndex));
       setCurrentPage(newPage);
       window.scrollTo(0, 0);
     }
@@ -474,7 +566,6 @@ function AdminDashboard() {
       setError(null);
       setReportError(null);
 
-      // Get current user from localStorage
       const currentUser = JSON.parse(localStorage.getItem("user")) || {};
 
       const doc = await generateUsersReport(currentUser);
@@ -514,19 +605,6 @@ function AdminDashboard() {
     }
   };
 
-  const EmptyState = () => (
-    <div className="flex flex-col items-center justify-center py-16 px-4">
-      <InboxIcon size={64} className="text-gray-300 mb-4" />
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">
-        No Users Found
-      </h3>
-      <p className="text-gray-500 text-center max-w-md mb-4">
-        There are currently no users in the system. Add users by clicking the
-        "Add User" button.
-      </p>
-    </div>
-  );
-
   const ErrorState = () => (
     <div className="flex flex-col items-center justify-center py-16 px-4">
       <AlertTriangle size={64} className="text-red-500 mb-4" />
@@ -564,43 +642,15 @@ function AdminDashboard() {
   return (
     <>
       <div className="flex h-screen bg-gray-100 pb-8">
-        {" "}
-        {/* Added pb-16 */}
         <Sidebar navItems={navItems} />
         <div className="flex-1 p-6 overflow-auto pb-16">
-          {" "}
-          {/* Added pb-16 */}
           <Header title="Users" />
-          {/* Add success message display */}
           {successMessage && (
             <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
               {successMessage}
             </div>
           )}
-          {/* Loading skeleton for UserStats */}
-          {isLoading && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-              {[...Array(5)].map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white p-6 rounded-lg shadow animate-pulse"
-                >
-                  <div className="h-4 bg-gray-200 rounded-full w-20 mb-3"></div>
-                  <div className="h-8 bg-gray-200 rounded-full w-16"></div>
-                </div>
-              ))}
-            </div>
-          )}
-          {/* Real UserStats when not loading */}
-          {!isLoading && (
-            <UserStats
-              totalUsers={stats.totalUsers}
-              totalLearners={stats.totalLearners}
-              totalTeachers={stats.totalTeachers}
-              totalStudentTeachers={stats.totalStudentTeachers}
-              totalAdmins={stats.totalAdmins}
-            />
-          )}
+          <UserStats {...stats} />
           <div className="bg-white shadow rounded-lg p-6">
             {isLoading ? (
               <div className="space-y-4">
@@ -616,28 +666,28 @@ function AdminDashboard() {
               </div>
             ) : error ? (
               <ErrorState />
-            ) : users.length === 0 ? (
-              <EmptyState />
             ) : (
               <UserTable
-                users={filteredUsers} // Pass filtered users instead of all users
-                onEdit={handleEditUser} // Updated to use handleEditUser
-                onAddUser={() => setIsAddModalOpen(true)}
+                users={filteredUsers}
+                onEdit={handleEditUser}
+                onAddUser={handleAddClick}
                 onDelete={() => setShowDeleteModal(true)}
                 selectedIds={selectedIds}
                 setSelectedIds={setSelectedIds}
-                onSearch={handleSearch} // Pass search handler
+                onSearch={handleSearch}
                 onCreateGroup={() => setIsCreateGroupModalOpen(true)}
                 onShowGroupList={handleShowGroupList}
-                onFilterChange={handleFilterChange} // Add this prop
-                currentFilter={roleFilter} // Add this prop
+                onFilterChange={handleFilterChange}
+                currentFilter={roleFilter}
                 currentPage={currentPage}
                 totalPages={totalPages}
+                totalItems={totalUsers}
                 onPageChange={handlePageChange}
                 onGenerateReport={handleGenerateReport}
-                onSearchCancel={handleSearchCancel} // Add this prop
+                onSearchCancel={handleSearchCancel}
                 onSort={handleSort}
                 sortConfig={sortConfig}
+                searchQuery={searchQuery}
               />
             )}
           </div>
@@ -650,7 +700,6 @@ function AdminDashboard() {
           onSubmit={handleUserCreated}
         />
       )}
-
       {showDeleteModal && (
         <DeleteModal
           onClose={() => setShowDeleteModal(false)}
@@ -660,14 +709,12 @@ function AdminDashboard() {
           } selected user${selectedIds.length > 1 ? "s" : ""}?`}
         />
       )}
-
       {isCreateGroupModalOpen && (
         <CreateGroupModal
           onClose={() => setIsCreateGroupModalOpen(false)}
           onSave={handleCreateGroup}
         />
       )}
-
       {isEditModalOpen && selectedUser && (
         <EditUserModal
           user={selectedUser}
@@ -678,11 +725,9 @@ function AdminDashboard() {
           onSave={handleSaveUser}
         />
       )}
-
       {isGroupListModalOpen && (
         <GroupDetailsModal onClose={() => setIsGroupListModalOpen(false)} />
       )}
-
       <ReportViewerModal
         isOpen={showReportModal}
         onClose={handleCloseReport}
