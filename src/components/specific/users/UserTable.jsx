@@ -7,6 +7,7 @@ import {
   FileText,
   Filter,
   Trash2,
+  X,
 } from "lucide-react";
 
 const UserTable = ({
@@ -19,6 +20,7 @@ const UserTable = ({
   onCreateGroup,
   onShowGroupList,
   onSearch,
+  onSearchCancel,
   onFilterChange,
   currentFilter,
   currentPage,
@@ -27,6 +29,8 @@ const UserTable = ({
   onGenerateReport,
   sortConfig,
   onSort,
+  totalItems,
+  searchQuery, // Add this prop
 }) => {
   const ROWS_PER_PAGE = 10;
 
@@ -75,8 +79,9 @@ const UserTable = ({
   };
 
   const handleSearchChange = (e) => {
+    e.preventDefault();
     const query = e.target.value;
-    onSearch(query);
+    onSearch(query); // This will now just update the search query without triggering immediate API calls
   };
 
   return (
@@ -143,10 +148,19 @@ const UserTable = ({
               <input
                 type="text"
                 placeholder="Search users..."
+                value={searchQuery} // Use the prop here
                 onChange={handleSearchChange}
                 className="w-full md:w-[15vw] pl-10 md:pl-[2vw] pr-4 md:pr-[1vw] py-2 md:py-[0.5vw] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
               />
               <Search className="absolute left-3 md:left-[0.5vw] top-1/2 -translate-y-1/2 text-[#475569] w-5 h-5 md:w-[1vw] md:h-[1vw]" />
+              {searchQuery && (
+                <button
+                  onClick={onSearchCancel}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={16} />
+                </button>
+              )}
             </div>
           </div>
 
@@ -232,84 +246,83 @@ const UserTable = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {users.map((user, index) => (
-              <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.includes(user.id)}
-                    onChange={() => handleCheckboxChange(user.id)}
-                    className="form-checkbox h-4 w-4 text-[#212529] rounded"
-                  />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {user.id}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {user.first_name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {user.middle_initial}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {user.last_name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {user.email}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {new Date(user.birth_date).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {user.contact_no}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {user.school_name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {user.role}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    aria-label="Edit"
-                    onClick={() => onEdit(user)}
-                    className="text-black hover:text-gray-700"
-                  >
-                    <SquarePen size={20} />
-                  </button>
+            {users.length === 0 ? (
+              <tr>
+                <td colSpan="11" className="px-6 py-4 text-center text-gray-500">
+                  No users found matching the selected criteria
                 </td>
               </tr>
-            ))}
+            ) : (
+              users.map((user) => (
+                <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(user.id)}
+                      onChange={() => handleCheckboxChange(user.id)}
+                      className="form-checkbox h-4 w-4 text-[#212529] rounded"
+                    />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {user.id}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {user.first_name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {user.middle_initial}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {user.last_name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {user.email}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {new Date(user.birth_date).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {user.contact_no}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {user.school_name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {user.role}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      aria-label="Edit"
+                      onClick={() => onEdit(user)}
+                      className="text-black hover:text-gray-700"
+                    >
+                      <SquarePen size={20} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
 
         <div className="px-6 py-4 flex items-center justify-between border-t">
           <div className="text-sm text-gray-700">
-            Showing page {currentPage} of {totalPages}
+            Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, totalItems)} of {totalItems} users
           </div>
           <div className="flex space-x-2 items-center">
             <button
-              onClick={() => handlePageChange(currentPage - 1)}
+              onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className="px-3 py-1 rounded border bg-white text-gray-600 
                        hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Previous
             </button>
-            <p className="text-sm text-gray-700">
-              Page{" "}
-              <input
-                type="text"
-                value={pageInput}
-                onChange={handlePageInputChange}
-                onKeyDown={handlePageInputSubmit}
-                onBlur={handlePageInputBlur}
-                className="w-12 px-2 py-1 text-center border rounded-md focus:outline-none focus:border-[#F6BA18]"
-              />{" "}
-              of {totalPages}
-            </p>
+            <span className="px-4 py-1 text-gray-600">
+              Page {currentPage} of {totalPages}
+            </span>
             <button
-              onClick={() => handlePageChange(currentPage + 1)}
+              onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage >= totalPages}
               className="px-3 py-1 rounded border bg-white text-gray-600 
                        hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
