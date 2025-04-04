@@ -293,13 +293,15 @@ const UserTable = ({
                     {user.role}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      aria-label="Edit"
-                      onClick={() => onEdit(user)}
-                      className="text-black hover:text-gray-700"
-                    >
-                      <SquarePen size={20} />
-                    </button>
+                    {user.role !== 'admin' && (
+                      <button
+                        aria-label="Edit"
+                        onClick={() => onEdit(user)}
+                        className="text-black hover:text-gray-700"
+                      >
+                        <SquarePen size={20} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))

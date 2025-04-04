@@ -648,23 +648,25 @@ const TeacherCourseModules = () => {
             subtitle={selectedCourse?.code}
           />
           <MobileNavBar navItems={navItems} />
-          <div className="flex flex-col items-center justify-center py-16 px-4">
-            <InboxIcon size={64} className="text-gray-300 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No Modules Found
-            </h3>
-            <p className="text-gray-500 text-center max-w-md mb-4">
-              There are currently no modules in this course. Get started by
-              creating your first module.
-            </p>
-            <button
-              role="button"
-              aria-label="create-first-module"
-              onClick={() => setIsCreateModuleOpen(true)}
-              className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
-            >
-              Create First Module
-            </button>
+          <div className="relative z-0">
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <InboxIcon size={64} className="text-gray-300 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                No Modules Found
+              </h3>
+              <p className="text-gray-500 text-center max-w-md mb-4">
+                There are currently no modules in this course. Get started by
+                creating your first module.
+              </p>
+              <button
+                role="button"
+                aria-label="create-first-module"
+                onClick={() => setIsCreateModuleOpen(true)}
+                className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
+              >
+                Create First Module
+              </button>
+            </div>
           </div>
 
           {/* Add CreateModuleModal */}
@@ -689,27 +691,32 @@ const TeacherCourseModules = () => {
           title={selectedCourse?.name || "Course Modules"}
           subtitle={selectedCourse?.code}
         />
-        <MobileNavBar navItems={navItems} />
-        {/* Add success message display */}
-        {successMessage && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
-            {successMessage}
-          </div>
-        )}
+        <div className="relative z-50">
+          <MobileNavBar navItems={navItems} />
+        </div>
+        {/* Add a container with lower z-index for content */}
+        <div className="relative z-0">
+          {/* Add success message display */}
+          {successMessage && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+              {successMessage}
+            </div>
+          )}
 
-        {/* Keep existing error display */}
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-            {error}
-          </div>
-        )}
+          {/* Keep existing error display */}
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+              {error}
+            </div>
+          )}
 
-        {renderModulesList()}
+          {renderModulesList()}
+        </div>
 
-        {/* Add Module Button */}
+        {/* Add Module Button with higher z-index */}
         <button
           onClick={() => setIsAddModuleOpen(true)}
-          className="fixed bottom-8 right-8 bg-yellow-500 text-white rounded-full p-4 shadow-lg hover:bg-yellow-600 transition-colors"
+          className="fixed bottom-20 right-8 bg-yellow-500 text-white rounded-full p-4 shadow-lg hover:bg-yellow-600 transition-colors z-40"
         >
           <Plus size={24} />
         </button>

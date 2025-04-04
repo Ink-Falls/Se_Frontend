@@ -429,9 +429,72 @@ function AdminDashboard() {
     try {
       const { password, ...userWithoutPassword } = updatedUser;
       const response = await updateUser(updatedUser.id, userWithoutPassword);
+      
+      // Close modal and show success message
       setIsEditModalOpen(false);
       setSelectedUser(null);
       setSuccessMessage("Successfully edited user");
+
+      // Refresh user data
+      const refreshedData = await getAllUsers({ limit: 999999 });
+      if (refreshedData && Array.isArray(refreshedData.users)) {
+        const enrichedUsers = enrichUserData(refreshedData.users);
+        setAllUsersData(enrichedUsers);
+        
+        // Update filtered view maintaining current filters
+        let currentData = enrichedUsers;
+        if (roleFilter !== "all") {
+          currentData = currentData.filter(user => user.role === roleFilter);
+        }
+        
+        // Apply current search if exists
+        if (searchQuery.trim() !== "") {
+          const searchTerm = searchQuery.toLowerCase();
+          currentData = currentData.filter(user => {
+            const fullName = `${user.first_name} ${user.middle_initial || ''} ${user.last_name}`.toLowerCase();
+            const email = user.email.toLowerCase();
+            const contact = user.contact_no || '';
+            return fullName.includes(searchTerm) || 
+                   email.includes(searchTerm) || 
+                   contact.includes(searchTerm);
+          });
+        }
+
+        // Apply current sort if exists
+        if (sortConfig.key) {
+          currentData.sort((a, b) => {
+            let compareA, compareB;
+            
+            if (sortConfig.key === 'fullName') {
+              compareA = `${a.first_name} ${a.last_name}`.toLowerCase();
+              compareB = `${b.first_name} ${b.last_name}`.toLowerCase();
+            } else if (sortConfig.key === 'id') {
+              compareA = parseInt(a.id);
+              compareB = parseInt(b.id);
+              return sortConfig.direction === 'asc' ? compareA - compareB : compareB - compareA;
+            } else {
+              compareA = (a[sortConfig.key] || '').toLowerCase();
+              compareB = (b[sortConfig.key] || '').toLowerCase();
+            }
+            
+            if (sortConfig.direction === 'asc') {
+              return compareA.localeCompare(compareB);
+            }
+            return compareB.localeCompare(compareA);
+          });
+        }
+
+        const startIndex = (currentPage - 1) * 10;
+        const endIndex = startIndex + 10;
+        
+        setFilteredUsers(currentData.slice(startIndex, endIndex));
+        setTotalUsers(currentData.length);
+        setTotalPages(Math.ceil(currentData.length / 10));
+      }
+
+      // Refresh stats
+      await fetchTotalCounts();
+
     } catch (error) {
       console.error("Error saving user:", error);
       throw error;
