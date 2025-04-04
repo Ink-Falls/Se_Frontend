@@ -30,7 +30,7 @@ const UserTable = ({
   sortConfig,
   onSort,
   totalItems,
-  searchQuery, // Add this prop
+  searchQuery,
 }) => {
   const ROWS_PER_PAGE = 10;
 
@@ -81,7 +81,7 @@ const UserTable = ({
   const handleSearchChange = (e) => {
     e.preventDefault();
     const query = e.target.value;
-    onSearch(query); // This will now just update the search query without triggering immediate API calls
+    onSearch(query);
   };
 
   return (
@@ -148,7 +148,7 @@ const UserTable = ({
               <input
                 type="text"
                 placeholder="Search users..."
-                value={searchQuery} // Use the prop here
+                value={searchQuery}
                 onChange={handleSearchChange}
                 className="w-full md:w-[15vw] pl-10 md:pl-[2vw] pr-4 md:pr-[1vw] py-2 md:py-[0.5vw] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
               />
@@ -248,8 +248,10 @@ const UserTable = ({
           <tbody className="bg-white divide-y divide-gray-200">
             {users.length === 0 ? (
               <tr>
-                <td colSpan="11" className="px-6 py-4 text-center text-gray-500">
-                  No users found matching the selected criteria
+                <td colSpan="11" className="px-6 py-8 text-center">
+                  <div className="text-gray-500 text-sm">
+                    No users found matching the selected criteria
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -307,23 +309,27 @@ const UserTable = ({
 
         <div className="px-6 py-4 flex items-center justify-between border-t">
           <div className="text-sm text-gray-700">
-            Showing {((currentPage - 1) * 10) + 1} to {Math.min(currentPage * 10, totalItems)} of {totalItems} users
+            {users.length === 0 ? (
+              'Showing page 1 of 0'
+            ) : (
+              `Showing ${((currentPage - 1) * 10) + 1} to ${Math.min(currentPage * 10, totalItems)} of ${totalItems} users`
+            )}
           </div>
           <div className="flex space-x-2 items-center">
             <button
               onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || users.length === 0}
               className="px-3 py-1 rounded border bg-white text-gray-600 
                        hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Previous
             </button>
             <span className="px-4 py-1 text-gray-600">
-              Page {currentPage} of {totalPages}
+              Page {currentPage} of {totalPages || 1}
             </span>
             <button
               onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages}
+              disabled={currentPage >= totalPages || users.length === 0}
               className="px-3 py-1 rounded border bg-white text-gray-600 
                        hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
