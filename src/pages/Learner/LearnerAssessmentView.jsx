@@ -68,6 +68,77 @@ const getStatusColor = (status) => {
   }
 };
 
+const renderQuestionWithAnswer = (question, index, submission) => (
+  <div key={question.id} className="bg-white rounded-lg shadow-sm p-6 mb-4">
+    <div className="flex items-center gap-2 mb-4">
+      <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+        Question {index + 1}
+      </span>
+      <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+        {question.points} Points
+      </span>
+    </div>
+
+    <p className="text-lg text-gray-800 mb-4">{question.question_text}</p>
+
+    {/* Add Media Display */}
+    {question.media_url && (
+      <div className="mb-4">
+        {question.media_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+          <img
+            src={question.media_url}
+            alt="Question media"
+            className="max-w-md rounded-lg border border-gray-200"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.style.display = 'none';
+            }}
+          />
+        ) : (
+          <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-600 border border-gray-200">
+            <a 
+              href={question.media_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              View attached media
+            </a>
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* Rest of the question and answer display */}
+    <div className="bg-gray-50 p-4 rounded-md">
+      <p className="text-sm font-medium text-gray-700">Your Answer:</p>
+      <div className="mt-2">
+        {submission ? (
+          submission.selected_option ? (
+            <p className="text-gray-800">{submission.selected_option.option_text}</p>
+          ) : (
+            <p className="text-gray-800">{submission.text_response || 'No response'}</p>
+          )
+        ) : (
+          <p className="text-gray-500 italic">Not answered</p>
+        )}
+      </div>
+      {submission?.points_awarded !== undefined && (
+        <div className="mt-4 flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">Score:</span>
+          <span className="text-sm text-gray-900">{submission.points_awarded}/{question.points}</span>
+        </div>
+      )}
+      {submission?.feedback && (
+        <div className="mt-4">
+          <p className="text-sm font-medium text-gray-700">Feedback:</p>
+          <p className="mt-1 text-sm text-gray-600">{submission.feedback}</p>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
 const LearnerAssessmentView = () => {
   const { selectedCourse } = useCourse();
   const navigate = useNavigate();
@@ -559,41 +630,7 @@ const LearnerAssessmentView = () => {
             <h4 className="text-lg font-medium text-gray-900">Your Answers</h4>
             {questions.map((question, index) => {
               const answer = latestSubmission.answers.find(a => a.question_id === question.id);
-              return (
-                <div key={question.id} className="bg-white p-6 rounded-lg shadow-sm">
-                  <div className="flex justify-between items-start mb-4">
-                    <h5 className="text-md font-medium text-gray-900">Question {index + 1}</h5>
-                    <span className="text-sm text-gray-500">Points: {question.points}</span>
-                  </div>
-                  <p className="text-gray-700 mb-4">{question.question_text}</p>
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <p className="text-sm font-medium text-gray-700">Your Answer:</p>
-                    <div className="mt-2">
-                      {answer ? (
-                        answer.selected_option ? (
-                          <p className="text-gray-800">{answer.selected_option.option_text}</p>
-                        ) : (
-                          <p className="text-gray-800">{answer.text_response || 'No response'}</p>
-                        )
-                      ) : (
-                        <p className="text-gray-500 italic">Not answered</p>
-                      )}
-                    </div>
-                    {answer?.points_awarded !== undefined && (
-                      <div className="mt-4 flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-700">Score:</span>
-                        <span className="text-sm text-gray-900">{answer.points_awarded}/{question.points}</span>
-                      </div>
-                    )}
-                    {answer?.feedback && (
-                      <div className="mt-4">
-                        <p className="text-sm font-medium text-gray-700">Feedback:</p>
-                        <p className="mt-1 text-sm text-gray-600">{answer.feedback}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
+              return renderQuestionWithAnswer(question, index, answer);
             })}
           </div>
         )}
