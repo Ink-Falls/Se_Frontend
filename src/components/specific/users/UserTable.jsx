@@ -312,7 +312,7 @@ const UserTable = ({
         <div className="px-6 py-4 flex items-center justify-between border-t">
           <div className="text-sm text-gray-700">
             {users.length === 0 ? (
-              'Showing page 1 of 0'
+              'No users to display'
             ) : (
               `Showing ${((currentPage - 1) * 10) + 1} to ${Math.min(currentPage * 10, totalItems)} of ${totalItems} users`
             )}
