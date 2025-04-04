@@ -228,13 +228,12 @@ export const deleteModuleContent = async (contentId) => {
 /**
  * Gets the module grade for a specific user
  * @param {number} moduleId - The ID of the module
- * @param {number} userId - The ID of the user
  * @returns {Promise<Object>} Grade information including average score and completion status
  */
-export const getModuleGrade = async (moduleId, userId) => {
+export const getModuleGrade = async (moduleId) => {
   try {
     const response = await fetchWithInterceptor(
-      `${API_BASE_URL}/modules/${moduleId}/${userId}/module-grade`
+      `${API_BASE_URL}/modules/${moduleId}/module-grade`
     );
 
     const data = await response.json();

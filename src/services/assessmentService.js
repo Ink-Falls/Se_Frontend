@@ -709,3 +709,29 @@ export const deleteQuestion = async (assessmentId, questionId) => {
     throw error;
   }
 };
+
+/**
+ * Gets the count of submissions for an assessment
+ * @param {number} assessmentId - The assessment ID
+ * @param {boolean} includeAnswers - Whether to include answers in the response
+ * @returns {Promise<Object>} Submission count object
+ */
+export const getUserSubmissionCount = async (assessmentId, includeAnswers = false) => {
+  try {
+    const url = new URL(`${API_BASE_URL}/assessments/${assessmentId}/my-submissions`);
+    url.searchParams.append('includeAnswers', includeAnswers);
+
+    const response = await fetchWithInterceptor(url.toString());
+
+    if (!response.ok) { // Check response status early
+      const errorData = await response.json(); // Get error message from response body
+      throw new Error(errorData.message || 'Failed to fetch submissions');
+    }
+    
+    const data = await response.json();
+    return { success: true, count: data.submissions.length }; // Add success flag
+  } catch (error) {
+    console.error('Error fetching submissions:', error);
+    return { success: false, error: error.message }; // Return error object for better handling
+  }
+};

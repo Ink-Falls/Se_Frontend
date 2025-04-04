@@ -171,7 +171,7 @@ const LearnerCourseAssessment = () => {
     const fetchModuleGrades = async () => {
       try {
         const gradePromises = modules.map(module => 
-          getModuleGrade(module.module_id, selectedCourse.userId)
+          getModuleGrade(module.module_id)
             .then(data => [module.module_id, data])
             .catch(() => [module.module_id, null])
         );
@@ -184,10 +184,10 @@ const LearnerCourseAssessment = () => {
       }
     };
 
-    if (modules.length > 0 && selectedCourse?.userId) {
+    if (modules.length > 0) {
       fetchModuleGrades();
     }
-  }, [modules, selectedCourse?.userId]);
+  }, [modules]);
 
   const getStatus = (submission) => {
     if (!submission) return "Not Started";
@@ -386,14 +386,19 @@ const LearnerCourseAssessment = () => {
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         Average: {moduleGrades[module.module_id].averageScore}%
                       </span>
-                      {moduleGrades[module.module_id].allGraded && (
+                      {!moduleGrades[module.module_id].allGraded ? (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-800">
+                          In Progress
+                        </span>
+                      ) : (
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           moduleGrades[module.module_id].allPassed 
                             ? 'bg-green-100 text-green-800'
                             : 'bg-yellow-100 text-yellow-800'
                         }`}>
-                          {moduleGrades[module.module_id].allPassed ? 'All Passed' : 'Some Failed'}
+                          {moduleGrades[module.module_id].allPassed ? 'Passed' : 'Failed'}
                         </span>
+                        // or red for failed?
                       )}
                     </div>
                   )}
