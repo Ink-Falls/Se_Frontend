@@ -338,7 +338,7 @@ const TeacherAssessmentView = () => {
         questionData
       );
 
-      if (response.success) {
+      if (response.success) { 
         const updatedAssessment = await getAssessmentById(
           assessment.id,
           true,
@@ -568,21 +568,25 @@ const TeacherAssessmentView = () => {
         {question.question_type === "true_false" && (
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700 mb-2">Options:</p>
-            {question.options?.map((option) => (
-              <div
-                key={option.id}
-                className={`flex items-center gap-3 p-2 rounded-lg ${
-                  option.is_correct
-                    ? "bg-green-50 text-green-700 border border-green-200"
-                    : "bg-white border border-gray-200"
-                }`}
-              >
-                {option.is_correct && (
-                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                )}
-                <span>{option.text}</span>
-              </div>
-            ))}
+            <div className="space-y-2">
+              {question.options?.map((option) => (
+                <div
+                  key={option.id}
+                  className={`flex items-center gap-3 p-3 rounded-lg ${
+                    option.is_correct
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "bg-white text-gray-700 border border-gray-200"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 flex-1">
+                    {option.is_correct && (
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                    )}
+                    <span>{option.text || option.option_text}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

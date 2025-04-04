@@ -39,6 +39,13 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
     setError("");
 
     try {
+      // Add validation for passing score
+      if (parseInt(formData.passing_score) > parseInt(formData.max_score)) {
+        setError("Passing score cannot be greater than maximum score");
+        setIsLoading(false);
+        return;
+      }
+
       const assessmentData = {
         ...formData,
         module_id: parseInt(formData.module_id),

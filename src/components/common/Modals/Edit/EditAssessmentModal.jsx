@@ -57,6 +57,13 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
     setError("");
 
     try {
+      // Add validation for passing score
+      if (parseInt(formData.passing_score) > parseInt(formData.max_score)) {
+        setError("Passing score cannot be greater than maximum score");
+        setIsLoading(false);
+        return;
+      }
+
       const assessmentData = {
         title: formData.title.trim(),
         description: formData.description.trim(),
