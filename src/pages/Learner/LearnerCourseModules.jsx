@@ -224,7 +224,7 @@ const LearnerCourseModules = () => {
         <MobileNavBar navItems={navItems} onLogout={logout} />
 
         <div className="flex flex-col gap-4 mt-4">
-          {modules.map((module) => (
+          {modules.map((module, index) => (
             <div
               key={module.id}
               className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg"
@@ -233,7 +233,7 @@ const LearnerCourseModules = () => {
                 <div className="w-full" onClick={() => toggleModule(module.id)}>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-full">
-                      MODULE {module.id}
+                      MODULE {index + 1}
                     </span>
                     <span className="text-xs text-gray-500">
                       {module.createdAt &&

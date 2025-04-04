@@ -48,8 +48,7 @@ function EnrollConfirm() {
 
             {/* Description text */}
             <p className="text-[3vw] mb-[5vw] lg:mb-[2vw] max-lg:text-[2.5vw] lg:text-[1vw] text-[#64748B] text-left">
-              Please wait for the verification email, or periodically check your
-              enrollment status directly on the enrollment page.
+              Your enrollment has been submitted. You can check your enrollment status anytime by entering your email address in the Enrollment Status Tracker.
             </p>
 
             {/* Back to Login button */}

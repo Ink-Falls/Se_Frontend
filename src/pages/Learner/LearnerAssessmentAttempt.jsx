@@ -37,19 +37,30 @@ const LearnerAssessmentAttempt = () => {
   const [savingAnswer, setSavingAnswer] = useState(false);
   const [savedAnswers, setSavedAnswers] = useState({});
 
+  const fetchQuestionsWithMedia = async (assessmentId) => {
+    try {
+      const response = await getAssessmentById(assessmentId, true);
+      if (response.success) {
+        // Ensure questions have media_url field
+        const questionsWithMedia = response.assessment.questions.map(question => ({
+          ...question,
+          media_url: question.media_url || null
+        }));
+        setQuestions(questionsWithMedia);
+      }
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+      setError('Failed to load questions');
+    }
+  };
+
   useEffect(() => {
     const initializeAttempt = async () => {
       try {
         setLoading(true);
         
         // First get assessment details with questions
-        const assessmentResponse = await getAssessmentById(assessment.id, true, false);
-        if (!assessmentResponse.success) {
-          throw new Error('Failed to fetch assessment details');
-        }
-        
-        setQuestions(assessmentResponse.assessment.questions || []);
-        console.log('Fetched questions:', assessmentResponse.assessment.questions);
+        await fetchQuestionsWithMedia(assessment.id);
 
         // Then create or fetch existing submission
         const submissionResponse = await createSubmission(assessment.id);
@@ -316,6 +327,36 @@ const LearnerAssessmentAttempt = () => {
         </div>
         <div className="p-6 bg-white rounded-lg shadow">
           <p className="text-lg text-gray-800 mb-6">{currentQuestion.question_text}</p>
+
+          {/* Media Display */}
+          {currentQuestion.media_url && (
+            <div className="mt-4 mb-6">
+              {currentQuestion.media_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                <img
+                  src={currentQuestion.media_url}
+                  alt="Question media"
+                  className="max-w-lg rounded-lg border border-gray-200"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.style.display = 'none';
+                    console.error('Failed to load question media');
+                  }}
+                />
+              ) : (
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <a 
+                    href={currentQuestion.media_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    View attached media
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+
           {renderOptions()}
           {renderSaveIndicator()}
         </div>

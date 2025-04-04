@@ -19,6 +19,7 @@ import {
   Edit2,
   Trash2,
   ChevronDown,
+  RotateCcw
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
 import { useNavigate } from "react-router-dom";
@@ -287,12 +288,19 @@ const TeacherCourseAssessment = () => {
 
   const handleEditSubmit = async (updatedAssessment) => {
     try {
+      // Keep the existing questions count when updating the assessment in state
+      const currentAssessment = assessments.find(a => a.id === updatedAssessment.id);
+      const updatedWithQuestions = {
+        ...updatedAssessment,
+        questions: currentAssessment.questions || []
+      };
+
       // Update moduleAssessments state
       setModuleAssessments((prev) => {
         const updated = { ...prev };
         Object.keys(updated).forEach((moduleId) => {
           updated[moduleId] = updated[moduleId].map((a) =>
-            a.id === updatedAssessment.id ? updatedAssessment : a
+            a.id === updatedAssessment.id ? updatedWithQuestions : a
           );
         });
         return updated;
@@ -300,7 +308,7 @@ const TeacherCourseAssessment = () => {
 
       // Update assessments array
       setAssessments((prev) =>
-        prev.map((a) => (a.id === updatedAssessment.id ? updatedAssessment : a))
+        prev.map((a) => (a.id === updatedAssessment.id ? updatedWithQuestions : a))
       );
 
       setEditingAssessment(null);
@@ -444,13 +452,19 @@ const TeacherCourseAssessment = () => {
               <div className="flex items-center text-sm">
                 <Clock className="w-4 h-4 mr-2" style={{ color: color.bg }} />
                 <span className="text-gray-600 font-medium">
-                  {assessment.duration_minutes} minutes
+                  Time Limit: {assessment.duration_minutes} minutes
                 </span>
               </div>
               <div className="flex items-center text-sm">
                 <Award className="w-4 h-4 mr-2" style={{ color: color.bg }} />
                 <span className="text-gray-600 font-medium">
                   Passing: {assessment.passing_score}/{assessment.max_score}
+                </span>
+              </div>
+              <div className="flex items-center text-sm">
+                <RotateCcw className="w-4 h-4 mr-2" style={{ color: color.bg }} />
+                <span className="text-gray-600 font-medium">
+                  {assessment.allowed_attempts} {assessment.allowed_attempts === 1 ? "attempt" : "attempts"}
                 </span>
               </div>
             </div>

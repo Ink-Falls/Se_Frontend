@@ -309,7 +309,7 @@ const fetchWithInterceptor = async (url, options = {}, retryCount = 0) => {
       
       switch (response.status) {
         case 400:
-          throw new Error(errorData.message || 'Invalid request');
+          throw new Error(errorData.error?.message || 'Invalid request');
         case 401:
           // Already handled above
           throw new Error(errorData.message || 'Unauthorized');
