@@ -85,13 +85,11 @@ const EditGradeModal = ({ isOpen, onClose, submission, question, onSave }) => {
 
     try {
       const payload = {
-        grades: [
-          {
+        grade: {
             questionId: gradingData.questionId,
             points: parseInt(gradingData.points),
             feedback: gradingData.feedback,
           },
-        ],
         feedback: "",
       };
 
