@@ -390,6 +390,25 @@ function AdminDashboard() {
     try {
       setIsAddModalOpen(false);
       setSuccessMessage("Successfully added user");
+      
+      // Fetch updated stats after adding new user
+      await fetchTotalCounts();
+      
+      // Update the all users data
+      const response = await getAllUsers({ limit: 999999 });
+      if (response && Array.isArray(response.users)) {
+        const enrichedUsers = enrichUserData(response.users);
+        setAllUsersData(enrichedUsers);
+        
+        // Update filtered users with current filters
+        let currentData = enrichedUsers;
+        if (roleFilter !== "all") {
+          currentData = currentData.filter(user => user.role === roleFilter);
+        }
+        setFilteredUsers(currentData.slice(0, 10));
+        setTotalUsers(currentData.length);
+        setTotalPages(Math.ceil(currentData.length / 10));
+      }
     } catch (error) {
       console.error("Error handling new user:", error);
       setError("Failed to refresh user data after adding");
