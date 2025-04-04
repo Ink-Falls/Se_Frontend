@@ -469,6 +469,12 @@ const LearnerAssessmentView = () => {
     }
   };
 
+  // Add this helper function to format passing score
+  const formatPassingScore = (passingScore) => {
+    if (!passingScore) return "0%";
+    return `${passingScore}%`;
+  };
+
   const renderHeader = () => (
     <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 p-8 text-white">
       <button
@@ -502,7 +508,7 @@ const LearnerAssessmentView = () => {
         </div>
         <div className="text-right">
           <p className="text-lg font-semibold">
-            Passing Score: {assessment?.passing_score || '0'}%
+            Passing Score: {formatPassingScore(assessmentData?.passing_score/assessmentData?.max_score * 100)}
           </p>
           <p className="text-sm text-gray-300">
             Duration: {assessment?.duration_minutes || '0'} minutes

@@ -19,6 +19,7 @@ import {
   Edit2,
   Trash2,
   ChevronDown,
+  RotateCcw
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
 import { useNavigate } from "react-router-dom";
@@ -458,6 +459,12 @@ const TeacherCourseAssessment = () => {
                 <Award className="w-4 h-4 mr-2" style={{ color: color.bg }} />
                 <span className="text-gray-600 font-medium">
                   Passing: {assessment.passing_score}/{assessment.max_score}
+                </span>
+              </div>
+              <div className="flex items-center text-sm">
+                <RotateCcw className="w-4 h-4 mr-2" style={{ color: color.bg }} />
+                <span className="text-gray-600 font-medium">
+                  {assessment.allowed_attempts} {assessment.allowed_attempts === 1 ? "attempt" : "attempts"}
                 </span>
               </div>
             </div>
