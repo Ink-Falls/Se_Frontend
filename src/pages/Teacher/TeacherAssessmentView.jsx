@@ -843,10 +843,13 @@ const TeacherAssessmentView = () => {
         </div>
         <div className="text-right">
           <p className="mt-3 text-lg font-semibold">
-            Passing Score: {formatPassingScore(assessmentData?.passing_score)}
+            Passing Score: {formatPassingScore(assessmentData?.passing_score/assessmentData?.max_score * 100)}
           </p>
           <p className="text-sm text-gray-300">
             Duration: {assessmentData?.duration_minutes} minutes
+          </p>
+          <p className="text-sm text-gray-300">
+            Allowed Attempts: {assessment?.allowed_attempts || '1'}
           </p>
         </div>
       </div>
