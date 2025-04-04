@@ -20,17 +20,14 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
   useEffect(() => {
     if (assessment) {
       try {
-        // Format the date correctly for the input - handle both Date objects and ISO strings
         let formattedDate = "";
         if (assessment.due_date) {
-          // Make sure we have a Date object to work with
           const dueDate =
             assessment.due_date instanceof Date
               ? assessment.due_date
               : new Date(assessment.due_date);
 
           if (!isNaN(dueDate.getTime())) {
-            // Format as YYYY-MM-DDTHH:MM (datetime-local format)
             formattedDate = dueDate.toISOString().substring(0, 16);
           } else {
             console.warn("Invalid date:", assessment.due_date);
@@ -40,13 +37,12 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
         setFormData({
           ...assessment,
           due_date: formattedDate,
-          // Make sure all required fields are present with appropriate defaults
           instructions: assessment.instructions || "",
           type: assessment.type || "quiz",
           max_score: assessment.max_score || 100,
           passing_score: assessment.passing_score || 60,
           duration_minutes: assessment.duration_minutes || 60,
-          allowed_attempts: assessment.allowed_attempts || 1, // Use existing value or default to 1
+          allowed_attempts: assessment.allowed_attempts || 1,
         });
       } catch (err) {
         console.error("Error formatting assessment data:", err);
@@ -61,7 +57,6 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
     setError("");
 
     try {
-      // Format data to match API requirements exactly
       const assessmentData = {
         title: formData.title.trim(),
         description: formData.description.trim(),
@@ -72,10 +67,9 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
         due_date: new Date(formData.due_date).toISOString(),
         instructions: formData.instructions?.trim() || "",
         allowed_attempts: parseInt(formData.allowed_attempts),
-        is_published: assessment.is_published // Maintain current publish state
+        is_published: assessment.is_published
       };
 
-      // Call the API
       const response = await editAssessment(assessment.id, assessmentData);
 
       if (response.success) {
@@ -97,7 +91,6 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
-        {/* Fixed Header */}
         <div className="p-6 border-b">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Edit Assessment</h2>
@@ -107,7 +100,6 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
           </div>
         </div>
 
-        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {error && (
             <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
@@ -168,11 +160,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
               </div>
 
               <div>
-                <label htmlFor="duration" className="block text-sm font-medium text-gray-700">
-                  Duration (minutes)
+                <label htmlFor="duration_minutes" className="block text-sm font-medium text-gray-700">
+                  Time Limit (minutes)
                 </label>
                 <input
-                  id="duration"
+                  id="duration_minutes"
                   type="number"
                   value={formData.duration_minutes}
                   onChange={(e) =>
@@ -274,7 +266,6 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
           </form>
         </div>
 
-        {/* Fixed Footer */}
         <div className="p-6 border-t">
           <div className="flex justify-end gap-3">
             <button

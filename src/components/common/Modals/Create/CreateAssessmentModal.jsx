@@ -213,7 +213,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
 
               <div>
                 <label htmlFor="duration" className="block text-sm font-medium text-gray-700">
-                  Duration (minutes)
+                  Time Limit (minutes)
                 </label>
                 <input
                   id="duration"
