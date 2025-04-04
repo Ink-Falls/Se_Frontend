@@ -316,6 +316,15 @@ const LearnerAssessmentAttempt = () => {
         </div>
         <div className="p-6 bg-white rounded-lg shadow">
           <p className="text-lg text-gray-800 mb-6">{currentQuestion.question_text}</p>
+          {currentQuestion.media_url && (
+          <div className="my-4">
+            <img
+              src={currentQuestion.media_url}
+              alt="Question media"
+              className="max-w-sm rounded-lg border border-gray-200 mx-auto"
+            />
+          </div>
+          )}
           {renderOptions()}
           {renderSaveIndicator()}
         </div>
