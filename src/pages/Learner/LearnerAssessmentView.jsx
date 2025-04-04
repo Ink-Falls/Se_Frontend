@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 import { 
   getAssessmentById, 
-  getUserSubmission 
+  getUserSubmission,
+  getUserSubmissionCount
 } from "../../services/assessmentService";
 
 // Add this helper function before the component
@@ -97,6 +98,7 @@ const LearnerAssessmentView = () => {
   const [startTime, setStartTime] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [latestSubmission, setLatestSubmission] = useState(null);
+  const [submissionCount, setSubmissionCount] = useState(0);
 
   useEffect(() => {
     return () => {
@@ -224,6 +226,24 @@ const LearnerAssessmentView = () => {
     };
 
     fetchSubmissions();
+  }, [assessment?.id]);
+
+  useEffect(() => {
+    const fetchSubmissionCount = async () => {
+      try {
+        if (!assessment?.id) return;
+        const response = await getUserSubmissionCount(assessment.id, false);
+        if (response.success) {
+          setSubmissionCount(response.count || 0);
+          console.log("Submission count updated:", response.count); // Debugging
+        }
+      } catch (err) {
+        console.error('Error fetching submission count:', err);
+        setError('Failed to fetch submission count');
+      }
+    };
+
+    fetchSubmissionCount();
   }, [assessment?.id]);
 
   useEffect(() => {
@@ -415,6 +435,12 @@ const LearnerAssessmentView = () => {
           </p>
           <p className="text-sm text-gray-300">
             Duration: {assessment?.duration_minutes || '0'} minutes
+          </p>
+          <p className="text-sm text-gray-300">
+            Allowed Attempts: {assessment?.allowed_attempts || '1'}
+          </p>
+          <p className="text-sm text-gray-300">
+            Remaining Attempts: {Math.max(0, (assessment?.allowed_attempts || 1) - submissionCount)}
           </p>
         </div>
       </div>
