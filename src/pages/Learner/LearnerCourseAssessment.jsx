@@ -430,7 +430,7 @@ const LearnerCourseAssessment = () => {
       <h3 className="text-xl font-semibold mb-2">{assessment.title}</h3>
       <p className="text-gray-600 mb-4">{assessment.description}</p>
 
-      {/* Assessment Details Grid - Updated to include question count */}
+      {/* Assessment Details Grid */}
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div className="space-y-3">
           <div className="flex items-center text-sm">
@@ -469,6 +469,12 @@ const LearnerCourseAssessment = () => {
             />
             <span className="text-gray-600 font-medium">
               {assessment.questions?.length || 0} Questions
+              {assessment.allowed_attempts && (
+                <span className="ml-2 text-gray-500">
+                  ({assessment.allowed_attempts} attempt
+                  {assessment.allowed_attempts !== 1 ? "s" : ""} allowed)
+                </span>
+              )}
             </span>
           </div>
         </div>
@@ -652,6 +658,15 @@ const LearnerCourseAssessment = () => {
                                   <span className="text-gray-600 font-medium">
                                     {assessment.questions?.length || 0}{" "}
                                     Questions
+                                    {assessment.allowed_attempts && (
+                                      <span className="ml-2 text-gray-500">
+                                        ({assessment.allowed_attempts} attempt
+                                        {assessment.allowed_attempts !== 1
+                                          ? "s"
+                                          : ""}{" "}
+                                        allowed)
+                                      </span>
+                                    )}
                                   </span>
                                 </div>
                               </div>

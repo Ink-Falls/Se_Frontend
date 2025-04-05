@@ -51,6 +51,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
     }
   }, [assessment]);
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -204,16 +209,17 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
               </div>
 
               <div>
-                <label htmlFor="pass_score"className="block text-sm font-medium text-gray-700">
-                  Passing Score (%)
+                <label htmlFor="pass_score" className="block text-sm font-medium text-gray-700">
+                  Passing Score
                 </label>
                 <input
                   id="pass_score"
                   type="number"
+                  name="passing_score"
                   value={formData.passing_score}
-                  onChange={(e) =>
-                    setFormData({ ...formData, passing_score: e.target.value })
-                  }
+                  onChange={handleInputChange}
+                  min="1"
+                  max={formData.max_score}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   required
                 />
