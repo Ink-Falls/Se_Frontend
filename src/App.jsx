@@ -66,6 +66,11 @@ const TeacherPages = {
   PictureCodeGenerator: lazy(() =>
     import("./pages/Teacher/PictureCodeGeneratorPage")
   ),
+  ProgressTracker: lazy(() =>
+    import("./pages/Teacher/TeacherProgressTracker").then((module) => ({
+      default: module.default || module.TeacherProgressTracker,
+    }))
+  ),
 };
 
 const LearnerPages = {
@@ -85,7 +90,9 @@ const LearnerPages = {
     import("./pages/Learner/LearnerCourseAssessment")
   ),
   AssessmentView: lazy(() => import("./pages/Learner/LearnerAssessmentView")),
-  AssessmentAttempt: lazy(() => import("./pages/Learner/LearnerAssessmentAttempt")),
+  AssessmentAttempt: lazy(() =>
+    import("./pages/Learner/LearnerAssessmentAttempt")
+  ),
 };
 
 const ErrorPages = {
@@ -304,6 +311,14 @@ function AppRoutes() {
                           >
                             <TeacherPages.PictureCodeGenerator />
                           </RoleBasedRoute>
+                        }
+                      />
+                      <Route
+                        path="ProgressTracker"
+                        element={
+                          <ProtectedRoute>
+                            <TeacherPages.ProgressTracker />
+                          </ProtectedRoute>
                         }
                       />
                       <Route path="*" element={<ErrorPages.Error404 />} />
