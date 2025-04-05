@@ -282,20 +282,6 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                 />
               </div>
 
-              <div className="flex items-center">
-                <input
-                  id="publish"
-                  type="checkbox"
-                  name="is_published"
-                  checked={formData.is_published}
-                  onChange={handleInputChange}
-                  className="h-4 w-4 text-yellow-600 rounded border-gray-300"
-                />
-                <label htmlFor="publish" className="ml-2 text-sm text-gray-700">
-                  Publish immediately
-                </label>
-              </div>
-
               <div className="col-span-2">
                 <label htmlFor="instruction" className="block text-sm font-medium text-gray-700">
                   Instructions
