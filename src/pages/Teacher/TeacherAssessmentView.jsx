@@ -26,6 +26,8 @@ import {
   getSubmissionDetails,
   deleteQuestion,
   deleteAssessment,
+  publishAssessment,
+  unpublishAssessment
 } from "../../services/assessmentService";
 import CreateQuestionModal from "../../components/common/Modals/Create/CreateQuestionModal";
 import EditQuestionModal from "../../components/common/Modals/Edit/EditQuestionModal";
@@ -330,6 +332,15 @@ const TeacherAssessmentView = () => {
     }
   }, [successMessage]);
 
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
   const handleCreateQuestion = async (questionData) => {
     try {
       console.log("Creating question with data:", questionData);
@@ -442,6 +453,40 @@ const TeacherAssessmentView = () => {
     } finally {
       setLoading(false);
       setIsDeletingAssessment(false);
+    }
+  };
+
+  const handlePublishAssessment = async () => {
+    try {
+      const response = await publishAssessment(assessment.id);
+      if (response.success) {
+        setSuccessMessage("Assessment published successfully");
+        setAssessmentData((prev) => ({ ...prev, is_published: true }));
+      } else {
+        throw new Error("Failed to publish assessment");
+      }
+    } catch (err) {
+      console.error("Error publishing assessment:", err);
+      setError("Failed to publish assessment: " + (err.message || "Unknown error"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnpublishAssessment = async () => {
+    try {
+      const response = await unpublishAssessment(assessment.id);
+      if (response.success) {
+        setSuccessMessage("Assessment unpublished successfully");
+        setAssessmentData((prev) => ({ ...prev, is_published: false }));
+      } else {
+        throw new Error("Failed to unpublish assessment");
+      }
+    } catch (err) {
+      console.error("Error unpublishing assessment:", err);
+      setError("Failed to unpublish assessment: " + (err.message || "Unknown error"));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -836,7 +881,6 @@ const TeacherAssessmentView = () => {
           <span>Back to Assessments</span>
         </button>
       </div>
-
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold mb-2">{assessmentData?.title}</h1>
@@ -897,13 +941,30 @@ const TeacherAssessmentView = () => {
             <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-semibold">Questions</h3>
-                <button
-                  onClick={() => setIsCreateQuestionOpen(true)}
-                  className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors flex items-center gap-2"
-                >
-                  <Plus size={20} />
-                  Add Question
-                </button>
+                <div className="flex gap-2">
+                  {assessmentData?.is_published ? (
+                    <button
+                      onClick={handleUnpublishAssessment}
+                      className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors flex items-center gap-2"
+                    >
+                      Unpublish
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handlePublishAssessment}
+                      className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center gap-2"
+                    >
+                      Publish
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setIsCreateQuestionOpen(true)}
+                    className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors flex items-center gap-2"
+                  >
+                    <Plus size={20} />
+                    Add Question
+                  </button>
+                </div>
               </div>
 
               {/* Add success message display */}
@@ -912,11 +973,14 @@ const TeacherAssessmentView = () => {
                   {successMessage}
                 </div>
               )}
+              {error && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+                  {error}
+                </div>
+              )}
 
               {loading ? (
                 <LoadingSpinner />
-              ) : error ? (
-                <div className="text-center text-red-600 py-4">{error}</div>
               ) : questions.length === 0 ? (
                 <div className="text-center py-8">
                   <ClipboardList
