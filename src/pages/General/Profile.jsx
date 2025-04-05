@@ -17,6 +17,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { changePassword } from "../../services/authService"; // Import function
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import { getUserProfileImage } from "../../utils/profileImages";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 const getNavItems = (role) => {
   // Base items for admin
@@ -88,6 +89,8 @@ function Profile() {
   const [profileImage] = useState(
     getUserProfileImage(JSON.parse(localStorage.getItem("user"))?.role)
   );
+  const [editMessage, setEditMessage] = useState({ type: "", text: "" });
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => {
@@ -101,6 +104,7 @@ function Profile() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
+        setIsLoading(true);
         if (authLoading) return;
 
         // Check authentication
@@ -142,6 +146,7 @@ function Profile() {
         setError(err.message || "Failed to load profile");
       } finally {
         setLoading(false);
+        setIsLoading(false);
       }
     };
 
@@ -227,34 +232,46 @@ function Profile() {
   const handleEditSubmit = async () => {
     try {
       setEditError("");
+      setEditMessage({ type: "", text: "" });
 
       // Validate email format first
       if (!validateEmail(editFormData.email)) {
         setEditError("Please enter a valid email address");
+        setEditMessage({
+          type: "error",
+          text: "Please enter a valid email address",
+        });
         return;
       }
 
       const updatedUser = await updateUser(user.id, editFormData);
       setUser(updatedUser);
       setIsEditMode(false);
-      setSuccessMessage("Profile updated successfully!");
-      setTimeout(() => setSuccessMessage(""), 3000);
+      setEditMessage({
+        type: "success",
+        text: "Profile updated successfully!",
+      });
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setEditMessage({ type: "", text: "" });
+      }, 3000);
     } catch (err) {
       console.error("Profile update error:", err);
 
-      // Handle specific API errors
       if (
         err.response?.status === 409 ||
         err.message.includes("already exists")
       ) {
-        setEditError("This email address is already in use");
-      } else if (
-        err.response?.status === 400 ||
-        err.message.includes("invalid")
-      ) {
-        setEditError("Please enter a valid email address");
+        setEditMessage({
+          type: "error",
+          text: "This email address is already in use",
+        });
       } else {
-        setEditError(err.message || "Failed to update profile");
+        setEditMessage({
+          type: "error",
+          text: err.message || "Failed to update profile",
+        });
       }
     }
   };
@@ -284,6 +301,10 @@ function Profile() {
   );
 
   // Add null check for user in render
+  if (isLoading) {
+    return <LoadingSpinner text="Loading Profile" />;
+  }
+
   if (!user || loading) {
     return <div>Loading...</div>;
   }
@@ -365,7 +386,7 @@ function Profile() {
                 })
               }
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              maxLength={1}
+              maxLength={2}
             />
           </div>
 
@@ -458,6 +479,17 @@ function Profile() {
       <div className="flex-1 p-6 overflow-auto">
         <Header title="Account" />
         <MobileNavBar navItems={navItems} />
+        {editMessage.text && (
+          <div
+            className={`mb-4 p-4 rounded-lg ${
+              editMessage.type === "success"
+                ? "bg-green-100 text-green-700 border border-green-200"
+                : "bg-red-100 text-red-700 border border-red-200"
+            }`}
+          >
+            {editMessage.text}
+          </div>
+        )}
         <div className="mt-6 bg-white rounded-lg shadow-md">
           {/* Banner */}
           <div

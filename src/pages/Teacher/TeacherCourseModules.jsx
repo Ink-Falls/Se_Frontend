@@ -266,32 +266,34 @@ const TeacherCourseModules = () => {
     fetchModules();
   }, [selectedCourse?.id, navigate]);
 
-  const handleCreateModule = async (moduleData) => {
+  const handleCreateModule = async (formattedData) => {
     try {
-      if (!selectedCourse?.id) {
-        throw new Error("No course selected");
-      }
-
-      // Format the data before sending
-      const formattedData = {
-        name: moduleData.name || moduleData.title,
-        description: moduleData.description,
+      const moduleData = {
+        name: formattedData.name,
+        description: formattedData.description,
         course_id: parseInt(selectedCourse.id),
       };
 
-      const newModule = await createModule(selectedCourse.id, formattedData);
+      const newModule = await createModule(selectedCourse.id, moduleData);
 
       if (!newModule) {
         throw new Error("Failed to create module");
       }
 
-      // Explicitly wait for fetchModules to complete
-      await fetchModules();
+      // Update modules state to include the new module with its resources
+      setModules((prevModules) => [
+        ...prevModules,
+        {
+          id: newModule.id || newModule.module_id,
+          title: newModule.name,
+          description: newModule.description,
+          resources: newModule.resources || [], // Include resources in the module data
+          createdAt: newModule.created_at,
+        },
+      ]);
 
-      // Close modals after successful creation and refresh
       setIsCreateModuleOpen(false);
-      setIsAddModuleOpen(false);
-      setSuccessMessage("Module created successfully"); 
+      setSuccessMessage("Module created successfully");
 
       return newModule;
     } catch (error) {
@@ -299,7 +301,6 @@ const TeacherCourseModules = () => {
       throw error;
     }
   };
-
 
   const handleEdit = (module) => {
     setEditingModule(module);
@@ -316,10 +317,10 @@ const TeacherCourseModules = () => {
         prev.map((m) => (m.id === updatedModule.id ? updatedModule : m))
       );
       setEditingModule(null);
-      setSuccessMessage("Module updated successfully"); 
+      setSuccessMessage("Module updated successfully");
     } catch (error) {
       console.error("Error updating module:", error);
-      setError("Failed to update module"); 
+      setError("Failed to update module");
     }
   };
 
@@ -331,7 +332,7 @@ const TeacherCourseModules = () => {
       setSuccessMessage("Module deleted successfully");
     } catch (error) {
       console.error("Error deleting module:", error);
-      setError("Failed to delete module"); 
+      setError("Failed to delete module");
     }
   };
 
@@ -778,7 +779,12 @@ const TeacherCourseModules = () => {
               }}
             >
               <div className="mb-4">
-                <label htmlFor="title" className="block font-medium text-gray-700">Title</label>
+                <label
+                  htmlFor="title"
+                  className="block font-medium text-gray-700"
+                >
+                  Title
+                </label>
                 <input
                   id="title"
                   type="text"
@@ -789,7 +795,10 @@ const TeacherCourseModules = () => {
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="description" className="block font-medium text-gray-700">
+                <label
+                  htmlFor="description"
+                  className="block font-medium text-gray-700"
+                >
                   Description
                 </label>
                 <textarea

@@ -57,7 +57,10 @@ const AddUserModal = ({ onClose, onSubmit }) => {
         "Last name must be 2-30 characters and contain only letters";
     }
 
-    if (formData.middle_initial && !/^[A-Z]{1,2}$/.test(formData.middle_initial)) {
+    if (
+      formData.middle_initial &&
+      !/^[A-Z]{1,2}$/.test(formData.middle_initial)
+    ) {
       errors.middle_initial =
         "Middle initial must be up to 2 uppercase letters";
     }
@@ -185,13 +188,13 @@ const AddUserModal = ({ onClose, onSubmit }) => {
   const handleMiddleInitialChange = (e) => {
     // Only allow up to 2 letters and convert to uppercase
     const value = e.target.value
-      .replace(/[^A-Za-z]/g, '') // Remove non-letters
+      .replace(/[^A-Za-z]/g, "") // Remove non-letters
       .substring(0, 2) // Limit to 2 characters
       .toUpperCase(); // Convert to uppercase
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      middle_initial: value
+      middle_initial: value,
     }));
   };
 
@@ -272,7 +275,12 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 type="text"
                 name="middle_initial"
                 value={formData.middle_initial}
-                onChange={handleMiddleInitialChange}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    middle_initial: e.target.value.toUpperCase().slice(0, 2),
+                  }))
+                }
                 placeholder="Up to 2 letters"
                 maxLength={2}
                 className={`mt-1 block w-full rounded-md border ${

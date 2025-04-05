@@ -6,6 +6,7 @@
 import { API_BASE_URL } from "../utils/constants";
 import tokenService from "./tokenService";
 import fetchWithInterceptor from "./apiService";
+import { getRandomCourseImage } from "../utils/courseImages";
 
 // Internal helper function for generating course codes
 const generateCourseCode = (courseName, courseId) => {
@@ -38,15 +39,15 @@ const formatCourses = (courses) => {
     code: generateCourseCode(course.name, course.id),
     description: course.description,
     teacher: course.teacher_name || "Not assigned",
-    learner_group_id: course.learner_group_id, 
+    learner_group_id: course.learner_group_id,
     student_teacher_group_id: course.student_teacher_group_id,
     studentCount: course.studentCount || 0,
-    imageUrl: course.imageUrl || "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+    imageUrl: course.imageUrl || getRandomCourseImage(),
   }));
 };
 
 // For testing purposes only - not for production use
-if (process.env.NODE_ENV === 'test') {
+if (process.env.NODE_ENV === "test") {
   exports.generateCourseCode = generateCourseCode;
   exports.formatCourses = formatCourses;
 }
@@ -86,9 +87,7 @@ export const getAllCourses = async () => {
       student_teacher_group: course.studentTeacherGroup?.name || "Not assigned",
       learner_group_id: course.learnerGroup?.group_id || null,
       student_teacher_group_id: course.studentTeacherGroup?.group_id || null,
-      image:
-        course.image ||
-        "https://miro.medium.com/v2/resize:fit:1200/1*rKl56ixsC55cMAsO2aQhGQ@2x.jpeg",
+      image: course.image || getRandomCourseImage(),
     }));
   } catch (error) {
     console.error("Error fetching courses:", error);
@@ -108,12 +107,15 @@ export const getUserCourses = async () => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user?.id) throw new Error("User data not found");
 
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/courses/user/${user.id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/courses/user/${user.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     if (!response.ok) throw new Error("Failed to fetch courses");
     const accessibleCourses = await response.json();
@@ -136,24 +138,27 @@ export const getUserCourses = async () => {
             groupMemberCounts[course.learner_group_id] = members.length;
           }
         } catch (error) {
-          console.warn(`Failed to fetch members for group ${course.learner_group_id}:`, error);
+          console.warn(
+            `Failed to fetch members for group ${course.learner_group_id}:`,
+            error
+          );
           groupMemberCounts[course.learner_group_id] = 0;
         }
       }
     }
 
     // Add member counts to courses
-    const coursesWithCounts = accessibleCourses.map(course => ({
+    const coursesWithCounts = accessibleCourses.map((course) => ({
       ...course,
-      studentCount: groupMemberCounts[course.learner_group_id] || 0
+      studentCount: groupMemberCounts[course.learner_group_id] || 0,
     }));
 
     return formatCourses(coursesWithCounts);
   } catch (error) {
     console.error("Error fetching learner courses:", error);
-    return []; 
+    return [];
   }
-}; 
+};
 
 /**
  * Creates a new course

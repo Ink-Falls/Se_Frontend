@@ -13,9 +13,9 @@ import {
   ArrowLeft,
   AlertTriangle,
   Check,
-  Save
+  Save,
 } from "lucide-react";
-import { 
+import {
   createSubmission,
   saveQuestionAnswer,
   submitAssessment,
@@ -42,15 +42,17 @@ const LearnerAssessmentAttempt = () => {
       const response = await getAssessmentById(assessmentId, true);
       if (response.success) {
         // Ensure questions have media_url field
-        const questionsWithMedia = response.assessment.questions.map(question => ({
-          ...question,
-          media_url: question.media_url || null
-        }));
+        const questionsWithMedia = response.assessment.questions.map(
+          (question) => ({
+            ...question,
+            media_url: question.media_url || null,
+          })
+        );
         setQuestions(questionsWithMedia);
       }
     } catch (error) {
-      console.error('Error fetching questions:', error);
-      setError('Failed to load questions');
+      console.error("Error fetching questions:", error);
+      setError("Failed to load questions");
     }
   };
 
@@ -58,30 +60,35 @@ const LearnerAssessmentAttempt = () => {
     const initializeAttempt = async () => {
       try {
         setLoading(true);
-        
+
         // First get assessment details with questions
         await fetchQuestionsWithMedia(assessment.id);
 
         // Then create or fetch existing submission
         const submissionResponse = await createSubmission(assessment.id);
-        
+
         if (submissionResponse.success) {
           const currentSubmission = submissionResponse.submission;
           setSubmissionId(currentSubmission.id);
-          
+
           // Initialize answers if they exist
-          if (submissionResponse.isExisting && submissionResponse.savedAnswers?.length > 0) {
+          if (
+            submissionResponse.isExisting &&
+            submissionResponse.savedAnswers?.length > 0
+          ) {
             const savedAnswers = {};
-            submissionResponse.savedAnswers.forEach(answer => {
-              savedAnswers[answer.question_id] = answer.selected_option_id 
+            submissionResponse.savedAnswers.forEach((answer) => {
+              savedAnswers[answer.question_id] = answer.selected_option_id
                 ? { optionId: answer.selected_option_id }
                 : { textResponse: answer.text_response };
             });
             setAnswers(savedAnswers);
-            setSavedAnswers(Object.keys(savedAnswers).reduce((acc, key) => {
-              acc[key] = true;
-              return acc;
-            }, {}));
+            setSavedAnswers(
+              Object.keys(savedAnswers).reduce((acc, key) => {
+                acc[key] = true;
+                return acc;
+              }, {})
+            );
           }
 
           // Setup timer
@@ -89,9 +96,12 @@ const LearnerAssessmentAttempt = () => {
           const currentTime = new Date().getTime();
           const elapsedMilliseconds = currentTime - startTime;
           const totalMilliseconds = assessment.duration_minutes * 60 * 1000;
-          const remainingMilliseconds = Math.max(0, totalMilliseconds - elapsedMilliseconds);
+          const remainingMilliseconds = Math.max(
+            0,
+            totalMilliseconds - elapsedMilliseconds
+          );
           const remainingSeconds = Math.floor(remainingMilliseconds / 1000);
-          
+
           if (remainingSeconds > 0) {
             setTimeRemaining(remainingSeconds);
           } else {
@@ -100,19 +110,21 @@ const LearnerAssessmentAttempt = () => {
           }
         }
       } catch (err) {
-        if (err.message?.includes('Maximum assessment attempts reached:')) {
-          const cleanMessage = err.message.split('Maximum assessment attempts reached:')[1].trim();
+        if (err.message?.includes("Maximum assessment attempts reached:")) {
+          const cleanMessage = err.message
+            .split("Maximum assessment attempts reached:")[1]
+            .trim();
           navigate(`/Learner/Assessment/View/${assessment.id}`, {
-            state: { 
+            state: {
               assessment,
-              error: 'Maximum attempts reached',
+              error: "Maximum attempts reached",
               errorDetails: cleanMessage,
-              submission: existingSubmission
-            }
+              submission: existingSubmission,
+            },
           });
           return;
         }
-        setError(err.message || 'Failed to start assessment');
+        setError(err.message || "Failed to start assessment");
       } finally {
         setLoading(false);
       }
@@ -127,12 +139,14 @@ const LearnerAssessmentAttempt = () => {
 
     // Store end time in localStorage if not already set
     if (!localStorage.getItem(`assessment_end_${submissionId}`)) {
-      const endTime = Date.now() + (timeRemaining * 1000);
+      const endTime = Date.now() + timeRemaining * 1000;
       localStorage.setItem(`assessment_end_${submissionId}`, endTime);
     }
 
     const timer = setInterval(() => {
-      const endTime = parseInt(localStorage.getItem(`assessment_end_${submissionId}`));
+      const endTime = parseInt(
+        localStorage.getItem(`assessment_end_${submissionId}`)
+      );
       const remaining = Math.floor((endTime - Date.now()) / 1000);
 
       if (remaining <= 0) {
@@ -151,9 +165,9 @@ const LearnerAssessmentAttempt = () => {
   }, [timeRemaining, submissionId]);
 
   const handleAnswerChange = (answer) => {
-    setAnswers(prev => ({
+    setAnswers((prev) => ({
       ...prev,
-      [questions[currentQuestionIndex].id]: answer
+      [questions[currentQuestionIndex].id]: answer,
     }));
   };
 
@@ -165,19 +179,19 @@ const LearnerAssessmentAttempt = () => {
       try {
         setSavingAnswer(true);
         await saveQuestionAnswer(submissionId, currentQuestion.id, answer);
-        setSavedAnswers(prev => ({
+        setSavedAnswers((prev) => ({
           ...prev,
-          [currentQuestion.id]: true
+          [currentQuestion.id]: true,
         }));
       } catch (err) {
-        console.error('Failed to save answer:', err);
+        console.error("Failed to save answer:", err);
       } finally {
         setSavingAnswer(false);
       }
     }
 
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+      setCurrentQuestionIndex((prev) => prev + 1);
     } else {
       await handleSubmitAssessment();
     }
@@ -191,9 +205,9 @@ const LearnerAssessmentAttempt = () => {
         // Clean up localStorage
         localStorage.removeItem(`assessment_end_${submissionId}`);
         localStorage.removeItem(`ongoing_assessment_${assessment.id}`);
-        
+
         navigate(`/Learner/Assessment/View/${assessment.id}`, {
-          state: { assessment, submission: response.submission }
+          state: { assessment, submission: response.submission },
         });
       }
     } catch (err) {
@@ -221,7 +235,9 @@ const LearnerAssessmentAttempt = () => {
           </div>
         ) : isAnswered ? (
           <div className="text-gray-500">
-            {isLastQuestion ? 'Click Submit to save your answer' : 'Click Next to save your answer'}
+            {isLastQuestion
+              ? "Click Submit to save your answer"
+              : "Click Next to save your answer"}
           </div>
         ) : null}
       </div>
@@ -234,80 +250,67 @@ const LearnerAssessmentAttempt = () => {
 
     const renderOptions = () => {
       switch (currentQuestion.question_type) {
-        case 'multiple_choice':
+        case "multiple_choice":
+        case "true_false":
           return (
-            <div className="space-y-3">
+            <div className="space-y-3 mt-8">
               {currentQuestion.options.map((option) => (
-                <div 
+                <div
                   key={option.id}
-                  className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                  onClick={() => handleAnswerChange({
-                    optionId: option.id
-                  })}
+                  className={`flex items-center space-x-3 p-4 border-2 rounded-xl hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
+                    answers[currentQuestion.id]?.optionId === option.id
+                      ? "border-yellow-400 bg-yellow-50"
+                      : "border-gray-200"
+                  }`}
+                  onClick={() => handleAnswerChange({ optionId: option.id })}
                 >
-                  <input
-                    type="radio"
-                    name={`question-${currentQuestion.id}`}
-                    checked={answers[currentQuestion.id]?.optionId === option.id}
-                    onChange={() => {}}
-                    className="h-4 w-4 text-yellow-600"
-                  />
-                  <label className="flex-1 cursor-pointer">{option.option_text}</label>
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      answers[currentQuestion.id]?.optionId === option.id
+                        ? "border-yellow-400 bg-yellow-400"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {answers[currentQuestion.id]?.optionId === option.id && (
+                      <div className="w-2 h-2 rounded-full bg-white" />
+                    )}
+                  </div>
+                  <label className="flex-1 cursor-pointer font-medium">
+                    {option.option_text}
+                  </label>
                 </div>
               ))}
             </div>
           );
 
-        case 'true_false':
-          return (
-            <div className="space-y-3">
-              {currentQuestion.options.map((option) => (
-                <div 
-                  key={option.id}
-                  className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                  onClick={() => handleAnswerChange({
-                    optionId: option.id
-                  })}
-                >
-                  <input
-                    type="radio"
-                    name={`question-${currentQuestion.id}`}
-                    checked={answers[currentQuestion.id]?.optionId === option.id}
-                    onChange={() => {}}
-                    className="h-4 w-4 text-yellow-600"
-                  />
-                  <label className="flex-1 cursor-pointer">{option.option_text}</label>
-                </div>
-              ))}
-            </div>
-          );
-
-        case 'short_answer':
+        case "short_answer":
           return (
             <input
               type="text"
-              value={answers[currentQuestion.id]?.textResponse || ''}
-              onChange={(e) => handleAnswerChange({
-                textResponse: e.target.value
-              })}
-              className="w-full p-4 border rounded-lg focus:ring-2 focus:ring-yellow-500"
-              placeholder="Enter your answer"
+              value={answers[currentQuestion.id]?.textResponse || ""}
+              onChange={(e) =>
+                handleAnswerChange({ textResponse: e.target.value })
+              }
+              className="w-full p-4 mt-8 border-2 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+              placeholder="Type your answer here..."
             />
           );
 
-        case 'essay':
+        case "essay":
           return (
-            <div>
+            <div className="mt-8">
               {currentQuestion.word_limit && (
-                <p className="text-sm text-gray-500 mb-2">Word limit: {currentQuestion.word_limit}</p>
+                <p className="text-sm text-gray-500 mb-2">
+                  Word limit: {currentQuestion.word_limit} words
+                </p>
               )}
               <textarea
-                value={answers[currentQuestion.id]?.textResponse || ''}
-                onChange={(e) => handleAnswerChange({
-                  textResponse: e.target.value
-                })}
-                className="w-full p-4 border rounded-lg h-32 focus:ring-2 focus:ring-yellow-500"
-                placeholder="Write your essay answer"
+                value={answers[currentQuestion.id]?.textResponse || ""}
+                onChange={(e) =>
+                  handleAnswerChange({ textResponse: e.target.value })
+                }
+                className="w-full p-4 border-2 rounded-xl h-40 focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+                placeholder="Write your essay answer here..."
               />
             </div>
           );
@@ -318,70 +321,160 @@ const LearnerAssessmentAttempt = () => {
     };
 
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-xl font-medium text-gray-900">
-            Question {currentQuestionIndex + 1} of {questions.length}
-          </h3>
-          <span className="text-sm text-gray-500">Points: {currentQuestion.points}</span>
-        </div>
-        <div className="p-6 bg-white rounded-lg shadow">
-          <p className="text-lg text-gray-800 mb-6">{currentQuestion.question_text}</p>
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-white rounded-b-2xl shadow-sm overflow-hidden">
+          <div className="p-8">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 mb-4">
+                  Question {currentQuestionIndex + 1}
+                </span>
+                <h3 className="text-xl font-semibold text-gray-900 mt-2">
+                  {currentQuestion.question_text}
+                </h3>
+              </div>
+              <span className="ml-4 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+                {currentQuestion.points} Points
+              </span>
+            </div>
 
-          {/* Media Display */}
-          {currentQuestion.media_url && (
-            <div className="mt-4 mb-6">
-              {currentQuestion.media_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                <img
-                  src={currentQuestion.media_url}
-                  alt="Question media"
-                  className="max-w-lg rounded-lg border border-gray-200"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.style.display = 'none';
-                    console.error('Failed to load question media');
-                  }}
-                />
-              ) : (
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <a 
+            {currentQuestion.media_url && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                {currentQuestion.media_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                  <img
+                    src={currentQuestion.media_url}
+                    alt="Question media"
+                    className="max-w-full rounded-lg mx-auto"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <a
                     href={currentQuestion.media_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
+                    className="flex items-center justify-center gap-2 text-blue-600 hover:text-blue-800"
                   >
+                    <FileText size={20} />
                     View attached media
                   </a>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
 
-          {renderOptions()}
-          {renderSaveIndicator()}
+            {renderOptions()}
+            {renderSaveIndicator()}
+          </div>
+
+          <div className="px-8 py-4 bg-gray-50 border-t flex justify-between items-center">
+            <button
+              onClick={() =>
+                setCurrentQuestionIndex((prev) => Math.max(0, prev - 1))
+              }
+              disabled={currentQuestionIndex === 0}
+              className="px-4 py-2 text-gray-600 bg-white rounded-md shadow-sm disabled:opacity-50 hover:bg-gray-50 border border-gray-200 transition-colors"
+            >
+              Previous
+            </button>
+
+            <button
+              onClick={handleNextQuestion}
+              className={`px-6 py-2 rounded-md shadow-sm font-medium transition-colors ${
+                currentQuestionIndex === questions.length - 1
+                  ? "bg-yellow-400 hover:bg-yellow-500 text-gray-900"
+                  : "bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529] text-white"
+              }`}
+            >
+              {currentQuestionIndex === questions.length - 1
+                ? "Submit Assessment"
+                : "Next Question"}
+            </button>
+          </div>
         </div>
       </div>
     );
   };
 
-  const renderHeader = () => (
-    <div className="bg-gray-800 p-6 text-white">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">{assessment?.title}</h2>
-          <p className="text-gray-300 mt-1">{assessment?.description}</p>
-        </div>
-        <div className="text-right">
-          <div className="text-xl font-mono">
-            Time remaining: {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+  const renderHeader = () => {
+    const minutes = Math.floor(timeRemaining / 60);
+    const seconds = timeRemaining % 60;
+    const isLowTime = timeRemaining <= 300; // 5 minutes or less
+
+    return (
+      <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-6 text-white shadow-md rounded-t-2xl">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h2 className="text-2xl font-bold">{assessment?.title}</h2>
+              <p className="text-gray-300 mt-1">{assessment?.description}</p>
+            </div>
+            <div
+              className={`text-right p-4 rounded-xl backdrop-blur-sm ${
+                isLowTime
+                  ? "bg-red-500/20 border-2 border-red-500/50 animate-pulse"
+                  : "bg-black/30 border border-white/10"
+              }`}
+            >
+              <div className="flex items-center gap-2 justify-center">
+                <Clock
+                  className={`w-5 h-5 ${
+                    isLowTime ? "text-red-300" : "text-yellow-400"
+                  }`}
+                />
+                <div className="font-mono text-2xl font-bold tracking-wider">
+                  <span
+                    className={isLowTime ? "text-red-300" : "text-yellow-400"}
+                  >
+                    {minutes.toString().padStart(2, "0")}
+                  </span>
+                  <span
+                    className={`animate-pulse ${
+                      isLowTime ? "text-red-300" : "text-yellow-400"
+                    }`}
+                  >
+                    :
+                  </span>
+                  <span
+                    className={isLowTime ? "text-red-300" : "text-yellow-400"}
+                  >
+                    {seconds.toString().padStart(2, "0")}
+                  </span>
+                </div>
+              </div>
+              <div
+                className={`text-sm mt-1 ${
+                  isLowTime ? "text-red-200" : "text-gray-300"
+                }`}
+              >
+                {isLowTime ? "Time running out!" : "Time remaining"}
+              </div>
+            </div>
           </div>
-          <div className="text-sm text-gray-300">
-            Question {currentQuestionIndex + 1} of {questions.length}
+          {/* Progress bar remains unchanged */}
+          <div className="mt-6">
+            <div className="flex justify-between text-sm mb-2">
+              <span>Progress</span>
+              <span>
+                {currentQuestionIndex + 1} of {questions.length}
+              </span>
+            </div>
+            <div className="w-full bg-gray-600 rounded-full h-2">
+              <div
+                className="bg-yellow-400 h-2 rounded-full transition-all duration-300"
+                style={{
+                  width: `${
+                    ((currentQuestionIndex + 1) / questions.length) * 100
+                  }%`,
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const navItems = [
     { text: "Home", icon: <Home size={20} />, route: "/Learner/Dashboard" },
@@ -406,21 +499,24 @@ const LearnerAssessmentAttempt = () => {
     <div className="flex h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
       <div className="flex-1 overflow-auto">
-        <Header 
+        <Header
           title={selectedCourse?.name || "Assessment"}
-          subtitle={selectedCourse?.code} 
+          subtitle={selectedCourse?.code}
         />
-        
-        <div className="max-w-4xl mx-auto p-6">
+
+        {/* Changed: Removed max-width constraint and adjusted padding */}
+        <div className="p-6">
           {loading ? (
             <div className="flex items-center justify-center min-h-[400px]">
               <LoadingSpinner />
             </div>
           ) : error ? (
-            <div className="text-center py-8">
+            <div className="max-w-7xl mx-auto text-center py-8 rounded-2xl">
+              {" "}
+              {/* Added max-width constraint */}
               <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
               <h3 className="text-xl font-medium text-gray-900 mt-4 mb-2">
-                {error === "Invalid request" 
+                {error === "Invalid request"
                   ? "Maximum number of attempts has been reached for this assessment"
                   : error}
               </h3>
@@ -432,31 +528,12 @@ const LearnerAssessmentAttempt = () => {
               </button>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="max-w-7xl mx-auto">
+              {" "}
+              {/* Added max-width constraint */}
               {renderHeader()}
-              
-              {/* Question section */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                {renderQuestion()}
-                
-                {/* Navigation buttons */}
-                <div className="flex justify-between mt-6">
-                  <button
-                    onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-                    disabled={currentQuestionIndex === 0}
-                    className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  
-                  <button
-                    onClick={handleNextQuestion}
-                    className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
-                  >
-                    {currentQuestionIndex === questions.length - 1 ? 'Submit' : 'Next'}
-                  </button>
-                </div>
-              </div>
+              {/* Question section - removed bg-white since header has its own style */}
+              <div>{renderQuestion()}</div>
             </div>
           )}
         </div>
