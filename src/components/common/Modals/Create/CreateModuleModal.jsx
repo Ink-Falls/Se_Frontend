@@ -58,45 +58,20 @@ const CreateModuleModal = ({ onClose, onSubmit, courseId }) => {
         throw new Error("Module title is required");
       }
 
-      // Format module data
+      // Format the data
       const moduleData = {
         name: formData.title.trim(),
         description: formData.description.trim(),
-        course_id: parseInt(courseId),
+        resources: formData.resources
+          .map((resource) => ({
+            title: resource.title.trim(),
+            link: resource.link.trim(),
+          }))
+          .filter((r) => r.title && r.link), // Only include valid resources
       };
 
-      // Create the module first
-      const newModule = await onSubmit(moduleData);
-
-      // Filter valid resources
-      const validResources = formData.resources.filter(
-        (r) => r.title && r.link
-      );
-      const addedResources = [];
-
-      // Add resources if any exist
-      if (newModule && validResources.length > 0) {
-        for (const resource of validResources) {
-          try {
-            const addedResource = await addModuleContent(
-              newModule.id || newModule.module_id,
-              {
-                title: resource.title.trim(),
-                type: "link",
-                content: resource.link.trim(),
-              }
-            );
-            addedResources.push(addedResource);
-          } catch (resourceError) {
-            console.error("Error adding resource:", resourceError);
-          }
-        }
-
-        // Update the module with resources
-        newModule.resources = addedResources;
-      }
-
-      // Close modal after all resources are added
+      // Submit to parent component
+      await onSubmit(moduleData);
       onClose();
     } catch (err) {
       console.error("Error in module creation:", err);

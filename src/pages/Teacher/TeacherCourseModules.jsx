@@ -274,28 +274,59 @@ const TeacherCourseModules = () => {
         course_id: parseInt(selectedCourse.id),
       };
 
+      // Create the module first
       const newModule = await createModule(selectedCourse.id, moduleData);
 
       if (!newModule) {
         throw new Error("Failed to create module");
       }
 
-      // Update modules state to include the new module with its resources
-      setModules((prevModules) => [
-        ...prevModules,
-        {
-          id: newModule.id || newModule.module_id,
-          title: newModule.name,
-          description: newModule.description,
-          resources: newModule.resources || [], // Include resources in the module data
-          createdAt: newModule.created_at,
-        },
-      ]);
+      // Process resources if they exist
+      const moduleId = newModule.id || newModule.module_id;
+      let resources = [];
 
+      if (formattedData.resources && formattedData.resources.length > 0) {
+        const validResources = formattedData.resources.filter(
+          (r) => r.title && r.link
+        );
+
+        // Add resources sequentially and collect results
+        for (const resource of validResources) {
+          try {
+            const addedResource = await addModuleContent(moduleId, {
+              title: resource.title.trim(),
+              type: "link",
+              content: resource.link.trim(),
+            });
+
+            if (addedResource) {
+              resources.push({
+                id: addedResource.id || addedResource.content_id,
+                title: addedResource.title || addedResource.name,
+                link: addedResource.content || addedResource.link,
+                type: "link",
+              });
+            }
+          } catch (error) {
+            console.error("Error adding resource:", error);
+          }
+        }
+      }
+
+      // Update modules state with the new module including resources
+      const newModuleWithResources = {
+        id: moduleId,
+        title: newModule.name,
+        description: newModule.description,
+        resources: resources,
+        createdAt: newModule.created_at || new Date().toISOString(),
+      };
+
+      setModules((prevModules) => [newModuleWithResources, ...prevModules]);
       setIsCreateModuleOpen(false);
       setSuccessMessage("Module created successfully");
 
-      return newModule;
+      return newModuleWithResources;
     } catch (error) {
       console.error("Error creating module:", error);
       throw error;
