@@ -27,7 +27,7 @@ import {
   deleteQuestion,
   deleteAssessment,
   publishAssessment,
-  unpublishAssessment
+  unpublishAssessment,
 } from "../../services/assessmentService";
 import CreateQuestionModal from "../../components/common/Modals/Create/CreateQuestionModal";
 import EditQuestionModal from "../../components/common/Modals/Edit/EditQuestionModal";
@@ -349,7 +349,7 @@ const TeacherAssessmentView = () => {
         questionData
       );
 
-      if (response.success) { 
+      if (response.success) {
         const updatedAssessment = await getAssessmentById(
           assessment.id,
           true,
@@ -467,7 +467,9 @@ const TeacherAssessmentView = () => {
       }
     } catch (err) {
       console.error("Error publishing assessment:", err);
-      setError("Failed to publish assessment: " + (err.message || "Unknown error"));
+      setError(
+        "Failed to publish assessment: " + (err.message || "Unknown error")
+      );
     } finally {
       setLoading(false);
     }
@@ -484,10 +486,34 @@ const TeacherAssessmentView = () => {
       }
     } catch (err) {
       console.error("Error unpublishing assessment:", err);
-      setError("Failed to unpublish assessment: " + (err.message || "Unknown error"));
+      setError(
+        "Failed to unpublish assessment: " + (err.message || "Unknown error")
+      );
     } finally {
       setLoading(false);
     }
+  };
+
+  const isVideoUrl = (url) => {
+    if (!url) return false;
+    const videoRegex = /\.(mp4|webm|ogg)$/i;
+    return (
+      videoRegex.test(url) ||
+      url.includes("youtube.com") ||
+      url.includes("youtu.be")
+    );
+  };
+
+  const getYoutubeEmbedUrl = (url) => {
+    if (!url) return null;
+    if (url.includes("youtube.com/watch?v=")) {
+      const videoId = url.split("v=")[1].split("&")[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    } else if (url.includes("youtu.be/")) {
+      const videoId = url.split("youtu.be/")[1];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    return url;
   };
 
   const renderQuestionItem = (question, index) => (
@@ -496,161 +522,61 @@ const TeacherAssessmentView = () => {
       className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-200"
     >
       <div className="p-6">
-        <div className="flex justify-between items-start gap-4">
-          <div className="flex-1">
-            <div className="flex flex-wrap items-center gap-3 mb-3">
-              <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
-                Question {index + 1}
-              </span>
-              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                {question.points} Points
-              </span>
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  question.question_type === "multiple_choice"
-                    ? "bg-purple-100 text-purple-800"
-                    : question.question_type === "true_false"
-                    ? "bg-indigo-100 text-indigo-800"
-                    : question.question_type === "short_answer"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-pink-100 text-pink-800"
-                }`}
-              >
-                {question.question_type
-                  .split("_")
-                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(" ")}
-              </span>
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-start gap-4">
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-3 mb-3">
+                <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                  Question {index + 1}
+                </span>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900">
+                {question.question_text}
+              </h3>
+              {question.media_url && (
+                <div className="mt-4">
+                  {question.media_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                    <img
+                      src={question.media_url}
+                      alt="Question media"
+                      className="max-w-md rounded-lg border border-gray-200"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.display = "none";
+                      }}
+                    />
+                  ) : isVideoUrl(question.media_url) ? (
+                    <div className="relative w-full h-0 pt-[56.25%] max-w-2xl">
+                      <iframe
+                        src={getYoutubeEmbedUrl(question.media_url)}
+                        className="absolute top-0 left-0 w-full h-full rounded-lg border border-gray-200"
+                        allowFullScreen
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        frameBorder="0"
+                      />
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-600 border border-gray-200">
+                      <a
+                        href={question.media_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        View attached media
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-            <p className="text-gray-800 font-medium text-lg">
-              {question.question_text}
-            </p>
-            {question.media_url && (
-              <div className="mt-4">
-                {question.media_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                  <img
-                    src={question.media_url}
-                    alt="Question media"
-                    className="max-w-sm rounded-lg border border-gray-200"
-                  />
-                ) : (
-                  <div className="p-2 bg-gray-50 rounded-lg text-sm text-gray-600 border border-gray-200">
-                    Media URL: {question.media_url}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMenu(showMenu === question.id ? null : question.id);
-              }}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <MoreVertical size={16} className="text-gray-600" />
-            </button>
-            {showMenu === question.id && (
-              <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg z-10 min-w-[120px] overflow-hidden border">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingQuestion({
-                      ...question,
-                      options: question.options?.map((opt) => ({
-                        ...opt,
-                        text: opt.option_text || opt.text || "", // Add this mapping
-                        is_correct: Boolean(opt.is_correct),
-                      })),
-                    });
-                    setShowMenu(null);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
-                >
-                  <Edit2 size={14} className="text-gray-500" />
-                  <span>Edit</span>
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeletingQuestion(question);
-                    setShowMenu(null);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-600 border-t"
-                >
-                  <Trash2 size={14} />
-                  <span>Delete</span>
-                </button>
-              </div>
-            )}
+
+            {/* Points display */}
+            <div className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium whitespace-nowrap">
+              {question.points} Points
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-        {question.question_type === "multiple_choice" && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700 mb-2">Options:</p>
-            {question.options?.map((option) => (
-              <div
-                key={option.id}
-                className={`flex items-center gap-3 p-3 rounded-lg ${
-                  option.is_correct
-                    ? "bg-green-50 text-green-700 border border-green-200"
-                    : "bg-white text-gray-700 border border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                {option.is_correct && (
-                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                )}
-                <span>{option.option_text}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {question.question_type === "true_false" && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700 mb-2">Options:</p>
-            <div className="space-y-2">
-              {question.options?.map((option) => (
-                <div
-                  key={option.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg ${
-                    option.is_correct
-                      ? "bg-green-50 text-green-700 border border-green-200"
-                      : "bg-white text-gray-700 border border-gray-200"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 flex-1">
-                    {option.is_correct && (
-                      <div className="w-2 h-2 rounded-full bg-green-500" />
-                    )}
-                    <span>{option.text || option.option_text}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {(question.question_type === "short_answer" ||
-          question.question_type === "essay") && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700 mb-2">
-              Answer Key / Guidelines:
-            </p>
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700">
-              {question.answer_key || "No answer key provided"}
-            </div>
-            {question.question_type === "essay" && question.word_limit && (
-              <p className="text-sm text-gray-500 mt-2">
-                Word limit: {question.word_limit} words
-              </p>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -869,18 +795,16 @@ const TeacherAssessmentView = () => {
 
   const renderHeader = () => (
     <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 p-8 text-white">
-      <div className="flex justify-between items-start mb-4">
-        <button
-          onClick={() => navigate("/Teacher/Assessment")}
-          className="flex items-center gap-2 text-gray-100 hover:text-[#F6BA18] transition-colors group"
-        >
-          <ArrowLeft
-            size={20}
-            className="group-hover:-translate-x-1 transition-transform"
-          />
-          <span>Back to Assessments</span>
-        </button>
-      </div>
+      <button
+        onClick={() => navigate("/Teacher/Assessment")}
+        className="flex items-center gap-2 text-gray-100 hover:text-[#F6BA18] transition-colors group mb-4"
+      >
+        <ArrowLeft
+          size={20}
+          className="group-hover:-translate-x-1 transition-transform"
+        />
+        <span>Back to Assessments</span>
+      </button>
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold mb-2">{assessmentData?.title}</h1>
@@ -891,13 +815,16 @@ const TeacherAssessmentView = () => {
         </div>
         <div className="text-right">
           <p className="mt-3 text-lg font-semibold">
-            Passing Score: {formatPassingScore(assessmentData?.passing_score/assessmentData?.max_score * 100)}
+            Passing Score:{" "}
+            {formatPassingScore(
+              (assessmentData?.passing_score / assessmentData?.max_score) * 100
+            )}
           </p>
           <p className="text-sm text-gray-300">
             Duration: {assessmentData?.duration_minutes} minutes
           </p>
           <p className="text-sm text-gray-300">
-            Allowed Attempts: {assessment?.allowed_attempts || '1'}
+            Allowed Attempts: {assessment?.allowed_attempts || "1"}
           </p>
         </div>
       </div>
@@ -920,7 +847,6 @@ const TeacherAssessmentView = () => {
           <div className="mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
             {/* Header Section */}
             {renderHeader()}
-
             {/* Instructions Section */}
             <div className="p-6 border-b border-gray-200">
               <div className="bg-gray-50 rounded-xl p-6">
@@ -945,7 +871,7 @@ const TeacherAssessmentView = () => {
                   {assessmentData?.is_published ? (
                     <button
                       onClick={handleUnpublishAssessment}
-                      className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors flex items-center gap-2"
+                      className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center gap-2"
                     >
                       Unpublish
                     </button>
