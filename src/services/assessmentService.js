@@ -735,3 +735,65 @@ export const getUserSubmissionCount = async (assessmentId, includeAnswers = fals
     return { success: false, error: error.message }; // Return error object for better handling
   }
 };
+
+/**
+ * Publishes an assessment
+ * @param {number} assessmentId - The assessment ID to publish
+ * @returns {Promise<Object>} Response object
+ */
+export const publishAssessment = async (assessmentId) => {
+  try {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/assessments/${assessmentId}/publish`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json',
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to publish assessment');
+    }
+
+    return {
+      success: true,
+      message: data.message || 'Assessment published successfully'
+    };
+  } catch (error) {
+    console.error('Error in publishAssessment:', error);
+    throw error;
+  }
+};
+
+/**
+ * Unpublishes an assessment
+ * @param {number} assessmentId - The assessment ID to unpublish
+ * @returns {Promise<Object>} Response object
+ */
+export const unpublishAssessment = async (assessmentId) => {
+  try {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/assessments/${assessmentId}/unpublish`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json',
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to unpublish assessment');
+    }
+
+    return {
+      success: true,
+      message: data.message || 'Assessment unpublished successfully'
+    };
+  } catch (error) {
+    console.error('Error in unpublishAssessment:', error);
+    throw error;
+  }
+};
