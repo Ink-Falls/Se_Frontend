@@ -498,7 +498,7 @@ const LearnerAssessmentView = () => {
               {getStatus(initialSubmission)}
             </span>
           </div>
-          <p className="text-gray-200 flex items-center gap-2">
+          <p aria-label="due" className="text-gray-200 flex items-center gap-2">
             <Clock size={16} />
             Due: {assessment?.due_date && new Date(assessment.due_date).toLocaleDateString()}
           </p>
@@ -507,7 +507,7 @@ const LearnerAssessmentView = () => {
           </p>
         </div>
         <div className="text-right">
-          <p className="text-lg font-semibold">
+          <p aria-label=" pass_score" className="text-lg font-semibold">
             Passing Score: {formatPassingScore(assessmentData?.passing_score/assessmentData?.max_score * 100)}
           </p>
           <p className="text-sm text-gray-300">

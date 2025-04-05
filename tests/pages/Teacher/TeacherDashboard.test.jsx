@@ -1,70 +1,76 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import Dashboard from '../../../src/pages/Teacher/TeacherDashboard';
-import * as courseService from '../../../src/services/courseService';
+import Dashboard from 'Se_Frontend/src/pages/Teacher/TeacherDashboard';
+import * as courseService from 'Se_Frontend/src/services/courseService';
+import { AuthProvider } from 'Se_Frontend/src/contexts/AuthContext'; // Import AuthProvider
 
 // Mock CourseContext
-vi.mock('../../../src/contexts/CourseContext', () => ({
-    useCourse: () => ({
-        setSelectedCourse: vi.fn(),
-    }),
+vi.mock('Se_Frontend/src/contexts/CourseContext', () => ({
+  useCourse: () => ({
+    setSelectedCourse: vi.fn(),
+  }),
 }));
 
 // Mock dependencies
-vi.mock('../../../src/services/courseService');
-vi.mock('../../../src/components/common/layout/Sidebar', () => ({
-    default: ({ navItems }) => (
-        <div data-testid="sidebar">
-            {navItems.map((item, index) => (
-                <div key={index} data-testid="nav-item">
-                    {item.text}
-                </div>
-            ))}
+vi.mock('Se_Frontend/src/services/courseService', () => ({
+  getTeacherCourses: vi.fn(),
+  getUserCourses: vi.fn(),
+}));
+
+vi.mock('Se_Frontend/src/components/common/layout/Sidebar', () => ({
+  default: ({ navItems }) => (
+    <div data-testid="sidebar">
+      {navItems.map((item, index) => (
+        <div key={index} data-testid="nav-item">
+          {item.text}
         </div>
-    ),
+      ))}
+    </div>
+  ),
 }));
-vi.mock('../../../src/components/common/layout/Header', () => ({
-    default: ({ title }) => <div data-testid="header">{title}</div>,
+
+vi.mock('Se_Frontend/src/components/common/layout/Header', () => ({
+  default: ({ title }) => <div data-testid="header">{title}</div>,
 }));
-vi.mock('../../../src/components/common/layout/MobileNavbar', () => ({
-    default: () => <div data-testid="mobile-navbar">MobileNavbar</div>,
+
+vi.mock('Se_Frontend/src/components/common/layout/MobileNavbar', () => ({
+  default: () => <div data-testid="mobile-navbar">MobileNavbar</div>,
 }));
-vi.mock('../../../src/components/common/LoadingSpinner', () => ({
-    default: () => <div data-testid="loading-spinner">Loading...</div>,
+
+vi.mock('Se_Frontend/src/components/common/LoadingSpinner', () => ({
+  default: () => <div data-testid="loading-spinner">Loading...</div>,
 }));
-vi.mock('../../../src/services/courseService', () => ({
-    getTeacherCourses: vi.fn(),
-  }));
+
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
-    const actual = await vi.importActual('react-router-dom');
-    return {
-        ...actual,
-        useNavigate: () => mockNavigate,
-    };
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
 });
 
 const mockCourseData = [
-    {
-        id: 1,
-        name: 'Test Course',
-        code: 'TC101',
-        description: 'Test Description',
-        imageUrl: 'test.jpg',
-        studentCount: 10,
-    },
-    {
-        id: 2,
-        name: 'Another Course',
-        code: 'AC102',
-        description: 'Another Description',
-        imageUrl: 'another.jpg',
-        studentCount: 15,
-    },
+  {
+    id: 1,
+    name: 'Test Course',
+    code: 'TC101',
+    description: 'Test Description',
+    imageUrl: 'test.jpg',
+    studentCount: 10,
+  },
+  {
+    id: 2,
+    name: 'Another Course',
+    code: 'AC102',
+    description: 'Another Description',
+    imageUrl: 'another.jpg',
+    studentCount: 15,
+  },
 ];
 
-describe('TeacherDashboard', () => {
+    describe('TeacherDashboard', () => {
     beforeEach(() => {
         vi.resetAllMocks();
         sessionStorage.clear();
@@ -75,21 +81,26 @@ describe('TeacherDashboard', () => {
 
     const renderDashboard = () => {
         return render(
-            <MemoryRouter>
-                <Dashboard />
-            </MemoryRouter>
+        <MemoryRouter>
+            <AuthProvider> {/* Wrap with AuthProvider */}
+            <Dashboard />
+            </AuthProvider>
+        </MemoryRouter>
         );
     };
 
     describe('Initial Render and Layout', () => {
         it('should render all layout components', async () => {
-            renderDashboard();
-            await waitFor(() => {
-                expect(screen.getByTestId('sidebar')).toBeInTheDocument();
-                expect(screen.getByTestId('header')).toBeInTheDocument();
-                expect(screen.getByTestId('mobile-navbar')).toBeInTheDocument();
-            });
+        renderDashboard();
+        await waitFor(() => {
+            expect(screen.getByTestId('sidebar')).toBeInTheDocument();
+            expect(screen.getByTestId('header')).toBeInTheDocument();
+            expect(screen.getByTestId('mobile-navbar')).toBeInTheDocument();
         });
+        });
+
+  // Add other test cases here...
+
 
         it('should render navigation items correctly', async () => {
             renderDashboard();
@@ -117,7 +128,7 @@ describe('TeacherDashboard', () => {
                 expect(screen.getByText('TC101')).toBeInTheDocument();
                 expect(screen.getByText('AC102')).toBeInTheDocument();
             });
-        });*/
+        });
 
         it('should handle cached data correctly', async () => {
             const cachedData = {
