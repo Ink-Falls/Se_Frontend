@@ -15,10 +15,12 @@ import {
   ClipboardList,
   FileText,
   ExternalLink,
+  Lock,
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import { useAuth } from "../../contexts/AuthContext";
+import { getCourseAssessments, getUserSubmission } from "../../services/assessmentService";
 
 const LearnerCourseModules = () => {
   const { selectedCourse } = useCourse();
@@ -48,6 +50,34 @@ const LearnerCourseModules = () => {
   const [expandedModules, setExpandedModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [moduleAssessments, setModuleAssessments] = useState({});
+  const [submissions, setSubmissions] = useState({});
+
+  const checkAssessmentPassed = (assessment, submission) => {
+    if (!submission || submission.status !== "graded") return false;
+    const score = submission.total_score || 0;
+    const maxScore = assessment.max_score || 100;
+    const percentage = (score / maxScore) * 100;
+    return percentage >= assessment.passing_score;
+  };
+
+  const checkModuleCompleted = (moduleId) => {
+    const moduleAssessmentList = moduleAssessments[moduleId] || [];
+    return moduleAssessmentList.every((assessment) => {
+      const submission = submissions[assessment.id];
+      return submission && checkAssessmentPassed(assessment, submission);
+    });
+  };
+
+  const shouldLockModule = (currentModule) => {
+    const moduleIndex = modules.findIndex(
+      (m) => m.module_id === currentModule.module_id
+    );
+    if (moduleIndex === 0) return false;
+
+    const previousModules = modules.slice(0, moduleIndex);
+    return previousModules.some((module) => !checkModuleCompleted(module.module_id));
+  };
 
   useEffect(() => {
     if (!selectedCourse?.id) {
@@ -69,14 +99,12 @@ const LearnerCourseModules = () => {
           return;
         }
 
-        // Fetch modules for the course
         const response = await getModulesByCourseId(selectedCourse.id);
 
         let modulesArray = Array.isArray(response)
           ? response
           : response?.modules || [];
 
-        // Fetch contents for each module
         const modulesWithContents = await Promise.all(
           modulesArray.map(async (module) => {
             try {
@@ -85,6 +113,7 @@ const LearnerCourseModules = () => {
 
               return {
                 id: moduleId,
+                module_id: moduleId,
                 title: module.name,
                 description: module.description,
                 resources: (contentsResponse?.contents || []).map(
@@ -103,6 +132,7 @@ const LearnerCourseModules = () => {
               );
               return {
                 id: module.module_id || module.id,
+                module_id: module.module_id || module.id,
                 title: module.name,
                 description: module.description,
                 resources: [],
@@ -123,13 +153,48 @@ const LearnerCourseModules = () => {
     fetchModules();
   }, [selectedCourse, navigate]);
 
+  useEffect(() => {
+    const fetchAssessmentsAndSubmissions = async () => {
+      if (!modules.length) return;
+
+      try {
+        const assessmentsByModule = {};
+        let allSubmissions = {};
+
+        for (const module of modules) {
+          const assessmentsResponse = await getCourseAssessments(module.module_id, true);
+          if (assessmentsResponse.success) {
+            const moduleAssessments = assessmentsResponse.assessments.filter(
+              (a) => a.module_id === module.module_id && a.is_published
+            );
+            assessmentsByModule[module.module_id] = moduleAssessments;
+
+            for (const assessment of moduleAssessments) {
+              const submissionResponse = await getUserSubmission(assessment.id, true);
+              if (submissionResponse.success && submissionResponse.submission) {
+                allSubmissions[assessment.id] = submissionResponse.submission;
+              }
+            }
+          }
+        }
+
+        setModuleAssessments(assessmentsByModule);
+        setSubmissions(allSubmissions);
+      } catch (error) {
+        console.error("Error fetching module assessments:", error);
+        setError("Failed to load module data");
+      }
+    };
+
+    fetchAssessmentsAndSubmissions();
+  }, [modules]);
+
   const toggleModule = (id) => {
     setExpandedModules((prev) =>
       prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
     );
   };
 
-  // Replace the loading condition with LoadingSpinner
   if (loading) {
     return (
       <div className="flex h-screen bg-gray-100">
@@ -148,7 +213,6 @@ const LearnerCourseModules = () => {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="flex h-screen bg-gray-100">
@@ -176,7 +240,6 @@ const LearnerCourseModules = () => {
     );
   }
 
-  // Add this condition before the normal render
   if (!loading && modules.length === 0) {
     return (
       <div className="flex h-screen bg-gray-100">
@@ -212,7 +275,122 @@ const LearnerCourseModules = () => {
     );
   }
 
-  // Normal render
+  const renderModule = (module) => {
+    const isLocked = shouldLockModule(module);
+
+    return (
+      <div 
+        key={module.module_id}
+        className={`bg-white rounded-lg shadow-sm overflow-hidden border-l-4 border-yellow-500 ${
+          isLocked ? 'opacity-75' : 'hover:shadow-md'
+        }`}
+      >
+        <div className="p-6 relative">
+          {isLocked && (
+            <div className="absolute inset-0 bg-gray-100/90 backdrop-blur-sm flex items-center justify-center z-10">
+              <div className="text-center p-6">
+                <Lock className="mx-auto h-12 w-12 text-yellow-500 mb-3" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Module Locked</h3>
+                <p className="text-gray-600 max-w-sm">
+                  Complete all assessments in the previous module to unlock this content.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center cursor-pointer">
+            <div className="w-full" onClick={() => toggleModule(module.id)}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-full">
+                  MODULE {modules.indexOf(module) + 1}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {module.createdAt &&
+                    new Date(module.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              <h3 className="font-bold text-xl text-gray-800 mb-1 group-hover:text-yellow-600 transition-colors">
+                {module.title}
+              </h3>
+              <p className="text-gray-600 text-sm leading-relaxed">
+                {module.description}
+              </p>
+            </div>
+
+            <button
+              className="p-2 text-gray-600 hover:text-yellow-600 transition-colors"
+              onClick={() => toggleModule(module.id)}
+            >
+              <ChevronDown
+                size={20}
+                className={`transform transition-transform duration-200 ${
+                  expandedModules.includes(module.id) ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+          </div>
+
+          {expandedModules.includes(module.id) && (
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="flex items-center gap-2 text-gray-700 font-semibold">
+                  <FileText size={18} className="text-yellow-500" />
+                  Learning Resources
+                  <span className="text-xs text-gray-500 font-normal">
+                    ({module.resources?.length || 0} items)
+                  </span>
+                </h4>
+              </div>
+              <div className="space-y-3">
+                {module.resources && module.resources.length > 0 ? (
+                  module.resources.map((resource, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-all duration-200 group"
+                    >
+                      <div className="p-2 bg-yellow-100 rounded-lg mr-3">
+                        <FileText size={18} className="text-yellow-600" />
+                      </div>
+                      <div className="flex-1">
+                        <a
+                          href={resource.link || resource.content}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block"
+                        >
+                          <h5 className="font-medium text-gray-800 mb-0.5 group-hover:text-yellow-600">
+                            {resource.title}
+                          </h5>
+                          <p className="text-sm text-gray-500 truncate">
+                            {resource.link}
+                          </p>
+                        </a>
+                      </div>
+                      <div className="flex items-center">
+                        <a
+                          href={resource.link || resource.content}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 text-gray-400 hover:text-yellow-600 transition-colors"
+                        >
+                          <ExternalLink size={18} />
+                        </a>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                    <p className="text-gray-500">No resources available yet</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar navItems={navItems} />
@@ -224,104 +402,7 @@ const LearnerCourseModules = () => {
         <MobileNavBar navItems={navItems} onLogout={logout} />
 
         <div className="flex flex-col gap-4 mt-4">
-          {modules.map((module, index) => (
-            <div
-              key={module.id}
-              className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg"
-            >
-              <div className="flex justify-between items-center cursor-pointer">
-                <div className="w-full" onClick={() => toggleModule(module.id)}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-full">
-                      MODULE {index + 1}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {module.createdAt &&
-                        new Date(module.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-xl text-gray-800 mb-1 group-hover:text-yellow-600 transition-colors">
-                    {module.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    {module.description}
-                  </p>
-                </div>
-
-                <button
-                  className="p-2 text-gray-600 hover:text-yellow-600 transition-colors"
-                  onClick={() => toggleModule(module.id)}
-                >
-                  <ChevronDown
-                    size={20}
-                    className={`transform transition-transform duration-200 ${
-                      expandedModules.includes(module.id) ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Content List */}
-              {expandedModules.includes(module.id) && (
-                <div className="mt-6 pt-6 border-t border-gray-100">
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="flex items-center gap-2 text-gray-700 font-semibold">
-                      <FileText size={18} className="text-yellow-500" />
-                      Learning Resources
-                      <span className="text-xs text-gray-500 font-normal">
-                        ({module.resources?.length || 0} items)
-                      </span>
-                    </h4>
-                  </div>
-                  <div className="space-y-3">
-                    {module.resources && module.resources.length > 0 ? (
-                      module.resources.map((resource, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-all duration-200 group"
-                        >
-                          <div className="p-2 bg-yellow-100 rounded-lg mr-3">
-                            <FileText size={18} className="text-yellow-600" />
-                          </div>
-                          <div className="flex-1">
-                            <a
-                              href={resource.link || resource.content}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block"
-                            >
-                              <h5 className="font-medium text-gray-800 mb-0.5 group-hover:text-yellow-600">
-                                {resource.title}
-                              </h5>
-                              <p className="text-sm text-gray-500 truncate">
-                                {resource.link}
-                              </p>
-                            </a>
-                          </div>
-                          <div className="flex items-center">
-                            <a
-                              href={resource.link || resource.content}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-2 text-gray-400 hover:text-yellow-600 transition-colors"
-                            >
-                              <ExternalLink size={18} />
-                            </a>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                        <p className="text-gray-500">
-                          No resources available yet
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+          {modules.map((module) => renderModule(module))}
         </div>
       </div>
     </div>

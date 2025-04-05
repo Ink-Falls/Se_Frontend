@@ -31,7 +31,7 @@ import {
   deleteModule,
   getModuleContents,
   addModuleContent,
-  deleteModuleContent, // Add this import
+  deleteModuleContent,
 } from "../../services/moduleService";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCourse } from "../../contexts/CourseContext";
@@ -66,7 +66,7 @@ const TeacherCourseModules = () => {
     {
       text: "Progress Tracker",
       icon: <LineChart size={20} />,
-      route: "/Teacher/ProgressTracker", // Fixed the route path
+      route: "/Teacher/ProgressTracker",
     },
   ];
 
@@ -82,10 +82,9 @@ const TeacherCourseModules = () => {
   const [isCreateContentOpen, setIsCreateContentOpen] = useState(false);
   const [selectedModuleId, setSelectedModuleId] = useState(null);
   const [selectedModule, setSelectedModule] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(""); // Add this line
+  const [successMessage, setSuccessMessage] = useState("");
   const [resourceToDelete, setResourceToDelete] = useState(null);
 
-  // Add this effect to auto-clear success messages
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(() => {
@@ -119,81 +118,7 @@ const TeacherCourseModules = () => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  const fetchModules = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      if (!selectedCourse?.id) {
-        setError(
-          "No course selected. Please select a course from the dashboard."
-        );
-        setLoading(false);
-        return;
-      }
-
-      // Get base module data
-      const response = await getModulesByCourseId(selectedCourse.id);
-      let modulesArray = response?.modules || [];
-
-      if (modulesArray.length === 0 && response.length > 0) {
-        modulesArray = response;
-      }
-
-      // Fetch contents for each module
-      const modulesWithContents = await Promise.all(
-        modulesArray.map(async (module) => {
-          try {
-            const moduleId = module.module_id || module.id;
-            const contentsResponse = await getModuleContents(moduleId);
-            const contents = contentsResponse?.contents || [];
-
-            return {
-              id: moduleId,
-              title: module.name,
-              description: module.description,
-              resources: contents.map((content) => ({
-                id: content.content_id || content.id,
-                title: content.name,
-                link: content.link,
-                content: content.link,
-                type: content.type || "link",
-              })),
-              createdAt: module.createdAt,
-              updatedAt: module.updatedAt,
-            };
-          } catch (error) {
-            console.error(
-              `Error fetching contents for module ${module.id}:`,
-              error
-            );
-            return {
-              id: module.module_id || module.id,
-              title: module.name,
-              description: module.description,
-              resources: [],
-              createdAt: module.createdAt,
-              updatedAt: module.updatedAt,
-            };
-          }
-        })
-      );
-
-      setModules(modulesWithContents);
-    } catch (error) {
-      console.error("Error fetching modules:", error);
-      setError("Failed to connect to server. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (!selectedCourse?.id) {
-      navigate("/Teacher/Dashboard");
-      return;
-    }
-
     const fetchModules = async () => {
       try {
         setLoading(true);
@@ -207,15 +132,13 @@ const TeacherCourseModules = () => {
           return;
         }
 
-        // Get base module data
         const response = await getModulesByCourseId(selectedCourse.id);
-        let modulesArray = response?.modules || [];
+        let modulesArray = Array.isArray(response)
+          ? response
+          : response?.modules || [];
 
-        if (modulesArray.length === 0 && response.length > 0) {
-          modulesArray = response;
-        }
+        modulesArray.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
-        // Fetch contents for each module
         const modulesWithContents = await Promise.all(
           modulesArray.map(async (module) => {
             try {
@@ -274,14 +197,12 @@ const TeacherCourseModules = () => {
         course_id: parseInt(selectedCourse.id),
       };
 
-      // Create the module first
       const newModule = await createModule(selectedCourse.id, moduleData);
 
       if (!newModule) {
         throw new Error("Failed to create module");
       }
 
-      // Process resources if they exist
       const moduleId = newModule.id || newModule.module_id;
       let resources = [];
 
@@ -290,7 +211,6 @@ const TeacherCourseModules = () => {
           (r) => r.title && r.link
         );
 
-        // Add resources sequentially and collect results
         for (const resource of validResources) {
           try {
             const addedResource = await addModuleContent(moduleId, {
@@ -313,7 +233,6 @@ const TeacherCourseModules = () => {
         }
       }
 
-      // Update modules state with the new module including resources
       const newModuleWithResources = {
         id: moduleId,
         title: newModule.name,
@@ -358,7 +277,7 @@ const TeacherCourseModules = () => {
   const confirmDelete = async () => {
     try {
       await deleteModule(moduleToDelete.id);
-      await fetchModules(); // Refresh modules after deletion
+      await fetchModules();
       setModuleToDelete(null);
       setSuccessMessage("Module deleted successfully");
     } catch (error) {
@@ -375,10 +294,8 @@ const TeacherCourseModules = () => {
         content: contentData.content.trim(),
       });
 
-      // Fetch updated contents for the module
       const updatedContents = await getModuleContents(selectedModuleId);
 
-      // Update the specific module with new contents
       setModules((currentModules) =>
         currentModules.map((module) => {
           if (module.id === selectedModuleId) {
@@ -398,10 +315,10 @@ const TeacherCourseModules = () => {
       );
 
       setIsCreateContentOpen(false);
-      setSuccessMessage("Learning resource added successfully"); // Add success message
+      setSuccessMessage("Learning resource added successfully");
     } catch (error) {
       console.error("Error creating content:", error);
-      setError("Failed to add learning resource"); // Update error message
+      setError("Failed to add learning resource");
     }
   };
 
@@ -423,7 +340,7 @@ const TeacherCourseModules = () => {
         }))
       );
       setSuccessMessage("Resource deleted successfully");
-      setResourceToDelete(null); // Clear the resource to delete
+      setResourceToDelete(null);
     } catch (error) {
       console.error("Error deleting resource:", error);
       setError("Failed to delete resource");
@@ -437,7 +354,6 @@ const TeacherCourseModules = () => {
           key={module.id}
           className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg"
         >
-          {/* Module Header */}
           <div className="flex justify-between items-center cursor-pointer">
             <div className="w-full" onClick={() => toggleModule(module.id)}>
               <div className="flex items-center gap-2 mb-2">
@@ -456,7 +372,6 @@ const TeacherCourseModules = () => {
               </p>
             </div>
 
-            {/* Actions Menu */}
             <div className="relative flex items-center gap-1">
               <button
                 onClick={() => handleAddContent(module)}
@@ -503,7 +418,6 @@ const TeacherCourseModules = () => {
             </div>
           </div>
 
-          {/* Content List */}
           {expandedModules.includes(module.id) && (
             <div className="mt-6 pt-6 border-t border-gray-100">
               <div className="flex justify-between items-center mb-4">
@@ -584,7 +498,6 @@ const TeacherCourseModules = () => {
     </div>
   );
 
-  // 1. No Course Selected State
   if (!selectedCourse?.id) {
     return (
       <div className="flex h-screen bg-gray-100">
@@ -612,7 +525,6 @@ const TeacherCourseModules = () => {
     );
   }
 
-  // 2. Loading State
   if (loading) {
     return (
       <div className="flex h-screen bg-gray-100">
@@ -631,7 +543,6 @@ const TeacherCourseModules = () => {
     );
   }
 
-  // 3. Error State
   if (error) {
     return (
       <div className="flex h-screen bg-gray-100">
@@ -669,7 +580,6 @@ const TeacherCourseModules = () => {
     );
   }
 
-  // 4. Empty State
   if (!loading && modules.length === 0) {
     return (
       <div className="flex h-screen bg-gray-100">
@@ -701,7 +611,6 @@ const TeacherCourseModules = () => {
             </div>
           </div>
 
-          {/* Add CreateModuleModal */}
           {isCreateModuleOpen && (
             <CreateModuleModal
               courseId={selectedCourse.id}
@@ -714,7 +623,6 @@ const TeacherCourseModules = () => {
     );
   }
 
-  // 5. Normal render with data
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
@@ -726,16 +634,13 @@ const TeacherCourseModules = () => {
         <div className="relative z-50">
           <MobileNavBar navItems={navItems} />
         </div>
-        {/* Add a container with lower z-index for content */}
         <div className="relative z-0">
-          {/* Add success message display */}
           {successMessage && (
             <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
               {successMessage}
             </div>
           )}
 
-          {/* Keep existing error display */}
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
               {error}
@@ -745,7 +650,6 @@ const TeacherCourseModules = () => {
           {renderModulesList()}
         </div>
 
-        {/* Add Module Button with higher z-index */}
         <button
           onClick={() => setIsAddModuleOpen(true)}
           className="fixed bottom-20 right-8 bg-yellow-500 text-white rounded-full p-4 shadow-lg hover:bg-yellow-600 transition-colors z-40"
@@ -753,7 +657,6 @@ const TeacherCourseModules = () => {
           <Plus size={24} />
         </button>
 
-        {/* Modals */}
         {editingModule && (
           <EditModuleModal
             module={editingModule}
