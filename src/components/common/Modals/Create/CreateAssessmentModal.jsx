@@ -251,7 +251,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div>
-                <label htmlFor="pass_score"className="block text-sm font-medium text-gray-700">
+                <label htmlFor="pass_score" className="block text-sm font-medium text-gray-700">
                   Passing Score
                 </label>
                 <input

@@ -36,6 +36,7 @@ const LearnerAssessmentAttempt = () => {
   const [error, setError] = useState(null);
   const [savingAnswer, setSavingAnswer] = useState(false);
   const [savedAnswers, setSavedAnswers] = useState({});
+  const [timer, setTimer] = useState(null);
 
   const fetchQuestionsWithMedia = async (assessmentId) => {
     try {
@@ -59,6 +60,22 @@ const LearnerAssessmentAttempt = () => {
   useEffect(() => {
     const initializeAttempt = async () => {
       try {
+        // Add this check at the start of initializeAttempt
+        if (!assessment || !location.state) {
+          // If there's no assessment in state, redirect to assessments page
+          navigate("/Learner/Assessment");
+          return;
+        }
+
+        const currentPath = location.pathname;
+        const pathAssessmentId = currentPath.split('/').pop();
+        
+        // Check if URL assessment ID matches the assessment from state
+        if (pathAssessmentId !== assessment.id.toString()) {
+          navigate("/Learner/Assessment");
+          return;
+        }
+
         setLoading(true);
 
         // First get assessment details with questions
@@ -133,17 +150,18 @@ const LearnerAssessmentAttempt = () => {
     initializeAttempt();
   }, [assessment, navigate]);
 
-  // Timer effect with more precise tracking
+  // Timer effect with cleanup
   useEffect(() => {
+    let timerInterval;
+
     if (timeRemaining === null || !submissionId) return;
 
-    // Store end time in localStorage if not already set
     if (!localStorage.getItem(`assessment_end_${submissionId}`)) {
       const endTime = Date.now() + timeRemaining * 1000;
       localStorage.setItem(`assessment_end_${submissionId}`, endTime);
     }
 
-    const timer = setInterval(() => {
+    timerInterval = setInterval(() => {
       const endTime = parseInt(
         localStorage.getItem(`assessment_end_${submissionId}`)
       );
@@ -151,16 +169,21 @@ const LearnerAssessmentAttempt = () => {
 
       if (remaining <= 0) {
         handleSubmitAssessment();
-        clearInterval(timer);
+        clearInterval(timerInterval);
         localStorage.removeItem(`assessment_end_${submissionId}`);
+        localStorage.removeItem(`timer_${assessment.id}`);
         setTimeRemaining(0);
       } else {
         setTimeRemaining(remaining);
       }
     }, 1000);
 
+    setTimer(timerInterval);
+
     return () => {
-      clearInterval(timer);
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
     };
   }, [timeRemaining, submissionId]);
 
@@ -200,11 +223,17 @@ const LearnerAssessmentAttempt = () => {
   // Clean up localStorage when assessment is submitted
   const handleSubmitAssessment = async () => {
     try {
-      const response = await submitAssessment(submissionId, assessment.id); // Add assessment.id here
+      const response = await submitAssessment(submissionId, assessment.id);
       if (response.success) {
-        // Clean up localStorage
+        // Clean up timer-related data from localStorage
         localStorage.removeItem(`assessment_end_${submissionId}`);
         localStorage.removeItem(`ongoing_assessment_${assessment.id}`);
+        localStorage.removeItem(`timer_${assessment.id}`);
+
+        // Clear the timer interval
+        if (timer) {
+          clearInterval(timer);
+        }
 
         navigate(`/Learner/Assessment/View/${assessment.id}`, {
           state: { assessment, submission: response.submission },
