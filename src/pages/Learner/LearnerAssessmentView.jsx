@@ -507,7 +507,7 @@ const LearnerAssessmentView = () => {
           </p>
         </div>
         <div className="text-right">
-          <p aria-label=" pass_score"className="text-lg font-semibold">
+          <p aria-label=" pass_score" className="text-lg font-semibold">
             Passing Score: {formatPassingScore(assessmentData?.passing_score/assessmentData?.max_score * 100)}
           </p>
           <p className="text-sm text-gray-300">
