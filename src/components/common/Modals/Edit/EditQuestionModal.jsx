@@ -25,7 +25,35 @@ const EditQuestionModal = ({
   const validateMediaUrl = (url) => {
     if (!url) return true;
     const imageRegex = /\.(jpg|jpeg|png|gif)$/i;
-    return imageRegex.test(url);
+    const videoRegex = /\.(mp4|webm|ogg)$/i;
+    return (
+      imageRegex.test(url) ||
+      videoRegex.test(url) ||
+      url.includes("youtube.com") ||
+      url.includes("youtu.be")
+    );
+  };
+
+  const isVideoUrl = (url) => {
+    if (!url) return false;
+    const videoRegex = /\.(mp4|webm|ogg)$/i;
+    return (
+      videoRegex.test(url) ||
+      url.includes("youtube.com") ||
+      url.includes("youtu.be")
+    );
+  };
+
+  const getYoutubeEmbedUrl = (url) => {
+    if (!url) return null;
+    if (url.includes("youtube.com/watch?v=")) {
+      const videoId = url.split("v=")[1].split("&")[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    } else if (url.includes("youtu.be/")) {
+      const videoId = url.split("youtu.be/")[1];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    return url;
   };
 
   useEffect(() => {
@@ -335,16 +363,32 @@ const EditQuestionModal = ({
               />
               {formData.media_url && validateMediaUrl(formData.media_url) && (
                 <div className="mt-2">
-                  <img
-                    src={formData.media_url}
-                    alt="Question media preview"
-                    className="max-w-xs rounded-lg border border-gray-200"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.style.display = "none";
-                      setError("Failed to load image preview");
-                    }}
-                  />
+                  {formData.media_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                    <img
+                      src={formData.media_url}
+                      alt="Question media preview"
+                      className="max-w-xs rounded-lg border border-gray-200"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.display = "none";
+                        setError("Failed to load image preview");
+                      }}
+                    />
+                  ) : isVideoUrl(formData.media_url) ? (
+                    <div className="relative w-full max-w-2xl pt-[40%]">
+                      <iframe
+                        src={getYoutubeEmbedUrl(formData.media_url)}
+                        className="absolute top-0 left-0 w-full h-full rounded-lg border border-gray-200"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
+                    </div>
+                  ) : (
+                    <div className="p-2 bg-gray-50 rounded-lg text-sm text-gray-600 border border-gray-200">
+                      Media URL: {formData.media_url}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

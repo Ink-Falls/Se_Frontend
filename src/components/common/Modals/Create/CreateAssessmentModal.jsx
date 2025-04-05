@@ -39,17 +39,10 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
     setError("");
 
     try {
-      // Add validation for passing score
-      if (parseInt(formData.passing_score) > parseInt(formData.max_score)) {
-        setError("Passing score cannot be greater than maximum score");
-        setIsLoading(false);
-        return;
-      }
-
       const assessmentData = {
         ...formData,
         module_id: parseInt(formData.module_id),
-        course_id: selectedCourse.id, // Add course_id from context
+        course_id: selectedCourse.id,
         max_score: parseInt(formData.max_score),
         passing_score: parseInt(formData.passing_score),
         duration_minutes: parseInt(formData.duration_minutes),
@@ -61,10 +54,20 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
         onSuccess(response.assessment);
         onClose();
       } else {
-        throw new Error(response.message || "Failed to create assessment");
+        throw new Error(response.message);
       }
     } catch (err) {
-      setError(err.message || "Failed to create assessment");
+      console.error("Assessment creation error:", err);
+      // Handle specific API errors
+      if (err.response?.status === 400) {
+        setError(err.response.data.message || "Invalid assessment data");
+      } else if (err.response?.status === 403) {
+        setError("You don't have permission to create assessments");
+      } else if (err.response?.status === 409) {
+        setError("An assessment with this title already exists");
+      } else {
+        setError(err.message || "Failed to create assessment");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -98,20 +101,22 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
       try {
         setLoadingModules(true);
         const modulesResponse = await getModulesByCourseId(selectedCourse.id);
-        console.log('Modules response:', modulesResponse); // Debug log
+        console.log("Modules response:", modulesResponse); // Debug log
 
         // Check if modulesResponse is array and has items
         if (Array.isArray(modulesResponse) && modulesResponse.length > 0) {
-          setModuleOptions(modulesResponse.map(module => ({
-            module_id: module.module_id,
-            name: module.name
-          })));
+          setModuleOptions(
+            modulesResponse.map((module) => ({
+              module_id: module.module_id,
+              name: module.name,
+            }))
+          );
         } else {
-          setError('No modules available for this course');
+          setError("No modules available for this course");
         }
       } catch (error) {
-        console.error('Error fetching modules:', error);
-        setError('Failed to load modules');
+        console.error("Error fetching modules:", error);
+        setError("Failed to load modules");
       } finally {
         setLoadingModules(false);
       }
@@ -148,10 +153,12 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              {/* Add Module Selection Dropdown */}
               <div className="col-span-2">
-                <label htmlFor="module_id" className="block text-sm font-medium text-gray-700">
-                  Module
+                <label
+                  htmlFor="module_id"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Module <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="module_id"
@@ -172,8 +179,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div className="col-span-2">
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                  Title
+                <label
+                  htmlFor="title"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Title <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="title"
@@ -187,8 +197,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div className="col-span-2">
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                  Description
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Description <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   id="description"
@@ -202,8 +215,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div>
-                <label htmlFor="type" className="block text-sm font-medium text-gray-700">
-                  Type
+                <label
+                  htmlFor="type"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Type <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="type"
@@ -219,8 +235,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div>
-                <label htmlFor="duration" className="block text-sm font-medium text-gray-700">
-                  Time Limit (minutes)
+                <label
+                  htmlFor="duration"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Time Limit (minutes) <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="duration"
@@ -235,8 +254,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div>
-                <label htmlFor="max_score" className="block text-sm font-medium text-gray-700">
-                  Maximum Score
+                <label
+                  htmlFor="max_score"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Maximum Score <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="max_score"
@@ -251,8 +273,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div>
-                <label htmlFor="pass_score" className="block text-sm font-medium text-gray-700">
-                  Passing Score
+                <label
+                  htmlFor="pass_score"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Passing Score <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="pass_score"
@@ -268,8 +293,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div>
-                <label htmlFor="due_date" className="block text-sm font-medium text-gray-700">
-                  Due Date
+                <label
+                  htmlFor="due_date"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Due Date <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="due_date"
@@ -283,8 +311,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div className="col-span-2">
-                <label htmlFor="instruction" className="block text-sm font-medium text-gray-700">
-                  Instructions
+                <label
+                  htmlFor="instruction"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Instructions <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   id="instruction"
@@ -298,8 +329,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div>
-                <label htmlFor="allowed_attempts" className="block text-sm font-medium text-gray-700">
-                  Allowed Attempts
+                <label
+                  htmlFor="allowed_attempts"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Allowed Attempts <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="allowed_attempts"

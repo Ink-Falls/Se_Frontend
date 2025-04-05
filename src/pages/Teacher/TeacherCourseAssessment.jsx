@@ -274,6 +274,9 @@ const TeacherCourseAssessment = () => {
         setAssessments((prev) =>
           prev.filter((a) => a.id !== assessmentToDelete.id)
         );
+
+        // Fetch updated assessments
+        await fetchAssessments();
         setSuccessMessage("Assessment deleted successfully");
       } else {
         throw new Error(response.message || "Failed to delete assessment");
@@ -320,59 +323,6 @@ const TeacherCourseAssessment = () => {
     } catch (err) {
       console.error("Error updating assessment:", err);
       setError("Failed to update assessment");
-    }
-  };
-
-  const handlePublishToggle = async (e, assessment) => {
-    e.stopPropagation();
-    try {
-      setPublishingId(assessment.id);
-
-      const updatedData = {
-        ...assessment,
-        is_published: !assessment.is_published,
-      };
-
-      const response = await editAssessment(assessment.id, updatedData);
-
-      if (response.success) {
-        // Update local state with the returned assessment
-        const updatedAssessment = {
-          ...assessment,
-          is_published: !assessment.is_published,
-        };
-
-        // Update moduleAssessments
-        setModuleAssessments((prev) => {
-          const updated = { ...prev };
-          Object.keys(updated).forEach((moduleId) => {
-            updated[moduleId] = updated[moduleId].map((a) =>
-              a.id === assessment.id ? updatedAssessment : a
-            );
-          });
-          return updated;
-        });
-
-        // Update assessments array
-        setAssessments((prev) =>
-          prev.map((a) => (a.id === assessment.id ? updatedAssessment : a))
-        );
-
-        setSuccessMessage(
-          `Assessment ${
-            !assessment.is_published ? "published" : "unpublished"
-          } successfully`
-        );
-      }
-    } catch (error) {
-      console.error("Error toggling publish state:", error);
-      setError(
-        `Failed to ${
-          assessment.is_published ? "unpublish" : "publish"
-        } assessment`
-      );
-    } finally {
-      setPublishingId(null);
     }
   };
 
@@ -499,13 +449,12 @@ const TeacherCourseAssessment = () => {
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t">
-            <button
-              onClick={(e) => handlePublishToggle(e, assessment)}
-              disabled={publishingId === assessment.id}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-300 ${
+            {/* Change the button to a status indicator */}
+            <div
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
                 assessment.is_published
-                  ? "bg-green-50 text-green-700 hover:bg-green-100"
-                  : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                  ? "bg-green-50 text-green-700"
+                  : "bg-gray-50 text-gray-600"
               }`}
             >
               <span
@@ -514,13 +463,9 @@ const TeacherCourseAssessment = () => {
                 }`}
               />
               <span className="text-sm font-medium">
-                {publishingId === assessment.id
-                  ? "Updating..."
-                  : assessment.is_published
-                  ? "Published"
-                  : "Draft"}
+                {assessment.is_published ? "Published" : "Draft"}
               </span>
-            </button>
+            </div>
 
             <button
               className="text-sm font-semibold flex items-center gap-1 transition-colors"
@@ -728,14 +673,6 @@ const TeacherCourseAssessment = () => {
             <div className="flex flex-col gap-4 mt-4">
               {renderModulesWithAssessments()}
             </div>
-
-            {/* Floating Action Button - Only shown when there are existing assessments */}
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="fixed bottom-8 right-8 w-14 h-14 bg-[#F6BA18] text-[#212529] rounded-full shadow-lg hover:bg-[#212529] hover:text-[#F6BA18] transition-colors z-50 flex items-center justify-center"
-            >
-              <Plus size={24} />
-            </button>
           </>
         )}
 
