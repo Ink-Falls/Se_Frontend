@@ -1,181 +1,206 @@
-import React, { useState } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
-import { createModule, addModuleContent } from '../../../../services/moduleService';
+import React, { useState } from "react";
+import { X, Plus, Trash2 } from "lucide-react";
+import {
+  createModule,
+  addModuleContent,
+} from "../../../../services/moduleService";
 
 const CreateModuleModal = ({ onClose, onSubmit, courseId }) => {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    resources: []
+    title: "",
+    description: "",
+    resources: [],
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showResources, setShowResources] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const addResource = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      resources: [...prev.resources, { title: '', link: '' }]
+      resources: [...prev.resources, { title: "", link: "" }],
     }));
   };
 
   const updateResource = (index, field, value) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const updatedResources = [...prev.resources];
       updatedResources[index] = {
         ...updatedResources[index],
-        [field]: value
+        [field]: value,
       };
       return { ...prev, resources: updatedResources };
     });
   };
 
   const removeResource = (index) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      resources: prev.resources.filter((_, i) => i !== index)
+      resources: prev.resources.filter((_, i) => i !== index),
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
       if (!formData.title.trim()) {
-        throw new Error('Module title is required');
+        throw new Error("Module title is required");
       }
 
-      // Format module data
+      // Format the data
       const moduleData = {
         name: formData.title.trim(),
         description: formData.description.trim(),
-        course_id: parseInt(courseId)
+        resources: formData.resources
+          .map((resource) => ({
+            title: resource.title.trim(),
+            link: resource.link.trim(),
+          }))
+          .filter((r) => r.title && r.link), // Only include valid resources
       };
 
-      const newModule = await onSubmit(moduleData);
-
-      // Only handle resources if module creation was successful
-      if (newModule && formData.resources.length > 0) {
-        const validResources = formData.resources.filter(r => r.title && r.link);
-        
-        for (const resource of validResources) {
-          try {
-            await addModuleContent(newModule.id || newModule.module_id, {
-              title: resource.title.trim(),
-              type: 'link',
-              content: resource.link.trim()
-            });
-          } catch (resourceError) {
-            console.error('Error adding resource:', resourceError);
-            // Continue with other resources even if one fails
-          }
-        }
-      }
-
-      // Close modal on success
+      // Submit to parent component
+      await onSubmit(moduleData);
       onClose();
     } catch (err) {
-      console.error('Error in module creation:', err);
-      setError(err.message || 'Failed to create module');
+      console.error("Error in module creation:", err);
+      setError(err.message || "Failed to create module");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Create New Module</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            <X size={24} />
-          </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
+        {/* Fixed Header */}
+        <div className="p-6 border-b sticky top-0 bg-white z-10">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Create New Module</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X size={24} />
+            </button>
+          </div>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
-            {error}
-          </div>
-        )}
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
+              {error}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Module Title</label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              placeholder="Enter module title"
-              required
-            />
-          </div>
+          <form onSubmit={handleSubmit} id="moduleForm" className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Module Title
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                placeholder="Enter module title"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              rows={4}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              placeholder="Enter module description"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                rows={4}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                placeholder="Enter module description"
+              />
+            </div>
 
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700">Learning Resources</label>
+            <div>
               <button
                 type="button"
-                onClick={addResource}
-                className="text-[#212529] hover:text-[#F6BA18] flex items-center gap-1"
+                onClick={() => setShowResources(!showResources)}
+                className="flex items-center gap-2 text-[#212529] hover:text-[#F6BA18]"
               >
                 <Plus size={16} />
-                Add Resource
+                {showResources ? "Hide Resources" : "Add Learning Resources"}
               </button>
-            </div>
 
-            <div className="space-y-2">
-              {formData.resources.map((resource, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={resource.title}
-                    onChange={(e) => updateResource(index, 'title', e.target.value)}
-                    placeholder="Resource title"
-                    className="flex-1 rounded-md border border-gray-300 px-3 py-2"
-                  />
-                  <input
-                    type="url"
-                    value={resource.link}
-                    onChange={(e) => updateResource(index, 'link', e.target.value)}
-                    placeholder="Resource link"
-                    className="flex-2 rounded-md border border-gray-300 px-3 py-2"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeResource(index)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 size={20} />
-                  </button>
+              {showResources && (
+                <div className="mt-4 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Learning Resources
+                    </label>
+                    <button
+                      type="button"
+                      onClick={addResource}
+                      className="text-[#212529] hover:text-[#F6BA18] flex items-center gap-1"
+                    >
+                      <Plus size={16} />
+                      Add Resource
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {formData.resources.map((resource, index) => (
+                      <div key={index} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={resource.title}
+                          onChange={(e) =>
+                            updateResource(index, "title", e.target.value)
+                          }
+                          placeholder="Resource title"
+                          className="flex-1 rounded-md border border-gray-300 px-3 py-2"
+                        />
+                        <input
+                          type="url"
+                          value={resource.link}
+                          onChange={(e) =>
+                            updateResource(index, "link", e.target.value)
+                          }
+                          placeholder="Resource link"
+                          className="flex-2 rounded-md border border-gray-300 px-3 py-2"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeResource(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 size={20} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
-          </div>
+          </form>
+        </div>
 
-          <div className="flex justify-end space-x-3 pt-4 border-t">
+        {/* Fixed Footer */}
+        <div className="p-6 border-t sticky bottom-0 bg-white z-10">
+          <div className="flex justify-end space-x-3">
             <button
               type="button"
               onClick={onClose}
@@ -185,13 +210,14 @@ const CreateModuleModal = ({ onClose, onSubmit, courseId }) => {
             </button>
             <button
               type="submit"
+              form="moduleForm"
               disabled={isLoading}
               className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] disabled:opacity-50"
             >
-              {isLoading ? 'Creating...' : 'Create Module'}
+              {isLoading ? "Creating..." : "Create Module"}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

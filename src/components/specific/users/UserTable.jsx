@@ -8,7 +8,9 @@ import {
   Filter,
   Trash2,
   X,
+  RotateCcw,
 } from "lucide-react";
+import RestoreUserModal from "../../common/Modals/Restore/RestoreUserModal";
 
 const UserTable = ({
   users,
@@ -35,6 +37,7 @@ const UserTable = ({
   const ROWS_PER_PAGE = 10;
 
   const [pageInput, setPageInput] = useState(currentPage.toString());
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -84,6 +87,36 @@ const UserTable = ({
     onSearch(query);
   };
 
+  const getSchoolAbbreviation = (schoolName) => {
+    const abbreviations = {
+      1001: "ACES",
+      1002: "UST",
+    };
+    return abbreviations[schoolName] || schoolName;
+  };
+
+  const getFormattedRole = (role) => {
+    const roleMap = {
+      student_teacher: "Student Teacher",
+      admin: "Admin",
+      teacher: "Teacher",
+      learner: "Learner",
+    };
+    return roleMap[role] || role;
+  };
+
+  const handleRowClick = (user) => {
+    if (user.role !== "admin") {
+      onEdit(user);
+    }
+  };
+
+  const handleRestoreSuccess = (message) => {
+    alert(message || "User restored successfully");
+    setIsRestoreModalOpen(false);
+    window.location.reload();
+  };
+
   return (
     <div>
       <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
@@ -123,7 +156,7 @@ const UserTable = ({
 
             <div className="relative py-2 md:py-[0.2vw]">
               <select
-                value={`${sortConfig.key || 'none'}-${sortConfig.direction}`}
+                value={`${sortConfig.key || "none"}-${sortConfig.direction}`}
                 onChange={(e) => {
                   const [key, direction] = e.target.value.split("-");
                   onSort(key === "none" ? null : key, direction);
@@ -165,6 +198,15 @@ const UserTable = ({
           </div>
 
           <div className="flex flex-col md:flex-row w-full md:w-auto gap-2 md:ml-auto">
+            <button
+              onClick={() => setIsRestoreModalOpen(true)}
+              className="flex items-center gap-2 md:gap-[0.3vw] p-2 md:p-[0.4vw] bg-[#212529] md:bg-transparent text-white md:text-[#475569] rounded-lg md:rounded-full text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
+              title="Restore deleted user"
+            >
+              <RotateCcw size={20} className="w-[10] h-[10]" />
+              <span className="md:hidden">Restore User</span>
+            </button>
+
             <button
               onClick={onAddUser}
               className="flex items-center gap-2 md:gap-[0.3vw] p-2 md:p-[0.4vw] bg-[#212529] md:bg-transparent text-white md:text-[#475569] rounded-lg md:rounded-full text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
@@ -214,7 +256,7 @@ const UserTable = ({
                 />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                #
+                ID
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 First Name
@@ -240,24 +282,35 @@ const UserTable = ({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Role
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {users.length === 0 ? (
               <tr>
-                <td colSpan="11" className="px-6 py-8 text-center">
-                  <div className="text-gray-500 text-sm">
-                    No users found matching the selected criteria
+                <td colSpan="10" className="px-6 py-8 text-center">
+                  <div className="flex flex-col items-center justify-center">
+                    <Users size={24} className="text-gray-400 mb-2" />
+                    <div className="text-gray-500 text-sm">
+                      {searchQuery
+                        ? `No users found matching "${searchQuery}"`
+                        : "No users found matching the selected criteria"}
+                    </div>
                   </div>
                 </td>
               </tr>
             ) : (
               users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                <tr
+                  key={user.id}
+                  onClick={() => handleRowClick(user)}
+                  className={`hover:bg-gray-50 transition-colors ${
+                    user.role !== "admin" ? "cursor-pointer" : ""
+                  }`}
+                >
+                  <td
+                    className="px-6 py-4 whitespace-nowrap"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <input
                       type="checkbox"
                       checked={selectedIds.includes(user.id)}
@@ -287,21 +340,10 @@ const UserTable = ({
                     {user.contact_no}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {user.school_name}
+                    {getSchoolAbbreviation(user.school_id)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {user.role}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {user.role !== 'admin' && (
-                      <button
-                        aria-label="Edit"
-                        onClick={() => onEdit(user)}
-                        className="text-black hover:text-gray-700"
-                      >
-                        <SquarePen size={20} />
-                      </button>
-                    )}
+                    {getFormattedRole(user.role)}
                   </td>
                 </tr>
               ))
@@ -311,11 +353,12 @@ const UserTable = ({
 
         <div className="px-6 py-4 flex items-center justify-between border-t">
           <div className="text-sm text-gray-700">
-            {users.length === 0 ? (
-              'No users to display'
-            ) : (
-              `Showing ${((currentPage - 1) * 10) + 1} to ${Math.min(currentPage * 10, totalItems)} of ${totalItems} users`
-            )}
+            {users.length === 0
+              ? "No users to display"
+              : `Showing ${(currentPage - 1) * 10 + 1} to ${Math.min(
+                  currentPage * 10,
+                  totalItems
+                )} of ${totalItems} users`}
           </div>
           <div className="flex space-x-2 items-center">
             <button
@@ -340,6 +383,14 @@ const UserTable = ({
           </div>
         </div>
       </div>
+
+      {isRestoreModalOpen && (
+        <RestoreUserModal
+          isOpen={isRestoreModalOpen}
+          onClose={() => setIsRestoreModalOpen(false)}
+          onSuccess={handleRestoreSuccess}
+        />
+      )}
     </div>
   );
 };

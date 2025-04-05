@@ -19,7 +19,7 @@ import {
   Edit2,
   Trash2,
   ChevronDown,
-  RotateCcw
+  RotateCcw,
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
 import { useNavigate } from "react-router-dom";
@@ -29,7 +29,7 @@ import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // 
 import {
   getCourseAssessments,
   deleteAssessment,
-  editAssessment, 
+  editAssessment,
 } from "../../services/assessmentService";
 import { getModulesByCourseId } from "../../services/moduleService";
 
@@ -289,10 +289,12 @@ const TeacherCourseAssessment = () => {
   const handleEditSubmit = async (updatedAssessment) => {
     try {
       // Keep the existing questions count when updating the assessment in state
-      const currentAssessment = assessments.find(a => a.id === updatedAssessment.id);
+      const currentAssessment = assessments.find(
+        (a) => a.id === updatedAssessment.id
+      );
       const updatedWithQuestions = {
         ...updatedAssessment,
-        questions: currentAssessment.questions || []
+        questions: currentAssessment.questions || [],
       };
 
       // Update moduleAssessments state
@@ -308,7 +310,9 @@ const TeacherCourseAssessment = () => {
 
       // Update assessments array
       setAssessments((prev) =>
-        prev.map((a) => (a.id === updatedAssessment.id ? updatedWithQuestions : a))
+        prev.map((a) =>
+          a.id === updatedAssessment.id ? updatedWithQuestions : a
+        )
       );
 
       setEditingAssessment(null);
@@ -381,11 +385,11 @@ const TeacherCourseAssessment = () => {
       light: "rgba(59, 130, 246, 0.1)",
     },
     exam: {
-      bg: "#EC4899", // Pink
+      bg: "#8B5CF6", // Purple (changed from pink)
       text: "white",
-      hover: "#DB2777",
-      badge: "bg-pink-100 text-pink-800",
-      light: "rgba(236, 72, 153, 0.1)",
+      hover: "#6D28D9",
+      badge: "bg-purple-100 text-purple-800",
+      light: "rgba(139, 92, 246, 0.1)",
     },
     assignment: {
       bg: "#10B981", // Green
@@ -462,9 +466,13 @@ const TeacherCourseAssessment = () => {
                 </span>
               </div>
               <div className="flex items-center text-sm">
-                <RotateCcw className="w-4 h-4 mr-2" style={{ color: color.bg }} />
+                <RotateCcw
+                  className="w-4 h-4 mr-2"
+                  style={{ color: color.bg }}
+                />
                 <span className="text-gray-600 font-medium">
-                  {assessment.allowed_attempts} {assessment.allowed_attempts === 1 ? "attempt" : "attempts"}
+                  {assessment.allowed_attempts}{" "}
+                  {assessment.allowed_attempts === 1 ? "attempt" : "attempts"}
                 </span>
               </div>
             </div>

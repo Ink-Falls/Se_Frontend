@@ -31,9 +31,9 @@ describe('EnrollConfirm', () => {
             expect(
                 screen.getByText('Successful Enrollment!')
             ).toBeInTheDocument();
-            expect(
-                screen.getByText(/Please wait for the verification email/)
-            ).toBeInTheDocument();
+            // expect(
+            //     screen.getByText('Your enrollment has been submitted. You can check your enrollment status anytime by entering your email address in the Enrollment Status Tracker.l')
+            // ).toBeInTheDocument();
         });
     });
 

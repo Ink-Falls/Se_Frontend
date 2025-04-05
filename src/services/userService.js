@@ -311,3 +311,30 @@ export const getUserById = async (userId) => {
     throw error;
   }
 };
+
+/**
+ * Restores a deleted user.
+ * @async
+ * @function restoreUser
+ * @param {string} email - Email of the user to restore
+ * @returns {Promise<Object>} Restored user object
+ * @throws {Error} If the API request fails
+ */
+export const restoreUser = async (email) => {
+  try {
+    const response = await fetchWithInterceptor(`${API_BASE_URL}/users/${email}/restore`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to restore user');
+    }
+    return data;
+  } catch (error) {
+    throw new Error(error.message || 'Failed to restore user');
+  }
+};

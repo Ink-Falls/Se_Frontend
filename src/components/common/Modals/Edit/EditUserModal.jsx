@@ -64,11 +64,12 @@ function EditUserModal({ user, onClose, onSave }) {
         [name]: formattedContactNo,
       }));
     } else if (name === "middle_initial") {
-      // Convert to uppercase and limit to 1 character
+      // Force uppercase and limit to 2 characters
       setEditedUser((prev) => ({
         ...prev,
-        [name]: value.toUpperCase().slice(0, 1),
+        [name]: value.toUpperCase().slice(0, 2),
       }));
+      return; // Exit early after handling middle initial
     } else {
       setEditedUser((prev) => ({
         ...prev,
@@ -221,8 +222,13 @@ function EditUserModal({ user, onClose, onSave }) {
                 type="text"
                 name="middle_initial"
                 value={editedUser.middle_initial || ""}
-                onChange={handleInputChange}
-                maxLength={1}
+                onChange={(e) =>
+                  setEditedUser((prev) => ({
+                    ...prev,
+                    middle_initial: e.target.value.toUpperCase().slice(0, 2),
+                  }))
+                }
+                maxLength={2}
                 className={`mt-1 block w-full px-3 py-2 border ${
                   fieldErrors.middle_initial
                     ? "border-red-500"

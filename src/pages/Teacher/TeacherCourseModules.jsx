@@ -266,40 +266,72 @@ const TeacherCourseModules = () => {
     fetchModules();
   }, [selectedCourse?.id, navigate]);
 
-  const handleCreateModule = async (moduleData) => {
+  const handleCreateModule = async (formattedData) => {
     try {
-      if (!selectedCourse?.id) {
-        throw new Error("No course selected");
-      }
-
-      // Format the data before sending
-      const formattedData = {
-        name: moduleData.name || moduleData.title,
-        description: moduleData.description,
+      const moduleData = {
+        name: formattedData.name,
+        description: formattedData.description,
         course_id: parseInt(selectedCourse.id),
       };
 
-      const newModule = await createModule(selectedCourse.id, formattedData);
+      // Create the module first
+      const newModule = await createModule(selectedCourse.id, moduleData);
 
       if (!newModule) {
         throw new Error("Failed to create module");
       }
 
-      // Explicitly wait for fetchModules to complete
-      await fetchModules();
+      // Process resources if they exist
+      const moduleId = newModule.id || newModule.module_id;
+      let resources = [];
 
-      // Close modals after successful creation and refresh
+      if (formattedData.resources && formattedData.resources.length > 0) {
+        const validResources = formattedData.resources.filter(
+          (r) => r.title && r.link
+        );
+
+        // Add resources sequentially and collect results
+        for (const resource of validResources) {
+          try {
+            const addedResource = await addModuleContent(moduleId, {
+              title: resource.title.trim(),
+              type: "link",
+              content: resource.link.trim(),
+            });
+
+            if (addedResource) {
+              resources.push({
+                id: addedResource.id || addedResource.content_id,
+                title: addedResource.title || addedResource.name,
+                link: addedResource.content || addedResource.link,
+                type: "link",
+              });
+            }
+          } catch (error) {
+            console.error("Error adding resource:", error);
+          }
+        }
+      }
+
+      // Update modules state with the new module including resources
+      const newModuleWithResources = {
+        id: moduleId,
+        title: newModule.name,
+        description: newModule.description,
+        resources: resources,
+        createdAt: newModule.created_at || new Date().toISOString(),
+      };
+
+      setModules((prevModules) => [newModuleWithResources, ...prevModules]);
       setIsCreateModuleOpen(false);
-      setIsAddModuleOpen(false);
-      setSuccessMessage("Module created successfully"); 
+      setSuccessMessage("Module created successfully");
 
-      return newModule;
+      return newModuleWithResources;
     } catch (error) {
       console.error("Error creating module:", error);
       throw error;
     }
   };
-
 
   const handleEdit = (module) => {
     setEditingModule(module);
@@ -316,10 +348,10 @@ const TeacherCourseModules = () => {
         prev.map((m) => (m.id === updatedModule.id ? updatedModule : m))
       );
       setEditingModule(null);
-      setSuccessMessage("Module updated successfully"); 
+      setSuccessMessage("Module updated successfully");
     } catch (error) {
       console.error("Error updating module:", error);
-      setError("Failed to update module"); 
+      setError("Failed to update module");
     }
   };
 
@@ -331,7 +363,7 @@ const TeacherCourseModules = () => {
       setSuccessMessage("Module deleted successfully");
     } catch (error) {
       console.error("Error deleting module:", error);
-      setError("Failed to delete module"); 
+      setError("Failed to delete module");
     }
   };
 
@@ -778,7 +810,12 @@ const TeacherCourseModules = () => {
               }}
             >
               <div className="mb-4">
-                <label htmlFor="title" className="block font-medium text-gray-700">Title</label>
+                <label
+                  htmlFor="title"
+                  className="block font-medium text-gray-700"
+                >
+                  Title
+                </label>
                 <input
                   id="title"
                   type="text"
@@ -789,7 +826,10 @@ const TeacherCourseModules = () => {
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="description" className="block font-medium text-gray-700">
+                <label
+                  htmlFor="description"
+                  className="block font-medium text-gray-700"
+                >
                   Description
                 </label>
                 <textarea
