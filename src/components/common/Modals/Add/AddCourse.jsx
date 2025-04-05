@@ -118,7 +118,10 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
 
         <div className="p-6 overflow-y-auto">
           {error && (
-            <div role="alert" className="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-center gap-2">
+            <div
+              role="alert"
+              className="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-center gap-2"
+            >
               <AlertTriangle size={20} />
               <span>{error}</span>
             </div>
@@ -146,7 +149,7 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                 required
-                data-testid="course-name-input" 
+                data-testid="course-name-input"
               />
             </div>
 
@@ -175,21 +178,14 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
               >
                 Select Teacher
               </label>
-              <select
-                id="user_id" // Ensure this matches the htmlFor attribute of the label
-                name="user_id"
-                value={formData.user_id}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              ></select>
-              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
+              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg divide-y">
                 {availableTeachers.map((teacher) => (
                   <div
                     key={teacher.id}
-                    className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 ${
+                    className={`p-4 cursor-pointer transition-colors duration-200 ${
                       formData.user_id === teacher.id.toString()
-                        ? "bg-yellow-50 border-yellow-500"
-                        : ""
+                        ? "bg-yellow-50 border-l-4 border-yellow-500"
+                        : "hover:bg-gray-50"
                     }`}
                     onClick={() =>
                       setFormData((prev) => ({
@@ -198,13 +194,18 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
                       }))
                     }
                   >
-                    <div className="flex flex-col">
-                      <span className="font-medium">
-                        {`${teacher.first_name} ${teacher.last_name}`}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        {teacher.email}
-                      </span>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {`${teacher.first_name} ${teacher.last_name}`}
+                        </p>
+                        <p className="text-sm text-gray-500">{teacher.email}</p>
+                      </div>
+                      <div className="w-5">
+                        {formData.user_id === teacher.id.toString() && (
+                          <div className="w-4 h-4 rounded-full bg-yellow-500" />
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -218,14 +219,14 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
               >
                 Select Learner Group
               </label>
-              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
+              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg divide-y">
                 {learnerGroups.map((group) => (
                   <div
                     key={group.id}
-                    className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 ${
+                    className={`p-4 cursor-pointer transition-colors duration-200 ${
                       formData.learner_group_id === group.id.toString()
-                        ? "bg-yellow-50 border-yellow-500"
-                        : ""
+                        ? "bg-yellow-50 border-l-4 border-yellow-500"
+                        : "hover:bg-gray-50"
                     }`}
                     onClick={() =>
                       setFormData((prev) => ({
@@ -234,11 +235,20 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
                       }))
                     }
                   >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{group.name}</span>
-                      <span className="text-sm text-gray-500">
-                        Group ID: {group.id}
-                      </span>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {group.name}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Group ID: {group.id}
+                        </p>
+                      </div>
+                      <div className="w-5">
+                        {formData.learner_group_id === group.id.toString() && (
+                          <div className="w-4 h-4 rounded-full bg-yellow-500" />
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -252,14 +262,14 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
               >
                 Select Student Teacher Group
               </label>
-              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
+              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg divide-y">
                 {studentTeacherGroups.map((group) => (
                   <div
                     key={group.id}
-                    className={`p-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 ${
+                    className={`p-4 cursor-pointer transition-colors duration-200 ${
                       formData.student_teacher_group_id === group.id.toString()
-                        ? "bg-yellow-50 border-yellow-500"
-                        : ""
+                        ? "bg-yellow-50 border-l-4 border-yellow-500"
+                        : "hover:bg-gray-50"
                     }`}
                     onClick={() =>
                       setFormData((prev) => ({
@@ -268,11 +278,21 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
                       }))
                     }
                   >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{group.name}</span>
-                      <span className="text-sm text-gray-500">
-                        Group ID: {group.id}
-                      </span>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {group.name}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Group ID: {group.id}
+                        </p>
+                      </div>
+                      <div className="w-5">
+                        {formData.student_teacher_group_id ===
+                          group.id.toString() && (
+                          <div className="w-4 h-4 rounded-full bg-yellow-500" />
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

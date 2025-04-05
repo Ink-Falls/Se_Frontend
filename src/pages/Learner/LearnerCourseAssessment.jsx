@@ -19,7 +19,10 @@ import {
   getCourseAssessments,
   getUserSubmission,
 } from "../../services/assessmentService";
-import { getModulesByCourseId, getModuleGrade } from "../../services/moduleService";
+import {
+  getModulesByCourseId,
+  getModuleGrade,
+} from "../../services/moduleService";
 import { ChevronDown } from "lucide-react";
 
 const typeColors = {
@@ -31,11 +34,11 @@ const typeColors = {
     light: "rgba(59, 130, 246, 0.1)",
   },
   exam: {
-    bg: "#EC4899", // Pink
+    bg: "#8B5CF6", // Purple (changed from pink)
     text: "white",
-    hover: "#DB2777",
-    badge: "bg-pink-100 text-pink-800",
-    light: "rgba(236, 72, 153, 0.1)",
+    hover: "#6D28D9",
+    badge: "bg-purple-100 text-purple-800",
+    light: "rgba(139, 92, 246, 0.1)",
   },
   assignment: {
     bg: "#10B981", // Green
@@ -170,17 +173,17 @@ const LearnerCourseAssessment = () => {
   useEffect(() => {
     const fetchModuleGrades = async () => {
       try {
-        const gradePromises = modules.map(module => 
+        const gradePromises = modules.map((module) =>
           getModuleGrade(module.module_id)
-            .then(data => [module.module_id, data])
+            .then((data) => [module.module_id, data])
             .catch(() => [module.module_id, null])
         );
-        
+
         const grades = await Promise.all(gradePromises);
         const gradesMap = Object.fromEntries(grades);
         setModuleGrades(gradesMap);
       } catch (err) {
-        console.error('Error fetching module grades:', err);
+        console.error("Error fetching module grades:", err);
       }
     };
 
@@ -192,7 +195,10 @@ const LearnerCourseAssessment = () => {
   const getStatus = (submission) => {
     if (!submission) return "Not Started";
     if (submission.is_late) return "Late";
-    return submission.status?.charAt(0).toUpperCase() + submission.status?.slice(1) || "Not Started";
+    return (
+      submission.status?.charAt(0).toUpperCase() +
+        submission.status?.slice(1) || "Not Started"
+    );
   };
 
   const getStatusColor = (status) => {
@@ -223,49 +229,58 @@ const LearnerCourseAssessment = () => {
   const handleAssessmentClick = async (assessment) => {
     try {
       // Check localStorage for existing submission
-      const storedData = localStorage.getItem(`ongoing_assessment_${assessment.id}`);
-      const storedSubmissionId = storedData ? JSON.parse(storedData).submissionId : null;
-      
-      console.log('View Assessment - Initial check:', {
+      const storedData = localStorage.getItem(
+        `ongoing_assessment_${assessment.id}`
+      );
+      const storedSubmissionId = storedData
+        ? JSON.parse(storedData).submissionId
+        : null;
+
+      console.log("View Assessment - Initial check:", {
         assessmentId: assessment.id,
-        storedSubmissionId: storedSubmissionId
+        storedSubmissionId: storedSubmissionId,
       });
-  
+
       // Get current submission from API
       const submissionResponse = await getUserSubmission(assessment.id, true);
       const existingSubmission = submissionResponse?.submission;
-  
+
       // Check if stored submission matches server submission
       let isResumable = false;
       if (storedSubmissionId && existingSubmission) {
-        isResumable = storedSubmissionId === existingSubmission.id && 
-                      existingSubmission.status === 'in_progress';
-        
-        console.log('Submission ID comparison:', {
+        isResumable =
+          storedSubmissionId === existingSubmission.id &&
+          existingSubmission.status === "in_progress";
+
+        console.log("Submission ID comparison:", {
           stored: storedSubmissionId,
           server: existingSubmission.id,
           matches: storedSubmissionId === existingSubmission.id,
           status: existingSubmission.status,
-          isResumable: isResumable
+          isResumable: isResumable,
         });
       }
-  
+
       navigate(`/Learner/Assessment/View/${assessment.id}`, {
-        state: { 
+        state: {
           assessment,
           submission: existingSubmission,
-          status: existingSubmission ? getStatus(existingSubmission) : "Not Started",
-          isResumable: isResumable
-        }
+          status: existingSubmission
+            ? getStatus(existingSubmission)
+            : "Not Started",
+          isResumable: isResumable,
+        },
       });
     } catch (error) {
-      console.error('Error checking submission status:', error);
+      console.error("Error checking submission status:", error);
       navigate(`/Learner/Assessment/View/${assessment.id}`, {
-        state: { 
+        state: {
           assessment,
           submission: submissions[assessment.id],
-          status: submissions[assessment.id] ? getStatus(submissions[assessment.id]) : "Not Started"
-        }
+          status: submissions[assessment.id]
+            ? getStatus(submissions[assessment.id])
+            : "Not Started",
+        },
       });
     }
   };
@@ -283,20 +298,51 @@ const LearnerCourseAssessment = () => {
       return <div className="text-sm text-gray-600">Not Started</div>;
     }
 
-    // Calculate total score considering both auto-graded and manual grades
     const totalPoints = calculateTotalPoints(submission);
     const score =
       submission.answers?.reduce((sum, answer) => {
-        // For manual graded questions (short_answer and essay)
         return sum + (parseInt(answer.points_awarded) || 0);
       }, 0) || 0;
 
-    // Show score if available
+    const percentage = (score / totalPoints) * 100;
+    const isPassed = percentage >= assessment.passing_score;
+
     return (
-      <div className="text-2xl font-bold text-gray-900">
-        {score}/{totalPoints}
+      <div className="flex flex-col items-end">
+        <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-baseline">
+            <span
+              className={`text-2xl font-bold ${
+                isPassed ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {score}
+            </span>
+            <span className="text-gray-500 text-lg">/{totalPoints}</span>
+          </div>
+          {submission.status === "graded" && (
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                isPassed
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {isPassed ? "Passed" : "Failed"}
+            </span>
+          )}
+        </div>
         {submission.status === "graded" && (
-          <div className="text-sm text-gray-500 mt-1">Final Grade</div>
+          <div className="text-xs text-gray-500 mt-1">
+            {isPassed ? (
+              <span>Passed ({percentage.toFixed(1)}%)</span>
+            ) : (
+              <span>
+                Need {assessment.passing_score - percentage.toFixed(1)}% more to
+                pass
+              </span>
+            )}
+          </div>
         )}
       </div>
     );
@@ -316,25 +362,29 @@ const LearnerCourseAssessment = () => {
 
   const calculateAssessmentScore = (submission) => {
     if (!submission?.answers) return 0;
-    
-    const earnedPoints = submission.answers.reduce((total, answer) => 
-      total + (answer.points_awarded || 0), 0);
-    
-    const totalPoints = submission.assessment.questions.reduce((total, question) => 
-      total + (question.points || 0), 0);
-    
+
+    const earnedPoints = submission.answers.reduce(
+      (total, answer) => total + (answer.points_awarded || 0),
+      0
+    );
+
+    const totalPoints = submission.assessment.questions.reduce(
+      (total, question) => total + (question.points || 0),
+      0
+    );
+
     return totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
   };
 
   const checkAssessmentPassed = (assessment, submission) => {
-    if (!submission || submission.status !== 'graded') return false;
+    if (!submission || submission.status !== "graded") return false;
     const score = calculateAssessmentScore(submission);
     return score >= assessment.passing_score;
   };
 
   const checkModuleCompleted = (moduleId) => {
     const moduleAssessmentList = moduleAssessments[moduleId] || [];
-    return moduleAssessmentList.every(assessment => {
+    return moduleAssessmentList.every((assessment) => {
       const submission = submissions[assessment.id];
       return submission && checkAssessmentPassed(assessment, submission);
     });
@@ -342,7 +392,7 @@ const LearnerCourseAssessment = () => {
 
   const findFirstFailedAssessment = (moduleId) => {
     const moduleAssessmentList = moduleAssessments[moduleId] || [];
-    return moduleAssessmentList.find(assessment => {
+    return moduleAssessmentList.find((assessment) => {
       const submission = submissions[assessment.id];
       return !submission || !checkAssessmentPassed(assessment, submission);
     });
@@ -350,18 +400,29 @@ const LearnerCourseAssessment = () => {
 
   const shouldLockModule = (currentModule) => {
     // Get all modules up to the current one
-    const moduleIndex = modules.findIndex(m => m.module_id === currentModule.module_id);
+    const moduleIndex = modules.findIndex(
+      (m) => m.module_id === currentModule.module_id
+    );
     const previousModules = modules.slice(0, moduleIndex);
-    
+
     // Check if all previous modules are completed
-    return previousModules.some(module => !checkModuleCompleted(module.module_id));
+    return previousModules.some(
+      (module) => !checkModuleCompleted(module.module_id)
+    );
   };
 
   const renderAssessmentCard = (assessment) => (
-    <div key={assessment.id} className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-all">
+    <div
+      key={assessment.id}
+      className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-all"
+    >
       {/* Assessment Type Badge */}
       <div className="flex items-center gap-3 mb-4">
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getTypeColor(assessment.type).badge}`}>
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-medium ${
+            getTypeColor(assessment.type).badge
+          }`}
+        >
           {assessment.type.toUpperCase()}
         </span>
       </div>
@@ -373,13 +434,19 @@ const LearnerCourseAssessment = () => {
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div className="space-y-3">
           <div className="flex items-center text-sm">
-            <Clock className="w-4 h-4 mr-2" style={{ color: getTypeColor(assessment.type).bg }} />
+            <Clock
+              className="w-4 h-4 mr-2"
+              style={{ color: getTypeColor(assessment.type).bg }}
+            />
             <span className="text-gray-600 font-medium">
               Time Limit: {assessment.duration_minutes} minutes
             </span>
           </div>
           <div className="flex items-center text-sm">
-            <Award className="w-4 h-4 mr-2" style={{ color: getTypeColor(assessment.type).bg }} />
+            <Award
+              className="w-4 h-4 mr-2"
+              style={{ color: getTypeColor(assessment.type).bg }}
+            />
             <span className="text-gray-600 font-medium">
               Passing: {assessment.passing_score}/{assessment.max_score}
             </span>
@@ -387,13 +454,19 @@ const LearnerCourseAssessment = () => {
         </div>
         <div className="space-y-3">
           <div className="flex items-center text-sm">
-            <Calendar className="w-4 h-4 mr-2" style={{ color: getTypeColor(assessment.type).bg }} />
+            <Calendar
+              className="w-4 h-4 mr-2"
+              style={{ color: getTypeColor(assessment.type).bg }}
+            />
             <span className="text-gray-600 font-medium">
               Due: {formatDate(assessment.due_date)}
             </span>
           </div>
           <div className="flex items-center text-sm">
-            <ClipboardList className="w-4 h-4 mr-2" style={{ color: getTypeColor(assessment.type).bg }} />
+            <ClipboardList
+              className="w-4 h-4 mr-2"
+              style={{ color: getTypeColor(assessment.type).bg }}
+            />
             <span className="text-gray-600 font-medium">
               {assessment.questions?.length || 0} Questions
             </span>
@@ -407,15 +480,19 @@ const LearnerCourseAssessment = () => {
     <div className="space-y-6">
       {modules.map((module) => {
         const isModuleLocked = shouldLockModule(module);
-        const failedAssessment = isModuleLocked ? 
-          findFirstFailedAssessment(modules[modules.findIndex(m => m.module_id === module.module_id) - 1]?.module_id) : 
-          null;
+        const failedAssessment = isModuleLocked
+          ? findFirstFailedAssessment(
+              modules[
+                modules.findIndex((m) => m.module_id === module.module_id) - 1
+              ]?.module_id
+            )
+          : null;
 
         return (
           <div
             key={module.module_id}
             className={`bg-white rounded-lg shadow-sm overflow-hidden ${
-              isModuleLocked ? 'opacity-50' : ''
+              isModuleLocked ? "opacity-50" : ""
             }`}
           >
             <div
@@ -437,21 +514,28 @@ const LearnerCourseAssessment = () => {
                           In Progress
                         </span>
                       ) : (
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          moduleGrades[module.module_id].allPassed 
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {moduleGrades[module.module_id].allPassed ? 'Passed' : 'Failed'}
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            moduleGrades[module.module_id].allPassed
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {moduleGrades[module.module_id].allPassed
+                            ? "Passed"
+                            : "Failed"}
                         </span>
                         // or red for failed?
                       )}
                     </div>
                   )}
                 </div>
-                <p className="text-sm text-gray-600 mt-1">{module.description}</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {module.description}
+                </p>
                 <span className="text-xs text-gray-500 mt-2 inline-block">
-                  {moduleAssessments[module.module_id]?.length || 0} Assessment(s)
+                  {moduleAssessments[module.module_id]?.length || 0}{" "}
+                  Assessment(s)
                 </span>
               </div>
               <ChevronDown
@@ -470,9 +554,9 @@ const LearnerCourseAssessment = () => {
                       Module Locked
                     </h3>
                     <p className="text-gray-600 max-w-md mx-auto">
-                      {failedAssessment ? 
-                        `You need to pass "${failedAssessment.title}" with a score of at least ${failedAssessment.passing_score}% to unlock this module.` :
-                        "Complete all assessments in the previous module to unlock this module."}
+                      {failedAssessment
+                        ? `You need to pass "${failedAssessment.title}" with a score of at least ${failedAssessment.passing_score}% to unlock this module.`
+                        : "Complete all assessments in the previous module to unlock this module."}
                     </p>
                   </div>
                 ) : moduleAssessments[module.module_id]?.length > 0 ? (
@@ -480,8 +564,13 @@ const LearnerCourseAssessment = () => {
                     {moduleAssessments[module.module_id].map((assessment) => {
                       const color = getTypeColor(assessment.type);
                       const submission = submissions[assessment.id];
-                      const score = submission ? calculateAssessmentScore(submission) : 0;
-                      const isPassed = checkAssessmentPassed(assessment, submission);
+                      const score = submission
+                        ? calculateAssessmentScore(submission)
+                        : 0;
+                      const isPassed = checkAssessmentPassed(
+                        assessment,
+                        submission
+                      );
 
                       return (
                         <div
@@ -561,7 +650,8 @@ const LearnerCourseAssessment = () => {
                                     style={{ color: color.bg }}
                                   />
                                   <span className="text-gray-600 font-medium">
-                                    {assessment.questions?.length || 0} Questions
+                                    {assessment.questions?.length || 0}{" "}
+                                    Questions
                                   </span>
                                 </div>
                               </div>
@@ -581,14 +671,6 @@ const LearnerCourseAssessment = () => {
                               {renderSubmissionScore(
                                 submissions[assessment.id],
                                 assessment
-                              )}
-                              {submission?.status === 'graded' && (
-                                <div className={`text-sm mt-2 ${
-                                  isPassed ? 'text-green-600' : 'text-red-600'
-                                }`}>
-                                  Score: {score.toFixed(1)}% 
-                                  {isPassed ? ' (Passed)' : ` (Need ${assessment.passing_score}% to pass)`}
-                                </div>
                               )}
                             </div>
                           </div>

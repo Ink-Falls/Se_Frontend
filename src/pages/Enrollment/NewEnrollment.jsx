@@ -29,6 +29,15 @@ function NewEnrollment() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
+    if (name === "middle_initial") {
+      // Force uppercase and limit to 2 characters
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: value.toUpperCase().slice(0, 2),
+      }));
+      return; // Exit early after handling middle initial
+    }
+
     if (name === "contact_no") {
       let cleanedValue = value.replace(/\D/g, ""); // Remove non-digits
 
@@ -84,8 +93,11 @@ function NewEnrollment() {
         "Last name must be 2-30 characters and contain only letters";
     }
 
-    if (formData.middle_initial && formData.middle_initial.length > 1) {
-      errors.middle_initial = "Middle initial must be a single character";
+    if (
+      formData.middle_initial &&
+      !/^[A-Z]{1,2}$/.test(formData.middle_initial)
+    ) {
+      errors.middle_initial = "Middle initial must be 1-2 uppercase letters";
     }
 
     // Contact number validation
@@ -355,8 +367,22 @@ function NewEnrollment() {
                           id={field.name}
                           name={field.name}
                           value={formData[field.name]}
-                          onChange={handleInputChange}
+                          onChange={(e) => {
+                            if (field.name === "middle_initial") {
+                              setFormData((prev) => ({
+                                ...prev,
+                                middle_initial: e.target.value
+                                  .toUpperCase()
+                                  .slice(0, 2),
+                              }));
+                            } else {
+                              handleInputChange(e);
+                            }
+                          }}
                           required={field.required}
+                          maxLength={
+                            field.name === "middle_initial" ? 2 : undefined
+                          }
                           className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] max-lg:text-[2.5vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                           placeholder={`Enter your ${field.label.toLowerCase()}`}
                         />
