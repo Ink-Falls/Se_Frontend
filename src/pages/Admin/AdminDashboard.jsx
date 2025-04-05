@@ -61,7 +61,7 @@ function AdminDashboard() {
   const [reportUrl, setReportUrl] = useState(null);
   const [reportError, setReportError] = useState(null);
   const [sortConfig, setSortConfig] = useState({
-    key: null,
+    key: "id",
     direction: "asc",
   });
   const [allUsersData, setAllUsersData] = useState([]);
@@ -236,10 +236,16 @@ function AdminDashboard() {
 
         if (response && response.users) {
           const enrichedUsers = enrichUserData(response.users);
-          setAllUsersData(enrichedUsers);
-          setFilteredUsers(enrichedUsers.slice(0, 10));
-          setTotalUsers(enrichedUsers.length);
-          setTotalPages(Math.ceil(enrichedUsers.length / 10));
+
+          // Apply default sorting by ID ascending
+          const sortedUsers = [...enrichedUsers].sort(
+            (a, b) => parseInt(a.id) - parseInt(b.id)
+          );
+
+          setAllUsersData(sortedUsers);
+          setFilteredUsers(sortedUsers.slice(0, 10));
+          setTotalUsers(sortedUsers.length);
+          setTotalPages(Math.ceil(sortedUsers.length / 10));
         }
 
         await fetchTotalCounts();
@@ -257,9 +263,9 @@ function AdminDashboard() {
   const handleFilterChange = async (filter) => {
     setRoleFilter(filter);
     setCurrentPage(1);
-    
+
     // Filter from allUsersData
-    const filtered = allUsersData.filter(user => {
+    const filtered = allUsersData.filter((user) => {
       if (filter === "all") return true;
       return user.role === filter;
     });
@@ -271,49 +277,50 @@ function AdminDashboard() {
 
   const handleSearch = async (query) => {
     setSearchQuery(query);
-    
     let currentData = allUsersData;
 
-    // First apply role filter if exists
+    // Apply role filter
     if (roleFilter !== "all") {
-      currentData = currentData.filter(user => user.role === roleFilter);
+      currentData = currentData.filter((user) => user.role === roleFilter);
     }
 
-    // Then apply search filter
+    // Apply search filter
     if (query.trim() !== "") {
       const searchTerm = query.toLowerCase();
-      currentData = currentData.filter(user => {
-        const fullName = `${user.first_name} ${user.middle_initial || ''} ${user.last_name}`.toLowerCase();
+      currentData = currentData.filter((user) => {
+        const fullName = `${user.first_name} ${user.middle_initial || ""} ${
+          user.last_name
+        }`.toLowerCase();
         const email = user.email.toLowerCase();
-        const contact = user.contact_no || '';
-        return fullName.includes(searchTerm) || 
-               email.includes(searchTerm) || 
-               contact.includes(searchTerm);
+        const contact = user.contact_no || "";
+        return (
+          fullName.includes(searchTerm) ||
+          email.includes(searchTerm) ||
+          contact.includes(searchTerm)
+        );
       });
     }
 
-    // Only update loading state for initial data fetch
-    if (currentData.length === 0 && !isLoading) {
-      setFilteredUsers([]);
-    } else {
-      const startIndex = 0;
-      const endIndex = 10;
-      setFilteredUsers(currentData.slice(startIndex, endIndex));
-      setTotalUsers(currentData.length);
-      setTotalPages(Math.ceil(currentData.length / 10));
-      setCurrentPage(1);
-    }
+    // Sort by ID in descending order
+    currentData.sort((a, b) => b.id - a.id);
+
+    const startIndex = 0;
+    const endIndex = 10;
+    setFilteredUsers(currentData.slice(startIndex, endIndex));
+    setTotalUsers(currentData.length);
+    setTotalPages(Math.ceil(currentData.length / 10));
+    setCurrentPage(1);
   };
 
   const handleSearchCancel = () => {
     setSearchQuery("");
     let currentData = allUsersData;
-    
+
     // Maintain current role filter when clearing search
     if (roleFilter !== "all") {
-      currentData = currentData.filter(user => user.role === roleFilter);
+      currentData = currentData.filter((user) => user.role === roleFilter);
     }
-    
+
     setFilteredUsers(currentData.slice(0, 10));
     setTotalUsers(currentData.length);
     setTotalPages(Math.ceil(currentData.length / 10));
@@ -322,34 +329,74 @@ function AdminDashboard() {
 
   const handleSort = (key, direction) => {
     setSortConfig({ key, direction });
-    
-    let sortedUsers = [...filteredUsers];
-    
-    if (key) {
-      sortedUsers.sort((a, b) => {
-        let compareA, compareB;
-        
-        if (key === 'fullName') {
-          compareA = `${a.first_name} ${a.last_name}`.toLowerCase();
-          compareB = `${b.first_name} ${b.last_name}`.toLowerCase();
-        } else if (key === 'id') {
-          compareA = parseInt(a.id);
-          compareB = parseInt(b.id);
-          return direction === 'asc' ? compareA - compareB : compareB - compareA;
-        } else {
-          compareA = (a[key] || '').toLowerCase();
-          compareB = (b[key] || '').toLowerCase();
-        }
-        
-        if (direction === 'asc') {
-          return compareA.localeCompare(compareB);
-        }
-        return compareB.localeCompare(compareA);
+
+    // Get the full dataset
+    let currentData = [...allUsersData];
+
+    // Apply current filters before sorting
+    if (roleFilter !== "all") {
+      currentData = currentData.filter((user) => user.role === roleFilter);
+    }
+
+    if (searchQuery.trim() !== "") {
+      const searchTerm = searchQuery.toLowerCase();
+      currentData = currentData.filter((user) => {
+        const fullName = `${user.first_name} ${user.middle_initial || ""} ${
+          user.last_name
+        }`.toLowerCase();
+        const email = user.email.toLowerCase();
+        const contact = user.contact_no || "";
+        return (
+          fullName.includes(searchTerm) ||
+          email.includes(searchTerm) ||
+          contact.includes(searchTerm)
+        );
       });
     }
 
-    // Update filtered results with sort
-    setFilteredUsers(sortedUsers);
+    // Apply sorting to full dataset
+    if (key) {
+      currentData.sort((a, b) => {
+        let compareA, compareB;
+
+        if (key === "fullName") {
+          compareA = `${a.first_name} ${a.last_name}`.toLowerCase();
+          compareB = `${b.first_name} ${b.last_name}`.toLowerCase();
+          return direction === "asc"
+            ? compareA.localeCompare(compareB, undefined, {
+                sensitivity: "base",
+              })
+            : compareB.localeCompare(compareA, undefined, {
+                sensitivity: "base",
+              });
+        } else if (key === "id") {
+          compareA = parseInt(a.id);
+          compareB = parseInt(b.id);
+          return direction === "asc"
+            ? compareA - compareB
+            : compareB - compareA;
+        } else {
+          compareA = String(a[key] || "").toLowerCase();
+          compareB = String(b[key] || "").toLowerCase();
+          return direction === "asc"
+            ? compareA.localeCompare(compareB, undefined, {
+                sensitivity: "base",
+              })
+            : compareB.localeCompare(compareA, undefined, {
+                sensitivity: "base",
+              });
+        }
+      });
+    }
+
+    // Update totals and pagination
+    setTotalUsers(currentData.length);
+    setTotalPages(Math.ceil(currentData.length / 10));
+
+    // Get current page slice
+    const startIndex = (currentPage - 1) * 10;
+    const endIndex = startIndex + 10;
+    setFilteredUsers(currentData.slice(startIndex, endIndex));
   };
 
   const handleAddClick = () => {
@@ -390,20 +437,20 @@ function AdminDashboard() {
     try {
       setIsAddModalOpen(false);
       setSuccessMessage("Successfully added user");
-      
+
       // Fetch updated stats after adding new user
       await fetchTotalCounts();
-      
+
       // Update the all users data
       const response = await getAllUsers({ limit: 999999 });
       if (response && Array.isArray(response.users)) {
         const enrichedUsers = enrichUserData(response.users);
         setAllUsersData(enrichedUsers);
-        
+
         // Update filtered users with current filters
         let currentData = enrichedUsers;
         if (roleFilter !== "all") {
-          currentData = currentData.filter(user => user.role === roleFilter);
+          currentData = currentData.filter((user) => user.role === roleFilter);
         }
         setFilteredUsers(currentData.slice(0, 10));
         setTotalUsers(currentData.length);
@@ -429,7 +476,7 @@ function AdminDashboard() {
     try {
       const { password, ...userWithoutPassword } = updatedUser;
       const response = await updateUser(updatedUser.id, userWithoutPassword);
-      
+
       // Close modal and show success message
       setIsEditModalOpen(false);
       setSelectedUser(null);
@@ -440,23 +487,27 @@ function AdminDashboard() {
       if (refreshedData && Array.isArray(refreshedData.users)) {
         const enrichedUsers = enrichUserData(refreshedData.users);
         setAllUsersData(enrichedUsers);
-        
+
         // Update filtered view maintaining current filters
         let currentData = enrichedUsers;
         if (roleFilter !== "all") {
-          currentData = currentData.filter(user => user.role === roleFilter);
+          currentData = currentData.filter((user) => user.role === roleFilter);
         }
-        
+
         // Apply current search if exists
         if (searchQuery.trim() !== "") {
           const searchTerm = searchQuery.toLowerCase();
-          currentData = currentData.filter(user => {
-            const fullName = `${user.first_name} ${user.middle_initial || ''} ${user.last_name}`.toLowerCase();
+          currentData = currentData.filter((user) => {
+            const fullName = `${user.first_name} ${user.middle_initial || ""} ${
+              user.last_name
+            }`.toLowerCase();
             const email = user.email.toLowerCase();
-            const contact = user.contact_no || '';
-            return fullName.includes(searchTerm) || 
-                   email.includes(searchTerm) || 
-                   contact.includes(searchTerm);
+            const contact = user.contact_no || "";
+            return (
+              fullName.includes(searchTerm) ||
+              email.includes(searchTerm) ||
+              contact.includes(searchTerm)
+            );
           });
         }
 
@@ -464,20 +515,22 @@ function AdminDashboard() {
         if (sortConfig.key) {
           currentData.sort((a, b) => {
             let compareA, compareB;
-            
-            if (sortConfig.key === 'fullName') {
+
+            if (sortConfig.key === "fullName") {
               compareA = `${a.first_name} ${a.last_name}`.toLowerCase();
               compareB = `${b.first_name} ${b.last_name}`.toLowerCase();
-            } else if (sortConfig.key === 'id') {
+            } else if (sortConfig.key === "id") {
               compareA = parseInt(a.id);
               compareB = parseInt(b.id);
-              return sortConfig.direction === 'asc' ? compareA - compareB : compareB - compareA;
+              return sortConfig.direction === "asc"
+                ? compareA - compareB
+                : compareB - compareA;
             } else {
-              compareA = (a[sortConfig.key] || '').toLowerCase();
-              compareB = (b[sortConfig.key] || '').toLowerCase();
+              compareA = (a[sortConfig.key] || "").toLowerCase();
+              compareB = (b[sortConfig.key] || "").toLowerCase();
             }
-            
-            if (sortConfig.direction === 'asc') {
+
+            if (sortConfig.direction === "asc") {
               return compareA.localeCompare(compareB);
             }
             return compareB.localeCompare(compareA);
@@ -486,7 +539,7 @@ function AdminDashboard() {
 
         const startIndex = (currentPage - 1) * 10;
         const endIndex = startIndex + 10;
-        
+
         setFilteredUsers(currentData.slice(startIndex, endIndex));
         setTotalUsers(currentData.length);
         setTotalPages(Math.ceil(currentData.length / 10));
@@ -494,7 +547,6 @@ function AdminDashboard() {
 
       // Refresh stats
       await fetchTotalCounts();
-
     } catch (error) {
       console.error("Error saving user:", error);
       throw error;
@@ -507,49 +559,63 @@ function AdminDashboard() {
 
   const handlePageChange = async (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
-      // Get current filtered data
-      let currentData = allUsersData;
-      
+      // Get full dataset and apply current filters and sort
+      let currentData = [...allUsersData];
+
       // Apply role filter
       if (roleFilter !== "all") {
-        currentData = currentData.filter(user => user.role === roleFilter);
+        currentData = currentData.filter((user) => user.role === roleFilter);
       }
-      
+
       // Apply search filter
       if (searchQuery.trim() !== "") {
-        currentData = currentData.filter(user => {
-          const searchTerm = searchQuery.toLowerCase();
-          const fullName = `${user.first_name} ${user.middle_initial || ''} ${user.last_name}`.toLowerCase();
+        const searchTerm = searchQuery.toLowerCase();
+        currentData = currentData.filter((user) => {
+          const fullName = `${user.first_name} ${user.middle_initial || ""} ${
+            user.last_name
+          }`.toLowerCase();
           const email = user.email.toLowerCase();
-          const contact = user.contact_no || '';
-          
-          return fullName.includes(searchTerm) || 
-                 email.includes(searchTerm) || 
-                 contact.includes(searchTerm);
+          const contact = user.contact_no || "";
+          return (
+            fullName.includes(searchTerm) ||
+            email.includes(searchTerm) ||
+            contact.includes(searchTerm)
+          );
         });
       }
-      
+
       // Apply current sort if exists
       if (sortConfig.key) {
         currentData.sort((a, b) => {
           let compareA, compareB;
-          
-          if (sortConfig.key === 'fullName') {
+
+          if (sortConfig.key === "fullName") {
             compareA = `${a.first_name} ${a.last_name}`.toLowerCase();
             compareB = `${b.first_name} ${b.last_name}`.toLowerCase();
-          } else if (sortConfig.key === 'id') {
+            return sortConfig.direction === "asc"
+              ? compareA.localeCompare(compareB, undefined, {
+                  sensitivity: "base",
+                })
+              : compareB.localeCompare(compareA, undefined, {
+                  sensitivity: "base",
+                });
+          } else if (sortConfig.key === "id") {
             compareA = parseInt(a.id);
             compareB = parseInt(b.id);
-            return sortConfig.direction === 'asc' ? compareA - compareB : compareB - compareA;
+            return sortConfig.direction === "asc"
+              ? compareA - compareB
+              : compareB - compareA;
           } else {
-            compareA = (a[sortConfig.key] || '').toLowerCase();
-            compareB = (b[sortConfig.key] || '').toLowerCase();
+            compareA = String(a[sortConfig.key] || "").toLowerCase();
+            compareB = String(b[sortConfig.key] || "").toLowerCase();
+            return sortConfig.direction === "asc"
+              ? compareA.localeCompare(compareB, undefined, {
+                  sensitivity: "base",
+                })
+              : compareB.localeCompare(compareA, undefined, {
+                  sensitivity: "base",
+                });
           }
-          
-          if (sortConfig.direction === 'asc') {
-            return compareA.localeCompare(compareB);
-          }
-          return compareB.localeCompare(compareA);
         });
       }
 

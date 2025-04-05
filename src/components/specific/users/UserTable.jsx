@@ -8,7 +8,9 @@ import {
   Filter,
   Trash2,
   X,
+  RotateCcw,
 } from "lucide-react";
+import RestoreUserModal from "../../common/Modals/Restore/RestoreUserModal";
 
 const UserTable = ({
   users,
@@ -35,6 +37,7 @@ const UserTable = ({
   const ROWS_PER_PAGE = 10;
 
   const [pageInput, setPageInput] = useState(currentPage.toString());
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -106,6 +109,12 @@ const UserTable = ({
     if (user.role !== "admin") {
       onEdit(user);
     }
+  };
+
+  const handleRestoreSuccess = (message) => {
+    alert(message || "User restored successfully");
+    setIsRestoreModalOpen(false);
+    window.location.reload();
   };
 
   return (
@@ -190,6 +199,15 @@ const UserTable = ({
 
           <div className="flex flex-col md:flex-row w-full md:w-auto gap-2 md:ml-auto">
             <button
+              onClick={() => setIsRestoreModalOpen(true)}
+              className="flex items-center gap-2 md:gap-[0.3vw] p-2 md:p-[0.4vw] bg-[#212529] md:bg-transparent text-white md:text-[#475569] rounded-lg md:rounded-full text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
+              title="Restore deleted user"
+            >
+              <RotateCcw size={20} className="w-[10] h-[10]" />
+              <span className="md:hidden">Restore User</span>
+            </button>
+
+            <button
               onClick={onAddUser}
               className="flex items-center gap-2 md:gap-[0.3vw] p-2 md:p-[0.4vw] bg-[#212529] md:bg-transparent text-white md:text-[#475569] rounded-lg md:rounded-full text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black w-full md:w-auto justify-center"
             >
@@ -238,7 +256,7 @@ const UserTable = ({
                 />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                #
+                ID
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 First Name
@@ -365,6 +383,14 @@ const UserTable = ({
           </div>
         </div>
       </div>
+
+      {isRestoreModalOpen && (
+        <RestoreUserModal
+          isOpen={isRestoreModalOpen}
+          onClose={() => setIsRestoreModalOpen(false)}
+          onSuccess={handleRestoreSuccess}
+        />
+      )}
     </div>
   );
 };
