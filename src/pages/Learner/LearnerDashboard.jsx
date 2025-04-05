@@ -114,7 +114,7 @@ const LearnerDashboard = () => {
               >
                 {/* Image Container with Gradient Overlay */}
                 <div className="relative h-40 overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/80 z-10 transition-colors duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent group-hover:from-black/60 z-10 transition-colors duration-300" />
                   <img
                     src={course.imageUrl}
                     alt={course.name}
