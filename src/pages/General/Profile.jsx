@@ -161,8 +161,8 @@ function Profile() {
 
   const getSchoolName = (schoolId) => {
     const schools = {
-      1001: "Asuncion Consunji Elementary School (ACES)",
-      1002: "University of Santo Tomas (UST)",
+      1001: "University of Santo Tomas (UST)",
+      1002: "Asuncion Consunji Elementary School (ACES)",
     };
     return schools[schoolId] || "N/A";
   };
@@ -448,9 +448,9 @@ function Profile() {
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
             >
               <option value="1001">
-                Asuncion Consunji Elementary School (ACES)
+                University of Santo Tomas (UST)
               </option>
-              <option value="1002">University of Santo Tomas (UST)</option>
+              <option value="1002">Asuncion Consunji Elementary School (ACES)</option>
             </select>
           </div>
         </div>
