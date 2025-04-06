@@ -328,39 +328,46 @@ const CreateQuestionModal = ({
         {questionData.question_type === "true_false" && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Correct Answer
+              Select Correct Answer
             </label>
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  id="true"
-                  name="correct_answer"
-                  value="true"
-                  checked={questionData.correct_answer === "true"}
-                  onChange={handleInputChange}
-                  className="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300"
-                  required
-                />
-                <label htmlFor="true" className="text-sm text-gray-700">
-                  True
-                </label>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  id="false"
-                  name="correct_answer"
-                  value="false"
-                  checked={questionData.correct_answer === "false"}
-                  onChange={handleInputChange}
-                  className="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300"
-                  required
-                />
-                <label htmlFor="false" className="text-sm text-gray-700">
-                  False
-                </label>
-              </div>
+              {[
+                { text: "True", id: "true" },
+                { text: "False", id: "false" },
+              ].map((option) => (
+                <div
+                  key={option.id}
+                  className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                    questionData.correct_answer === option.id
+                      ? "bg-green-50 border-green-200"
+                      : "bg-gray-50 border-gray-200"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      id={option.id}
+                      name="correct_answer"
+                      value={option.id}
+                      checked={questionData.correct_answer === option.id}
+                      onChange={handleInputChange}
+                      className="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300"
+                      required
+                    />
+                    <label
+                      htmlFor={option.id}
+                      className="text-sm text-gray-700"
+                    >
+                      {option.text}
+                    </label>
+                  </div>
+                  {questionData.correct_answer === option.id && (
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                      Correct Answer
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}
