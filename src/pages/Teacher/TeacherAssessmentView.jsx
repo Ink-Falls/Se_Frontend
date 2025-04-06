@@ -70,6 +70,9 @@ const TeacherAssessmentView = () => {
     direction: "desc", // Changed from 'asc'
   });
   const [showMenu, setShowMenu] = useState(null); // Add this line
+  const [isLoading, setIsLoading] = useState(false); // Add loading state for operations
+  const [questionErrors, setQuestionErrors] = useState({}); // Add this state
+  const [questionSuccessMessages, setQuestionSuccessMessages] = useState({}); // Add this state
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -174,8 +177,19 @@ const TeacherAssessmentView = () => {
 
         if (response.success && response.assessment) {
           const assessmentData = response.assessment;
-          setAssessmentData(assessmentData);
-          setQuestions(assessmentData.questions || []);
+          // Sort and reindex questions
+          const sortedQuestions = [...(assessmentData.questions || [])]
+            .sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
+            .map((q, idx) => ({
+              ...q,
+              order_index: idx + 1,
+            }));
+
+          setAssessmentData({
+            ...assessmentData,
+            questions: sortedQuestions,
+          });
+          setQuestions(sortedQuestions);
 
           // Format due date
           if (assessmentData.due_date) {
@@ -341,32 +355,124 @@ const TeacherAssessmentView = () => {
     }
   }, [error]);
 
+  // Add effect to clear question errors after timeout
+  useEffect(() => {
+    const timers = {};
+
+    // For each question error, set a timeout to clear it
+    Object.keys(questionErrors).forEach((questionId) => {
+      if (questionErrors[questionId]) {
+        timers[questionId] = setTimeout(() => {
+          setQuestionErrors((prev) => ({
+            ...prev,
+            [questionId]: null,
+          }));
+        }, 5000); // 5 seconds timeout
+      }
+    });
+
+    // Cleanup timers on unmount or when questionErrors changes
+    return () => {
+      Object.values(timers).forEach((timer) => clearTimeout(timer));
+    };
+  }, [questionErrors]);
+
+  // Add effect to clear question success messages after timeout
+  useEffect(() => {
+    const timers = {};
+
+    Object.keys(questionSuccessMessages).forEach((questionId) => {
+      if (questionSuccessMessages[questionId]) {
+        timers[questionId] = setTimeout(() => {
+          setQuestionSuccessMessages((prev) => ({
+            ...prev,
+            [questionId]: null,
+          }));
+        }, 3000);
+      }
+    });
+
+    return () => {
+      Object.values(timers).forEach((timer) => clearTimeout(timer));
+    };
+  }, [questionSuccessMessages]);
+
+  // Update the validateQuestion function to throw specific errors
+  const validateQuestion = (questionData) => {
+    const errors = [];
+
+    if (!questionData.question_text.trim()) {
+      errors.push("Question text is required");
+    }
+
+    const currentPoints =
+      questions?.reduce((sum, q) => {
+        // Don't include the current question's points if we're editing
+        if (questionData.id && q.id === questionData.id) return sum;
+        return sum + (parseInt(q.points) || 0);
+      }, 0) || 0;
+
+    const newPoints = parseInt(questionData.points) || 0;
+    const maxScore = assessmentData?.max_score || 0;
+
+    if (newPoints <= 0) {
+      errors.push("Points must be greater than 0");
+    }
+
+    const totalAfterAdding = currentPoints + newPoints;
+    if (totalAfterAdding > maxScore) {
+      errors.push(
+        `Total points (${totalAfterAdding}) would exceed maximum score (${maxScore})`
+      );
+    }
+
+    if (errors.length > 0) {
+      throw new Error(errors.join(". "));
+    }
+  };
+
   const handleCreateQuestion = async (questionData) => {
     try {
-      console.log("Creating question with data:", questionData);
+      setIsLoading(true);
+      setError(null);
+      setQuestionErrors({});
+
+      validateQuestion(questionData);
+
+      if (!questionData.id) {
+        const currentMaxOrder = Math.max(
+          ...questions.map((q) => q.order_index || 0),
+          0
+        );
+        questionData.order_index = currentMaxOrder + 1;
+      }
+
       const response = await createAssessmentQuestion(
         assessment.id,
         questionData
       );
 
       if (response.success) {
-        const updatedAssessment = await getAssessmentById(
-          assessment.id,
-          true,
-          true
-        );
-        if (updatedAssessment.success) {
-          setQuestions(updatedAssessment.assessment.questions || []);
-          setIsCreateQuestionOpen(false);
-          setSuccessMessage("Question added successfully");
-        }
+        setQuestionSuccessMessages((prev) => ({
+          ...prev,
+          [response.question.id]: "Question added successfully",
+        }));
+        window.location.reload();
       } else {
         throw new Error(response.message || "Failed to create question");
       }
     } catch (err) {
-      console.error("Error creating question:", err);
-      // Pass the error message to the modal through onSubmit rejection
-      throw new Error(err.message || "Failed to create question");
+      // If this is for a specific question, set the error for that question
+      if (questionData.id) {
+        setQuestionErrors((prev) => ({
+          ...prev,
+          [questionData.id]: err.message,
+        }));
+      } else {
+        setError(err.message);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -419,20 +525,33 @@ const TeacherAssessmentView = () => {
     }
   }, [location.state?.submission?.id]);
 
+  // Update delete handler with auto-close on error
   const handleQuestionDelete = async () => {
     try {
+      setIsLoading(true);
+      setQuestionErrors({});
+
       const response = await deleteQuestion(assessment.id, deletingQuestion.id);
       if (response.success) {
         setQuestions((prev) =>
           prev.filter((q) => q.id !== deletingQuestion.id)
         );
         setDeletingQuestion(null);
-        setSuccessMessage("Question deleted successfully"); // Updated this line
+        setSuccessMessage("Question deleted successfully");
       } else {
-        throw new Error(response.message || "Failed to delete question");
+        throw new Error(response.message);
       }
     } catch (err) {
-      setError(err.message || "Failed to delete question");
+      setQuestionErrors((prev) => ({
+        ...prev,
+        [deletingQuestion.id]: err.message,
+      }));
+      // Auto-close delete modal after error
+      setTimeout(() => {
+        setDeletingQuestion(null);
+      }, 1000);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -456,22 +575,23 @@ const TeacherAssessmentView = () => {
     }
   };
 
+  // Update publish/unpublish handlers with consistent error handling
   const handlePublishAssessment = async () => {
     try {
+      setIsLoading(true);
+      setError(null);
+
       const response = await publishAssessment(assessment.id);
       if (response.success) {
-        setSuccessMessage("Assessment published successfully");
         setAssessmentData((prev) => ({ ...prev, is_published: true }));
+        setSuccessMessage("Assessment published successfully");
       } else {
-        throw new Error("Failed to publish assessment");
+        throw new Error(response.message);
       }
     } catch (err) {
-      console.error("Error publishing assessment:", err);
-      setError(
-        "Failed to publish assessment: " + (err.message || "Unknown error")
-      );
+      setError(err.message || "Failed to publish assessment");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -516,70 +636,257 @@ const TeacherAssessmentView = () => {
     return url;
   };
 
+  // Update the renderQuestionItem function to show errors and success messages
   const renderQuestionItem = (question, index) => (
     <div
       key={question.id}
-      className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-200"
+      className="bg-white rounded-xl border border-gray-200 overflow-hidden transition-all duration-200 hover:border-yellow-400"
     >
+      {/* Show question-specific error if it exists */}
+      {questionErrors[question.id] && (
+        <div className="bg-red-50 border-b border-red-200 p-3">
+          <p className="text-red-600 text-sm">{questionErrors[question.id]}</p>
+        </div>
+      )}
+      {/* Show question-specific success message if it exists */}
+      {questionSuccessMessages[question.id] && (
+        <div className="bg-green-50 border-b border-green-200 p-3">
+          <p className="text-green-600 text-sm">
+            {questionSuccessMessages[question.id]}
+          </p>
+        </div>
+      )}
+
       <div className="p-6">
         <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-start gap-4">
+          <div className="flex justify-between items-start">
             <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-3 mb-3">
-                <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
-                  Question {index + 1}
-                </span>
+              {/* Question header - Use order_index instead of array index */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">
+                    Question {index + 1}
+                  </span>
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium capitalize">
+                    {question.question_type.replace("_", " ")}
+                  </span>
+                  <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                    {question.points} Points
+                  </span>
+                </div>
+                {/* Control buttons */}
+                <div className="flex gap-2 ml-auto">
+                  <button
+                    onClick={() => setEditingQuestion(question)}
+                    className="p-2 text-gray-600 hover:text-yellow-600 rounded-lg hover:bg-yellow-50 transition-colors"
+                    title="Edit question"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  <button
+                    onClick={() => setDeletingQuestion(question)}
+                    className="p-2 text-gray-600 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                    title="Delete question"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
-              <h3 className="text-lg font-medium text-gray-900">
+
+              {/* Question text */}
+              <h3 className="text-lg text-gray-900 mb-4 font-medium">
                 {question.question_text}
               </h3>
-              {question.media_url && (
-                <div className="mt-4">
-                  {question.media_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                    <img
-                      src={question.media_url}
-                      alt="Question media"
-                      className="max-w-md rounded-lg border border-gray-200"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.style.display = "none";
-                      }}
-                    />
-                  ) : isVideoUrl(question.media_url) ? (
-                    <div className="relative w-full h-0 pt-[56.25%] max-w-2xl">
-                      <iframe
-                        src={getYoutubeEmbedUrl(question.media_url)}
-                        className="absolute top-0 left-0 w-full h-full rounded-lg border border-gray-200"
-                        allowFullScreen
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        frameBorder="0"
-                      />
-                    </div>
-                  ) : (
-                    <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-600 border border-gray-200">
-                      <a
-                        href={question.media_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        View attached media
-                      </a>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
 
-            {/* Points display */}
-            <div className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium whitespace-nowrap">
-              {question.points} Points
+              {/* Answer options */}
+              <div className="space-y-3">
+                {question.question_type === "multiple_choice" && (
+                  <div className="grid gap-2">
+                    {question.options?.map((option, i) => (
+                      <div
+                        key={i}
+                        className={`p-3 rounded-lg flex items-center justify-between ${
+                          option.is_correct
+                            ? "bg-green-50 border-2 border-green-200"
+                            : "bg-gray-50 border border-gray-200"
+                        }`}
+                      >
+                        <span
+                          className={
+                            option.is_correct
+                              ? "text-green-700"
+                              : "text-gray-700"
+                          }
+                        >
+                          {option.text || option.option_text}
+                        </span>
+                        {option.is_correct && (
+                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                            Correct Answer
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* True/False options */}
+                {question.question_type === "true_false" && (
+                  <div className="grid gap-2">
+                    {question.options?.map((option, i) => (
+                      <div
+                        key={i}
+                        className={`p-3 rounded-lg flex items-center justify-between ${
+                          option.is_correct
+                            ? "bg-green-50 border-2 border-green-200"
+                            : "bg-gray-50 border border-gray-200"
+                        }`}
+                      >
+                        <span
+                          className={
+                            option.is_correct
+                              ? "text-green-700"
+                              : "text-gray-700"
+                          }
+                        >
+                          {option.text || option.option_text}
+                        </span>
+                        {option.is_correct && (
+                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                            Correct Answer
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Short Answer/Essay */}
+                {(question.question_type === "short_answer" ||
+                  question.question_type === "essay") && (
+                  <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-100">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-blue-800">
+                        Answer Key/Guidelines
+                      </span>
+                      {question.question_type === "essay" &&
+                        question.word_limit && (
+                          <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                            Word limit: {question.word_limit}
+                          </span>
+                        )}
+                    </div>
+                    <p className="text-blue-700 whitespace-pre-wrap">
+                      {question.answer_key}
+                    </p>
+                  </div>
+                )}
+
+                {/* Media section - updated with better styling */}
+                {question.media_url && (
+                  <div className="mt-6 bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <FileText size={16} className="text-gray-500" />
+                        <span className="text-sm font-medium text-gray-700">
+                          Attached Media
+                        </span>
+                      </div>
+
+                      {question.media_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                        <img
+                          src={question.media_url}
+                          alt="Question media"
+                          className="w-full max-h-[400px] object-contain rounded-lg border border-gray-200"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.style.display = "none";
+                            e.target.parentElement.innerHTML +=
+                              '<p class="text-red-500 text-sm">Failed to load image</p>';
+                          }}
+                        />
+                      ) : isVideoUrl(question.media_url) ? (
+                        <div className="relative w-full max-w-[500px] mx-auto aspect-[16/9]">
+                          <iframe
+                            src={getYoutubeEmbedUrl(question.media_url)}
+                            className="absolute inset-0 w-full h-full rounded-lg border border-gray-200"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          ></iframe>
+                        </div>
+                      ) : (
+                        <a
+                          href={question.media_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          <LinkIcon size={16} />
+                          <span>View attached media</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Media section */}
+                {question.media_url && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    {/* ...existing media rendering code... */}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
   );
+
+  // Update header section styles
+  const renderHeader = () => (
+    <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 p-8 text-white">
+      <button
+        onClick={() => navigate("/Teacher/Assessment")}
+        className="flex items-center gap-2 text-gray-100 hover:text-[#F6BA18] transition-colors group mb-4"
+      >
+        <ArrowLeft
+          size={20}
+          className="group-hover:-translate-x-1 transition-transform"
+        />
+        <span>Back to Assessments</span>
+      </button>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">{assessmentData?.title}</h1>
+          <p className="text-gray-200 flex items-center gap-2">
+            <Clock size={16} />
+            Due: {assessmentData?.formattedDueDate}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="mt-3 text-lg font-semibold">
+            Passing Score:{" "}
+            {formatPassingScore(
+              (assessmentData?.passing_score / assessmentData?.max_score) * 100
+            )}
+          </p>
+          <p className="text-sm text-gray-300">
+            Duration: {assessmentData?.duration_minutes} minutes
+          </p>
+          <p className="text-sm text-gray-300">
+            Allowed Attempts: {assessment?.allowed_attempts || "1"}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const handleDeleteSuccess = (message) => {
+    alert(message || "Assessment deleted successfully");
+    navigate("/Teacher/Assessment");
+  };
 
   const renderPagination = () => {
     if (!totalPages || totalPages <= 1) return null;
@@ -654,9 +961,9 @@ const TeacherAssessmentView = () => {
   };
 
   const renderSubmissionsSection = () => (
-    <div className="p-4 md:p-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-4">
-        <h3 className="text-lg md:text-xl font-semibold text-gray-800">
+    <div className="p-6 bg-white rounded-xl shadow-sm">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-semibold text-gray-800">
           Student Submissions
         </h3>
         <div className="flex flex-wrap gap-2 md:gap-4">
@@ -793,44 +1100,53 @@ const TeacherAssessmentView = () => {
     return `${passingScore}%`;
   };
 
-  const renderHeader = () => (
-    <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 p-4 md:p-8 text-white">
+  // Update the button sections to show loading state
+  const renderActionButtons = () => (
+    <div className="flex gap-2">
+      {assessmentData?.is_published ? (
+        <button
+          onClick={handleUnpublishAssessment}
+          disabled={isLoading}
+          className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center gap-2"
+        >
+          {isLoading ? "Processing..." : "Click to Unpublish"}
+        </button>
+      ) : (
+        <button
+          onClick={handlePublishAssessment}
+          disabled={isLoading}
+          className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center gap-2"
+        >
+          {isLoading ? "Processing..." : "Click to Publish"}
+        </button>
+      )}
       <button
-        onClick={() => navigate("/Teacher/Assessment")}
-        className="flex items-center gap-2 text-gray-100 hover:text-[#F6BA18] transition-colors group mb-4"
+        onClick={() => setIsCreateQuestionOpen(true)}
+        disabled={isLoading}
+        className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors flex items-center gap-2"
       >
-        <ArrowLeft
-          size={20}
-          className="group-hover:-translate-x-1 transition-transform"
-        />
-        <span>Back to Assessments</span>
+        <Plus size={20} />
+        Add Question
       </button>
-      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-        <div>
-          <h1 className="text-xl md:text-3xl font-bold mb-2">{assessmentData?.title}</h1>
-          <p className="text-gray-200 flex items-center gap-2 text-sm md:text-base">
-            <Clock size={16} />
-            Due: {assessmentData?.formattedDueDate}
-          </p>
-        </div>
-        <div className="text-left md:text-right">
-          <p className="mt-1 md:mt-3 text-base md:text-lg font-semibold">
-            Passing Score: {formatPassingScore((assessmentData?.passing_score / assessmentData?.max_score) * 100)}
-          </p>
-          <p className="text-xs md:text-sm text-gray-300">
-            Duration: {assessmentData?.duration_minutes} minutes
-          </p>
-          <p className="text-xs md:text-sm text-gray-300">
-            Allowed Attempts: {assessment?.allowed_attempts || "1"}
-          </p>
-        </div>
-      </div>
     </div>
   );
 
-  const handleDeleteSuccess = (message) => {
-    alert(message || "Assessment deleted successfully");
-    navigate("/Teacher/Assessment");
+  // Update the question list after edit to maintain order
+  const handleQuestionEdit = async (updatedQuestion) => {
+    try {
+      setQuestionErrors({}); // Clear existing errors
+      setEditingQuestion(null);
+      setQuestionSuccessMessages((prev) => ({
+        ...prev,
+        [updatedQuestion.id]: "Question updated successfully",
+      }));
+      window.location.reload();
+    } catch (err) {
+      setQuestionErrors((prev) => ({
+        ...prev,
+        [updatedQuestion.id]: err.message,
+      }));
+    }
   };
 
   return (
@@ -861,33 +1177,10 @@ const TeacherAssessmentView = () => {
             {renderSubmissionsSection()}
 
             {/* Questions Section */}
-            <div className="mt-4 md:mt-6 bg-white rounded-xl shadow-sm p-4 md:p-6">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-4">
-                <h3 className="text-lg md:text-xl font-semibold">Questions</h3>
-                <div className="flex flex-wrap gap-2">
-                  {assessmentData?.is_published ? (
-                    <button
-                      onClick={handleUnpublishAssessment}
-                      className="px-3 md:px-4 py-1.5 md:py-2 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center gap-2"
-                    >
-                      Unpublish
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handlePublishAssessment}
-                      className="px-3 md:px-4 py-1.5 md:py-2 text-sm bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center gap-2"
-                    >
-                      Publish
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setIsCreateQuestionOpen(true)}
-                    className="px-3 md:px-4 py-1.5 md:py-2 text-sm bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors flex items-center gap-2"
-                  >
-                    <Plus size={20} />
-                    Add Question
-                  </button>
-                </div>
+            <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-semibold">Questions</h3>
+                {renderActionButtons()}
               </div>
 
               {/* Add success message display */}
@@ -944,15 +1237,7 @@ const TeacherAssessmentView = () => {
           onClose={() => setEditingQuestion(null)}
           question={editingQuestion}
           assessmentId={assessment.id}
-          onSuccess={(updatedQuestion) => {
-            setQuestions((prev) =>
-              prev.map((q) =>
-                q.id === updatedQuestion.id ? updatedQuestion : q
-              )
-            );
-            setEditingQuestion(null);
-            setSuccessMessage("Question updated successfully"); // Add this line
-          }}
+          onSuccess={handleQuestionEdit}
         />
       )}
 
