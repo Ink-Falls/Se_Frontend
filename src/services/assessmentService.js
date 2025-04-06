@@ -220,91 +220,101 @@ export const createAssessmentQuestion = async (assessmentId, questionData) => {
  */
 export const createSubmission = async (assessmentId) => {
   try {
-    // Check localStorage first for any existing submission
-    const storedData = localStorage.getItem(`ongoing_assessment_${assessmentId}`);
-    const storedSubmissionId = storedData ? JSON.parse(storedData).submissionId : null;
+    if (!assessmentId) {
+      throw new Error('Assessment ID is required');
+    }
+
+    // Add atomic lock with timestamp
+    const lockKey = `submission_creating_${assessmentId}`;
+    const existingLock = localStorage.getItem(lockKey);
     
-    // If we have a stored submission ID, try to fetch its details first
-    if (storedSubmissionId) {
-      try {
-        const submissionDetails = await getSubmissionDetails(storedSubmissionId);
-        if (submissionDetails.success && 
-            submissionDetails.submission.status === 'in_progress' && 
-            submissionDetails.submission.assessment_id === parseInt(assessmentId)) {
-          return {
-            success: true,
-            submission: submissionDetails.submission,
-            isExisting: true,
-            savedAnswers: submissionDetails.submission.answers || []
-          };
-        }
-      } catch (error) {
-        console.warn('Failed to fetch stored submission details:', error);
+    if (existingLock) {
+      // Wait for any in-progress creation to finish
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Check if submission was created during wait
+      const storedSubmission = localStorage.getItem(`ongoing_assessment_${assessmentId}`);
+      if (storedSubmission) {
+        const parsed = JSON.parse(storedSubmission);
+        console.log('Using submission created by parallel process:', parsed);
+        return {
+          success: true,
+          submission: {
+            id: parsed.submissionId,
+            start_time: parsed.startTime,
+            status: 'in_progress'
+          },
+          isExisting: true
+        };
       }
     }
 
-    // Check existing submissions first
-    const userSubmissions = await getUserSubmission(assessmentId, true);
-    const completedSubmissions = userSubmissions.submissions?.filter(s => 
-      s.status === 'submitted' || s.status === 'graded'
-    ) || [];
+    // Set creation lock
+    localStorage.setItem(lockKey, Date.now().toString());
 
-    // Always try to create submission first
     try {
-      const response = await fetchWithInterceptor(`${API_BASE_URL}/assessments/${assessmentId}/submissions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Check for existing submission one last time
+      const existingData = localStorage.getItem(`ongoing_assessment_${assessmentId}`);
+      if (existingData) {
+        const parsed = JSON.parse(existingData);
+        if (parsed.submissionId) {
+          return {
+            success: true,
+            submission: {
+              id: parsed.submissionId,
+              start_time: parsed.startTime,
+              status: 'in_progress'
+            },
+            isExisting: true
+          };
         }
-      });
+      }
+
+      // Create new submission with debounce
+      console.log('Creating new submission on server');
+      const response = await fetchWithInterceptor(
+        `${API_BASE_URL}/assessments/${assessmentId}/submissions`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
 
       const data = await response.json();
       
-      if (response.ok) {
-        // Store submission data and return success
-        localStorage.setItem(`ongoing_assessment_${assessmentId}`, JSON.stringify({
-          submissionId: data.submission.id,
-          startTime: data.submission.start_time
-        }));
-        
-        return {
-          ...data,
-          isExisting: false,
-          savedAnswers: []
-        };
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create submission');
       }
 
-      // If error and no completed submissions, force first attempt
-      if (response.status === 400 && completedSubmissions.length === 0) {
-        const firstAttemptResponse = await fetchWithInterceptor(
-          `${API_BASE_URL}/assessments/${assessmentId}/submissions`, 
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ force_first_attempt: true })
-          }
-        );
+      const submissionData = {
+        success: true,
+        submission: data.submission,
+        isExisting: false,
+        savedAnswers: []
+      };
 
-        if (firstAttemptResponse.ok) {
-          const firstAttemptData = await firstAttemptResponse.json();
-          localStorage.setItem(`ongoing_assessment_${assessmentId}`, JSON.stringify({
-            submissionId: firstAttemptData.submission.id,
-            startTime: firstAttemptData.submission.start_time
-          }));
-          
-          return {
-            ...firstAttemptData,
-            isExisting: false,
-            savedAnswers: []
-          };
-        }
-      }
+      // Store in localStorage atomically
+      const storageData = {
+        submissionId: data.submission.id,
+        startTime: data.submission.start_time,
+        assessmentId,
+        timestamp: Date.now()
+      };
 
-      throw new Error(data.message || 'Failed to create submission');
-    } catch (error) {
-      console.error('Error creating submission:', error);
-      throw error;
+      localStorage.setItem(`ongoing_assessment_${assessmentId}`, 
+        JSON.stringify(storageData)
+      );
+
+      console.log('New submission stored:', data.submission.id);
+      return submissionData;
+
+    } finally {
+      // Remove lock after a delay to prevent race conditions
+      setTimeout(() => {
+        localStorage.removeItem(lockKey);
+      }, 1000);
     }
+
   } catch (error) {
     console.error('Error in createSubmission:', error);
     throw error;
@@ -401,26 +411,23 @@ export const saveQuestionAnswer = async (submissionId, questionId, answerData) =
   }
 };
 
-export const submitAssessment = async (submissionId, assessmentId = null) => {
+export const submitAssessment = async (submissionId, assessmentId) => {
   try {
     if (!submissionId) {
       throw new Error('Submission ID is required');
     }
-    
-    if (!assessmentId) {
-      // Try to get the assessment ID from localStorage as fallback
-      const storedData = localStorage.getItem(`ongoing_assessment_${assessmentId}`);
-      if (storedData) {
-        const parsedData = JSON.parse(storedData);
-        assessmentId = parsedData.assessmentId;
+
+    // Verify this is the correct submission ID from storage
+    const storedData = localStorage.getItem(`ongoing_assessment_${assessmentId}`);
+    if (storedData) {
+      const parsed = JSON.parse(storedData);
+      if (parsed.submissionId !== submissionId) {
+        console.warn('Submission ID mismatch. Stored:', parsed.submissionId, 'Current:', submissionId);
+        // Use the stored submission ID instead
+        submissionId = parsed.submissionId;
       }
     }
-    
-    if (!assessmentId) {
-      throw new Error('Assessment ID not found for submission');
-    }
 
-    // Always set status to 'submitted' for learner submissions
     const status = 'submitted';
     const submit_time = new Date().toISOString();
 
@@ -434,7 +441,7 @@ export const submitAssessment = async (submissionId, assessmentId = null) => {
         body: JSON.stringify({
           status,
           submit_time,
-          assessment_id: assessmentId // Include assessment_id in the request
+          assessment_id: assessmentId
         })
       }
     );
@@ -444,11 +451,15 @@ export const submitAssessment = async (submissionId, assessmentId = null) => {
       throw new Error(data.message || 'Failed to submit assessment');
     }
 
-    // Clean up all related localStorage items
+    // Clean up ALL related localStorage items
     localStorage.removeItem(`submission_${submissionId}_time`);
     localStorage.removeItem(`ongoing_assessment_${assessmentId}`);
+    localStorage.removeItem(`assessment_end_${submissionId}`);
+    localStorage.removeItem(`submission_lock_${assessmentId}`);
+    localStorage.removeItem(`timer_${assessmentId}`);
 
     return {
+      success: true,
       ...data,
       submit_time
     };
