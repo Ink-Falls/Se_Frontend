@@ -412,37 +412,32 @@ const LearnerAssessmentView = () => {
 
   const handleStartNewAttempt = async () => {
     try {
-      const storedSubmissionData = localStorage.getItem(`ongoing_assessment_${assessment.id}`);
-      let storedSubmissionId = null;
+      setLoading(true);
       
-      if (storedSubmissionData) {
-        const parsedData = JSON.parse(storedSubmissionData);
-        storedSubmissionId = parsedData.submissionId;
-        console.log('Found stored submission before start:', storedSubmissionId);
+      // First, check if there's an existing attempt
+      const existingData = localStorage.getItem(`ongoing_assessment_${assessment.id}`);
+      if (existingData) {
+        const parsed = JSON.parse(existingData);
+        console.log('Found existing attempt:', parsed);
       }
-  
-      const submissionResponse = await getUserSubmission(assessment.id, true);
-      let existingSubmission = null;
-  
-      if (submissionResponse.success && submissionResponse.submission?.status === 'in_progress') {
-        existingSubmission = submissionResponse.submission;
-        console.log('Submission validation:', {
-          storedId: storedSubmissionId,
-          existingId: existingSubmission.id,
-          matches: storedSubmissionId === existingSubmission.id,
-          status: existingSubmission.status
-        });
-      }
-  
+
+      // Clear ALL related localStorage items
+      localStorage.removeItem(`ongoing_assessment_${assessment.id}`);
+      localStorage.removeItem(`assessment_end_${assessment.id}`);
+      localStorage.removeItem(`timer_${assessment.id}`);
+
+      // Navigate with a flag indicating this is a fresh attempt
       navigate(`/Learner/Assessment/Attempt/${assessment.id}`, {
         state: { 
           assessment,
-          submission: existingSubmission 
+          isNewAttempt: true 
         }
       });
     } catch (error) {
-      console.error('Error validating submission:', error);
+      console.error('Error starting assessment:', error);
       setError('Failed to start assessment. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
