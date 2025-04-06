@@ -71,6 +71,8 @@ const TeacherAssessmentView = () => {
   });
   const [showMenu, setShowMenu] = useState(null); // Add this line
   const [isLoading, setIsLoading] = useState(false); // Add loading state for operations
+  const [questionErrors, setQuestionErrors] = useState({}); // Add this state
+  const [questionSuccessMessages, setQuestionSuccessMessages] = useState({}); // Add this state
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -353,36 +355,79 @@ const TeacherAssessmentView = () => {
     }
   }, [error]);
 
-  // Add validation function
+  // Add effect to clear question errors after timeout
+  useEffect(() => {
+    const timers = {};
+
+    // For each question error, set a timeout to clear it
+    Object.keys(questionErrors).forEach((questionId) => {
+      if (questionErrors[questionId]) {
+        timers[questionId] = setTimeout(() => {
+          setQuestionErrors((prev) => ({
+            ...prev,
+            [questionId]: null,
+          }));
+        }, 5000); // 5 seconds timeout
+      }
+    });
+
+    // Cleanup timers on unmount or when questionErrors changes
+    return () => {
+      Object.values(timers).forEach((timer) => clearTimeout(timer));
+    };
+  }, [questionErrors]);
+
+  // Add effect to clear question success messages after timeout
+  useEffect(() => {
+    const timers = {};
+
+    Object.keys(questionSuccessMessages).forEach((questionId) => {
+      if (questionSuccessMessages[questionId]) {
+        timers[questionId] = setTimeout(() => {
+          setQuestionSuccessMessages((prev) => ({
+            ...prev,
+            [questionId]: null,
+          }));
+        }, 3000);
+      }
+    });
+
+    return () => {
+      Object.values(timers).forEach((timer) => clearTimeout(timer));
+    };
+  }, [questionSuccessMessages]);
+
+  // Update the validateQuestion function to throw specific errors
   const validateQuestion = (questionData) => {
+    const errors = [];
+
     if (!questionData.question_text.trim()) {
-      throw new Error("Question text is required");
+      errors.push("Question text is required");
     }
 
-    // Calculate current total points from existing questions
     const currentPoints =
-      questions?.reduce((sum, q) => sum + (parseInt(q.points) || 0), 0) || 0;
+      questions?.reduce((sum, q) => {
+        // Don't include the current question's points if we're editing
+        if (questionData.id && q.id === questionData.id) return sum;
+        return sum + (parseInt(q.points) || 0);
+      }, 0) || 0;
+
     const newPoints = parseInt(questionData.points) || 0;
     const maxScore = assessmentData?.max_score || 0;
 
-    // Points validation
     if (newPoints <= 0) {
-      throw new Error("Points must be greater than 0");
+      errors.push("Points must be greater than 0");
     }
 
     const totalAfterAdding = currentPoints + newPoints;
-
     if (totalAfterAdding > maxScore) {
-      throw new Error(
-        `Cannot add question worth ${newPoints} points. ` +
-          `Current total (${currentPoints}) plus new points (${newPoints}) ` +
-          `would exceed maximum score (${maxScore})`
+      errors.push(
+        `Total points (${totalAfterAdding}) would exceed maximum score (${maxScore})`
       );
     }
 
-    // For new questions, always add at the end
-    if (!questionData.id) {
-      questionData.order_index = questions.length + 1;
+    if (errors.length > 0) {
+      throw new Error(errors.join(". "));
     }
   };
 
@@ -390,10 +435,10 @@ const TeacherAssessmentView = () => {
     try {
       setIsLoading(true);
       setError(null);
+      setQuestionErrors({});
 
       validateQuestion(questionData);
 
-      // Ensure order_index is properly set
       if (!questionData.id) {
         const currentMaxOrder = Math.max(
           ...questions.map((q) => q.order_index || 0),
@@ -408,13 +453,24 @@ const TeacherAssessmentView = () => {
       );
 
       if (response.success) {
-        setSuccessMessage("Question added successfully");
-        window.location.reload(); // Force reload after adding
+        setQuestionSuccessMessages((prev) => ({
+          ...prev,
+          [response.question.id]: "Question added successfully",
+        }));
+        window.location.reload();
       } else {
         throw new Error(response.message || "Failed to create question");
       }
     } catch (err) {
-      setError(err.message || "Failed to create question");
+      // If this is for a specific question, set the error for that question
+      if (questionData.id) {
+        setQuestionErrors((prev) => ({
+          ...prev,
+          [questionData.id]: err.message,
+        }));
+      } else {
+        setError(err.message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -469,11 +525,11 @@ const TeacherAssessmentView = () => {
     }
   }, [location.state?.submission?.id]);
 
-  // Update delete handler with better error handling
+  // Update delete handler with auto-close on error
   const handleQuestionDelete = async () => {
     try {
       setIsLoading(true);
-      setError(null);
+      setQuestionErrors({});
 
       const response = await deleteQuestion(assessment.id, deletingQuestion.id);
       if (response.success) {
@@ -486,7 +542,14 @@ const TeacherAssessmentView = () => {
         throw new Error(response.message);
       }
     } catch (err) {
-      setError(err.message || "Failed to delete question");
+      setQuestionErrors((prev) => ({
+        ...prev,
+        [deletingQuestion.id]: err.message,
+      }));
+      // Auto-close delete modal after error
+      setTimeout(() => {
+        setDeletingQuestion(null);
+      }, 1000);
     } finally {
       setIsLoading(false);
     }
@@ -573,11 +636,27 @@ const TeacherAssessmentView = () => {
     return url;
   };
 
+  // Update the renderQuestionItem function to show errors and success messages
   const renderQuestionItem = (question, index) => (
     <div
       key={question.id}
       className="bg-white rounded-xl border border-gray-200 overflow-hidden transition-all duration-200 hover:border-yellow-400"
     >
+      {/* Show question-specific error if it exists */}
+      {questionErrors[question.id] && (
+        <div className="bg-red-50 border-b border-red-200 p-3">
+          <p className="text-red-600 text-sm">{questionErrors[question.id]}</p>
+        </div>
+      )}
+      {/* Show question-specific success message if it exists */}
+      {questionSuccessMessages[question.id] && (
+        <div className="bg-green-50 border-b border-green-200 p-3">
+          <p className="text-green-600 text-sm">
+            {questionSuccessMessages[question.id]}
+          </p>
+        </div>
+      )}
+
       <div className="p-6">
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-start">
@@ -1028,9 +1107,9 @@ const TeacherAssessmentView = () => {
         <button
           onClick={handleUnpublishAssessment}
           disabled={isLoading}
-          className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors flex items-center gap-2"
+          className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center gap-2"
         >
-          {isLoading ? "Processing..." : "Unpublish"}
+          {isLoading ? "Processing..." : "Click to Unpublish"}
         </button>
       ) : (
         <button
@@ -1038,7 +1117,7 @@ const TeacherAssessmentView = () => {
           disabled={isLoading}
           className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center gap-2"
         >
-          {isLoading ? "Processing..." : "Publish"}
+          {isLoading ? "Processing..." : "Click to Publish"}
         </button>
       )}
       <button
@@ -1053,10 +1132,21 @@ const TeacherAssessmentView = () => {
   );
 
   // Update the question list after edit to maintain order
-  const handleQuestionEdit = (updatedQuestion) => {
-    setEditingQuestion(null);
-    setSuccessMessage("Question updated successfully");
-    window.location.reload(); // Force reload after editing
+  const handleQuestionEdit = async (updatedQuestion) => {
+    try {
+      setQuestionErrors({}); // Clear existing errors
+      setEditingQuestion(null);
+      setQuestionSuccessMessages((prev) => ({
+        ...prev,
+        [updatedQuestion.id]: "Question updated successfully",
+      }));
+      window.location.reload();
+    } catch (err) {
+      setQuestionErrors((prev) => ({
+        ...prev,
+        [updatedQuestion.id]: err.message,
+      }));
+    }
   };
 
   return (
