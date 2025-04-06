@@ -412,37 +412,30 @@ const LearnerAssessmentView = () => {
 
   const handleStartNewAttempt = async () => {
     try {
-      const storedSubmissionData = localStorage.getItem(`ongoing_assessment_${assessment.id}`);
-      let storedSubmissionId = null;
+      setLoading(true);
       
-      if (storedSubmissionData) {
-        const parsedData = JSON.parse(storedSubmissionData);
-        storedSubmissionId = parsedData.submissionId;
-        console.log('Found stored submission before start:', storedSubmissionId);
+      // Check for existing attempt in localStorage
+      const existingData = localStorage.getItem(`ongoing_assessment_${assessment.id}`);
+      let existingSubmissionId = null;
+
+      if (existingData) {
+        const parsed = JSON.parse(existingData);
+        existingSubmissionId = parsed.submissionId;
       }
-  
-      const submissionResponse = await getUserSubmission(assessment.id, true);
-      let existingSubmission = null;
-  
-      if (submissionResponse.success && submissionResponse.submission?.status === 'in_progress') {
-        existingSubmission = submissionResponse.submission;
-        console.log('Submission validation:', {
-          storedId: storedSubmissionId,
-          existingId: existingSubmission.id,
-          matches: storedSubmissionId === existingSubmission.id,
-          status: existingSubmission.status
-        });
-      }
-  
+
+      // Navigate with appropriate state
       navigate(`/Learner/Assessment/Attempt/${assessment.id}`, {
         state: { 
           assessment,
-          submission: existingSubmission 
+          isNewAttempt: true,
+          submissionId: existingSubmissionId // Pass existing submission ID if available
         }
       });
     } catch (error) {
-      console.error('Error validating submission:', error);
+      console.error('Error starting assessment:', error);
       setError('Failed to start assessment. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
