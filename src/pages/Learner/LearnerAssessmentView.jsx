@@ -469,7 +469,7 @@ const LearnerAssessmentView = () => {
   };
 
   const renderHeader = () => (
-    <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 p-8 text-white">
+    <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 p-4 md:p-8 text-white">
       <button
         onClick={() => navigate("/Learner/Assessment")}
         className="flex items-center gap-2 text-gray-100 hover:text-[#F6BA18] transition-colors mb-4 group"
@@ -478,38 +478,38 @@ const LearnerAssessmentView = () => {
           size={20}
           className="group-hover:-translate-x-1 transition-transform"
         />
-        <span>Back to Assessments</span>
+        <span className="text-sm md:text-base">Back to Assessments</span>
       </button>
 
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold">
+          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-2">
+            <h1 className="text-xl md:text-3xl font-bold">
               {assessmentData?.title || assessment?.title}
             </h1>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(getStatus(initialSubmission))}`}>
+            <span className={`px-3 py-1 rounded-full text-sm font-medium w-fit ${getStatusColor(getStatus(initialSubmission))}`}>
               {getStatus(initialSubmission)}
             </span>
           </div>
-          <p aria-label="due" className="text-gray-200 flex items-center gap-2">
+          <p aria-label="due" className="text-gray-200 flex items-center gap-2 text-sm md:text-base">
             <Clock size={16} />
             Due: {assessment?.due_date && new Date(assessment.due_date).toLocaleDateString()}
           </p>
-          <p className="text-sm text-gray-300 mt-2">
+          <p className="text-xs md:text-sm text-gray-300 mt-2">
             {assessment?.description}
           </p>
         </div>
-        <div className="text-right">
-          <p aria-label=" pass_score" className="text-lg font-semibold">
+        <div className="text-left md:text-right space-y-1">
+          <p aria-label="pass_score" className="text-base md:text-lg font-semibold">
             Passing Score: {formatPassingScore(assessmentData?.passing_score/assessmentData?.max_score * 100)}
           </p>
-          <p className="text-sm text-gray-300">
+          <p className="text-xs md:text-sm text-gray-300">
             Duration: {assessment?.duration_minutes || '0'} minutes
           </p>
-          <p className="text-sm text-gray-300">
+          <p className="text-xs md:text-sm text-gray-300">
             Allowed Attempts: {assessment?.allowed_attempts || '1'}
           </p>
-          <p className="text-sm text-gray-300">
+          <p className="text-xs md:text-sm text-gray-300">
             Remaining Attempts: {Math.max(0, (assessment?.allowed_attempts || 1) - submissionCount)}
           </p>
         </div>
@@ -638,25 +638,22 @@ const LearnerAssessmentView = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
-      <div className="flex-1 p-6 overflow-auto">
+      <div className="flex-1 p-3 md:p-6 overflow-auto">
         <Header 
           title={selectedCourse?.name || "Assessment"}
           subtitle={selectedCourse?.code} 
         />
         <div className="max-w-7xl mx-auto">
-          <div className="mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
-            {/* Header section with assessment details */}
+          <div className="mt-4 md:mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
             {renderHeader()}
             
-            {/* Instructions section */}
-            <div className="p-6 border-b border-gray-200">
+            <div className="p-4 md:p-6 border-b border-gray-200">
               {/* ...existing instructions code... */}
             </div>
 
-            {/* Submission status and answers section */}
-            <div className="p-6">
+            <div className="p-4 md:p-6">
               {loading ? (
                 <LoadingSpinner />
               ) : error ? (

@@ -654,15 +654,15 @@ const TeacherAssessmentView = () => {
   };
 
   const renderSubmissionsSection = () => (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-semibold text-gray-800">
+    <div className="p-4 md:p-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-4">
+        <h3 className="text-lg md:text-xl font-semibold text-gray-800">
           Student Submissions
         </h3>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-2 md:gap-4">
           <button
             onClick={() => handleSort("studentName")}
-            className="flex items-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50"
+            className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 text-sm bg-white border rounded-lg hover:bg-gray-50"
           >
             Sort by Name
             {sortField === "studentName" && (
@@ -671,7 +671,7 @@ const TeacherAssessmentView = () => {
           </button>
           <button
             onClick={() => handleSort("submissionDate")}
-            className="flex items-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50"
+            className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 text-sm bg-white border rounded-lg hover:bg-gray-50"
           >
             Sort by Date
             {sortField === "submissionDate" && (
@@ -794,7 +794,7 @@ const TeacherAssessmentView = () => {
   };
 
   const renderHeader = () => (
-    <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 p-8 text-white">
+    <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 p-4 md:p-8 text-white">
       <button
         onClick={() => navigate("/Teacher/Assessment")}
         className="flex items-center gap-2 text-gray-100 hover:text-[#F6BA18] transition-colors group mb-4"
@@ -805,25 +805,22 @@ const TeacherAssessmentView = () => {
         />
         <span>Back to Assessments</span>
       </button>
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">{assessmentData?.title}</h1>
-          <p className="text-gray-200 flex items-center gap-2">
+          <h1 className="text-xl md:text-3xl font-bold mb-2">{assessmentData?.title}</h1>
+          <p className="text-gray-200 flex items-center gap-2 text-sm md:text-base">
             <Clock size={16} />
             Due: {assessmentData?.formattedDueDate}
           </p>
         </div>
-        <div className="text-right">
-          <p className="mt-3 text-lg font-semibold">
-            Passing Score:{" "}
-            {formatPassingScore(
-              (assessmentData?.passing_score / assessmentData?.max_score) * 100
-            )}
+        <div className="text-left md:text-right">
+          <p className="mt-1 md:mt-3 text-base md:text-lg font-semibold">
+            Passing Score: {formatPassingScore((assessmentData?.passing_score / assessmentData?.max_score) * 100)}
           </p>
-          <p className="text-sm text-gray-300">
+          <p className="text-xs md:text-sm text-gray-300">
             Duration: {assessmentData?.duration_minutes} minutes
           </p>
-          <p className="text-sm text-gray-300">
+          <p className="text-xs md:text-sm text-gray-300">
             Allowed Attempts: {assessment?.allowed_attempts || "1"}
           </p>
         </div>
@@ -839,22 +836,22 @@ const TeacherAssessmentView = () => {
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
-      <div className="flex-1 p-6 overflow-auto">
+      <div className="flex-1 p-2 md:p-6 overflow-auto">
         <div className="max-w-7xl mx-auto">
           <Header title="Assessment" />
           <MobileNavBar navItems={navItems} />
 
-          <div className="mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="mt-4 md:mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
             {/* Header Section */}
             {renderHeader()}
             {/* Instructions Section */}
-            <div className="p-6 border-b border-gray-200">
-              <div className="bg-gray-50 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <div className="p-4 md:p-6 border-b border-gray-200">
+              <div className="bg-gray-50 rounded-xl p-4 md:p-6">
+                <h3 className="text-base md:text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <FileText size={20} className="text-gray-500" />
                   Instructions
                 </h3>
-                <div className="prose max-w-none text-gray-600">
+                <div className="prose max-w-none text-gray-600 text-sm md:text-base">
                   {assessmentData?.instructions || "No instructions provided."}
                 </div>
               </div>
@@ -864,28 +861,28 @@ const TeacherAssessmentView = () => {
             {renderSubmissionsSection()}
 
             {/* Questions Section */}
-            <div className="mt-6 bg-white rounded-xl shadow-sm p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-semibold">Questions</h3>
-                <div className="flex gap-2">
+            <div className="mt-4 md:mt-6 bg-white rounded-xl shadow-sm p-4 md:p-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-4">
+                <h3 className="text-lg md:text-xl font-semibold">Questions</h3>
+                <div className="flex flex-wrap gap-2">
                   {assessmentData?.is_published ? (
                     <button
                       onClick={handleUnpublishAssessment}
-                      className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center gap-2"
+                      className="px-3 md:px-4 py-1.5 md:py-2 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center gap-2"
                     >
                       Unpublish
                     </button>
                   ) : (
                     <button
                       onClick={handlePublishAssessment}
-                      className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center gap-2"
+                      className="px-3 md:px-4 py-1.5 md:py-2 text-sm bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center gap-2"
                     >
                       Publish
                     </button>
                   )}
                   <button
                     onClick={() => setIsCreateQuestionOpen(true)}
-                    className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors flex items-center gap-2"
+                    className="px-3 md:px-4 py-1.5 md:py-2 text-sm bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors flex items-center gap-2"
                   >
                     <Plus size={20} />
                     Add Question

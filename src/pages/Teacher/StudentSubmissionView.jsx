@@ -393,16 +393,22 @@ const StudentSubmissionView = () => {
 
         {/* Updated submission meta data section with total score */}
         <div className="mt-6 p-6 bg-white rounded-lg border">
-          <div className="grid grid-cols-3 gap-6">
-            <div>
-              <p className="text-sm text-gray-600">Submission Status:</p>
-              <p className="font-medium capitalize">{submissionStatus}</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            <div className="space-y-4 md:space-y-0">
+              <div>
+                <p className="text-sm text-gray-600">Submission Status:</p>
+                <p className="font-medium capitalize">{submissionStatus}</p>
+              </div>
+              <div className="md:hidden">
+                <p className="text-sm text-gray-600">Submitted:</p>
+                <p className="font-medium">{formattedSubmitTime}</p>
+              </div>
             </div>
-            <div>
+            <div className="hidden md:block">
               <p className="text-sm text-gray-600">Submitted:</p>
               <p className="font-medium">{formattedSubmitTime}</p>
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1 md:col-span-2">
               <p className="text-sm text-gray-600 mb-1">Total Score:</p>
               <div className="bg-gray-50 p-3 rounded-lg">
                 <p className="text-2xl font-bold text-gray-900">
@@ -583,9 +589,9 @@ const StudentSubmissionView = () => {
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="flex items-center justify-center min-w-[90px] md:min-w-[120px] mt-2">
                   <span
-                    className={`inline-block px-4 py-2 rounded-full text-sm font-medium
+                    className={`inline-flex items-center justify-center px-2 md:px-4 py-1 md:py-2 rounded-full text-xs md:text-sm font-medium w-full
                     ${
                       submission?.status === "Submitted"
                         ? "bg-green-100 text-green-800"

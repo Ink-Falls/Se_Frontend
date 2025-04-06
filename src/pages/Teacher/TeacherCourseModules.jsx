@@ -3,6 +3,7 @@ import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import Modal from "../../components/common/Button/Modal";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
+import BlackHeader from "../../components/common/layout/BlackHeader";
 import {
   MoreVertical,
   Plus,
@@ -19,6 +20,7 @@ import {
   ExternalLink,
   InboxIcon,
   AlertTriangle,
+  ArrowUpDown,
 } from "lucide-react";
 import EditModuleModal from "../../components/common/Modals/Edit/EditModuleModal";
 import DeleteModal from "../../components/common/Modals/Delete/DeleteModal";
@@ -84,6 +86,7 @@ const TeacherCourseModules = () => {
   const [selectedModule, setSelectedModule] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [resourceToDelete, setResourceToDelete] = useState(null);
+  const [isSorted, setIsSorted] = useState(false);
 
   useEffect(() => {
     if (successMessage) {
@@ -118,7 +121,79 @@ const TeacherCourseModules = () => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
+  const fetchModules = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (!selectedCourse?.id) {
+        setError(
+          "No course selected. Please select a course from the dashboard."
+        );
+        setLoading(false);
+        return;
+      }
+
+      const response = await getModulesByCourseId(selectedCourse.id);
+      let modulesArray = response?.modules || [];
+
+      if (modulesArray.length === 0 && response.length > 0) {
+        modulesArray = response;
+      }
+
+      const modulesWithContents = await Promise.all(
+        modulesArray.map(async (module) => {
+          try {
+            const moduleId = module.module_id || module.id;
+            const contentsResponse = await getModuleContents(moduleId);
+            const contents = contentsResponse?.contents || [];
+
+            return {
+              id: moduleId,
+              title: module.name,
+              description: module.description,
+              resources: contents.map((content) => ({
+                id: content.content_id || content.id,
+                title: content.name,
+                link: content.link,
+                content: content.link,
+                type: content.type || "link",
+              })),
+              createdAt: module.createdAt,
+              updatedAt: module.updatedAt,
+            };
+          } catch (error) {
+            console.error(
+              `Error fetching contents for module ${module.id}:`,
+              error
+            );
+            return {
+              id: module.module_id || module.id,
+              title: module.name,
+              description: module.description,
+              resources: [],
+              createdAt: module.createdAt,
+              updatedAt: module.updatedAt,
+            };
+          }
+        })
+      );
+
+      setModules(modulesWithContents);
+    } catch (error) {
+      console.error("Error fetching modules:", error);
+      setError("Failed to connect to server. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
+    if (!selectedCourse?.id) {
+      navigate("/Teacher/Dashboard");
+      return;
+    }
+
     const fetchModules = async () => {
       try {
         setLoading(true);
@@ -133,11 +208,11 @@ const TeacherCourseModules = () => {
         }
 
         const response = await getModulesByCourseId(selectedCourse.id);
-        let modulesArray = Array.isArray(response)
-          ? response
-          : response?.modules || [];
+        let modulesArray = response?.modules || [];
 
-        modulesArray.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        if (modulesArray.length === 0 && response.length > 0) {
+          modulesArray = response;
+        }
 
         const modulesWithContents = await Promise.all(
           modulesArray.map(async (module) => {
@@ -189,63 +264,31 @@ const TeacherCourseModules = () => {
     fetchModules();
   }, [selectedCourse?.id, navigate]);
 
-  const handleCreateModule = async (formattedData) => {
+  const handleCreateModule = async (moduleData) => {
     try {
-      const moduleData = {
-        name: formattedData.name,
-        description: formattedData.description,
+      if (!selectedCourse?.id) {
+        throw new Error("No course selected");
+      }
+
+      const formattedData = {
+        name: moduleData.name || moduleData.title,
+        description: moduleData.description,
         course_id: parseInt(selectedCourse.id),
       };
 
-      const newModule = await createModule(selectedCourse.id, moduleData);
+      const newModule = await createModule(selectedCourse.id, formattedData);
 
       if (!newModule) {
         throw new Error("Failed to create module");
       }
 
-      const moduleId = newModule.id || newModule.module_id;
-      let resources = [];
+      await fetchModules();
 
-      if (formattedData.resources && formattedData.resources.length > 0) {
-        const validResources = formattedData.resources.filter(
-          (r) => r.title && r.link
-        );
-
-        for (const resource of validResources) {
-          try {
-            const addedResource = await addModuleContent(moduleId, {
-              title: resource.title.trim(),
-              type: "link",
-              content: resource.link.trim(),
-            });
-
-            if (addedResource) {
-              resources.push({
-                id: addedResource.id || addedResource.content_id,
-                title: addedResource.title || addedResource.name,
-                link: addedResource.content || addedResource.link,
-                type: "link",
-              });
-            }
-          } catch (error) {
-            console.error("Error adding resource:", error);
-          }
-        }
-      }
-
-      const newModuleWithResources = {
-        id: moduleId,
-        title: newModule.name,
-        description: newModule.description,
-        resources: resources,
-        createdAt: newModule.created_at || new Date().toISOString(),
-      };
-
-      setModules((prevModules) => [newModuleWithResources, ...prevModules]);
       setIsCreateModuleOpen(false);
+      setIsAddModuleOpen(false);
       setSuccessMessage("Module created successfully");
 
-      return newModuleWithResources;
+      return newModule;
     } catch (error) {
       console.error("Error creating module:", error);
       throw error;
@@ -345,6 +388,14 @@ const TeacherCourseModules = () => {
       console.error("Error deleting resource:", error);
       setError("Failed to delete resource");
     }
+  };
+
+  const handleSort = () => {
+    const sortedModules = [...modules].sort((a, b) => {
+      return isSorted ? a.id - b.id : b.id - a.id;
+    });
+    setModules(sortedModules);
+    setIsSorted(!isSorted);
   };
 
   const renderModulesList = () => (
@@ -647,15 +698,28 @@ const TeacherCourseModules = () => {
             </div>
           )}
 
+          <div className="bg-[#212529] rounded-t-lg shadow-md">
+            <BlackHeader title="Modules" count={modules.length}>
+              <button
+                data-testid="open-add-module-modal"
+                aria-label="Add Module"
+                onClick={() => setIsAddModuleOpen(true)}
+                className="p-2 rounded hover:bg-gray-700"
+              >
+                <Plus size={20} />
+              </button>
+              <button
+                onClick={handleSort}
+                className="p-2 rounded hover:bg-gray-700"
+                aria-label="Sort modules"
+              >
+                <ArrowUpDown size={20} />
+              </button>
+            </BlackHeader>
+          </div>
+
           {renderModulesList()}
         </div>
-
-        <button
-          onClick={() => setIsAddModuleOpen(true)}
-          className="fixed bottom-20 right-8 bg-yellow-500 text-white rounded-full p-4 shadow-lg hover:bg-yellow-600 transition-colors z-40"
-        >
-          <Plus size={24} />
-        </button>
 
         {editingModule && (
           <EditModuleModal

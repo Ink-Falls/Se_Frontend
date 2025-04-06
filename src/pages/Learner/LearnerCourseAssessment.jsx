@@ -312,13 +312,13 @@ const LearnerCourseAssessment = () => {
         <div className="flex items-center gap-2 mb-1">
           <div className="flex items-baseline">
             <span
-              className={`text-2xl font-bold ${
+              className={`text-lg md:text-2xl font-bold ${
                 isPassed ? "text-green-600" : "text-red-600"
               }`}
             >
               {score}
             </span>
-            <span className="text-gray-500 text-lg">/{totalPoints}</span>
+            <span className="text-base md:text-lg text-gray-500">/{totalPoints}</span>
           </div>
           {submission.status === "graded" && (
             <span
@@ -335,10 +335,10 @@ const LearnerCourseAssessment = () => {
         {submission.status === "graded" && (
           <div className="text-xs text-gray-500 mt-1">
             {isPassed ? (
-              <span>Passed ({percentage.toFixed(1)}%)</span>
+              <span>Passed ({percentage.toFixed(1)})</span>
             ) : (
               <span>
-                Need {assessment.passing_score - percentage.toFixed(1)}% more to
+                Need {assessment.passing_score - percentage.toFixed(1)} more to
                 pass
               </span>
             )}
@@ -513,7 +513,7 @@ const LearnerCourseAssessment = () => {
                   {moduleGrades[module.module_id] && (
                     <div className="flex gap-2">
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        Average: {moduleGrades[module.module_id].averageScore}%
+                        Average: {moduleGrades[module.module_id].averageScore}
                       </span>
                       {!moduleGrades[module.module_id].allGraded ? (
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-800">
@@ -561,7 +561,7 @@ const LearnerCourseAssessment = () => {
                     </h3>
                     <p className="text-gray-600 max-w-md mx-auto">
                       {failedAssessment
-                        ? `You need to pass "${failedAssessment.title}" with a score of at least ${failedAssessment.passing_score}% to unlock this module.`
+                        ? `You need to pass "${failedAssessment.title}" with a score of at least ${failedAssessment.passing_score} to unlock this module.`
                         : "Complete all assessments in the previous module to unlock this module."}
                     </p>
                   </div>
@@ -636,7 +636,7 @@ const LearnerCourseAssessment = () => {
                                     style={{ color: color.bg }}
                                   />
                                   <span className="text-gray-600 font-medium">
-                                    Passing: {assessment.passing_score}%
+                                    Passing: {assessment.passing_score}
                                   </span>
                                 </div>
                               </div>
@@ -672,17 +672,19 @@ const LearnerCourseAssessment = () => {
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-between pt-4 border-t">
-                              <button
-                                className="px-4 py-2 text-sm font-medium text-white rounded-md"
-                                style={{ backgroundColor: color.bg }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAssessmentClick(assessment);
-                                }}
-                              >
-                                View Assessment
-                              </button>
+                            <div className="flex items-start md:items-center justify-between gap-4 pt-4 border-t">
+                              <div className="flex items-center mt-1 md:mt-0">
+                                <button
+                                  className="px-2 py-2 md:px-4 md:py-3 text-xs md:text-sm font-medium text-white rounded-md"
+                                  style={{ backgroundColor: color.bg }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAssessmentClick(assessment);
+                                  }}
+                                >
+                                  View Assessment
+                                </button>
+                              </div>
                               {renderSubmissionScore(
                                 submissions[assessment.id],
                                 assessment
@@ -720,7 +722,9 @@ const LearnerCourseAssessment = () => {
           title={selectedCourse?.name || "Course"}
           subtitle={selectedCourse?.code}
         />
-        <MobileNavBar navItems={navItems} />
+        <div className="relative z-50"> {/* Add wrapper with high z-index */}
+          <MobileNavBar navItems={navItems} />
+        </div>
 
         {loading && (
           <div className="flex items-center justify-center min-h-[400px]">
