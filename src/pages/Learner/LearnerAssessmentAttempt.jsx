@@ -20,6 +20,7 @@ import {
   saveQuestionAnswer,
   submitAssessment,
   getAssessmentById,
+  getSubmissionDetails,
 } from "../../services/assessmentService";
 
 const LearnerAssessmentAttempt = () => {
@@ -60,6 +61,31 @@ const LearnerAssessmentAttempt = () => {
     }
   };
 
+  const loadSavedAnswers = async (submissionId) => {
+    try {
+      const response = await getSubmissionDetails(submissionId);
+      if (response.success && response.submission?.answers) {
+        const savedAnswerMap = {};
+        const savedAnswersStatus = {};
+        
+        response.submission.answers.forEach(answer => {
+          if (answer.selected_option_id) {
+            savedAnswerMap[answer.question_id] = { optionId: answer.selected_option_id };
+          } else if (answer.text_response) {
+            savedAnswerMap[answer.question_id] = { textResponse: answer.text_response };
+          }
+          savedAnswersStatus[answer.question_id] = true;
+        });
+        
+        setAnswers(savedAnswerMap);
+        setSavedAnswers(savedAnswersStatus);
+        console.log('Loaded saved answers:', savedAnswerMap);
+      }
+    } catch (error) {
+      console.error('Error loading saved answers:', error);
+    }
+  };
+
   useEffect(() => {
     const initializeAttempt = async () => {
       // Guard against double initialization from Strict Mode
@@ -79,6 +105,30 @@ const LearnerAssessmentAttempt = () => {
         setLoading(true);
         await fetchQuestionsWithMedia(assessment.id);
 
+        // Check for existing submission in localStorage
+        const existingData = localStorage.getItem(`ongoing_assessment_${assessment.id}`);
+        if (existingData) {
+          const parsed = JSON.parse(existingData);
+          console.log('Found existing submission:', parsed);
+          if (parsed.submissionId) {
+            // Load existing submission and its answers
+            setSubmissionId(parsed.submissionId);
+            await loadSavedAnswers(parsed.submissionId);
+
+            // Calculate remaining time
+            const startTime = new Date(parsed.startTime).getTime();
+            const currentTime = new Date().getTime();
+            const elapsedMilliseconds = currentTime - startTime;
+            const totalMilliseconds = assessment.duration_minutes * 60 * 1000;
+            const remainingMilliseconds = Math.max(0, totalMilliseconds - elapsedMilliseconds);
+            
+            setTimeRemaining(Math.floor(remainingMilliseconds / 1000));
+            submissionCreatedRef.current = true;
+            return;
+          }
+        }
+
+        // Continue with new submission creation if no existing one found
         if (location.state.isNewAttempt && !submissionCreatedRef.current) {
           console.log('Creating new submission attempt');
           const submissionResponse = await createSubmission(assessment.id);

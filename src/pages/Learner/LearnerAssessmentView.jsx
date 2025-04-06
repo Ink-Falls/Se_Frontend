@@ -414,23 +414,21 @@ const LearnerAssessmentView = () => {
     try {
       setLoading(true);
       
-      // First, check if there's an existing attempt
+      // Check for existing attempt in localStorage
       const existingData = localStorage.getItem(`ongoing_assessment_${assessment.id}`);
+      let existingSubmissionId = null;
+
       if (existingData) {
         const parsed = JSON.parse(existingData);
-        console.log('Found existing attempt:', parsed);
+        existingSubmissionId = parsed.submissionId;
       }
 
-      // Clear ALL related localStorage items
-      localStorage.removeItem(`ongoing_assessment_${assessment.id}`);
-      localStorage.removeItem(`assessment_end_${assessment.id}`);
-      localStorage.removeItem(`timer_${assessment.id}`);
-
-      // Navigate with a flag indicating this is a fresh attempt
+      // Navigate with appropriate state
       navigate(`/Learner/Assessment/Attempt/${assessment.id}`, {
         state: { 
           assessment,
-          isNewAttempt: true 
+          isNewAttempt: true,
+          submissionId: existingSubmissionId // Pass existing submission ID if available
         }
       });
     } catch (error) {
