@@ -15,7 +15,7 @@ const UserStats = ({
   totalAdmins,
 }) => {
   return (
-    <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-3 2xl:grid-cols-5 gap-3 sm:gap-4 mb-6">
       {/* Total Users */}
       <div className="bg-white p-4 sm:p-5 lg:p-6 rounded-lg shadow hover:shadow-md transition-shadow">
         <div className="flex items-center gap-3">

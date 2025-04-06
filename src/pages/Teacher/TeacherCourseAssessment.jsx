@@ -607,7 +607,9 @@ const TeacherCourseAssessment = () => {
           title={selectedCourse?.name || "Course Assessment"}
           subtitle={selectedCourse?.code}
         />
-        <MobileNavBar navItems={navItems} />
+        <div className="sticky top-0 z-50">
+          <MobileNavBar navItems={navItems} />
+        </div>
 
         {/* Add success message display */}
         {successMessage && (

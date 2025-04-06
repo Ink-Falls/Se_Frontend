@@ -966,10 +966,10 @@ const TeacherAssessmentView = () => {
         <h3 className="text-xl font-semibold text-gray-800">
           Student Submissions
         </h3>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-2 md:gap-4">
           <button
             onClick={() => handleSort("studentName")}
-            className="flex items-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50"
+            className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 text-sm bg-white border rounded-lg hover:bg-gray-50"
           >
             Sort by Name
             {sortField === "studentName" && (
@@ -978,7 +978,7 @@ const TeacherAssessmentView = () => {
           </button>
           <button
             onClick={() => handleSort("submissionDate")}
-            className="flex items-center gap-2 px-4 py-2 bg-white border rounded-lg hover:bg-gray-50"
+            className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 text-sm bg-white border rounded-lg hover:bg-gray-50"
           >
             Sort by Date
             {sortField === "submissionDate" && (
@@ -1152,22 +1152,22 @@ const TeacherAssessmentView = () => {
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
-      <div className="flex-1 p-6 overflow-auto">
+      <div className="flex-1 p-2 md:p-6 overflow-auto">
         <div className="max-w-7xl mx-auto">
           <Header title="Assessment" />
           <MobileNavBar navItems={navItems} />
 
-          <div className="mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="mt-4 md:mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
             {/* Header Section */}
             {renderHeader()}
             {/* Instructions Section */}
-            <div className="p-6 border-b border-gray-200">
-              <div className="bg-gray-50 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <div className="p-4 md:p-6 border-b border-gray-200">
+              <div className="bg-gray-50 rounded-xl p-4 md:p-6">
+                <h3 className="text-base md:text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <FileText size={20} className="text-gray-500" />
                   Instructions
                 </h3>
-                <div className="prose max-w-none text-gray-600">
+                <div className="prose max-w-none text-gray-600 text-sm md:text-base">
                   {assessmentData?.instructions || "No instructions provided."}
                 </div>
               </div>
