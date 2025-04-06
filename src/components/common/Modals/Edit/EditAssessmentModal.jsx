@@ -12,7 +12,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
     duration_minutes: 60,
     due_date: "",
     instructions: "",
-    allowed_attempts: 1
+    allowed_attempts: 1,
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -79,7 +79,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
         due_date: new Date(formData.due_date).toISOString(),
         instructions: formData.instructions?.trim() || "",
         allowed_attempts: parseInt(formData.allowed_attempts),
-        is_published: assessment.is_published
+        is_published: assessment.is_published,
       };
 
       const response = await editAssessment(assessment.id, assessmentData);
@@ -120,41 +120,55 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                Title
-              </label>
-              <input
-                id="title"
-                type="text"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                required
-              />
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Add the same required field indicators as CreateAssessmentModal */}
+              <div className="col-span-2">
+                <label
+                  htmlFor="title"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="title"
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                  required
+                />
+              </div>
 
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                Description
-              </label>
-              <textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                rows={4}
-                required
-              />
+              {/* Continue adding required indicators to all required fields following 
+                  the same pattern as CreateAssessmentModal */}
+              <div className="col-span-2">
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                  rows={4}
+                  required
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="type" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="type"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Type
                 </label>
                 <select
@@ -172,8 +186,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
               </div>
 
               <div>
-                <label htmlFor="duration_minutes" className="block text-sm font-medium text-gray-700">
-                  Time Limit (minutes)
+                <label
+                  htmlFor="duration_minutes"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Time Limit (minutes) <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="duration_minutes"
@@ -193,8 +210,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="max_score" className="block text-sm font-medium text-gray-700">
-                  Max Score
+                <label
+                  htmlFor="max_score"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Max Score <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="max_score"
@@ -209,8 +229,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
               </div>
 
               <div>
-                <label htmlFor="pass_score" className="block text-sm font-medium text-gray-700">
-                  Passing Score
+                <label
+                  htmlFor="pass_score"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Passing Score <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="pass_score"
@@ -228,8 +251,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="allowed_attempts" className="block text-sm font-medium text-gray-700">
-                  Allowed Attempts
+                <label
+                  htmlFor="allowed_attempts"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Allowed Attempts <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="allowed_attempts"
@@ -237,24 +263,38 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                   min="1"
                   max="10"
                   value={formData.allowed_attempts}
-                  onChange={(e) => setFormData({ ...formData, allowed_attempts: Math.max(1, parseInt(e.target.value) || 1) })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      allowed_attempts: Math.max(
+                        1,
+                        parseInt(e.target.value) || 1
+                      ),
+                    })
+                  }
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   required
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  Current setting: {formData.allowed_attempts} attempt{formData.allowed_attempts !== 1 ? 's' : ''}
+                  Current setting: {formData.allowed_attempts} attempt
+                  {formData.allowed_attempts !== 1 ? "s" : ""}
                 </p>
               </div>
-              
+
               <div>
-                <label htmlFor="due_date" className="block text-sm font-medium text-gray-700">
-                  Due Date
+                <label
+                  htmlFor="due_date"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Due Date <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="due_date"
                   type="datetime-local"
                   value={formData.due_date}
-                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, due_date: e.target.value })
+                  }
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   required
                 />
@@ -262,7 +302,10 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
             </div>
 
             <div>
-              <label htmlFor="instructions" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="instructions"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Instructions
               </label>
               <textarea

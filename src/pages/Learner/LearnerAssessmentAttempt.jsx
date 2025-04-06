@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Check,
   Save,
+  FileText, // Add this import
 } from "lucide-react";
 import {
   createSubmission,
@@ -369,6 +370,19 @@ const LearnerAssessmentAttempt = () => {
       }
     };
 
+    const isVideoUrl = (url) => {
+      return url.match(/(youtube\.com|youtu\.be)/i);
+    };
+
+    const getYoutubeEmbedUrl = (url) => {
+      const videoIdMatch = url.match(
+        /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+      );
+      return videoIdMatch
+        ? `https://www.youtube.com/embed/${videoIdMatch[1]}`
+        : url;
+    };
+
     return (
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-b-2xl shadow-sm overflow-hidden">
@@ -399,6 +413,16 @@ const LearnerAssessmentAttempt = () => {
                       e.target.style.display = "none";
                     }}
                   />
+                ) : isVideoUrl(currentQuestion.media_url) ? (
+                  <div className="relative w-full h-0 pt-[56.25%]">
+                    <iframe
+                      src={getYoutubeEmbedUrl(currentQuestion.media_url)}
+                      className="absolute top-0 left-0 w-full h-full rounded-lg"
+                      allowFullScreen
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      frameBorder="0"
+                    />
+                  </div>
                 ) : (
                   <a
                     href={currentQuestion.media_url}
