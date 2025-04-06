@@ -377,10 +377,10 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 <option value="" disabled>
                   Select a school...
                 </option>
-                <option value="1001">
+                <option value="1002" data-name="ACES">
                   Asuncion Consunji Elementary School (ACES)
                 </option>
-                <option value="1002">University of Santo Tomas (UST)</option>
+                <option value="1001" data-name="UST">University of Santo Tomas (UST)</option>
               </select>
             </div>
 

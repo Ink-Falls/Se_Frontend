@@ -7,6 +7,12 @@ const GroupMembersModal = ({ isOpen, onClose, group, members, isLoading, onMembe
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Add the schoolMapping object here
+  const schoolMapping = {
+    1001: "UST",
+    1002: "ACES",
+  };
+
   const handleRemoveMember = async (member) => {
     try {
       setRemovingMember(true);
@@ -82,49 +88,62 @@ const GroupMembersModal = ({ isOpen, onClose, group, members, isLoading, onMembe
             </div>
           ) : (
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {members.map((member) => (
-                <div
-                  key={member.id || member.user_id}
-                  className="flex items-center bg-gray-50 p-3 rounded-lg"
-                >
-                  {/* Main content container with flex-grow */}
-                  <div className="flex-grow">
-                    <span className="font-medium">
-                      {member.first_name} {member.last_name}
-                    </span>
-                    <div className="text-sm text-gray-600 mt-1">
-                      <span>{member.email}</span>
-                      {member.school_id && (
-                        <span className="ml-2">• ID: {member.school_id}</span>
-                      )}
-                      {member.year_level && (
-                        <span className="ml-2">• Year Level: {member.year_level}</span>
-                      )}
-                    </div>
-                  </div>
+              {members.map((member) => {
+  console.log("Member Data:", member); // Logs the member object
+  console.log("Mapped School Name:", schoolMapping[member.school_id]); // Logs the mapped school name
 
-                  {/* Right side container with fixed layout */}
-                  <div className="flex items-center gap-3 ml-4">
-                    {member.role && (
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
-                        member.role.includes('learner')
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {member.role}
-                      </span>
-                    )}
-                    <button
-                      onClick={() => handleRemoveMember(member)}
-                      disabled={removingMember}
-                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors flex-shrink-0"
-                      title="Remove member"
-                    >
-                      {removingMember ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                    </button>
-                  </div>
-                </div>
-              ))}
+  return (
+    <div
+      key={member.id || member.user_id}
+      className="flex items-center bg-gray-50 p-3 rounded-lg"
+    >
+      {/* Main content container with flex-grow */}
+      <div className="flex-grow">
+        <span className="font-medium">
+          {member.first_name} {member.last_name}
+        </span>
+        <div className="text-sm text-gray-600 mt-1">
+          <span>{member.email}</span>
+          {member.school_id && (
+            <span className="ml-2">
+              • School: {schoolMapping[member.school_id] || "Unknown School"}
+            </span>
+          )}
+          {member.year_level && (
+            <span className="ml-2">• Year Level: {member.year_level}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Right side container with fixed layout */}
+      <div className="flex items-center gap-3 ml-4">
+        {member.role && (
+          <span
+            className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
+              member.role.includes("learner")
+                ? "bg-blue-100 text-blue-800"
+                : "bg-green-100 text-green-800"
+            }`}
+          >
+            {member.role}
+          </span>
+        )}
+        <button
+          onClick={() => handleRemoveMember(member)}
+          disabled={removingMember}
+          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors flex-shrink-0"
+          title="Remove member"
+        >
+          {removingMember ? (
+            <Loader size={16} className="animate-spin" />
+          ) : (
+            <Trash2 size={16} />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+})}
             </div>
           )}
         </div>
