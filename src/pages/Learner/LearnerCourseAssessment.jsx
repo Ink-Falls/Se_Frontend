@@ -383,11 +383,8 @@ const LearnerCourseAssessment = () => {
   };
 
   const checkModuleCompleted = (moduleId) => {
-    const moduleAssessmentList = moduleAssessments[moduleId] || [];
-    return moduleAssessmentList.every((assessment) => {
-      const submission = submissions[assessment.id];
-      return submission && checkAssessmentPassed(assessment, submission);
-    });
+    const allPassed = getModuleGrade(moduleId);
+    return allPassed.allPassed;
   };
 
   const findFirstFailedAssessment = (moduleId) => {
