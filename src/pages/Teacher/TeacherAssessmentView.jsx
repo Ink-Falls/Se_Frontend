@@ -657,49 +657,49 @@ const TeacherAssessmentView = () => {
         </div>
       )}
 
-      <div className="p-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
+      <div className="p-3 md:p-6">
+        <div className="flex flex-col gap-2 md:gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-2 md:gap-0">
+            <div className="w-full">
               {/* Question header - Use order_index instead of array index */}
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">
+              <div className="flex flex-wrap items-center gap-2 mb-2 md:mb-4">
+                <div className="flex flex-wrap items-center gap-1 md:gap-2">
+                  <span className="px-2 md:px-3 py-0.5 md:py-1 bg-gray-100 text-gray-800 rounded-full text-xs md:text-sm font-medium">
                     Question {index + 1}
                   </span>
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium capitalize">
+                  <span className="px-2 md:px-3 py-0.5 md:py-1 bg-blue-100 text-blue-800 rounded-full text-xs md:text-sm font-medium capitalize">
                     {question.question_type.replace("_", " ")}
                   </span>
-                  <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                  <span className="px-2 md:px-3 py-0.5 md:py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs md:text-sm font-medium">
                     {question.points} Points
                   </span>
                 </div>
                 {/* Control buttons */}
-                <div className="flex gap-2 ml-auto">
+                <div className="flex gap-1 md:gap-2 ml-auto">
                   <button
                     onClick={() => setEditingQuestion(question)}
-                    className="p-2 text-gray-600 hover:text-yellow-600 rounded-lg hover:bg-yellow-50 transition-colors"
+                    className="p-1.5 md:p-2 text-gray-600 hover:text-yellow-600 rounded-lg hover:bg-yellow-50 transition-colors"
                     title="Edit question"
                   >
-                    <Edit2 size={16} />
+                    <Edit2 size={14} className="md:w-4 md:h-4" />
                   </button>
                   <button
                     onClick={() => setDeletingQuestion(question)}
-                    className="p-2 text-gray-600 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                    className="p-1.5 md:p-2 text-gray-600 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                     title="Delete question"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} className="md:w-4 md:h-4" />
                   </button>
                 </div>
               </div>
 
               {/* Question text */}
-              <h3 className="text-lg text-gray-900 mb-4 font-medium">
+              <h3 className="text-base md:text-lg text-gray-900 mb-2 md:mb-4 font-medium">
                 {question.question_text}
               </h3>
 
               {/* Answer options */}
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 {question.question_type === "multiple_choice" && (
                   <div className="grid gap-2">
                     {question.options?.map((option, i) => (
@@ -846,36 +846,35 @@ const TeacherAssessmentView = () => {
 
   // Update header section styles
   const renderHeader = () => (
-    <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 p-8 text-white">
+    <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 p-4 md:p-8 text-white">
       <button
         onClick={() => navigate("/Teacher/Assessment")}
-        className="flex items-center gap-2 text-gray-100 hover:text-[#F6BA18] transition-colors group mb-4"
+        className="flex items-center gap-1 md:gap-2 text-sm md:text-base text-gray-100 hover:text-[#F6BA18] transition-colors group mb-2 md:mb-4"
       >
-        <ArrowLeft
-          size={20}
-          className="group-hover:-translate-x-1 transition-transform"
-        />
+        <ArrowLeft size={16} className="md:w-5 md:h-5" />
         <span>Back to Assessments</span>
       </button>
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">{assessmentData?.title}</h1>
-          <p className="text-gray-200 flex items-center gap-2">
-            <Clock size={16} />
+          <h1 className="text-xl md:text-3xl font-bold mb-2">
+            {assessmentData?.title}
+          </h1>
+          <p className="text-sm md:text-base text-gray-200 flex items-center gap-2">
+            <Clock size={14} className="md:w-4 md:h-4" />
             Due: {assessmentData?.formattedDueDate}
           </p>
         </div>
-        <div className="text-right">
-          <p className="mt-3 text-lg font-semibold">
+        <div className="text-left md:text-right w-full md:w-auto">
+          <p className="text-base md:text-lg font-semibold">
             Passing Score:{" "}
             {formatPassingScore(
               (assessmentData?.passing_score / assessmentData?.max_score) * 100
             )}
           </p>
-          <p className="text-sm text-gray-300">
+          <p className="text-xs md:text-sm text-gray-300">
             Duration: {assessmentData?.duration_minutes} minutes
           </p>
-          <p className="text-sm text-gray-300">
+          <p className="text-xs md:text-sm text-gray-300">
             Allowed Attempts: {assessment?.allowed_attempts || "1"}
           </p>
         </div>
@@ -962,11 +961,11 @@ const TeacherAssessmentView = () => {
 
   const renderSubmissionsSection = () => (
     <div className="p-6 bg-white rounded-xl shadow-sm">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-semibold text-gray-800">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <h3 className="text-xl font-semibold text-gray-800 mb-4 md:mb-0">
           Student Submissions
         </h3>
-        <div className="flex flex-wrap gap-2 md:gap-4">
+        <div className="flex flex-wrap gap-2 md:gap-4 self-end md:self-auto">
           <button
             onClick={() => handleSort("studentName")}
             className="flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 text-sm bg-white border rounded-lg hover:bg-gray-50"
@@ -1102,30 +1101,30 @@ const TeacherAssessmentView = () => {
 
   // Update the button sections to show loading state
   const renderActionButtons = () => (
-    <div className="flex gap-2">
+    <div className="flex flex-col md:flex-row gap-2">
       {assessmentData?.is_published ? (
         <button
           onClick={handleUnpublishAssessment}
           disabled={isLoading}
-          className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center gap-2"
+          className="w-full px-3 py-1.5 text-xs md:text-sm bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
         >
-          {isLoading ? "Processing..." : "Click to Unpublish"}
+          {isLoading ? "Processing..." : "Unpublish"}
         </button>
       ) : (
         <button
           onClick={handlePublishAssessment}
           disabled={isLoading}
-          className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center gap-2"
+          className="w-full px-3 py-1.5 text-xs md:text-sm bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
         >
-          {isLoading ? "Processing..." : "Click to Publish"}
+          {isLoading ? "Processing..." : "Publish"}
         </button>
       )}
       <button
         onClick={() => setIsCreateQuestionOpen(true)}
         disabled={isLoading}
-        className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors flex items-center gap-2"
+        className="w-full px-3 py-1.5 text-xs md:text-sm bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
       >
-        <Plus size={20} />
+        <Plus size={16} className="md:w-5 md:h-5" />
         Add Question
       </button>
     </div>
@@ -1152,12 +1151,12 @@ const TeacherAssessmentView = () => {
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
-      <div className="flex-1 p-2 md:p-6 overflow-auto">
+      <div className="flex-1 p-2 md:p-6 overflow-auto pb-10 lg:pb-6"> {/* Added pb-20 for extra padding bottom on mobile */}
         <div className="max-w-7xl mx-auto">
           <Header title="Assessment" />
           <MobileNavBar navItems={navItems} />
 
-          <div className="mt-4 md:mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="mt-4 md:mt-6 bg-white rounded-xl shadow-sm overflow-hidden mb-4 lg:mb-0"> {/* Added mb-16 for extra margin bottom on mobile */}
             {/* Header Section */}
             {renderHeader()}
             {/* Instructions Section */}
