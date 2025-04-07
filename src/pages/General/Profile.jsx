@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom"; // Make sure useLocation is here
 import { getUserById, updateUser } from "../../services/userService";
 import { useAuth } from "../../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import {
@@ -12,6 +12,11 @@ import {
   PencilIcon,
   X,
   Check as CheckIcon,
+  Megaphone,
+  BookOpen,
+  ClipboardList,
+  User,
+  LineChart,
 } from "lucide-react";
 import { Eye, EyeOff } from "lucide-react";
 import { changePassword } from "../../services/authService"; // Import function
@@ -19,41 +24,29 @@ import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import { getUserProfileImage } from "../../utils/profileImages";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 
-const getNavItems = (role) => {
+const getNavItems = (role, location) => {
   // Base items for admin
   const adminItems = [
     { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
     { text: "Courses", icon: <Book size={20} />, route: "/Admin/Courses" },
-    {
-      text: "Enrollments",
-      icon: <Bell size={20} />,
-      route: "/Admin/Enrollments",
-    },
-    {
-      text: "Announcements",
-      icon: <FileText size={20} />,
-      route: "/Admin/Announcements",
-    },
+    { text: "Enrollments", icon: <Bell size={20} />, route: "/Admin/Enrollments" },
+    { text: "Announcements", icon: <FileText size={20} />, route: "/Admin/Announcements" },
   ];
 
-  // Base items for teacher/student_teacher
+  // Base items for teacher/student_teacher with course context
   const teacherItems = [
-    { text: "Courses", icon: <Book size={20} />, route: "/Teacher/Dashboard" },
-    {
-      text: "Notifications",
-      icon: <Bell size={20} />,
-      route: "/Teacher/Notifications",
-    },
+    { text: "Home", icon: <Home size={20} />, route: "/Teacher/Dashboard" },
+    { text: "Announcements", icon: <Megaphone size={20} />, route: "/Teacher/CourseAnnouncements" },
+    { text: "Modules", icon: <BookOpen size={20} />, route: "/Teacher/CourseModules" },
+    { text: "Assessments", icon: <ClipboardList size={20} />, route: "/Teacher/Assessment" },
+    { text: "Attendance", icon: <User size={20} />, route: "/Teacher/Attendance" },
+    { text: "Progress Tracker", icon: <LineChart size={20} />, route: "/Teacher/ProgressTracker" },
   ];
 
   // Base items for learner - Updated to match LearnerDashboard
   const learnerItems = [
     { text: "Courses", icon: <Book size={20} />, route: "/Learner/Dashboard" },
-    {
-      text: "Notifications",
-      icon: <Bell size={20} />,
-      route: "/Learner/Notifications",
-    },
+    { text: "Notifications", icon: <Bell size={20} />, route: "/Learner/Notifications" },
   ];
 
   switch (role?.toLowerCase()) {
@@ -70,6 +63,7 @@ const getNavItems = (role) => {
 };
 
 function Profile() {
+  const location = useLocation(); // Add this line
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -314,7 +308,7 @@ function Profile() {
   }
 
   // Get nav items based on user role
-  const navItems = getNavItems(user?.role);
+  const navItems = getNavItems(user?.role, location);
 
   const renderEditModal = () => (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
