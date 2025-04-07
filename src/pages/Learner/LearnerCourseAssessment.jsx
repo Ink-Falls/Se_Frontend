@@ -382,9 +382,9 @@ const LearnerCourseAssessment = () => {
     return score >= assessment.passing_score;
   };
 
-  const checkModuleCompleted = (moduleId) => {
-    const allPassed = getModuleGrade(moduleId);
-    return allPassed.allPassed;
+  const checkModuleCompleted = async (moduleId) => {
+    const result = await getModuleGrade(moduleId);
+    return result.allPassed;
   };
 
   const findFirstFailedAssessment = (moduleId) => {
