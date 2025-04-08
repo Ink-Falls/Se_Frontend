@@ -12,6 +12,11 @@ import {
   PencilIcon,
   X,
   Check as CheckIcon,
+  Megaphone,
+  BookOpen,
+  ClipboardList,
+  User,
+  LineChart
 } from 'lucide-react';
 import { Eye, EyeOff } from 'lucide-react';
 import { changePassword } from '../../services/authService'; // Import function
@@ -38,11 +43,31 @@ const getNavItems = (role) => {
 
   // Base items for teacher/student_teacher
   const teacherItems = [
-    { text: 'Courses', icon: <Book size={20} />, route: '/Teacher/Dashboard' },
+    { text: "Home", icon: <Home size={20} />, route: "/Teacher/Dashboard" },
     {
-      text: 'Notifications',
-      icon: <Bell size={20} />,
-      route: '/Teacher/Notifications',
+      text: "Announcements",
+      icon: <Megaphone size={20} />,
+      route: "/Teacher/CourseAnnouncements",
+    },
+    {
+      text: "Modules",
+      icon: <BookOpen size={20} />,
+      route: "/Teacher/CourseModules",
+    },
+    {
+      text: "Assessments",
+      icon: <ClipboardList size={20} />,
+      route: "/Teacher/Assessment",
+    },
+    {
+      text: "Attendance",
+      icon: <User size={20} />,
+      route: "/Teacher/Attendance",
+    },
+    {
+      text: "Progress Tracker",
+      icon: <LineChart size={20} />,
+      route: "/Teacher/ProgressTracker",
     },
   ];
 
