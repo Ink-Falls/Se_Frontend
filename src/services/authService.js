@@ -79,18 +79,18 @@ const logoutUser = async () => {
   try {
     // Clear auto refresh first
     tokenService.clearAutoRefresh();
-    
-    // Get token before clearing storage
-    const token = localStorage.getItem('token');
 
-    // Clear storage immediately 
+    // Get token before clearing storage
+    const token = localStorage.getItem("token");
+
+    // Clear storage immediately
     localStorage.clear();
     sessionStorage.clear();
 
     // Clear all ongoing assessment data
     const keys = Object.keys(localStorage);
-    keys.forEach(key => {
-      if (key.startsWith('ongoing_assessment_')) {
+    keys.forEach((key) => {
+      if (key.startsWith("ongoing_assessment_")) {
         localStorage.removeItem(key);
       }
     });
@@ -103,14 +103,14 @@ const logoutUser = async () => {
     // Try server logout but don't retry on failure
     try {
       await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
     } catch (error) {
       // Ignore server errors since we've already cleared local storage
-      console.warn('Server logout failed:', error);
+      console.warn("Server logout failed:", error);
     }
 
     return true;
@@ -133,13 +133,16 @@ const logoutUser = async () => {
  */
 const forgotPassword = async (email) => {
   try {
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/users/forgot-password`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/users/forgot-password`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      }
+    );
 
     const responseData = await response.json();
 
@@ -169,13 +172,16 @@ const forgotPassword = async (email) => {
  */
 const verifyResetCode = async (email, code) => {
   try {
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/users/verify-reset-code`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, code }),
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/users/verify-reset-code`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, code }),
+      }
+    );
 
     const responseData = await response.json();
 
@@ -205,13 +211,16 @@ const verifyResetCode = async (email, code) => {
  */
 const resetPassword = async (email, newPassword, confirmPassword) => {
   try {
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/users/reset-password`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, newPassword, confirmPassword }),
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/users/reset-password`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, newPassword, confirmPassword }),
+      }
+    );
 
     const responseData = await response.json();
 
@@ -418,13 +427,19 @@ const requestPictureCode = async (studentEmail) => {
  */
 const verifyMagicLinkToken = async (token) => {
   try {
-    const response = await fetchWithInterceptor(`${API_BASE_URL}/auth/passwordless/verify`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ token }),
-    });
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/auth/passwordless/verify`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token,
+          tokenType,
+        }),
+      }
+    );
 
     const data = await response.json();
     if (!response.ok) {

@@ -86,26 +86,32 @@ function Enrollment() {
     <>
       {/* Page container with a background image */}
       <div
-        className="min-h-screen bg-cover bg-center"
+        className="min-h-screen bg-cover bg-center relative"
         style={{
           backgroundImage:
             "url(https://upload.wikimedia.org/wikipedia/commons/7/7b/400_Year_old_Beauty.jpg)",
         }}
       >
+        {/* Semi-transparent black overlay */}
+        <div className="absolute inset-0 bg-black opacity-30"></div>
+
         {/* Header with logo and navigation button */}
-        <header className="py-[3vw] px-[4vw] lg:py-[1.5vw] lg:px-[2vw] bg-[#121212] text-[#F6BA18] flex justify-between items-center shadow-xl">
-          <div className="flex items-center">
+        <header className="relative z-10 py-[3vw] px-[4vw] lg:py-[1.5vw] lg:px-[2vw] bg-[#121212] text-[#F6BA18] flex justify-between items-center shadow-xl">
+          <div 
+            className="flex items-center cursor-pointer" 
+            onClick={() => navigate("/Login")}
+          >
             <img
               src={logo}
               alt="ARALKADEMY Logo"
-              className="h-[5vw] lg:h-[2.5vw] mr-2"
+              className="h-[8vw] md:h-[5vw] lg:h-[2.5vw] mr-2"
             />
           </div>
 
           {/* Log In button */}
           <button
             onClick={() => navigate("/Login")}
-            className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
+            className="text-[4vw] py-[1.5vw] px-[6vw] md:text-[3vw] md:py-[1vw] md:px-[4vw] lg:text-[1vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
           >
             Log In
           </button>
@@ -114,7 +120,7 @@ function Enrollment() {
         {/* Main content area */}
         <div className="flex items-center justify-center min-h-screen">
           {/* Wrapper for the enrollment options */}
-          <div className="mt-[-15vw] sm:mt-[5vw] lg:mt-[-10vw] flex flex-col lg:flex-row items-center rounded-lg gap-[5vw]">
+          <div className="relative z-10 mt-[-15vw] sm:mt-[5vw] lg:mt-[-10vw] flex flex-col lg:flex-row items-center rounded-lg gap-[5vw]">
             {/* New Enrollee section */}
             <div className="p-[5vw] max-lg:p-[7vw] w-[80vw] lg:h-[13.5vw] lg:mt-[-1vw] lg:p-[2.5vw] lg:w-[30vw] bg-white rounded-lg shadow-2xl relative">
               {/* Highlighted top border */}

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { verifyMagicLinkToken } from "../../services/authService";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { debounce } from "lodash";
 
 import dogImage from "../../assets/images/picture-codes/dog.png";
 import catImage from "../../assets/images/picture-codes/cat.png";
@@ -48,6 +49,10 @@ function PictureCodeLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const requestInProgressRef = useRef(false);
+  const MAX_ATTEMPTS = 2; // Allow only 2 attempts before forcing reset
 
   // Shuffle pictures on component mount
   useEffect(() => {
@@ -68,7 +73,94 @@ function PictureCodeLogin() {
     setSelectedPictures(updated);
   };
 
-  const handleSubmit = async (e) => {
+  // Debounced submit handler to prevent rapid requests
+  const debouncedSubmit = useCallback(
+    debounce(async (pictureCode) => {
+      // If a request is already in progress, don't start another one
+      if (requestInProgressRef.current) {
+        return;
+      }
+
+      requestInProgressRef.current = true;
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // Use the verification endpoint with the picture code
+        const response = await verifyMagicLinkToken(
+          pictureCode,
+          "picture_code"
+        );
+
+        // Handle successful response
+        if (response) {
+          // Store tokens using the correct format
+          localStorage.setItem("accessToken", response.token || "");
+          localStorage.setItem("refreshToken", response.refreshToken || "");
+
+          // Store user data if available
+          if (response.user) {
+            localStorage.setItem("user", JSON.stringify(response.user));
+          }
+
+          // Update auth context - critical step
+          await checkAuth();
+
+          setSuccess(true);
+          setFailedAttempts(0); // Reset failed attempts on success
+
+          // Redirect after a short delay
+          setTimeout(() => {
+            const role = response.user?.role?.toLowerCase();
+            let dashboardRoute = "/Learner/Dashboard";
+
+            if (role === "admin") {
+              dashboardRoute = "/Admin/Dashboard";
+            } else if (role === "teacher" || role === "student_teacher") {
+              dashboardRoute = "/Teacher/Dashboard";
+            }
+
+            navigate(dashboardRoute);
+          }, 1500);
+        }
+      } catch (err) {
+        console.error("Picture verification failed:", err);
+
+        // Check if this is a rate limiting error
+        if (
+          err.message?.includes("Too many") ||
+          err.message?.includes("rate limit") ||
+          err.message?.includes("Circuit breaker")
+        ) {
+          setIsRateLimited(true);
+          setError(
+            "Too many attempts. Please wait and try again with a different pattern."
+          );
+        } else {
+          setFailedAttempts((prev) => prev + 1);
+          setError(
+            "Oops! That's not the right picture sequence. Please try again."
+          );
+        }
+
+        setSelectedPictures([]);
+
+        // Force reset after too many attempts
+        if (failedAttempts >= MAX_ATTEMPTS || isRateLimited) {
+          handleReset();
+        }
+      } finally {
+        setIsLoading(false);
+        // Add a small delay before allowing another submission
+        setTimeout(() => {
+          requestInProgressRef.current = false;
+        }, 1000);
+      }
+    }, 500), // 500ms debounce time
+    [checkAuth, navigate, failedAttempts, isRateLimited]
+  );
+
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (selectedPictures.length < 3) {
@@ -76,62 +168,36 @@ function PictureCodeLogin() {
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Create a code from picture NAMES not IDs
-      const pictureCode = selectedPictures
-        .map((p) => ID_TO_NAME_MAP[p.id])
-        .join("-");
-
-      // Use the verification endpoint with the picture code
-      const response = await verifyMagicLinkToken(pictureCode);
-
-      // Store tokens using the direct format from backend
-      if (response) {
-        // Set tokens using the correct format
-        localStorage.setItem("accessToken", response.token || "");
-        localStorage.setItem("refreshToken", response.refreshToken || "");
-
-        // Store user data if available
-        if (response.user) {
-          localStorage.setItem("user", JSON.stringify(response.user));
-        }
-
-        // Update auth context - critical step
-        await checkAuth();
-      }
-
-      setSuccess(true);
-
-      // Redirect after a short delay to show success animation
-      setTimeout(() => {
-        const role = response.user?.role?.toLowerCase();
-        let dashboardRoute = "/Learner/Dashboard";
-
-        if (role === "admin") {
-          dashboardRoute = "/Admin/Dashboard";
-        } else if (role === "teacher" || role === "student_teacher") {
-          dashboardRoute = "/Teacher/Dashboard";
-        }
-
-        navigate(dashboardRoute);
-      }, 1500);
-    } catch (err) {
-      console.error("Picture verification failed:", err);
-      setError(
-        "Oops! That's not the right picture sequence. Please try again."
-      );
-      setSelectedPictures([]);
-    } finally {
-      setIsLoading(false);
+    // Add this to prevent multiple submissions
+    if (isLoading) {
+      return;
     }
+
+    if (isRateLimited || failedAttempts >= MAX_ATTEMPTS) {
+      handleReset();
+      setIsRateLimited(false);
+      setFailedAttempts(0);
+      return;
+    }
+
+    // Create a code from picture NAMES not IDs
+    const pictureCode = selectedPictures
+      .map((p) => ID_TO_NAME_MAP[p.id])
+      .join("-");
+
+    // Use the debounced function to prevent multiple rapid requests
+    debouncedSubmit(pictureCode);
   };
 
   const handleReset = () => {
     setSelectedPictures([]);
     setError(null);
+
+    // If we've hit rate limits, reset attempts
+    if (isRateLimited) {
+      setIsRateLimited(false);
+      setFailedAttempts(0);
+    }
 
     // Reshuffle the pictures
     const shuffled = [...SAMPLE_PICTURES].sort(() => 0.5 - Math.random());
@@ -185,7 +251,7 @@ function PictureCodeLogin() {
             name="please select at least 3 pictures"
             className="text-red-500 text-center text-[3vw] lg:text-[0.9vw] max-lg:text-[2.5vw]"
           >
-            Please select at least 3 pictures
+            {error}
           </p>
         </div>
       )}
@@ -194,14 +260,16 @@ function PictureCodeLogin() {
       <div>
         <div className="mt-2 flex justify-center items-center space-x-2 h-20 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-2">
           {selectedPictures.length === 0 ? (
-            <span className="text-gray-400 text-sm">Select pictures below</span>
+            <span className="text-gray-400 text-[2.5vw] md:text-sm">
+              Select pictures below
+            </span>
           ) : (
             selectedPictures.map((pic, idx) => (
-              <div key={idx} className="relative">
+              <div key={idx} className="relative w-14 h-14">
                 <img
                   src={pic.url}
                   alt={pic.name}
-                  className="w-14 h-14 object-contain p-1 bg-white rounded border border-gray-200"
+                  className="w-full h-full object-contain p-1 bg-white rounded border border-gray-200"
                 />
                 <button
                   aria-label={`Remove ${pic.name}`}
@@ -218,14 +286,14 @@ function PictureCodeLogin() {
       </div>
 
       {/* Picture grid - Updated for better mobile responsiveness */}
-      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4">
+      <div className="grid grid-cols-4 md:grid-cols-5 gap-2 md:gap-4">
         {pictures.map((pic) => (
           <button
             key={pic.id}
             type="button"
             onClick={() => handlePictureSelect(pic)}
             disabled={selectedPictures.some((p) => p.id === pic.id)}
-            className={`p-2 rounded-lg border-2 transition-all ${
+            className={`aspect-square p-2 rounded-lg border-2 transition-all ${
               selectedPictures.some((p) => p.id === pic.id)
                 ? "border-[#F6BA18] bg-yellow-50 opacity-60"
                 : "border-gray-200 hover:border-[#F6BA18] hover:shadow-md"
@@ -234,7 +302,7 @@ function PictureCodeLogin() {
             <img
               src={pic.url}
               alt={pic.name}
-              className="w-full h-12 md:h-14 lg:h-16 object-contain"
+              className="w-full h-full object-contain"
             />
           </button>
         ))}

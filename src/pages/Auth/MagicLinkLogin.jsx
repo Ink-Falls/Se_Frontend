@@ -91,13 +91,13 @@ function MagicLinkLogin() {
         />
       </div>
 
-      {/* Spacer div that only appears on mobile */}
-      <div className="h-[3vw] md:h-[0vw]"></div>
+      {/* Spacer div that appears on mobile and medium screens */}
+      <div className="h-[3vw] md:h-[5vw] lg:h-[0vw]"></div>
 
       <div className="flex justify-center">
         <button
           type="submit"
-          className={`flex items-center justify-center min-w-[11rem] max-w-[11rem] px-6 py-3 
+          className={`flex items-center justify-center min-w-[8rem] md:min-w-[15rem] lg:min-w-[10rem] max-w-[12rem] md:max-w-[15rem] lg:max-w-[10rem] px-6 py-2 md:py-4 lg:py-3
           font-semibold rounded-md transition-colors duration-300 flex-shrink-0
           text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529] dark:bg-gray-900 dark:hover:bg-yellow-400
           disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300`}
@@ -130,7 +130,7 @@ function MagicLinkLogin() {
               </span>
             </div>
           ) : (
-            <span className="text-xs sm:text-sm md:sm lg:sm">
+            <span className="text-xs sm:text-sm md:text-2xl lg:text-base whitespace-nowrap">
               Send Magic Link
             </span>
           )}
