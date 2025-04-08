@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   getModulesByCourseId,
   getModuleContents,
   getModuleGrade,
-} from '../../services/moduleService';
-import Sidebar from '../../components/common/layout/Sidebar';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
-import Header from '../../components/common/layout/Header';
+} from "../../services/moduleService";
+import Sidebar from "../../components/common/layout/Sidebar";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
+import Header from "../../components/common/layout/Header";
 import {
   ChevronDown,
   Home,
@@ -17,14 +17,14 @@ import {
   FileText,
   ExternalLink,
   Lock,
-} from 'lucide-react';
-import { useCourse } from '../../contexts/CourseContext';
-import MobileNavBar from '../../components/common/layout/MobileNavbar';
-import { useAuth } from '../../contexts/AuthContext';
+} from "lucide-react";
+import { useCourse } from "../../contexts/CourseContext";
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
+import { useAuth } from "../../contexts/AuthContext";
 import {
   getCourseAssessments,
   getUserSubmission,
-} from '../../services/assessmentService';
+} from "../../services/assessmentService";
 
 const LearnerCourseModules = () => {
   const { selectedCourse } = useCourse();
@@ -32,21 +32,21 @@ const LearnerCourseModules = () => {
   const navigate = useNavigate();
 
   const navItems = [
-    { text: 'Home', icon: <Home size={20} />, route: '/Learner/Dashboard' },
+    { text: "Home", icon: <Home size={20} />, route: "/Learner/Dashboard" },
     {
-      text: 'Modules',
+      text: "Modules",
       icon: <BookOpen size={20} />,
-      route: '/Learner/CourseModules',
+      route: "/Learner/CourseModules",
     },
     {
-      text: 'Announcements',
+      text: "Announcements",
       icon: <Megaphone size={20} />,
-      route: '/Learner/CourseAnnouncements',
+      route: "/Learner/CourseAnnouncements",
     },
     {
-      text: 'Assessments',
+      text: "Assessments",
       icon: <ClipboardList size={20} />,
-      route: '/Learner/Assessment',
+      route: "/Learner/Assessment",
     },
   ];
 
@@ -59,7 +59,7 @@ const LearnerCourseModules = () => {
   const [moduleGrades, setModuleGrades] = useState({});
 
   const checkAssessmentPassed = (assessment, submission) => {
-    if (!submission || submission.status !== 'graded') return false;
+    if (!submission || submission.status !== "graded") return false;
     const score = submission.total_score || 0;
     const maxScore = assessment.max_score || 100;
     const percentage = (score / maxScore) * 100;
@@ -92,7 +92,7 @@ const LearnerCourseModules = () => {
 
   useEffect(() => {
     if (!selectedCourse?.id) {
-      navigate('/Learner/Dashboard');
+      navigate("/Learner/Dashboard");
       return;
     }
 
@@ -102,9 +102,9 @@ const LearnerCourseModules = () => {
         setError(null);
 
         if (!selectedCourse?.id) {
-          console.error('Missing course data:', selectedCourse);
+          console.error("Missing course data:", selectedCourse);
           setError(
-            'No course selected. Please select a course from the dashboard.'
+            "No course selected. Please select a course from the dashboard."
           );
           setLoading(false);
           return;
@@ -154,8 +154,8 @@ const LearnerCourseModules = () => {
 
         setModules(modulesWithContents);
       } catch (error) {
-        console.error('Error fetching modules:', error);
-        setError('Failed to load modules. Please try again.');
+        console.error("Error fetching modules:", error);
+        setError("Failed to load modules. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -177,7 +177,7 @@ const LearnerCourseModules = () => {
         const gradesMap = Object.fromEntries(grades);
         setModuleGrades(gradesMap);
       } catch (err) {
-        console.error('Error fetching module grades:', err);
+        console.error("Error fetching module grades:", err);
       }
     };
 
@@ -220,8 +220,8 @@ const LearnerCourseModules = () => {
         setModuleAssessments(assessmentsByModule);
         setSubmissions(allSubmissions);
       } catch (error) {
-        console.error('Error fetching module assessments:', error);
-        setError('Failed to load module data');
+        console.error("Error fetching module assessments:", error);
+        setError("Failed to load module data");
       }
     };
 
@@ -240,7 +240,7 @@ const LearnerCourseModules = () => {
         <Sidebar navItems={navItems} />
         <div className="flex-1">
           <Header
-            title={selectedCourse?.name || 'Course Modules'}
+            title={selectedCourse?.name || "Course Modules"}
             subtitle={selectedCourse?.code}
           />
           <MobileNavBar navItems={navItems} onLogout={logout} />
@@ -258,7 +258,7 @@ const LearnerCourseModules = () => {
         <Sidebar navItems={navItems} />
         <div className="flex-1 p-6">
           <Header
-            title={selectedCourse?.name || 'Course Modules'}
+            title={selectedCourse?.name || "Course Modules"}
             subtitle={selectedCourse?.code}
           />
           <MobileNavBar navItems={navItems} onLogout={logout} />
@@ -268,7 +268,7 @@ const LearnerCourseModules = () => {
               {error}
             </h3>
             <button
-              onClick={() => navigate('/Learner/Dashboard')}
+              onClick={() => navigate("/Learner/Dashboard")}
               className="mt-4 px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
             >
               Return to Dashboard
@@ -285,7 +285,7 @@ const LearnerCourseModules = () => {
         <Sidebar navItems={navItems} />
         <div className="flex-1 p-6">
           <Header
-            title={selectedCourse?.name || 'Course Modules'}
+            title={selectedCourse?.name || "Course Modules"}
             subtitle={selectedCourse?.code}
           />
           <MobileNavBar navItems={navItems} onLogout={logout} />
@@ -302,7 +302,7 @@ const LearnerCourseModules = () => {
                 teacher will add modules soon.
               </p>
               <button
-                onClick={() => navigate('/Learner/Dashboard')}
+                onClick={() => navigate("/Learner/Dashboard")}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529]"
               >
                 Return to Dashboard
@@ -321,22 +321,16 @@ const LearnerCourseModules = () => {
       <div
         key={module.module_id}
         className={`bg-white rounded-lg shadow-sm overflow-hidden border-l-4 border-yellow-500 ${
-          isLocked ? 'opacity-75' : 'hover:shadow-md'
+          isLocked ? "opacity-75" : "hover:shadow-md"
         }`}
       >
         <div className="p-6 relative">
           {isLocked && (
-            <div className="absolute inset-0 bg-gray-100/90 backdrop-blur-sm flex items-center justify-center z-10">
-              <div className="text-center p-6">
-                <Lock className="mx-auto h-12 w-12 text-yellow-500 mb-3" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Module Locked
-                </h3>
-                <p className="text-gray-600 max-w-sm">
-                  Complete all assessments in the previous module to unlock this
-                  content.
-                </p>
-              </div>
+            <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-[1px] flex flex-col items-center justify-center z-10 rounded-lg transition-all duration-300">
+              <Lock className="h-12 w-12 text-white/90" />
+              <span className="text-white/90 text-sm mt-2">
+                Pass the previous module to unlock
+              </span>
             </div>
           )}
 
@@ -366,7 +360,7 @@ const LearnerCourseModules = () => {
               <ChevronDown
                 size={20}
                 className={`transform transition-transform duration-200 ${
-                  expandedModules.includes(module.id) ? 'rotate-180' : ''
+                  expandedModules.includes(module.id) ? "rotate-180" : ""
                 }`}
               />
             </button>
@@ -438,7 +432,7 @@ const LearnerCourseModules = () => {
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-6 overflow-auto">
         <Header
-          title={selectedCourse?.name || 'Course Modules'}
+          title={selectedCourse?.name || "Course Modules"}
           subtitle={selectedCourse?.code}
         />
         <MobileNavBar navItems={navItems} onLogout={logout} />

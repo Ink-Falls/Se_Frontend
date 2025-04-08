@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import Sidebar from '/src/components/common/layout/Sidebar.jsx';
-import Header from '/src/components/common/layout/Header.jsx';
-import DeleteModal from '/src/components/common/Modals/Delete/DeleteModal.jsx';
-import AddUserModal from '/src/components/common/Modals/Add/AddUserModal.jsx';
-import CreateGroupModal from '/src/components/common/Modals/Create/CreateGroupModal.jsx';
-import EditUserModal from '/src/components/common/Modals/Edit/EditUserModal.jsx';
-import GroupDetailsModal from '../../components/common/Modals/View/GroupDetailsModal';
+import React, { useState, useEffect } from "react";
+import Sidebar from "/src/components/common/layout/Sidebar.jsx";
+import Header from "/src/components/common/layout/Header.jsx";
+import DeleteModal from "/src/components/common/Modals/Delete/DeleteModal.jsx";
+import AddUserModal from "/src/components/common/Modals/Add/AddUserModal.jsx";
+import CreateGroupModal from "/src/components/common/Modals/Create/CreateGroupModal.jsx";
+import EditUserModal from "/src/components/common/Modals/Edit/EditUserModal.jsx";
+import GroupDetailsModal from "../../components/common/Modals/View/GroupDetailsModal";
 import {
   Home,
   Book,
@@ -13,19 +13,19 @@ import {
   FileText,
   InboxIcon,
   AlertTriangle,
-} from 'lucide-react';
-import UserStats from '/src/components/specific/users/UserStats.jsx';
-import UserTable from '/src/components/specific/users/UserTable.jsx';
+} from "lucide-react";
+import UserStats from "/src/components/specific/users/UserStats.jsx";
+import UserTable from "/src/components/specific/users/UserTable.jsx";
 import {
   getAllUsers,
   updateUser,
   deleteUser,
-} from '/src/services/userService.js';
-import { generateUsersReport } from '../../services/reportService';
-import ReportViewerModal from '../../components/common/Modals/View/ReportViewerModal';
-import MobileNavBar from '../../components/common/layout/MobileNavbar';
-import { getAllCourses } from '/src/services/courseService.js';
-import { getGroupsByType } from '/src/services/groupService.js';
+} from "/src/services/userService.js";
+import { generateUsersReport } from "../../services/reportService";
+import ReportViewerModal from "../../components/common/Modals/View/ReportViewerModal";
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
+import { getAllCourses } from "/src/services/courseService.js";
+import { getGroupsByType } from "/src/services/groupService.js";
 
 function AdminDashboard() {
   const [courses, setCourses] = useState([]);
@@ -37,7 +37,7 @@ function AdminDashboard() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalLearners: 0,
@@ -50,7 +50,7 @@ function AdminDashboard() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
-  const [roleFilter, setRoleFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState("all");
   const [isGroupListModalOpen, setIsGroupListModalOpen] = useState(false);
   const [error, setError] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -66,7 +66,7 @@ function AdminDashboard() {
   // Add new state for sorting
   const [sortConfig, setSortConfig] = useState({
     key: null,
-    direction: 'asc',
+    direction: "asc",
   });
 
   const toggleDropdown = (id, event) => {
@@ -77,32 +77,32 @@ function AdminDashboard() {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
-        !event.target.closest('.dropdown-menu') &&
-        !event.target.closest('.menu-btn')
+        !event.target.closest(".dropdown-menu") &&
+        !event.target.closest(".menu-btn")
       ) {
         setDropdownOpen(null);
       }
     };
 
-    document.addEventListener('click', handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
 
     return () => {
-      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
     };
   }, []);
 
   const navItems = [
-    { text: 'Users', icon: <Home size={20} />, route: '/Admin/Dashboard' },
-    { text: 'Courses', icon: <Book size={20} />, route: '/Admin/Courses' },
+    { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
+    { text: "Courses", icon: <Book size={20} />, route: "/Admin/Courses" },
     {
-      text: 'Enrollments',
+      text: "Enrollments",
       icon: <Bell size={20} />,
-      route: '/Admin/Enrollments',
+      route: "/Admin/Enrollments",
     },
     {
-      text: 'Announcements',
+      text: "Announcements",
       icon: <FileText size={20} />,
-      route: '/Admin/Announcements',
+      route: "/Admin/Announcements",
     },
   ];
 
@@ -120,8 +120,8 @@ function AdminDashboard() {
         ] = await Promise.all([
           getAllCourses(),
           getAllUsers({ page: 1, limit: 0 }), // Get all teachers
-          getGroupsByType('learner'),
-          getGroupsByType('student_teacher'),
+          getGroupsByType("learner"),
+          getGroupsByType("student_teacher"),
         ]);
 
         setCourses(coursesData);
@@ -129,7 +129,7 @@ function AdminDashboard() {
         // Filter teachers from users data
         if (teachersData && Array.isArray(teachersData.users)) {
           const filteredTeachers = teachersData.users.filter(
-            (user) => user.role === 'teacher'
+            (user) => user.role === "teacher"
           );
           setTeachers(filteredTeachers);
         }
@@ -138,7 +138,7 @@ function AdminDashboard() {
         if (Array.isArray(learnerGroupsData)) {
           setLearnerGroups(learnerGroupsData);
         } else {
-          console.error('Invalid learner groups data:', learnerGroupsData);
+          console.error("Invalid learner groups data:", learnerGroupsData);
           setLearnerGroups([]);
         }
 
@@ -147,13 +147,13 @@ function AdminDashboard() {
           setStudentTeacherGroups(studentTeacherGroupsData);
         } else {
           console.error(
-            'Invalid student teacher groups data:',
+            "Invalid student teacher groups data:",
             studentTeacherGroupsData
           );
           setStudentTeacherGroups([]);
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error("Error fetching data:", error);
         setError(true);
       } finally {
         setIsLoading(false);
@@ -165,10 +165,10 @@ function AdminDashboard() {
 
   const getSchoolName = (schoolId) => {
     const schools = {
-      1001: 'Asuncion Consunji Elementary School (ACES)',
-      1002: 'University of Santo Tomas (UST)',
+      1001: "Asuncion Consunji Elementary School (ACES)",
+      1002: "University of Santo Tomas (UST)",
     };
-    return schools[schoolId] || 'N/A';
+    return schools[schoolId] || "N/A";
   };
 
   // Modify the users data to include school name
@@ -192,14 +192,14 @@ function AdminDashboard() {
         const roleCounts = result.roleCounts || [];
         const totalUsers = result.totalItems; // Total users from API
         const totalLearners =
-          roleCounts.find((role) => role.role === 'learner')?.count || 0;
+          roleCounts.find((role) => role.role === "learner")?.count || 0;
         const totalTeachers =
-          roleCounts.find((role) => role.role === 'teacher')?.count || 0;
+          roleCounts.find((role) => role.role === "teacher")?.count || 0;
         const totalStudentTeachers =
-          roleCounts.find((role) => role.role === 'student_teacher')?.count ||
+          roleCounts.find((role) => role.role === "student_teacher")?.count ||
           0;
         const totalAdmins =
-          roleCounts.find((role) => role.role === 'admin')?.count || 0;
+          roleCounts.find((role) => role.role === "admin")?.count || 0;
 
         setStats({
           totalUsers,
@@ -210,7 +210,7 @@ function AdminDashboard() {
         });
       }
     } catch (error) {
-      console.error('Error fetching total counts:', error);
+      console.error("Error fetching total counts:", error);
     }
   };
 
@@ -240,8 +240,8 @@ function AdminDashboard() {
           setTotalUsers(totalItems);
         }
       } catch (error) {
-        console.error('Error fetching users:', error);
-        setError('Failed to load users');
+        console.error("Error fetching users:", error);
+        setError("Failed to load users");
       } finally {
         setIsLoading(false);
       }
@@ -260,9 +260,9 @@ function AdminDashboard() {
     setSortConfig((prevConfig) => ({
       key,
       direction:
-        prevConfig.key === key && prevConfig.direction === 'asc'
-          ? 'desc'
-          : 'asc',
+        prevConfig.key === key && prevConfig.direction === "asc"
+          ? "desc"
+          : "asc",
     }));
     setCurrentPage(1); // Reset to first page when sorting
   };
@@ -276,17 +276,17 @@ function AdminDashboard() {
     // Apply search if query exists
     if (searchQuery) {
       processedResults = processedResults.filter((user) => {
-        const fullName = `${user.first_name} ${user.middle_initial || ''} ${
+        const fullName = `${user.first_name} ${user.middle_initial || ""} ${
           user.last_name
         }`.toLowerCase();
-        const email = user.email?.toLowerCase() || '';
+        const email = user.email?.toLowerCase() || "";
         const searchTerm = searchQuery.toLowerCase();
         return fullName.includes(searchTerm) || email.includes(searchTerm);
       });
     }
 
     // Apply role filter
-    if (roleFilter !== 'all') {
+    if (roleFilter !== "all") {
       processedResults = processedResults.filter(
         (user) => user.role === roleFilter
       );
@@ -295,24 +295,27 @@ function AdminDashboard() {
     // Apply sorting
     if (sortConfig.key) {
       processedResults.sort((a, b) => {
-        let aVal = a[sortConfig.key];
-        let bVal = b[sortConfig.key];
+        let aVal, bVal;
 
-        if (sortConfig.key === 'name') {
-          aVal = `${a.first_name} ${a.last_name}`;
-          bVal = `${b.first_name} ${b.last_name}`;
+        if (sortConfig.key === "fullName") {
+          // Create full names for comparison
+          aVal = `${a.first_name} ${a.middle_initial || ""} ${a.last_name}`
+            .trim()
+            .toLowerCase();
+          bVal = `${b.first_name} ${b.middle_initial || ""} ${b.last_name}`
+            .trim()
+            .toLowerCase();
+        } else {
+          aVal = a[sortConfig.key];
+          bVal = b[sortConfig.key];
+
+          if (typeof aVal === "string") aVal = aVal.toLowerCase();
+          if (typeof bVal === "string") bVal = bVal.toLowerCase();
         }
 
-        if (typeof aVal === 'string') aVal = aVal.toLowerCase();
-        if (typeof bVal === 'string') bVal = bVal.toLowerCase();
-
-        return sortConfig.direction === 'asc'
-          ? aVal < bVal
-            ? -1
-            : 1
-          : aVal > bVal
-          ? -1
-          : 1;
+        if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+        return 0;
       });
     }
 
@@ -342,7 +345,7 @@ function AdminDashboard() {
 
   // Add this function to handle search cancellation
   const handleSearchCancel = () => {
-    setSearchQuery('');
+    setSearchQuery("");
     setCurrentPage(1);
     if (allUsersData.length > 0) {
       const totalItems = allUsersData.length;
@@ -378,12 +381,12 @@ function AdminDashboard() {
       setShowDeleteModal(false);
       setSuccessMessage(
         `Successfully deleted ${selectedIds.length} user${
-          selectedIds.length > 1 ? 's' : ''
+          selectedIds.length > 1 ? "s" : ""
         }`
       );
     } catch (error) {
-      console.error('Error deleting users:', error);
-      setError(error.message || 'Failed to delete users');
+      console.error("Error deleting users:", error);
+      setError(error.message || "Failed to delete users");
     } finally {
       setIsLoading(false);
     }
@@ -420,8 +423,8 @@ function AdminDashboard() {
       // Update stats
       await fetchTotalCounts();
     } catch (error) {
-      console.error('Error refreshing users:', error);
-      setError('Failed to refresh users');
+      console.error("Error refreshing users:", error);
+      setError("Failed to refresh users");
     } finally {
       setIsLoading(false);
     }
@@ -431,10 +434,10 @@ function AdminDashboard() {
     try {
       await refreshUsers();
       setIsAddModalOpen(false);
-      setSuccessMessage('Successfully added user');
+      setSuccessMessage("Successfully added user");
     } catch (error) {
-      console.error('Error handling new user:', error);
-      setError('Failed to refresh user data after adding');
+      console.error("Error handling new user:", error);
+      setError("Failed to refresh user data after adding");
     }
   };
 
@@ -444,8 +447,8 @@ function AdminDashboard() {
       setSelectedUser(user);
       setIsEditModalOpen(true);
     } catch (error) {
-      console.error('Error updating user:', error);
-      alert(error.message || 'Failed to update user');
+      console.error("Error updating user:", error);
+      alert(error.message || "Failed to update user");
     }
   };
 
@@ -457,9 +460,9 @@ function AdminDashboard() {
       await refreshUsers();
       setIsEditModalOpen(false);
       setSelectedUser(null);
-      setSuccessMessage('Successfully edited user');
+      setSuccessMessage("Successfully edited user");
     } catch (error) {
-      console.error('Error saving user:', error);
+      console.error("Error saving user:", error);
       // Instead of showing alert, throw the error back to EditUserModal
       throw error;
     }
@@ -482,18 +485,18 @@ function AdminDashboard() {
       setReportError(null);
 
       // Get current user from localStorage
-      const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+      const currentUser = JSON.parse(localStorage.getItem("user")) || {};
 
       const doc = await generateUsersReport(currentUser);
-      const pdfBlob = doc.output('blob');
+      const pdfBlob = doc.output("blob");
       const pdfUrl = URL.createObjectURL(pdfBlob);
 
       setReportUrl(pdfUrl);
       setShowReportModal(true);
     } catch (error) {
-      console.error('Error generating report:', error);
-      setError('Failed to generate users report');
-      setReportError('Failed to generate users report');
+      console.error("Error generating report:", error);
+      setError("Failed to generate users report");
+      setReportError("Failed to generate users report");
       setShowReportModal(true);
     }
   };
@@ -509,7 +512,7 @@ function AdminDashboard() {
 
   const handlePrintReport = () => {
     if (reportUrl) {
-      window.open(reportUrl, '_blank');
+      window.open(reportUrl, "_blank");
     }
   };
 
@@ -520,19 +523,6 @@ function AdminDashboard() {
       setShowReportModal(false);
     }
   };
-
-  const EmptyState = () => (
-    <div className="flex flex-col items-center justify-center py-16 px-4">
-      <InboxIcon size={64} className="text-gray-300 mb-4" />
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">
-        No Users Found
-      </h3>
-      <p className="text-gray-500 text-center max-w-md mb-4">
-        There are currently no users in the system. Add users by clicking the
-        "Add User" button.
-      </p>
-    </div>
-  );
 
   const ErrorState = () => (
     <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -571,14 +561,9 @@ function AdminDashboard() {
   return (
     <>
       <div className="flex h-screen bg-gray-100 pb-8">
-        {' '}
-        {/* Added pb-16 */}
         <Sidebar navItems={navItems} />
         <div className="flex-1 p-6 overflow-auto pb-16">
-          {' '}
-          {/* Added pb-16 */}
           <Header title="Users" />
-          {/* Add success message display */}
           {successMessage && (
             <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
               {successMessage}
@@ -598,7 +583,6 @@ function AdminDashboard() {
               ))}
             </div>
           )}
-          {/* Real UserStats when not loading */}
           {!isLoading && (
             <UserStats
               totalUsers={stats.totalUsers}
@@ -623,29 +607,28 @@ function AdminDashboard() {
               </div>
             ) : error ? (
               <ErrorState />
-            ) : users.length === 0 ? (
-              <EmptyState />
             ) : (
               <UserTable
-                users={filteredUsers} // Pass filtered users instead of all users
-                onEdit={handleEditUser} // Updated to use handleEditUser
+                users={filteredUsers}
+                onEdit={handleEditUser}
                 onAddUser={() => setIsAddModalOpen(true)}
                 onDelete={() => setShowDeleteModal(true)}
                 selectedIds={selectedIds}
                 setSelectedIds={setSelectedIds}
-                onSearch={handleSearch} // Pass search handler
                 onCreateGroup={() => setIsCreateGroupModalOpen(true)}
                 onShowGroupList={handleShowGroupList}
-                onFilterChange={handleFilterChange} // Add this prop
-                currentFilter={roleFilter} // Add this prop
+                onSearch={handleSearch}
+                onFilterChange={handleFilterChange}
+                currentFilter={roleFilter}
                 currentPage={currentPage}
                 totalPages={totalPages}
                 totalUsers={totalUsers}
                 onPageChange={handlePageChange}
                 onGenerateReport={handleGenerateReport}
-                onSearchCancel={handleSearchCancel} // Add this prop
+                onSearchCancel={handleSearchCancel}
                 onSort={handleSort}
                 sortConfig={sortConfig}
+                searchQuery={searchQuery}
               />
             )}
           </div>
@@ -665,7 +648,7 @@ function AdminDashboard() {
           onConfirm={handleDeleteSelected}
           message={`Are you sure you want to delete ${
             selectedIds.length
-          } selected user${selectedIds.length > 1 ? 's' : ''}?`}
+          } selected user${selectedIds.length > 1 ? "s" : ""}?`}
         />
       )}
 
