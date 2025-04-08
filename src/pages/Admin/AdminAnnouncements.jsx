@@ -194,7 +194,7 @@ function AdminAnnouncements() {
   return (
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar navItems={navItems} />
-      <div className="flex-1 p-6 overflow-auto">
+      <div className="flex-1 p-6 overflow-y-auto pb-20 md:pb-32 lg:pb-6">
         <Header title={<span className="text-xl md:text-2xl">Announcements</span>} />
         <div className="bg-[#212529] text-white p-4 rounded-lg">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

@@ -403,27 +403,24 @@ function EnrolleeTable({
       </div>
 
       {/* Updated Pagination Controls */}
-      <div className="px-6 py-4 flex items-center justify-between border-t">
-        <div className="text-sm text-gray-700">
-          Showing page {((currentPage - 1) * itemsPerPage) + 1} of {Math.min(currentPage * itemsPerPage, totalItems)}
-        </div>
-        <div className="flex space-x-2 items-center">
+      <div className="px-6 py-4 flex items-center justify-start md:justify-end border-t">
+        <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 items-start md:items-center text-sm md:text-base">
           <button
             onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="px-3 py-1 rounded border bg-white text-gray-600 
-                     hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={currentPage === 1 || enrollees.length === 0}
+            className="w-full md:w-auto px-2 md:px-3 py-0.5 md:py-1 rounded border bg-white text-gray-600 
+                     hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
           >
             Previous
           </button>
-          <span className="px-4 py-1 text-gray-600">
-            Page {currentPage} of {totalPages}
+          <span className="px-2 md:px-4 py-0.5 md:py-1 text-gray-600 whitespace-nowrap text-sm md:text-base">
+            Page {currentPage} of {totalPages || 1}
           </span>
           <button
             onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-            className="px-3 py-1 rounded border bg-white text-gray-600 
-                     hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={currentPage >= totalPages || enrollees.length === 0}
+            className="w-full md:w-auto px-2 md:px-3 py-0.5 md:py-1 rounded border bg-white text-gray-600 
+                     hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
           >
             Next
           </button>
