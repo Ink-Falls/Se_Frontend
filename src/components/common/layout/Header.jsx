@@ -1,22 +1,42 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { getUserProfileImage } from "../../../utils/profileImages";
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { getUserProfileImage } from '../../../utils/profileImages';
 
 const Header = ({ title }) => {
   const [userData, setUserData] = useState(null);
   const [profileImage, setProfileImage] = useState(() => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
     return getUserProfileImage(user.role);
   });
 
-  const currentDate = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
 
+  // Add event listener for user updates
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const handleUserUpdate = () => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        setUserData(user);
+        setProfileImage(getUserProfileImage(user.role));
+      }
+    };
+
+    // Listen for user update events
+    window.addEventListener('userUpdated', handleUserUpdate);
+    handleUserUpdate(); // Initial load
+
+    return () => {
+      window.removeEventListener('userUpdated', handleUserUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const user = JSON.parse(storedUser);
       setUserData(user);
@@ -33,7 +53,11 @@ const Header = ({ title }) => {
           <p className="text-xs text-[#334155]">{currentDate}</p>
         </div>
         <Link to="/profile">
-          <img src={profileImage} alt="Profile" className="w-8 h-8 rounded-full" />
+          <img
+            src={profileImage}
+            alt="Profile"
+            className="w-8 h-8 rounded-full"
+          />
         </Link>
       </div>
 

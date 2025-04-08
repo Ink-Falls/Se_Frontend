@@ -18,6 +18,7 @@ import {
   Plus, // Add this import
   Trash2,
   MoreVertical, // Add this import
+  Users, // Add this import
 } from "lucide-react";
 import {
   getAssessmentById, // for getting all the questions
@@ -846,38 +847,56 @@ const TeacherAssessmentView = () => {
 
   // Update header section styles
   const renderHeader = () => (
-    <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 p-8 text-white">
+    <div className="relative bg-gradient-to-r from-[#212529] to-gray-800 p-6 md:p-8 text-white overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute top-0 right-0 w-64 h-64 transform translate-x-32 -translate-y-32 rotate-45 bg-yellow-500 opacity-10 rounded-full" />
+      <div className="absolute bottom-0 left-0 w-48 h-48 transform -translate-x-24 translate-y-24 rotate-45 bg-yellow-500 opacity-10 rounded-full" />
+
+      {/* Back button */}
       <button
         onClick={() => navigate("/Teacher/Assessment")}
-        className="flex items-center gap-2 text-gray-100 hover:text-[#F6BA18] transition-colors group mb-4"
+        className="flex items-center gap-2 text-gray-300 hover:text-[#F6BA18] transition-colors group mb-6"
       >
         <ArrowLeft
           size={20}
           className="group-hover:-translate-x-1 transition-transform"
         />
-        <span>Back to Assessments</span>
+        <span className="text-sm md:text-base">Back to Assessments</span>
       </button>
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">{assessmentData?.title}</h1>
-          <p className="text-gray-200 flex items-center gap-2">
-            <Clock size={16} />
-            Due: {assessmentData?.formattedDueDate}
-          </p>
+
+      {/* Main content */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+        <div className="space-y-3">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">
+            {assessmentData?.title}
+          </h1>
+          <div className="flex flex-col md:flex-row gap-4 text-gray-300 text-sm">
+            <div className="flex items-center gap-2">
+              <Clock size={16} className="text-[#F6BA18]" />
+              <span>Due: {assessmentData?.formattedDueDate}</span>
+            </div>
+            <div className="hidden md:block text-gray-500">•</div>
+            <div className="flex items-center gap-2">
+              <Users size={16} className="text-[#F6BA18]" />
+              <span>{submissions?.length || 0} Submissions</span>
+            </div>
+          </div>
         </div>
-        <div className="text-right">
-          <p className="mt-3 text-lg font-semibold">
-            Passing Score:{" "}
-            {formatPassingScore(
-              (assessmentData?.passing_score / assessmentData?.max_score) * 100
-            )}
-          </p>
-          <p className="text-sm text-gray-300">
-            Duration: {assessmentData?.duration_minutes} minutes
-          </p>
-          <p className="text-sm text-gray-300">
-            Allowed Attempts: {assessment?.allowed_attempts || "1"}
-          </p>
+
+        <div className="flex flex-col gap-3 md:text-right">
+          <div className="flex items-center gap-2 bg-black/20 px-4 py-2 rounded-lg">
+            <span className="text-[#F6BA18] font-medium">Passing Score:</span>
+            <span className="text-white">
+              {formatPassingScore(
+                assessmentData?.passing_score || 0,
+                assessmentData?.max_score || 0
+              )}
+            </span>
+          </div>
+          <div className="text-sm text-gray-300 space-y-1">
+            <p>Duration: {assessmentData?.duration_minutes} minutes</p>
+            <p>Allowed Attempts: {assessment?.allowed_attempts || "1"}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -1095,9 +1114,9 @@ const TeacherAssessmentView = () => {
   );
 
   // Add this helper function to format passing score
-  const formatPassingScore = (passingScore) => {
-    if (!passingScore) return "0%";
-    return `${passingScore}%`;
+  const formatPassingScore = (passingScore, maxScore) => {
+    if (!passingScore || !maxScore) return "0/0";
+    return `${passingScore}/${maxScore}`;
   };
 
   // Update the button sections to show loading state

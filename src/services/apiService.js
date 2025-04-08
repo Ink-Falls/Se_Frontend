@@ -329,6 +329,16 @@ const fetchWithInterceptor = async (url, options = {}, retryCount = 0) => {
           const retryAfter = parseInt(response.headers.get('Retry-After')) * 1000 || 
                             calculateBackoff(retryCount);
           
+          // For picture code verification, don't retry automatically
+          if (url.includes('/auth/passwordless/verify')) {
+            showAlert(
+              errorData.message || 'Too many attempts. Please try a different pattern.',
+              5000 // Show for 5 seconds
+            );
+            throw new Error('Rate limited: Too many attempts with this code pattern');
+          }
+          
+          // For other requests, use normal retry logic
           if (retryCount < RATE_LIMIT.MAX_RETRIES) {
             await new Promise(resolve => setTimeout(resolve, retryAfter));
             return fetchWithInterceptor(url, options, retryCount + 1);

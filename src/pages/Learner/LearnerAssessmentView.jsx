@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useCourse } from "../../contexts/CourseContext"; 
+import { useCourse } from "../../contexts/CourseContext";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
@@ -12,18 +12,19 @@ import {
   Clock,
   ArrowLeft,
   AlertTriangle,
-  Check
+  Check,
+  Users,
 } from "lucide-react";
-import { 
-  getAssessmentById, 
+import {
+  getAssessmentById,
   getUserSubmission,
-  getUserSubmissionCount
+  getUserSubmissionCount,
 } from "../../services/assessmentService";
 
 // Add this helper function before the component
 const calculateTotalPoints = (answers) => {
   if (!answers || !Array.isArray(answers)) return 0;
-  
+
   // Calculate earned points
   const earnedPoints = answers.reduce((total, answer) => {
     if (answer.is_auto_graded && answer.points_awarded !== null) {
@@ -43,14 +44,17 @@ const calculateTotalPoints = (answers) => {
 
   return {
     earned: earnedPoints,
-    total: totalPossiblePoints
+    total: totalPossiblePoints,
   };
 };
 
 const getStatus = (submission) => {
   if (!submission) return "Not Started";
   if (submission.is_late) return "Late";
-  return submission.status?.charAt(0).toUpperCase() + submission.status?.slice(1) || "Not Started";
+  return (
+    submission.status?.charAt(0).toUpperCase() + submission.status?.slice(1) ||
+    "Not Started"
+  );
 };
 
 const getStatusColor = (status) => {
@@ -91,12 +95,12 @@ const renderQuestionWithAnswer = (question, index, submission) => (
             className="max-w-md rounded-lg border border-gray-200"
             onError={(e) => {
               e.target.onerror = null;
-              e.target.style.display = 'none';
+              e.target.style.display = "none";
             }}
           />
         ) : (
           <div className="p-3 bg-gray-50 rounded-lg text-sm text-gray-600 border border-gray-200">
-            <a 
+            <a
               href={question.media_url}
               target="_blank"
               rel="noopener noreferrer"
@@ -115,9 +119,13 @@ const renderQuestionWithAnswer = (question, index, submission) => (
       <div className="mt-2">
         {submission ? (
           submission.selected_option ? (
-            <p className="text-gray-800">{submission.selected_option.option_text}</p>
+            <p className="text-gray-800">
+              {submission.selected_option.option_text}
+            </p>
           ) : (
-            <p className="text-gray-800">{submission.text_response || 'No response'}</p>
+            <p className="text-gray-800">
+              {submission.text_response || "No response"}
+            </p>
           )
         ) : (
           <p className="text-gray-500 italic">Not answered</p>
@@ -126,7 +134,9 @@ const renderQuestionWithAnswer = (question, index, submission) => (
       {submission?.points_awarded !== undefined && (
         <div className="mt-4 flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700">Score:</span>
-          <span className="text-sm text-gray-900">{submission.points_awarded}/{question.points}</span>
+          <span className="text-sm text-gray-900">
+            {submission.points_awarded}/{question.points}
+          </span>
         </div>
       )}
       {submission?.feedback && (
@@ -143,7 +153,12 @@ const LearnerAssessmentView = () => {
   const { selectedCourse } = useCourse();
   const navigate = useNavigate();
   const location = useLocation();
-  const { assessment, submission: initialSubmission, status, error: routeError } = location.state || {};
+  const {
+    assessment,
+    submission: initialSubmission,
+    status,
+    error: routeError,
+  } = location.state || {};
   const [textAnswer, setTextAnswer] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState("");
@@ -181,7 +196,7 @@ const LearnerAssessmentView = () => {
 
   useEffect(() => {
     if (!selectedCourse?.id) {
-      navigate('/Learner/Dashboard');
+      navigate("/Learner/Dashboard");
       return;
     }
   }, [selectedCourse, navigate]);
@@ -191,35 +206,37 @@ const LearnerAssessmentView = () => {
       try {
         setLoading(true);
         const response = await getAssessmentById(assessment.id, true, false);
-        
+
         if (response.success && response.assessment) {
           const assessmentData = {
             ...response.assessment,
-            formattedDueDate: new Date(response.assessment.due_date).toLocaleString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })
+            formattedDueDate: new Date(
+              response.assessment.due_date
+            ).toLocaleString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
           };
 
           setAssessmentData(assessmentData);
           setQuestions(assessmentData.questions || []);
-          
+
           // Initialize progress data for each question
-          const progress = assessmentData.questions.map(question => ({
+          const progress = assessmentData.questions.map((question) => ({
             questionId: question.id,
             answered: false,
-            answer: null
+            answer: null,
           }));
           setProgressData(progress);
         } else {
-          throw new Error(response.message || 'Failed to fetch assessment');
+          throw new Error(response.message || "Failed to fetch assessment");
         }
       } catch (err) {
-        console.error('Error:', err);
-        setError(err.message || 'Failed to load assessment');
+        console.error("Error:", err);
+        setError(err.message || "Failed to load assessment");
         setQuestions([]);
         setProgressData([]);
       } finally {
@@ -236,7 +253,7 @@ const LearnerAssessmentView = () => {
     const fetchAssessmentAndSubmission = async () => {
       try {
         if (!assessment?.id) {
-          throw new Error('Assessment ID is missing');
+          throw new Error("Assessment ID is missing");
         }
 
         setLoading(true);
@@ -244,32 +261,37 @@ const LearnerAssessmentView = () => {
 
         // Get submission data which includes assessment details
         const submissionResponse = await getUserSubmission(assessment.id, true);
-        
+
         if (submissionResponse?.success) {
           // Check specifically for in-progress submission
-          if (submissionResponse.submission?.status === 'in_progress') {
+          if (submissionResponse.submission?.status === "in_progress") {
             setExistingSubmission(submissionResponse.submission);
-            console.log('Found in-progress submission:', submissionResponse.submission);
+            console.log(
+              "Found in-progress submission:",
+              submissionResponse.submission
+            );
           }
-          
+
           if (submissionResponse.assessment) {
             const assessmentData = {
               ...submissionResponse.assessment,
-              formattedDueDate: new Date(submissionResponse.assessment.due_date).toLocaleString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })
+              formattedDueDate: new Date(
+                submissionResponse.assessment.due_date
+              ).toLocaleString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
             };
             setAssessmentData(assessmentData);
             setQuestions(assessmentData.questions || []);
           }
         }
       } catch (err) {
-        console.error('Error:', err);
-        setError(err.message || 'Failed to load assessment details');
+        console.error("Error:", err);
+        setError(err.message || "Failed to load assessment details");
       } finally {
         setLoading(false);
       }
@@ -291,8 +313,8 @@ const LearnerAssessmentView = () => {
           }
         }
       } catch (err) {
-        console.error('Error fetching submissions:', err);
-        setError('Failed to fetch submission history');
+        console.error("Error fetching submissions:", err);
+        setError("Failed to fetch submission history");
       }
     };
 
@@ -309,8 +331,8 @@ const LearnerAssessmentView = () => {
           console.log("Submission count updated:", response.count); // Debugging
         }
       } catch (err) {
-        console.error('Error fetching submission count:', err);
-        setError('Failed to fetch submission count');
+        console.error("Error fetching submission count:", err);
+        setError("Failed to fetch submission count");
       }
     };
 
@@ -318,8 +340,10 @@ const LearnerAssessmentView = () => {
   }, [assessment?.id]);
 
   useEffect(() => {
-    if (routeError === 'Maximum attempts reached') {
-      setError('You have reached the maximum number of allowed attempts for this assessment.');
+    if (routeError === "Maximum attempts reached") {
+      setError(
+        "You have reached the maximum number of allowed attempts for this assessment."
+      );
     }
   }, [routeError]);
 
@@ -413,9 +437,11 @@ const LearnerAssessmentView = () => {
   const handleStartNewAttempt = async () => {
     try {
       setLoading(true);
-      
+
       // Check for existing attempt in localStorage
-      const existingData = localStorage.getItem(`ongoing_assessment_${assessment.id}`);
+      const existingData = localStorage.getItem(
+        `ongoing_assessment_${assessment.id}`
+      );
       let existingSubmissionId = null;
 
       if (existingData) {
@@ -425,15 +451,15 @@ const LearnerAssessmentView = () => {
 
       // Navigate with appropriate state
       navigate(`/Learner/Assessment/Attempt/${assessment.id}`, {
-        state: { 
+        state: {
           assessment,
           isNewAttempt: true,
-          submissionId: existingSubmissionId // Pass existing submission ID if available
-        }
+          submissionId: existingSubmissionId, // Pass existing submission ID if available
+        },
       });
     } catch (error) {
-      console.error('Error starting assessment:', error);
-      setError('Failed to start assessment. Please try again.');
+      console.error("Error starting assessment:", error);
+      setError("Failed to start assessment. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -443,11 +469,11 @@ const LearnerAssessmentView = () => {
     try {
       setLoading(true);
       const submissionResponse = await getUserSubmission(assessment.id, true);
-      
-      console.log('Latest submission fetch:', {
+
+      console.log("Latest submission fetch:", {
         success: submissionResponse.success,
         hasSubmission: !!submissionResponse.submission,
-        submissionStatus: submissionResponse.submission?.status
+        submissionStatus: submissionResponse.submission?.status,
       });
 
       if (submissionResponse.success && submissionResponse.submission) {
@@ -455,24 +481,28 @@ const LearnerAssessmentView = () => {
       }
       setShowAnswers(!showAnswers);
     } catch (err) {
-      console.error('Error fetching latest submission:', err);
-      setError('Failed to load submission details');
+      console.error("Error fetching latest submission:", err);
+      setError("Failed to load submission details");
     } finally {
       setLoading(false);
     }
   };
 
-  // Add this helper function to format passing score
-  const formatPassingScore = (passingScore) => {
-    if (!passingScore) return "0%";
-    return `${passingScore}%`;
+  // Update the formatPassingScore function to show score/max format
+  const formatPassingScore = (passingScore, maxScore) => {
+    if (!passingScore || !maxScore) return "0/0";
+    return `${passingScore}/${maxScore}`;
   };
 
   const renderHeader = () => (
-    <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 p-4 md:p-8 text-white">
+    <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 p-4 md:p-8 text-white overflow-hidden rounded-t-xl">
+      {/* Decorative elements - adjusted positioning */}
+      <div className="absolute top-0 right-0 w-48 h-48 transform translate-x-16 -translate-y-16 rotate-45 bg-yellow-500 opacity-10 rounded-full" />
+      <div className="absolute bottom-0 left-0 w-36 h-36 transform -translate-x-16 translate-y-16 rotate-45 bg-yellow-500 opacity-10 rounded-full" />
+
       <button
         onClick={() => navigate("/Learner/Assessment")}
-        className="flex items-center gap-2 text-gray-100 hover:text-[#F6BA18] transition-colors mb-4 group"
+        className="flex items-center gap-2 text-gray-300 hover:text-[#F6BA18] transition-colors mb-4 group"
       >
         <ArrowLeft
           size={20}
@@ -481,37 +511,61 @@ const LearnerAssessmentView = () => {
         <span className="text-sm md:text-base">Back to Assessments</span>
       </button>
 
-      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-        <div>
-          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+        <div className="space-y-3">
+          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
             <h1 className="text-xl md:text-3xl font-bold">
               {assessmentData?.title || assessment?.title}
             </h1>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium w-fit ${getStatusColor(getStatus(initialSubmission))}`}>
+            <span
+              className={`px-3 py-1 rounded-full text-sm font-medium w-fit ${getStatusColor(
+                getStatus(initialSubmission)
+              )}`}
+            >
               {getStatus(initialSubmission)}
             </span>
           </div>
-          <p aria-label="due" className="text-gray-200 flex items-center gap-2 text-sm md:text-base">
-            <Clock size={16} />
-            Due: {assessment?.due_date && new Date(assessment.due_date).toLocaleDateString()}
-          </p>
-          <p className="text-xs md:text-sm text-gray-300 mt-2">
-            {assessment?.description}
-          </p>
+          <div className="flex flex-col md:flex-row gap-4 text-gray-300 text-sm">
+            <div className="flex items-center gap-2">
+              <Clock size={16} className="text-[#F6BA18]" />
+              <span>Due: {assessmentData?.formattedDueDate}</span>
+            </div>
+            {initialSubmission && (
+              <>
+                <div className="hidden md:block text-gray-500">•</div>
+                <div className="flex items-center gap-2">
+                  <Users size={16} className="text-[#F6BA18]" />
+                  <span>
+                    Attempt {submissionCount} of{" "}
+                    {assessment?.allowed_attempts || 1}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+          <p className="text-sm text-gray-300">{assessment?.description}</p>
         </div>
-        <div className="text-left md:text-right space-y-1">
-          <p aria-label="pass_score" className="text-base md:text-lg font-semibold">
-            Passing Score: {formatPassingScore(assessmentData?.passing_score/assessmentData?.max_score * 100)}
-          </p>
-          <p className="text-xs md:text-sm text-gray-300">
-            Duration: {assessment?.duration_minutes || '0'} minutes
-          </p>
-          <p className="text-xs md:text-sm text-gray-300">
-            Allowed Attempts: {assessment?.allowed_attempts || '1'}
-          </p>
-          <p className="text-xs md:text-sm text-gray-300">
-            Remaining Attempts: {Math.max(0, (assessment?.allowed_attempts || 1) - submissionCount)}
-          </p>
+
+        <div className="flex flex-col gap-3 md:text-right">
+          <div className="flex items-center gap-2 bg-black/20 px-4 py-2 rounded-lg">
+            <span className="text-[#F6BA18] font-medium">Passing Score:</span>
+            <span className="text-white">
+              {formatPassingScore(
+                assessmentData?.passing_score || 0,
+                assessmentData?.max_score || 0
+              )}
+            </span>
+          </div>
+          <div className="text-sm text-gray-300 space-y-1">
+            <p>Duration: {assessment?.duration_minutes} minutes</p>
+            <p>
+              Remaining Attempts:{" "}
+              {Math.max(
+                0,
+                (assessment?.allowed_attempts || 1) - submissionCount
+              )}
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -519,15 +573,19 @@ const LearnerAssessmentView = () => {
 
   const renderSubmissionStatus = () => {
     // Check localStorage first for ongoing attempt
-    const storedData = localStorage.getItem(`ongoing_assessment_${assessment.id}`);
-    const storedSubmissionId = storedData ? JSON.parse(storedData).submissionId : null;
-    
-    console.log('Submission Status Check:', {
+    const storedData = localStorage.getItem(
+      `ongoing_assessment_${assessment.id}`
+    );
+    const storedSubmissionId = storedData
+      ? JSON.parse(storedData).submissionId
+      : null;
+
+    console.log("Submission Status Check:", {
       storedSubmissionId,
       hasStoredData: !!storedData,
-      initialSubmission: !!initialSubmission
+      initialSubmission: !!initialSubmission,
     });
-  
+
     if (storedSubmissionId) {
       // Override the completed submission view if there's a stored submission
       return (
@@ -550,13 +608,15 @@ const LearnerAssessmentView = () => {
         </div>
       );
     }
-  
-    if (error || routeError === 'Maximum attempts reached') {
+
+    if (error || routeError === "Maximum attempts reached") {
       return (
         <div className="text-center py-8">
           <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
           <h3 className="text-xl font-medium text-gray-900 mt-4 mb-2">
-            {location.state?.errorDetails || error || "Maximum number of attempts has been reached"}
+            {location.state?.errorDetails ||
+              error ||
+              "Maximum number of attempts has been reached"}
           </h3>
           <button
             onClick={() => navigate("/Learner/Assessment")}
@@ -567,7 +627,7 @@ const LearnerAssessmentView = () => {
         </div>
       );
     }
-  
+
     // Show not started state if no submission and no stored attempt
     if (!initialSubmission) {
       return (
@@ -590,7 +650,7 @@ const LearnerAssessmentView = () => {
         </div>
       );
     }
-  
+
     // Show completed submission view only if no stored attempt
     return (
       <div className="space-y-6">
@@ -598,21 +658,23 @@ const LearnerAssessmentView = () => {
           <Check className="mx-auto h-12 w-12 text-green-500" />
           <h3 className="mt-2 text-lg font-medium">Latest Attempt</h3>
           <p className="text-sm text-gray-500">
-            Submitted on: {new Date(initialSubmission.submit_time).toLocaleString()}
+            Submitted on:{" "}
+            {new Date(initialSubmission.submit_time).toLocaleString()}
           </p>
-          
+
           {initialSubmission.total_score !== undefined && (
             <div className="mt-4 text-2xl font-bold">
-              Score: {calculateTotalPoints(initialSubmission.answers).earned}/{calculateTotalPoints(initialSubmission.answers).total}
+              Score: {calculateTotalPoints(initialSubmission.answers).earned}/
+              {calculateTotalPoints(initialSubmission.answers).total}
             </div>
           )}
-  
+
           <div className="mt-6 flex justify-center gap-4">
             <button
               onClick={handleShowAnswers}
               className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
             >
-              {showAnswers ? 'Hide My Answers' : 'Show My Answers'}
+              {showAnswers ? "Hide My Answers" : "Show My Answers"}
             </button>
             <button
               onClick={handleStartNewAttempt}
@@ -622,13 +684,15 @@ const LearnerAssessmentView = () => {
             </button>
           </div>
         </div>
-  
+
         {/* Show answers section - use latestSubmission instead of initialSubmission */}
         {showAnswers && latestSubmission?.answers && (
           <div className="mt-6 space-y-6">
             <h4 className="text-lg font-medium text-gray-900">Your Answers</h4>
             {questions.map((question, index) => {
-              const answer = latestSubmission.answers.find(a => a.question_id === question.id);
+              const answer = latestSubmission.answers.find(
+                (a) => a.question_id === question.id
+              );
               return renderQuestionWithAnswer(question, index, answer);
             })}
           </div>
@@ -641,14 +705,14 @@ const LearnerAssessmentView = () => {
     <div className="flex flex-col md:flex-row h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-3 md:p-6 overflow-auto">
-        <Header 
+        <Header
           title={selectedCourse?.name || "Assessment"}
-          subtitle={selectedCourse?.code} 
+          subtitle={selectedCourse?.code}
         />
         <div className="max-w-7xl mx-auto">
           <div className="mt-4 md:mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
             {renderHeader()}
-            
+
             <div className="p-4 md:p-6 border-b border-gray-200">
               {/* ...existing instructions code... */}
             </div>
