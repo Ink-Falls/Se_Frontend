@@ -194,14 +194,14 @@ function PictureCodeLogin() {
       <div>
         <div className="mt-2 flex justify-center items-center space-x-2 h-20 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-2">
           {selectedPictures.length === 0 ? (
-            <span className="text-gray-400 text-sm">Select pictures below</span>
+            <span className="text-gray-400 text-[2.5vw] md:text-sm">Select pictures below</span>
           ) : (
             selectedPictures.map((pic, idx) => (
-              <div key={idx} className="relative">
+              <div key={idx} className="relative w-14 h-14">
                 <img
                   src={pic.url}
                   alt={pic.name}
-                  className="w-14 h-14 object-contain p-1 bg-white rounded border border-gray-200"
+                  className="w-full h-full object-contain p-1 bg-white rounded border border-gray-200"
                 />
                 <button
                   aria-label={`Remove ${pic.name}`}
@@ -218,14 +218,14 @@ function PictureCodeLogin() {
       </div>
 
       {/* Picture grid - Updated for better mobile responsiveness */}
-      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4">
+      <div className="grid grid-cols-4 md:grid-cols-5 gap-2 md:gap-4">
         {pictures.map((pic) => (
           <button
             key={pic.id}
             type="button"
             onClick={() => handlePictureSelect(pic)}
             disabled={selectedPictures.some((p) => p.id === pic.id)}
-            className={`p-2 rounded-lg border-2 transition-all ${
+            className={`aspect-square p-2 rounded-lg border-2 transition-all ${
               selectedPictures.some((p) => p.id === pic.id)
                 ? "border-[#F6BA18] bg-yellow-50 opacity-60"
                 : "border-gray-200 hover:border-[#F6BA18] hover:shadow-md"
@@ -234,7 +234,7 @@ function PictureCodeLogin() {
             <img
               src={pic.url}
               alt={pic.name}
-              className="w-full h-12 md:h-14 lg:h-16 object-contain"
+              className="w-full h-full object-contain"
             />
           </button>
         ))}
