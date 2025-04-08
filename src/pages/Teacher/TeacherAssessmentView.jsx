@@ -105,7 +105,7 @@ const TeacherAssessmentView = () => {
     {
       text: "Progress Tracker",
       icon: <LineChart size={20} />,
-      route: "/TeacherProgress",
+      route: "/Teacher/ProgressTracker",
     },
   ];
 
