@@ -226,14 +226,14 @@ function Login() {
             <img
               src={logo}
               alt="ARALKADEMY Logo"
-              className="h-[5vw] lg:h-[2.5vw] mr-2"
+              className="h-[8vw] md:h-[5vw] lg:h-[2.5vw] mr-2"
             />
           </div>
 
           {/* Enroll button */}
           <button
             onClick={handleEnroll}
-            className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] lg:py-[0.5vw] lg:px-[2vw] max-lg:text-[2.5vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
+            className="text-[4vw] py-[1.5vw] px-[6vw] md:text-[3vw] md:py-[1vw] md:px-[4vw] lg:text-[1vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
           >
             Enroll
           </button>
@@ -352,7 +352,7 @@ function Login() {
                       <button
                         type="button"
                         onClick={handleTogglePassword}
-                        className="absolute right-[3vw] lg:right-[1vw] top-1/2 transform -translate-y-1/2 text-gray-500"
+                        className="absolute right-[3vw] lg:right-[1vw] top-[55%] transform -translate-y-1/2 text-gray-500"
                         aria-label="Toggle password visibility"
                         data-testid="password-toggle"
                       >
@@ -404,7 +404,7 @@ function Login() {
                   <div className="flex justify-center mt-[0.5vw]">
                     <button
                       type="submit"
-                      className={`flex items-center justify-center min-w-[10rem] max-w-[10rem] px-6 py-3 
+                      className={`flex items-center justify-center min-w-[8rem] md:min-w-[15rem] lg:min-w-[10rem] max-w-[12rem] md:max-w-[15rem] lg:max-w-[10rem] px-6 py-2 md:py-4 lg:py-3
           font-semibold rounded-md transition-colors duration-300 ease-in-out flex-shrink-0
           text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529] dark:bg-gray-900 dark:hover:bg-yellow-400
           disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300`}
@@ -433,12 +433,12 @@ function Login() {
                               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                             ></path>
                           </svg>
-                          <span className="animate-pulse text-sm md:text-base">
+                          <span className="animate-pulse text-sm md:text-lg lg:text-base">
                             Loading...
                           </span>
                         </div>
                       ) : (
-                        <span className="text-xs sm:text-sm md:text-base lg:text-base">
+                        <span className="text-xs sm:text-sm md:text-2xl lg:text-base">
                           Log In
                         </span>
                       )}

@@ -126,20 +126,20 @@ function NumericCodeLogin() {
               value={digit}
               onChange={(e) => handleChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
-              className="w-[10vw] h-[12vw] lg:w-[3vw] lg:h-[4vw] xl:w-[2.5vw] xl:h-[3.5vw] text-[3vw] lg:text-[1vw] xl:text-[0.8vw] max-lg:text-[2.5vw] border-2 border-[#64748B] rounded-md text-center font-bold focus:outline-none focus:ring-2 focus:ring-[#F6BA18] focus:border-[#F6BA18]"
+              className="w-[10vw] h-[12vw] md:w-[8vw] md:h-[9vw] lg:w-[3vw] lg:h-[4vw] text-[5vw] md:text-[4vw] lg:text-[1.5vw] border-2 border-[#64748B] rounded-md text-center font-bold focus:outline-none focus:ring-2 focus:ring-[#F6BA18] focus:border-[#F6BA18]"
             />
           ))}
         </div>
       </div>
 
-      {/* Spacer div that only appears on mobile */}
-      <div className="h-[3vw] md:h-[0vw]"></div>
+      {/* Spacer div that appears on mobile and medium screens */}
+      <div className="h-[3vw] md:h-[5vw] lg:h-[0vw]"></div>
 
       <div className="flex justify-center mt-[4vw] lg:mt-[2vw]">
         <button
           type="submit"
-          className={`flex items-center justify-center min-w-[10rem] max-w-[10rem] px-6 py-3 mt-3 
-          font-semibold rounded-md transition-colors duration-300 flex-shrink-0
+          className={`flex items-center justify-center min-w-[8rem] md:min-w-[15rem] lg:min-w-[10rem] max-w-[12rem] md:max-w-[15rem] lg:max-w-[10rem] px-6 py-2 md:py-4 lg:py-3
+          font-semibold rounded-md transition-colors duration-300 ease-in-out flex-shrink-0
           text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529] dark:bg-gray-900 dark:hover:bg-yellow-400
           disabled:cursor-not-allowed disabled:bg-gray-600 disabled:text-gray-300`}
           disabled={isLoading}
@@ -166,7 +166,7 @@ function NumericCodeLogin() {
               </span>
             </div>
           ) : (
-            <span className="text-xs sm:text-sm md:text-base lg:text-base">
+            <span className="text-xs sm:text-sm md:text-2xl lg:text-base">
               Log In
             </span>
           )}

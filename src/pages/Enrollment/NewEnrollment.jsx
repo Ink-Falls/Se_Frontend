@@ -217,31 +217,34 @@ function NewEnrollment() {
   return (
     <>
       <div
-        className="min-h-screen bg-cover bg-center"
+        className="min-h-screen bg-cover bg-center relative"
         style={{
           backgroundImage:
             "url(https://upload.wikimedia.org/wikipedia/commons/7/7b/400_Year_old_Beauty.jpg)",
         }}
       >
-        <header className="py-[3vw] px-[4vw] lg:py-[1.5vw] lg:px-[2vw] bg-[#121212] text-[#F6BA18] flex justify-between items-center shadow-xl">
+        {/* Semi-transparent black overlay */}
+        <div className="absolute inset-0 bg-black opacity-30"></div>
+
+        <header className="relative z-10 py-[3vw] px-[4vw] lg:py-[1.5vw] lg:px-[2vw] bg-[#121212] text-[#F6BA18] flex justify-between items-center shadow-xl">
           <div className="flex items-center">
             <img
               src={logo}
               alt="ARALKADEMY Logo"
-              className="h-[5vw] lg:h-[2.5vw] mr-2"
+              className="h-[8vw] md:h-[5vw] lg:h-[2.5vw] mr-2"
             />
           </div>
 
           <button
             onClick={() => navigate("/Login")}
-            className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
+            className="text-[4vw] py-[1.5vw] px-[6vw] md:text-[3vw] md:py-[1vw] md:px-[4vw] lg:text-[1vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-[#FFFFFF] transition-colors duration-300 ease-in-out"
           >
             Log In
           </button>
         </header>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="mt-[5vw] lg:mt-[0vw] flex flex-col lg:flex-row items-center rounded-lg">
-            <div className="p-[10vw] max-lg:p-[9vw] max-w-[90vw] w-[90vw] lg:p-[2vw] lg:max-w-[60vw] my-[2vw] lg:w-[80vw] bg-white rounded-lg shadow-2xl relative">
+        <div className="relative z-10 flex items-center justify-center min-h-screen pb-[15vw] md:pb-[10vw] lg:pb-0">
+          <div className="mt-[10vw] md:mt-[15vw] lg:mt-[0vw] flex flex-col lg:flex-row items-center rounded-lg">
+            <div className="p-[5vw] max-lg:p-[7vw] w-[80vw] lg:p-[2.5vw] lg:w-[60vw] bg-white rounded-lg shadow-2xl relative">
               <div className="top-[0vw] left-[0vw] h-[1.5vw] lg:top-[0vw] lg:left-[0vw] lg:h-[0.5vw] absolute w-full bg-[#F6BA18] rounded-t-lg"></div>
               <h2 className="text-[8vw] lg:text-[2vw] max-lg:text-[6vw] font-bold text-left text-[#212529]">
                 Enrollment
@@ -345,7 +348,7 @@ function NewEnrollment() {
                                 ? setShowPassword(!showPassword)
                                 : setShowConfirmPassword(!showConfirmPassword)
                             }
-                            className="absolute right-[3vw] lg:right-[1vw] top-1/2 transform -translate-y-1/2 text-gray-500"
+                            className="absolute right-[3vw] lg:right-[1vw] top-[55%] transform -translate-y-1/2 text-gray-500"
                             aria-label={`Toggle ${field.label.toLowerCase()} visibility`}
                           >
                             {field.name === "password" ? (
@@ -455,7 +458,7 @@ function NewEnrollment() {
                 <div className="flex justify-end items-center w-full">
                   <button
                     type="submit"
-                    className="py-[1.5vw] px-[10vw] text-[3.5vw] mb-[2vw] max-lg:text-[2.5vw] mt-[3vw] lg:mb-[0.2vw] lg:mt-[0.vw] lg:py-[0.4vw] lg:px-[2.5vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-bold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
+                    className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] mb-[2vw] mt-[2vw] lg:mb-[0.2vw] lg:mt-[0.2vw] lg:py-[0.4vw] lg:px-[2.5vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
                     disabled={isLoading}
                   >
                     {isLoading ? "Submitting..." : "Submit"}
