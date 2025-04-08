@@ -74,30 +74,73 @@ const TeacherProgressTracker = () => {
 
         const assessmentsByModule = {};
         const gradesByModule = {};
+        const submissionsByAssessment = {};
 
-        for (const module of modulesResponse) {
-          try {
-            const assessmentResponse = await getCourseAssessments(module.module_id, true);
-            if (assessmentResponse.success) {
-              assessmentsByModule[module.module_id] = assessmentResponse.assessments;
+        
+      for (const module of modulesResponse) {
+        try {
+          const assessmentResponse = await getCourseAssessments(module.module_id, true);
+          if (assessmentResponse.success) {
+            assessmentsByModule[module.module_id] = assessmentResponse.assessments;
+            
+            // Fetch submissions for each assessment immediately
+            for (const assessment of assessmentResponse.assessments) {
+              try {
+                const submissionsResponse = await getAssessmentSubmissions(assessment.id);
+                if (submissionsResponse.success) {
+                  const detailedSubmissions = await Promise.all(
+                    submissionsResponse.submissions.map(async (sub) => {
+                      try {
+                        const detailsResponse = await getSubmissionDetails(sub.id);
+                        if (detailsResponse.success && detailsResponse.submission) {
+                          const scores = calculateSubmissionScore(detailsResponse.submission);
+                          return {
+                            id: sub.id,
+                            student: {
+                              name: `${detailsResponse.submission.user?.first_name || ''} ${detailsResponse.submission.user?.last_name || ''}`.trim(),
+                              id: detailsResponse.submission.user?.id
+                            },
+                            status: areAllQuestionsGraded(detailsResponse.submission) ? 'graded' : 'Not Graded',
+                            score: scores.total,
+                            maxScore: scores.possible,
+                            percentage: scores.possible > 0 ? ((scores.total / scores.possible) * 100).toFixed(1) : '0',
+                            submit_time: sub.submit_time,
+                            isLate: detailsResponse.submission.is_late,
+                            fullSubmission: detailsResponse.submission
+                          };
+                        }
+                      } catch (err) {
+                        console.error(`Error fetching details for submission ${sub.id}:`, err);
+                      }
+                      return null;
+                    })
+                  );
+                  submissionsByAssessment[assessment.id] = detailedSubmissions.filter(Boolean);
+                }
+              } catch (err) {
+                console.warn(`Failed to fetch submissions for assessment ${assessment.id}:`, err);
+                submissionsByAssessment[assessment.id] = [];
+              }
             }
-          } catch (err) {
-            console.warn(`Failed to fetch assessments for module ${module.module_id}:`, err);
-            assessmentsByModule[module.module_id] = [];
           }
-
-          try {
-            const gradeResponse = await getModuleGrade(module.module_id);
-            gradesByModule[module.module_id] = gradeResponse;
-          } catch (err) {
-            console.warn(`Failed to fetch grades for module ${module.module_id}:`, err);
-            gradesByModule[module.module_id] = null;
-          }
+        } catch (err) {
+          console.warn(`Failed to fetch assessments for module ${module.module_id}:`, err);
+          assessmentsByModule[module.module_id] = [];
         }
+
+        try {
+          const gradeResponse = await getModuleGrade(module.module_id);
+          gradesByModule[module.module_id] = gradeResponse;
+        } catch (err) {
+          console.warn(`Failed to fetch grades for module ${module.module_id}:`, err);
+          gradesByModule[module.module_id] = null;
+        }
+      }
 
         setModules(modulesResponse);
         setModuleAssessments(assessmentsByModule);
         setModuleGrades(gradesByModule);
+        setStudentSubmissions(submissionsByAssessment);
         
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -274,15 +317,82 @@ const TeacherProgressTracker = () => {
   };
 
   const calculateAverageScore = (submissions) => {
-    if (!submissions || submissions.length === 0) return 0;
+    if (!submissions || submissions.length === 0) return null;
     
-    const sum = submissions.reduce((total, submission) => {
-      const score = submission.score || 0;
-      const maxScore = submission.maxScore || 1;
-      return total + ((score / maxScore) * 100);
+    // Group submissions by student and get their best scores
+    const studentBestScores = Object.values(
+      submissions.reduce((acc, submission) => {
+        const studentId = submission.student.id;
+        if (!acc[studentId] || (submission.score / submission.maxScore) > (acc[studentId].score / acc[studentId].maxScore)) {
+          acc[studentId] = {
+            score: submission.score,
+            maxScore: submission.maxScore
+          };
+        }
+        return acc;
+      }, {})
+    );
+
+    if (studentBestScores.length === 0) return null;
+
+    // Calculate average using best scores
+    const sum = studentBestScores.reduce((total, score) => {
+      return total + ((score.score / score.maxScore) * 100);
     }, 0);
 
-    return sum / submissions.length;
+    return sum / studentBestScores.length;
+  };
+
+  const calculateModuleAverage = (moduleId) => {
+    const assessments = moduleAssessments[moduleId] || [];
+    if (!assessments.length) return null;
+
+    // Get all submissions for all assessments in this module
+    const moduleSubmissions = assessments.flatMap(assessment => 
+      studentSubmissions[assessment.id] || []
+    );
+
+    // Group by student and get best scores per assessment
+    const studentBestScores = {};
+    
+    moduleSubmissions.forEach(submission => {
+      const studentId = submission.student.id;
+      const assessmentId = submission.fullSubmission.assessment.id;
+      
+      if (!studentBestScores[studentId]) {
+        studentBestScores[studentId] = {};
+      }
+      
+      if (!studentBestScores[studentId][assessmentId] || 
+          (submission.score / submission.maxScore) > 
+          (studentBestScores[studentId][assessmentId].score / studentBestScores[studentId][assessmentId].maxScore)) {
+        studentBestScores[studentId][assessmentId] = {
+          score: submission.score,
+          maxScore: submission.maxScore
+        };
+      }
+    });
+
+    // Calculate average for each student across their best assessment scores
+    let totalAverage = 0;
+    let studentCount = 0;
+
+    Object.values(studentBestScores).forEach(studentScores => {
+      const assessmentScores = Object.values(studentScores);
+      if (assessmentScores.length > 0) {
+        const studentAverage = assessmentScores.reduce((sum, score) => 
+          sum + (score.score / score.maxScore * 100), 0) / assessmentScores.length;
+        totalAverage += studentAverage;
+        studentCount++;
+      }
+    });
+
+    return studentCount > 0 ? totalAverage / studentCount : null;
+  };
+
+  const allStudentsPassed = (moduleId) => {
+    const moduleAvg = calculateModuleAverage(moduleId);
+    return moduleAvg !== null && moduleAvg >= 75; // assuming 75 is passing score
   };
 
   const renderStudentSubmissions = (assessment) => {
@@ -348,7 +458,7 @@ const TeacherProgressTracker = () => {
                         <span className={getScoreStyle(
                           bestSubmission.score,
                           assessment.passing_score,
-                          assessment.max_score
+                          bestSubmission.maxScore
                         )}>
                           {bestSubmission.score}/{bestSubmission.maxScore}
                           <span className="ml-1 text-xs">
@@ -419,90 +529,119 @@ const TeacherProgressTracker = () => {
 
   const renderModuleProgress = () => (
     <div className="space-y-6">
-      {modules.map(module => (
-        <div key={module.module_id} className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div 
-            className="p-6 bg-gray-50 border-l-4 border-yellow-500 flex justify-between items-center cursor-pointer hover:bg-gray-100"
-            onClick={() => toggleModule(module.module_id)}
-          >
-            <div>
-              <h3 className="text-xl font-semibold text-gray-800">{module.name}</h3>
-              <p className="text-sm text-gray-600 mt-1">{module.description}</p>
-              {moduleGrades[module.module_id] && (
-                <div className="flex gap-2 mt-2">
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    Average: {moduleGrades[module.module_id].averageScore}%
-                  </span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    moduleGrades[module.module_id].allPassed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {moduleGrades[module.module_id].allPassed ? 'All Passed' : 'Some Failed'}
-                  </span>
-                </div>
-              )}
-            </div>
-            <ChevronDown className={`w-6 h-6 text-gray-400 transform transition-transform duration-200 ${
-              expandedModules.has(module.module_id) ? "rotate-180" : ""
-            }`} />
-          </div>
+      {modules.map(module => {
+        const hasAssessments = moduleAssessments[module.module_id]?.length > 0;
+        const hasSubmissions = hasAssessments && moduleAssessments[module.module_id].some(
+          assessment => (studentSubmissions[assessment.id]?.length || 0) > 0
+        );
 
-          {expandedModules.has(module.module_id) && (
-            <div className="p-6">
-              <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-                <div className="grid grid-cols-6 gap-4 text-sm font-medium text-gray-500">
-                  <div>Assessment</div>
-                  <div>Type</div>
-                  <div>Due Date</div>
-                  <div>Submissions</div>
-                  <div>Average Score</div>
-                  <div>Pass Rate</div>
-                </div>
-              </div>
-
-              {(moduleAssessments[module.module_id] || []).map(assessment => (
-                <div key={assessment.id} className="mb-6 last:mb-0">
-                  <div className="grid grid-cols-6 gap-4 items-center hover:bg-gray-50 p-4 rounded-lg">
-                    <div className="font-medium text-gray-900">{assessment.title}</div>
-                    <div>
-                      <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${getTypeStyle(assessment.type)}`}>
-                        {assessment.type?.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="text-gray-500">{new Date(assessment.due_date).toLocaleDateString()}</div>
-                    <div className="text-gray-500">
-                      {(() => {
-                        const counts = countUniqueSubmissions(assessment);
-                        return `${counts.submitted} / ${counts.total} ${counts.total === 1 ? "Learner" : "Learners"}`;
-                      })()}
-                    </div>
-                    <div className={getSubmissionScoreClass(
-                      calculateAverageScore(studentSubmissions[assessment.id]),
-                      assessment.passing_score
-                    )}>
-                      {calculateAverageScore(studentSubmissions[assessment.id]).toFixed(1)}%
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500">
-                        {formatPassingPercentage(assessment.passing_score, assessment.max_score)}
-                      </span>
-                      <button
-                        onClick={() => {
-                          setSelectedAssessment(assessment);
-                          fetchStudentSubmissions(assessment);
-                        }}
-                        className="px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100"
-                      >
-                        View Submissions
-                      </button>
-                    </div>
+        return (
+          <div key={module.module_id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div 
+              className="p-6 bg-gray-50 border-l-4 border-yellow-500 flex justify-between items-center cursor-pointer hover:bg-gray-100"
+              onClick={() => toggleModule(module.module_id)}
+            >
+              <div>
+                <h3 className="text-xl font-semibold text-gray-800">{module.name}</h3>
+                <p className="text-sm text-gray-600 mt-1">{module.description}</p>
+                {moduleGrades[module.module_id] && (
+                  <div className="flex gap-2 mt-2">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {hasAssessments ? (
+                        hasSubmissions ? (
+                          `Average: ${calculateModuleAverage(module.module_id)?.toFixed(1)}%`
+                        ) : 'No submissions yet'
+                      ) : 'No assessments'
+                    }
+                    </span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      hasAssessments ? (
+                        hasSubmissions ? (
+                          allStudentsPassed(module.module_id)
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        ) : 'bg-gray-100 text-gray-600'
+                      ) : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {hasAssessments ? (
+                        hasSubmissions ? (
+                          allStudentsPassed(module.module_id) ? 'All Passed' : 'Some Failed'
+                        ) : 'Waiting for submissions'
+                      ) : 'No assessments available'
+                    }
+                    </span>
                   </div>
-                  {selectedAssessment?.id === assessment.id && renderStudentSubmissions(assessment)}
-                </div>
-              ))}
+                )}
+              </div>
+              <ChevronDown className={`w-6 h-6 text-gray-400 transform transition-transform duration-200 ${
+                expandedModules.has(module.module_id) ? "rotate-180" : ""
+              }`} />
             </div>
-          )}
-        </div>
-      ))}
+
+            {expandedModules.has(module.module_id) && (
+              <div className="p-6">
+                <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
+                  <div className="grid grid-cols-6 gap-4 text-sm font-medium text-gray-500">
+                    <div>Assessment</div>
+                    <div>Type</div>
+                    <div>Due Date</div>
+                    <div>Submissions</div>
+                    <div>Average Score</div>
+                    <div>Pass Rate</div>
+                  </div>
+                </div>
+
+                {(moduleAssessments[module.module_id] || []).map(assessment => (
+                  <div key={assessment.id} className="mb-6 last:mb-0">
+                    <div className="grid grid-cols-6 gap-4 items-center hover:bg-gray-50 p-4 rounded-lg">
+                      <div className="font-medium text-gray-900">{assessment.title}</div>
+                      <div>
+                        <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${getTypeStyle(assessment.type)}`}>
+                          {assessment.type?.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="text-gray-500">{new Date(assessment.due_date).toLocaleDateString()}</div>
+                      <div className="text-gray-500">
+                        {(() => {
+                          const counts = countUniqueSubmissions(assessment);
+                          return `${counts.submitted} / ${counts.total} ${counts.total === 1 ? "Learner" : "Learners"}`;
+                        })()}
+                      </div>
+                      <div className={`${
+                        calculateAverageScore(studentSubmissions[assessment.id]) === null 
+                          ? 'text-gray-400' 
+                          : getSubmissionScoreClass(
+                              calculateAverageScore(studentSubmissions[assessment.id]),
+                              assessment.passing_score
+                            )
+                      }`}>
+                        {calculateAverageScore(studentSubmissions[assessment.id]) === null 
+                          ? 'No submissions' 
+                          : `${calculateAverageScore(studentSubmissions[assessment.id]).toFixed(1)}%`
+                        }
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500">
+                          {formatPassingPercentage(assessment.passing_score, assessment.max_score)}
+                        </span>
+                        <button
+                          onClick={() => {
+                            setSelectedAssessment(assessment);
+                          }}
+                          className="px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100"
+                        >
+                          View Submissions
+                        </button>
+                      </div>
+                    </div>
+                    {selectedAssessment?.id === assessment.id && renderStudentSubmissions(assessment)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 

@@ -83,6 +83,7 @@ const Dashboard = () => {
       name: course.name,
       code: course.code || "No Code",
       description: course.description,
+      studentCount: course.studentCount
     });
     navigate("/Teacher/ProgressTracker");
   };
