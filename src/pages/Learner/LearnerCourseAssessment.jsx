@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
-import Sidebar from "../../components/common/layout/Sidebar";
-import Header from "../../components/common/layout/Header";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
-import MobileNavBar from "../../components/common/layout/MobileNavbar";
+import React, { useState, useEffect } from 'react';
+import Sidebar from '../../components/common/layout/Sidebar';
+import Header from '../../components/common/layout/Header';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import MobileNavBar from '../../components/common/layout/MobileNavbar';
 import {
   Home,
   Megaphone,
@@ -12,40 +12,40 @@ import {
   Calendar,
   Award,
   AlertTriangle,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useCourse } from "../../contexts/CourseContext";
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useCourse } from '../../contexts/CourseContext';
 import {
   getCourseAssessments,
   getUserSubmission,
-} from "../../services/assessmentService";
+} from '../../services/assessmentService';
 import {
   getModulesByCourseId,
   getModuleGrade,
-} from "../../services/moduleService";
-import { ChevronDown } from "lucide-react";
+} from '../../services/moduleService';
+import { ChevronDown } from 'lucide-react';
 
 const typeColors = {
   quiz: {
-    bg: "#3B82F6", // Blue
-    text: "white",
-    hover: "#2563EB",
-    badge: "bg-blue-100 text-blue-800",
-    light: "rgba(59, 130, 246, 0.1)",
+    bg: '#3B82F6', // Blue
+    text: 'white',
+    hover: '#2563EB',
+    badge: 'bg-blue-100 text-blue-800',
+    light: 'rgba(59, 130, 246, 0.1)',
   },
   exam: {
-    bg: "#8B5CF6", // Purple (changed from pink)
-    text: "white",
-    hover: "#6D28D9",
-    badge: "bg-purple-100 text-purple-800",
-    light: "rgba(139, 92, 246, 0.1)",
+    bg: '#8B5CF6', // Purple (changed from pink)
+    text: 'white',
+    hover: '#6D28D9',
+    badge: 'bg-purple-100 text-purple-800',
+    light: 'rgba(139, 92, 246, 0.1)',
   },
   assignment: {
-    bg: "#10B981", // Green
-    text: "white",
-    hover: "#059669",
-    badge: "bg-green-100 text-green-800",
-    light: "rgba(16, 185, 129, 0.1)",
+    bg: '#10B981', // Green
+    text: 'white',
+    hover: '#059669',
+    badge: 'bg-green-100 text-green-800',
+    light: 'rgba(16, 185, 129, 0.1)',
   },
 };
 
@@ -66,27 +66,27 @@ const LearnerCourseAssessment = () => {
   const [moduleGrades, setModuleGrades] = useState({});
 
   const navItems = [
-    { text: "Home", icon: <Home size={20} />, route: "/Learner/Dashboard" },
+    { text: 'Home', icon: <Home size={20} />, route: '/Learner/Dashboard' },
     {
-      text: "Modules",
+      text: 'Modules',
       icon: <BookOpen size={20} />,
-      route: "/Learner/CourseModules",
+      route: '/Learner/CourseModules',
     },
     {
-      text: "Announcements",
+      text: 'Announcements',
       icon: <Megaphone size={20} />,
-      route: "/Learner/CourseAnnouncements",
+      route: '/Learner/CourseAnnouncements',
     },
     {
-      text: "Assessments",
+      text: 'Assessments',
       icon: <ClipboardList size={20} />,
-      route: "/Learner/Assessment",
+      route: '/Learner/Assessment',
     },
   ];
 
   useEffect(() => {
     if (!selectedCourse?.id) {
-      navigate("/Learner/Dashboard");
+      navigate('/Learner/Dashboard');
       return;
     }
 
@@ -96,7 +96,7 @@ const LearnerCourseAssessment = () => {
         const modulesResponse = await getModulesByCourseId(selectedCourse.id);
 
         if (!modulesResponse) {
-          throw new Error("Failed to fetch modules data");
+          throw new Error('Failed to fetch modules data');
         }
 
         setModules(modulesResponse);
@@ -160,8 +160,8 @@ const LearnerCourseAssessment = () => {
 
         setSubmissions(submissionsMap);
       } catch (err) {
-        console.error("Error in fetchAssessments:", err);
-        setError(err.message || "Failed to fetch assessments");
+        console.error('Error in fetchAssessments:', err);
+        setError(err.message || 'Failed to fetch assessments');
       } finally {
         setLoading(false);
       }
@@ -183,7 +183,7 @@ const LearnerCourseAssessment = () => {
         const gradesMap = Object.fromEntries(grades);
         setModuleGrades(gradesMap);
       } catch (err) {
-        console.error("Error fetching module grades:", err);
+        console.error('Error fetching module grades:', err);
       }
     };
 
@@ -193,36 +193,36 @@ const LearnerCourseAssessment = () => {
   }, [modules]);
 
   const getStatus = (submission) => {
-    if (!submission) return "Not Started";
-    if (submission.is_late) return "Late";
+    if (!submission) return 'Not Started';
+    if (submission.is_late) return 'Late';
     return (
       submission.status?.charAt(0).toUpperCase() +
-        submission.status?.slice(1) || "Not Started"
+        submission.status?.slice(1) || 'Not Started'
     );
   };
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case "graded":
-        return "bg-green-100 text-green-800";
-      case "submitted":
-        return "bg-yellow-100 text-yellow-800";
-      case "late":
-        return "bg-red-100 text-red-800";
-      case "not started":
-        return "bg-gray-100 text-gray-600";
+      case 'graded':
+        return 'bg-green-100 text-green-800';
+      case 'submitted':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'late':
+        return 'bg-red-100 text-red-800';
+      case 'not started':
+        return 'bg-gray-100 text-gray-600';
       default:
-        return "bg-gray-100 text-gray-600";
+        return 'bg-gray-100 text-gray-600';
     }
   };
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    return new Date(date).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
@@ -236,7 +236,7 @@ const LearnerCourseAssessment = () => {
         ? JSON.parse(storedData).submissionId
         : null;
 
-      console.log("View Assessment - Initial check:", {
+      console.log('View Assessment - Initial check:', {
         assessmentId: assessment.id,
         storedSubmissionId: storedSubmissionId,
       });
@@ -250,9 +250,9 @@ const LearnerCourseAssessment = () => {
       if (storedSubmissionId && existingSubmission) {
         isResumable =
           storedSubmissionId === existingSubmission.id &&
-          existingSubmission.status === "in_progress";
+          existingSubmission.status === 'in_progress';
 
-        console.log("Submission ID comparison:", {
+        console.log('Submission ID comparison:', {
           stored: storedSubmissionId,
           server: existingSubmission.id,
           matches: storedSubmissionId === existingSubmission.id,
@@ -267,19 +267,19 @@ const LearnerCourseAssessment = () => {
           submission: existingSubmission,
           status: existingSubmission
             ? getStatus(existingSubmission)
-            : "Not Started",
+            : 'Not Started',
           isResumable: isResumable,
         },
       });
     } catch (error) {
-      console.error("Error checking submission status:", error);
+      console.error('Error checking submission status:', error);
       navigate(`/Learner/Assessment/View/${assessment.id}`, {
         state: {
           assessment,
           submission: submissions[assessment.id],
           status: submissions[assessment.id]
             ? getStatus(submissions[assessment.id])
-            : "Not Started",
+            : 'Not Started',
         },
       });
     }
@@ -294,7 +294,7 @@ const LearnerCourseAssessment = () => {
   };
 
   const renderSubmissionScore = (submission, assessment) => {
-    if (!submission || !submission.status || submission.status === "null") {
+    if (!submission || !submission.status || submission.status === 'null') {
       return <div className="text-sm text-gray-600">Not Started</div>;
     }
 
@@ -313,26 +313,28 @@ const LearnerCourseAssessment = () => {
           <div className="flex items-baseline">
             <span
               className={`text-lg md:text-2xl font-bold ${
-                isPassed ? "text-green-600" : "text-red-600"
+                isPassed ? 'text-green-600' : 'text-red-600'
               }`}
             >
               {score}
             </span>
-            <span className="text-base md:text-lg text-gray-500">/{totalPoints}</span>
+            <span className="text-base md:text-lg text-gray-500">
+              /{totalPoints}
+            </span>
           </div>
-          {submission.status === "graded" && (
+          {submission.status === 'graded' && (
             <span
               className={`px-2 py-1 rounded-full text-xs font-medium ${
                 isPassed
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-red-100 text-red-800'
               }`}
             >
-              {isPassed ? "Passed" : "Failed"}
+              {isPassed ? 'Passed' : 'Failed'}
             </span>
           )}
         </div>
-        {submission.status === "graded" && (
+        {submission.status === 'graded' && (
           <div className="text-xs text-gray-500 mt-1">
             {isPassed ? (
               <span>Passed ({percentage.toFixed(1)})</span>
@@ -377,14 +379,17 @@ const LearnerCourseAssessment = () => {
   };
 
   const checkAssessmentPassed = (assessment, submission) => {
-    if (!submission || submission.status !== "graded") return false;
+    if (!submission || submission.status !== 'graded') return false;
     const score = calculateAssessmentScore(submission);
     return score >= assessment.passing_score;
   };
 
-  const checkModuleCompleted = async (moduleId) => {
-    const result = await getModuleGrade(moduleId);
-    return result.allPassed;
+  const checkModuleCompleted = (moduleId) => {
+    const moduleAssessmentList = moduleAssessments[moduleId] || [];
+    return moduleAssessmentList.every((assessment) => {
+      const submission = submissions[assessment.id];
+      return submission && checkAssessmentPassed(assessment, submission);
+    });
   };
 
   const findFirstFailedAssessment = (moduleId) => {
@@ -402,10 +407,11 @@ const LearnerCourseAssessment = () => {
     );
     const previousModules = modules.slice(0, moduleIndex);
 
-    // Check if all previous modules are completed
-    return previousModules.some(
-      (module) => !checkModuleCompleted(module.module_id)
-    );
+    // Check if previous module is passed based on moduleGrades
+    return previousModules.some((module) => {
+      const moduleGrade = moduleGrades[module.module_id];
+      return !(moduleGrade && moduleGrade.allPassed);
+    });
   };
 
   const renderAssessmentCard = (assessment) => (
@@ -469,7 +475,7 @@ const LearnerCourseAssessment = () => {
               {assessment.allowed_attempts && (
                 <span className="ml-2 text-gray-500">
                   ({assessment.allowed_attempts} attempt
-                  {assessment.allowed_attempts !== 1 ? "s" : ""} allowed)
+                  {assessment.allowed_attempts !== 1 ? 's' : ''} allowed)
                 </span>
               )}
             </span>
@@ -495,7 +501,7 @@ const LearnerCourseAssessment = () => {
           <div
             key={module.module_id}
             className={`bg-white rounded-lg shadow-sm overflow-hidden ${
-              isModuleLocked ? "opacity-50" : ""
+              isModuleLocked ? 'opacity-50' : ''
             }`}
           >
             <div
@@ -520,13 +526,13 @@ const LearnerCourseAssessment = () => {
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-medium ${
                             moduleGrades[module.module_id].allPassed
-                              ? "bg-green-100 text-green-800"
-                              : "bg-yellow-100 text-yellow-800"
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
                           }`}
                         >
                           {moduleGrades[module.module_id].allPassed
-                            ? "Passed"
-                            : "Failed"}
+                            ? 'Passed'
+                            : 'Failed'}
                         </span>
                         // or red for failed?
                       )}
@@ -537,13 +543,13 @@ const LearnerCourseAssessment = () => {
                   {module.description}
                 </p>
                 <span className="text-xs text-gray-500 mt-2 inline-block">
-                  {moduleAssessments[module.module_id]?.length || 0}{" "}
+                  {moduleAssessments[module.module_id]?.length || 0}{' '}
                   Assessment(s)
                 </span>
               </div>
               <ChevronDown
                 className={`w-6 h-6 text-gray-400 transform transition-transform duration-200 ${
-                  expandedModules.has(module.module_id) ? "rotate-180" : ""
+                  expandedModules.has(module.module_id) ? 'rotate-180' : ''
                 }`}
               />
             </div>
@@ -559,7 +565,7 @@ const LearnerCourseAssessment = () => {
                     <p className="text-gray-600 max-w-md mx-auto">
                       {failedAssessment
                         ? `You need to pass "${failedAssessment.title}" with a score of at least ${failedAssessment.passing_score} to unlock this module.`
-                        : "Complete all assessments in the previous module to unlock this module."}
+                        : 'Complete all assessments in the previous module to unlock this module.'}
                     </p>
                   </div>
                 ) : moduleAssessments[module.module_id]?.length > 0 ? (
@@ -593,7 +599,7 @@ const LearnerCourseAssessment = () => {
                                 <span
                                   className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${color.badge}`}
                                 >
-                                  {assessment.type?.toUpperCase() || "QUIZ"}
+                                  {assessment.type?.toUpperCase() || 'QUIZ'}
                                 </span>
                                 {submissions[assessment.id] && (
                                   <span
@@ -653,14 +659,14 @@ const LearnerCourseAssessment = () => {
                                     style={{ color: color.bg }}
                                   />
                                   <span className="text-gray-600 font-medium">
-                                    {assessment.questions?.length || 0}{" "}
+                                    {assessment.questions?.length || 0}{' '}
                                     Questions
                                     {assessment.allowed_attempts && (
                                       <span className="ml-2 text-gray-500">
                                         ({assessment.allowed_attempts} attempt
                                         {assessment.allowed_attempts !== 1
-                                          ? "s"
-                                          : ""}{" "}
+                                          ? 's'
+                                          : ''}{' '}
                                         allowed)
                                       </span>
                                     )}
@@ -716,10 +722,12 @@ const LearnerCourseAssessment = () => {
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-6 overflow-auto">
         <Header
-          title={selectedCourse?.name || "Course"}
+          title={selectedCourse?.name || 'Course'}
           subtitle={selectedCourse?.code}
         />
-        <div className="relative z-50"> {/* Add wrapper with high z-index */}
+        <div className="relative z-50">
+          {' '}
+          {/* Add wrapper with high z-index */}
           <MobileNavBar navItems={navItems} />
         </div>
 
