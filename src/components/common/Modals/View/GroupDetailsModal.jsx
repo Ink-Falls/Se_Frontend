@@ -12,7 +12,7 @@ import {
 import GroupMembersModal from "./GroupMembersModal";
 import EditGroupModal from "../Edit/EditGroupModal";
 
-const GroupDetailsModal = ({ onClose }) => {
+const GroupDetailsModal = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [existingGroups, setExistingGroups] = useState([]);
@@ -32,6 +32,12 @@ const GroupDetailsModal = ({ onClose }) => {
   const [selectedGroupForAssignment, setSelectedGroupForAssignment] =
     useState(null);
   const [successMessage, setSuccessMessage] = useState("");
+
+  // Add school mapping
+  const schoolMapping = {
+    1001: "University of Santo Tomas (UST)",
+    1002: "Asuncion Consunji Elementary School (ACES)",
+  };
 
   useEffect(() => {
     setTimeout(() => setAnimate(true), 50);
@@ -300,7 +306,7 @@ const GroupDetailsModal = ({ onClose }) => {
                     Existing Groups ({existingGroups?.length || 0})
                   </h3>
                 </div>
-                {selectedGroups.length> 0 && (
+                {selectedGroups.length > 0 && (
                   <button
                     onClick={handleDeleteSelected}
                     className="flex items-center gap-2 px-3 py-1 text-red-600 hover:text-red-800"
@@ -462,10 +468,11 @@ const GroupDetailsModal = ({ onClose }) => {
                           <span className="font-medium">
                             {member.first_name} {member.last_name}
                           </span>
-                          <div className="flex gap-4 text-sm text-gray-600">
+                          <div className="text-sm text-gray-600 flex gap-2">
                             <span>{member.email}</span>
-                            <span>|</span>
-                            <span>ID: {member.school_id}</span>
+                            {member.school_id && (
+                              <span>• {schoolMapping[member.school_id]}</span>
+                            )}
                           </div>
                         </div>
                       </div>
