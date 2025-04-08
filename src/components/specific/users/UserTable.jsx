@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   SquarePen,
   Plus,
@@ -9,8 +9,8 @@ import {
   Trash2,
   X,
   RotateCcw,
-} from 'lucide-react';
-import RestoreUserModal from '../../common/Modals/Restore/RestoreUserModal';
+} from "lucide-react";
+import RestoreUserModal from "../../common/Modals/Restore/RestoreUserModal";
 
 const UserTable = ({
   users,
@@ -51,7 +51,7 @@ const UserTable = ({
   };
 
   const handlePageInputSubmit = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       const newPage = parseInt(pageInput);
       if (!isNaN(newPage) && newPage >= 1 && newPage <= totalPages) {
         onPageChange(newPage);
@@ -89,30 +89,30 @@ const UserTable = ({
 
   const getSchoolAbbreviation = (schoolName) => {
     const abbreviations = {
-      1001: 'ACES',
-      1002: 'UST',
+      1001: "ACES",
+      1002: "UST",
     };
     return abbreviations[schoolName] || schoolName;
   };
 
   const getFormattedRole = (role) => {
     const roleMap = {
-      student_teacher: 'Student Teacher',
-      admin: 'Admin',
-      teacher: 'Teacher',
-      learner: 'Learner',
+      student_teacher: "Student Teacher",
+      admin: "Admin",
+      teacher: "Teacher",
+      learner: "Learner",
     };
     return roleMap[role] || role;
   };
 
   const handleRowClick = (user) => {
-    if (user.role !== 'admin') {
+    if (user.role !== "admin") {
       onEdit(user);
     }
   };
 
   const handleRestoreSuccess = (message) => {
-    alert(message || 'User restored successfully');
+    alert(message || "User restored successfully");
     setIsRestoreModalOpen(false);
     window.location.reload();
   };
@@ -156,10 +156,10 @@ const UserTable = ({
 
             <div className="relative py-2 md:py-[0.2vw]">
               <select
-                value={`${sortConfig.key || 'none'}-${sortConfig.direction}`}
+                value={`${sortConfig.key || "none"}-${sortConfig.direction}`}
                 onChange={(e) => {
-                  const [key, direction] = e.target.value.split('-');
-                  onSort(key === 'none' ? null : key, direction);
+                  const [key, direction] = e.target.value.split("-");
+                  onSort(key === "none" ? null : key, direction);
                 }}
                 className="pl-10 md:pl-[2vw] pr-4 md:pr-[1vw] py-2 md:py-[0.5vw] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none w-full md:w-[12vw]"
               >
@@ -253,6 +253,7 @@ const UserTable = ({
                   checked={selectedIds.length === users.length}
                   onChange={handleSelectAll}
                   className="form-checkbox h-4 w-4 text-[#212529] rounded"
+                  disabled={users.length === 0}
                 />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -287,14 +288,17 @@ const UserTable = ({
           <tbody className="bg-white divide-y divide-gray-200">
             {users.length === 0 ? (
               <tr>
-                <td colSpan="10" className="px-6 py-8 text-center">
+                <td colSpan="10" className="px-6 py-20 text-center">
                   <div className="flex flex-col items-center justify-center">
-                    <Users size={24} className="text-gray-400 mb-2" />
-                    <div className="text-gray-500 text-sm">
+                    <Users size={64} className="text-gray-300 mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      No Users Found
+                    </h3>
+                    <p className="text-gray-500 text-sm max-w-md">
                       {searchQuery
-                        ? `No users found matching "${searchQuery}"`
-                        : 'No users found matching the selected criteria'}
-                    </div>
+                        ? `We couldn't find any users matching "${searchQuery}"`
+                        : "No users available for the selected criteria"}
+                    </p>
                   </div>
                 </td>
               </tr>
@@ -304,7 +308,7 @@ const UserTable = ({
                   key={user.id}
                   onClick={() => handleRowClick(user)}
                   className={`hover:bg-gray-50 transition-colors ${
-                    user.role !== 'admin' ? 'cursor-pointer' : ''
+                    user.role !== "admin" ? "cursor-pointer" : ""
                   }`}
                 >
                   <td
@@ -351,27 +355,39 @@ const UserTable = ({
           </tbody>
         </table>
 
-        <div className="px-6 py-4 flex items-center justify-start md:justify-end border-t">
-          <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 items-start md:items-center text-sm md:text-base">
-            <button
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1 || users.length === 0}
-              className="w-full md:w-auto px-2 md:px-3 py-0.5 md:py-1 rounded border bg-white text-gray-600 
-                       hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
-            >
-              Previous
-            </button>
-            <span className="px-2 md:px-4 py-0.5 md:py-1 text-gray-600 whitespace-nowrap text-sm md:text-base">
-              Page {currentPage} of {totalPages || 1}
-            </span>
-            <button
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages || users.length === 0}
-              className="w-full md:w-auto px-2 md:px-3 py-0.5 md:py-1 rounded border bg-white text-gray-600 
-                       hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
-            >
-              Next
-            </button>
+        <div className="px-6 py-4 border-t">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            {/* Add total items counter */}
+            <p className="text-sm text-gray-600 order-2 sm:order-1">
+              Showing {users.length} of {totalUsers} users
+            </p>
+
+            {/* Pagination controls */}
+            <div className="flex items-center gap-2 order-1 sm:order-2">
+              <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1 || users.length === 0}
+                className="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed min-w-[80px]"
+              >
+                Previous
+              </button>
+
+              <div className="flex items-center gap-1 px-2">
+                <span className="text-sm font-medium text-gray-700">
+                  {currentPage}
+                </span>
+                <span className="text-gray-500">/</span>
+                <span className="text-sm text-gray-600">{totalPages || 1}</span>
+              </div>
+
+              <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages || users.length === 0}
+                className="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed min-w-[80px]"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       </div>
