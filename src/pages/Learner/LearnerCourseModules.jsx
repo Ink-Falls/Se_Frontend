@@ -26,6 +26,34 @@ import {
   getUserSubmission,
 } from "../../services/assessmentService";
 
+const moduleColors = {
+  blue: {
+    bg: "#3B82F6",
+    accent: "#60A5FA",
+    light: "#EFF6FF",
+  },
+  purple: {
+    bg: "#8B5CF6",
+    accent: "#A78BFA",
+    light: "#F5F3FF",
+  },
+  green: {
+    bg: "#22C55E",
+    accent: "#4ADE80",
+    light: "#F0FDF4",
+  },
+  pink: {
+    bg: "#EC4899",
+    accent: "#F472B6",
+    light: "#FDF2F8",
+  },
+  orange: {
+    bg: "#F97316",
+    accent: "#FB923C",
+    light: "#FFF7ED",
+  },
+};
+
 const LearnerCourseModules = () => {
   const { selectedCourse } = useCourse();
   const { logout } = useAuth();
@@ -51,7 +79,6 @@ const LearnerCourseModules = () => {
   ];
 
   const [modules, setModules] = useState([]);
-  const [expandedModules, setExpandedModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [moduleAssessments, setModuleAssessments] = useState({});
@@ -75,15 +102,13 @@ const LearnerCourseModules = () => {
   };
 
   const shouldLockModule = (currentModule) => {
-    // Get all modules up to the current one
     const moduleIndex = modules.findIndex(
       (m) => m.module_id === currentModule.module_id
     );
-    if (moduleIndex === 0) return false; // First module is always unlocked
+    if (moduleIndex === 0) return false;
 
     const previousModules = modules.slice(0, moduleIndex);
 
-    // Check if previous module is passed based on moduleGrades
     return previousModules.some((module) => {
       const moduleGrade = moduleGrades[module.module_id];
       return !(moduleGrade && moduleGrade.allPassed);
@@ -228,9 +253,153 @@ const LearnerCourseModules = () => {
     fetchAssessmentsAndSubmissions();
   }, [modules]);
 
-  const toggleModule = (id) => {
-    setExpandedModules((prev) =>
-      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
+  const renderModule = (module, index) => {
+    const isLocked = shouldLockModule(module);
+    const color =
+      moduleColors[
+        Object.keys(moduleColors)[index % Object.keys(moduleColors).length]
+      ];
+    const resourceCount = module.resources?.length || 0;
+    const hasResources = resourceCount > 0;
+
+    return (
+      <div
+        key={module.module_id}
+        className="bg-white shadow-sm overflow-hidden"
+      >
+        <div className="p-6">
+          <div className="flex items-start gap-4">
+            {/* Module Number Badge */}
+            <div className="flex flex-col items-center">
+              <div
+                className="w-12 h-12 rounded-lg flex items-center justify-center text-lg font-bold text-white transform transition hover:scale-105"
+                style={{ backgroundColor: color.bg }}
+              >
+                {index + 1}
+              </div>
+            </div>
+
+            {/* Module Content */}
+            <div className="flex-1 min-w-0">
+              {/* Title and description are always visible */}
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-xl font-bold text-gray-800">
+                      {module.title}
+                    </h3>
+                    <span
+                      className="px-2 py-1 rounded-full text-xs font-medium"
+                      style={{
+                        backgroundColor: color.light,
+                        color: color.bg,
+                      }}
+                    >
+                      {hasResources
+                        ? `${resourceCount} Resources`
+                        : "No Resources"}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                    {module.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Resources Section */}
+              <div className="mt-4 rounded-lg">
+                {isLocked ? (
+                  <div className="bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300">
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <Lock className="h-12 w-12 text-gray-400 mb-3" />
+                      <h4 className="text-lg font-medium text-gray-900 mb-2">
+                        Module Content Locked
+                      </h4>
+                      <p className="text-gray-600 max-w-md">
+                        Get passing marks in the assessments in the previous
+                        module to unlock this content
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="p-4 rounded-lg"
+                    style={{ backgroundColor: color.light }}
+                  >
+                    <div className="flex justify-between items-center mb-3">
+                      <h4
+                        className="text-sm font-medium"
+                        style={{ color: color.bg }}
+                      >
+                        Learning Resources
+                      </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {module.resources && module.resources.length > 0 ? (
+                        module.resources.map((resource) => (
+                          <div
+                            key={resource.id}
+                            className="flex items-center bg-white p-3 rounded-lg group hover:shadow-md transition-all duration-200 border border-transparent hover:border-yellow-500"
+                          >
+                            <div
+                              className="p-2 rounded-lg mr-3 transition-colors"
+                              style={{
+                                backgroundColor: `${color.bg}20`,
+                                color: color.bg,
+                              }}
+                            >
+                              <FileText size={16} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <a
+                                href={resource.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block truncate text-sm font-medium text-gray-900 group-hover:text-yellow-600"
+                              >
+                                {resource.title}
+                              </a>
+                              <p className="text-xs text-gray-500 truncate">
+                                {resource.link}
+                              </p>
+                            </div>
+                            <a
+                              href={resource.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2 text-gray-400 hover:text-yellow-600 transition-colors rounded-full hover:bg-gray-50"
+                              title="Open resource"
+                            >
+                              <ExternalLink size={16} />
+                            </a>
+                          </div>
+                        ))
+                      ) : (
+                        <div
+                          className="col-span-2 text-center py-8 bg-white rounded-lg border-2 border-dashed"
+                          style={{ borderColor: `${color.bg}40` }}
+                        >
+                          <div className="mb-2">
+                            <FileText
+                              size={24}
+                              className="mx-auto"
+                              style={{ color: color.bg }}
+                            />
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            No resources available yet
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -314,119 +483,6 @@ const LearnerCourseModules = () => {
     );
   }
 
-  const renderModule = (module) => {
-    const isLocked = shouldLockModule(module);
-
-    return (
-      <div
-        key={module.module_id}
-        className={`bg-white rounded-lg shadow-sm overflow-hidden border-l-4 border-yellow-500 ${
-          isLocked ? "opacity-75" : "hover:shadow-md"
-        }`}
-      >
-        <div className="p-6 relative">
-          {isLocked && (
-            <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-[1px] flex flex-col items-center justify-center z-10 rounded-lg transition-all duration-300">
-              <Lock className="h-12 w-12 text-white/90" />
-              <span className="text-white/90 text-sm mt-2">
-                Pass the previous module to unlock
-              </span>
-            </div>
-          )}
-
-          <div className="flex justify-between items-center cursor-pointer">
-            <div className="w-full" onClick={() => toggleModule(module.id)}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-full">
-                  MODULE {modules.indexOf(module) + 1}
-                </span>
-                <span className="text-xs text-gray-500">
-                  {module.createdAt &&
-                    new Date(module.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-              <h3 className="font-bold text-xl text-gray-800 mb-1 group-hover:text-yellow-600 transition-colors">
-                {module.title}
-              </h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                {module.description}
-              </p>
-            </div>
-
-            <button
-              className="p-2 text-gray-600 hover:text-yellow-600 transition-colors"
-              onClick={() => toggleModule(module.id)}
-            >
-              <ChevronDown
-                size={20}
-                className={`transform transition-transform duration-200 ${
-                  expandedModules.includes(module.id) ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-          </div>
-
-          {expandedModules.includes(module.id) && (
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="flex items-center gap-2 text-gray-700 font-semibold">
-                  <FileText size={18} className="text-yellow-500" />
-                  Learning Resources
-                  <span className="text-xs text-gray-500 font-normal">
-                    ({module.resources?.length || 0} items)
-                  </span>
-                </h4>
-              </div>
-              <div className="space-y-3">
-                {module.resources && module.resources.length > 0 ? (
-                  module.resources.map((resource, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-all duration-200 group"
-                    >
-                      <div className="p-2 bg-yellow-100 rounded-lg mr-3">
-                        <FileText size={18} className="text-yellow-600" />
-                      </div>
-                      <div className="flex-1">
-                        <a
-                          href={resource.link || resource.content}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block"
-                        >
-                          <h5 className="font-medium text-gray-800 mb-0.5 group-hover:text-yellow-600">
-                            {resource.title}
-                          </h5>
-                          <p className="text-sm text-gray-500 truncate">
-                            {resource.link}
-                          </p>
-                        </a>
-                      </div>
-                      <div className="flex items-center">
-                        <a
-                          href={resource.link || resource.content}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 text-gray-400 hover:text-yellow-600 transition-colors"
-                        >
-                          <ExternalLink size={18} />
-                        </a>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                    <p className="text-gray-500">No resources available yet</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="flex h-screen bg-gray-100 relative">
       <Sidebar navItems={navItems} />
@@ -437,9 +493,11 @@ const LearnerCourseModules = () => {
         />
         <MobileNavBar navItems={navItems} onLogout={logout} />
 
-        <div className="flex flex-col gap-4 mt-4">
-          {modules.map((module) => renderModule(module))}
-        </div>
+        {!loading && !error && modules.length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm divide-y divide-gray-100">
+            {modules.map((module, index) => renderModule(module, index))}
+          </div>
+        )}
       </div>
     </div>
   );
