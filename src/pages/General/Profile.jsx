@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { getUserById, updateUser } from "../../services/userService";
-import { useAuth } from "../../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
-import Sidebar from "../../components/common/layout/Sidebar";
-import Header from "../../components/common/layout/Header";
+import React, { useState, useEffect } from 'react';
+import { getUserById, updateUser } from '../../services/userService';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import Sidebar from '../../components/common/layout/Sidebar';
+import Header from '../../components/common/layout/Header';
 import {
   Book,
   Bell,
@@ -12,57 +12,57 @@ import {
   PencilIcon,
   X,
   Check as CheckIcon,
-} from "lucide-react";
-import { Eye, EyeOff } from "lucide-react";
-import { changePassword } from "../../services/authService"; // Import function
-import MobileNavBar from "../../components/common/layout/MobileNavbar";
-import { getUserProfileImage } from "../../utils/profileImages";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+} from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
+import { changePassword } from '../../services/authService'; // Import function
+import MobileNavBar from '../../components/common/layout/MobileNavbar';
+import { getUserProfileImage } from '../../utils/profileImages';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const getNavItems = (role) => {
   // Base items for admin
   const adminItems = [
-    { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
-    { text: "Courses", icon: <Book size={20} />, route: "/Admin/Courses" },
+    { text: 'Users', icon: <Home size={20} />, route: '/Admin/Dashboard' },
+    { text: 'Courses', icon: <Book size={20} />, route: '/Admin/Courses' },
     {
-      text: "Enrollments",
+      text: 'Enrollments',
       icon: <Bell size={20} />,
-      route: "/Admin/Enrollments",
+      route: '/Admin/Enrollments',
     },
     {
-      text: "Announcements",
+      text: 'Announcements',
       icon: <FileText size={20} />,
-      route: "/Admin/Announcements",
+      route: '/Admin/Announcements',
     },
   ];
 
   // Base items for teacher/student_teacher
   const teacherItems = [
-    { text: "Courses", icon: <Book size={20} />, route: "/Teacher/Dashboard" },
+    { text: 'Courses', icon: <Book size={20} />, route: '/Teacher/Dashboard' },
     {
-      text: "Notifications",
+      text: 'Notifications',
       icon: <Bell size={20} />,
-      route: "/Teacher/Notifications",
+      route: '/Teacher/Notifications',
     },
   ];
 
   // Base items for learner - Updated to match LearnerDashboard
   const learnerItems = [
-    { text: "Courses", icon: <Book size={20} />, route: "/Learner/Dashboard" },
+    { text: 'Courses', icon: <Book size={20} />, route: '/Learner/Dashboard' },
     {
-      text: "Notifications",
+      text: 'Notifications',
       icon: <Bell size={20} />,
-      route: "/Learner/Notifications",
+      route: '/Learner/Notifications',
     },
   ];
 
   switch (role?.toLowerCase()) {
-    case "admin":
+    case 'admin':
       return adminItems;
-    case "teacher":
-    case "student_teacher":
+    case 'teacher':
+    case 'student_teacher':
       return teacherItems;
-    case "learner":
+    case 'learner':
       return learnerItems;
     default:
       return learnerItems; // Default to learner items
@@ -75,30 +75,30 @@ function Profile() {
   const [error, setError] = useState(null);
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState('');
   const [oldPasswordVisible, setOldPasswordVisible] = useState(false);
   const [newPasswordVisible, setNewPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editFormData, setEditFormData] = useState(null);
-  const [editError, setEditError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [editError, setEditError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [profileImage] = useState(
-    getUserProfileImage(JSON.parse(localStorage.getItem("user"))?.role)
+    getUserProfileImage(JSON.parse(localStorage.getItem('user'))?.role)
   );
-  const [editMessage, setEditMessage] = useState({ type: "", text: "" });
+  const [editMessage, setEditMessage] = useState({ type: '', text: '' });
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setOldPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setMessage("");
+    setOldPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setMessage('');
   };
 
   useEffect(() => {
@@ -109,41 +109,41 @@ function Profile() {
 
         // Check authentication
         if (!isAuthenticated) {
-          navigate("/login");
+          navigate('/login');
           return;
         }
 
         // Get user from localStorage
-        const storedUser = JSON.parse(localStorage.getItem("user"));
-        const savedProfileImage = localStorage.getItem("userProfileImage");
+        const storedUser = JSON.parse(localStorage.getItem('user'));
+        const savedProfileImage = localStorage.getItem('userProfileImage');
 
         if (savedProfileImage) {
           setCurrentProfileImage(savedProfileImage);
         }
 
         if (!storedUser || !storedUser.id) {
-          console.error("No user data in localStorage");
-          setError("User data not found");
+          console.error('No user data in localStorage');
+          setError('User data not found');
           return;
         }
 
-        if (storedUser.role === "learner") {
+        /*if (storedUser.role === "learner") { // Why different for learner?
           // For learners, use stored data
           setUser(storedUser);
-        } else {
-          try {
-            // For teachers/admins, get fresh data
-            const freshData = await getUserById(storedUser.id);
-            setUser(freshData || storedUser); // Fallback to stored data if fetch fails
-          } catch (err) {
-            console.error("Failed to fetch fresh data:", err);
-            // Fallback to stored data on error
-            setUser(storedUser);
-          }
+        } else {*/
+        try {
+          // For teachers/admins, get fresh data
+          const freshData = await getUserById(storedUser.id);
+          setUser(freshData || storedUser); // Fallback to stored data if fetch fails
+        } catch (err) {
+          console.error('Failed to fetch fresh data:', err);
+          // Fallback to stored data on error
+          setUser(storedUser);
         }
+        //}
       } catch (err) {
-        console.error("Profile fetch error:", err);
-        setError(err.message || "Failed to load profile");
+        console.error('Profile fetch error:', err);
+        setError(err.message || 'Failed to load profile');
       } finally {
         setLoading(false);
         setIsLoading(false);
@@ -153,7 +153,7 @@ function Profile() {
     fetchUserData();
 
     // Load saved profile image
-    const savedImageSrc = localStorage.getItem("userProfileImage");
+    const savedImageSrc = localStorage.getItem('userProfileImage');
     if (savedImageSrc) {
       setCurrentProfileImage(savedImageSrc);
     }
@@ -161,15 +161,15 @@ function Profile() {
 
   const getSchoolName = (schoolId) => {
     const schools = {
-      1001: "University of Santo Tomas (UST)",
-      1002: "Asuncion Consunji Elementary School (ACES)",
+      1001: 'University of Santo Tomas (UST)',
+      1002: 'Asuncion Consunji Elementary School (ACES)',
     };
-    return schools[schoolId] || "N/A";
+    return schools[schoolId] || 'N/A';
   };
 
   const handleChangePassword = async () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
-      setMessage("Please fill out all fields.");
+      setMessage('Please fill out all fields.');
       return;
     }
 
@@ -177,25 +177,25 @@ function Profile() {
       /^(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
     if (!passwordPattern.test(newPassword)) {
       setMessage(
-        "Password must have at least 8 characters, one digit, and one symbol."
+        'Password must have at least 8 characters, one digit, and one symbol.'
       );
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setMessage("Passwords do not match. Please try again.");
+      setMessage('Passwords do not match. Please try again.');
       return;
     }
 
     try {
       await changePassword(user.id, oldPassword, newPassword, confirmPassword);
-      setMessage("Password changed successfully!");
-      setOldPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+      setMessage('Password changed successfully!');
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (err) {
-      console.error("Password change error:", err);
-      setMessage(err.message || "Failed to change password. Please try again.");
+      console.error('Password change error:', err);
+      setMessage(err.message || 'Failed to change password. Please try again.');
     }
   };
 
@@ -203,20 +203,20 @@ function Profile() {
     setEditFormData({
       first_name: user.first_name,
       last_name: user.last_name,
-      middle_initial: user.middle_initial || "",
+      middle_initial: user.middle_initial || '',
       email: user.email,
-      contact_no: user.contact_no || "",
+      contact_no: user.contact_no || '',
       birth_date: user.birth_date
-        ? new Date(user.birth_date).toISOString().split("T")[0]
-        : "",
-      school_id: user.school_id || "",
+        ? new Date(user.birth_date).toISOString().split('T')[0]
+        : '',
+      school_id: user.school_id || '',
     });
     setIsEditMode(true);
   };
 
   const validateEmail = (email) => {
     // Array of common TLDs - add more as needed
-    const validTLDs = ["com", "edu", "ph", "org", "net", "gov", "edu.ph"];
+    const validTLDs = ['com', 'edu', 'ph', 'org', 'net', 'gov', 'edu.ph'];
 
     // Basic email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -225,52 +225,57 @@ function Profile() {
     }
 
     // Extract domain and check TLD
-    const domain = email.split("@")[1];
+    const domain = email.split('@')[1];
     return validTLDs.some((tld) => domain.toLowerCase().endsWith(`.${tld}`));
   };
 
   const handleEditSubmit = async () => {
     try {
-      setEditError("");
-      setEditMessage({ type: "", text: "" });
+      setEditError('');
+      setEditMessage({ type: '', text: '' });
 
       // Validate email format first
       if (!validateEmail(editFormData.email)) {
-        setEditError("Please enter a valid email address");
+        setEditError('Please enter a valid email address');
         setEditMessage({
-          type: "error",
-          text: "Please enter a valid email address",
+          type: 'error',
+          text: 'Please enter a valid email address',
         });
         return;
       }
 
       const updatedUser = await updateUser(user.id, editFormData);
       setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      // Dispatch event to notify Header component
+      window.dispatchEvent(new Event('userUpdated'));
+
       setIsEditMode(false);
       setEditMessage({
-        type: "success",
-        text: "Profile updated successfully!",
+        type: 'success',
+        text: 'Profile updated successfully!',
       });
 
       // Clear success message after 3 seconds
       setTimeout(() => {
-        setEditMessage({ type: "", text: "" });
+        setEditMessage({ type: '', text: '' });
       }, 3000);
     } catch (err) {
-      console.error("Profile update error:", err);
+      console.error('Profile update error:', err);
 
       if (
         err.response?.status === 409 ||
-        err.message.includes("already exists")
+        err.message.includes('already exists')
       ) {
         setEditMessage({
-          type: "error",
-          text: "This email address is already in use",
+          type: 'error',
+          text: 'This email address is already in use',
         });
       } else {
         setEditMessage({
-          type: "error",
-          text: err.message || "Failed to update profile",
+          type: 'error',
+          text: err.message || 'Failed to update profile',
         });
       }
     }
@@ -285,8 +290,8 @@ function Profile() {
     }));
 
     // Clear error when email is changed
-    if (name === "email") {
-      setEditError("");
+    if (name === 'email') {
+      setEditError('');
     }
   };
 
@@ -447,10 +452,10 @@ function Profile() {
               }
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
             >
-              <option value="1001">
-                University of Santo Tomas (UST)
+              <option value="1001">University of Santo Tomas (UST)</option>
+              <option value="1002">
+                Asuncion Consunji Elementary School (ACES)
               </option>
-              <option value="1002">Asuncion Consunji Elementary School (ACES)</option>
             </select>
           </div>
         </div>
@@ -482,9 +487,9 @@ function Profile() {
         {editMessage.text && (
           <div
             className={`mb-4 p-4 rounded-lg ${
-              editMessage.type === "success"
-                ? "bg-green-100 text-green-700 border border-green-200"
-                : "bg-red-100 text-red-700 border border-red-200"
+              editMessage.type === 'success'
+                ? 'bg-green-100 text-green-700 border border-green-200'
+                : 'bg-red-100 text-red-700 border border-red-200'
             }`}
           >
             {editMessage.text}
@@ -496,7 +501,7 @@ function Profile() {
             className="h-40 rounded-t-lg bg-cover bg-center"
             style={{
               backgroundImage:
-                "url(https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg)",
+                'url(https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg)',
             }}
           ></div>
 
@@ -557,7 +562,7 @@ function Profile() {
                       Middle Initial:
                     </label>
                     <p className="mt-1 text-sm text-gray-900">
-                      {user.middle_initial || "N/A"}
+                      {user.middle_initial || 'N/A'}
                     </p>
                   </div>
                   <div>
@@ -571,7 +576,7 @@ function Profile() {
                       Contact Number:
                     </label>
                     <p className="mt-1 text-sm text-gray-900">
-                      {user.contact_no || "N/A"}
+                      {user.contact_no || 'N/A'}
                     </p>
                   </div>
                   <div>
@@ -581,7 +586,7 @@ function Profile() {
                     <p className="mt-1 text-sm text-gray-900">
                       {user.birth_date
                         ? new Date(user.birth_date).toLocaleDateString()
-                        : "N/A"}
+                        : 'N/A'}
                     </p>
                   </div>
                   <div>
@@ -611,7 +616,7 @@ function Profile() {
             <h2 className="text-xl font-semibold mb-4">Change Password</h2>
             <div className="relative">
               <input
-                type={oldPasswordVisible ? "text" : "password"}
+                type={oldPasswordVisible ? 'text' : 'password'}
                 placeholder="Old Password"
                 className="w-full p-2 border rounded mb-2 pr-[6vw] lg:pr-[2.5vw]"
                 value={oldPassword}
@@ -631,7 +636,7 @@ function Profile() {
             </div>
             <div className="relative">
               <input
-                type={newPasswordVisible ? "text" : "password"}
+                type={newPasswordVisible ? 'text' : 'password'}
                 placeholder="New Password"
                 className="w-full p-2 border rounded mb-2 pr-[6vw] lg:pr-[2.5vw]"
                 value={newPassword}
@@ -651,7 +656,7 @@ function Profile() {
             </div>
             <div className="relative">
               <input
-                type={confirmPasswordVisible ? "text" : "password"}
+                type={confirmPasswordVisible ? 'text' : 'password'}
                 placeholder="Confirm Password"
                 className="w-full p-2 border rounded mb-2 pr-[6vw] lg:pr-[2.5vw]"
                 value={confirmPassword}
@@ -674,9 +679,9 @@ function Profile() {
             {message && (
               <p
                 className={`mt-2 ${
-                  message.includes("successfully")
-                    ? "text-green-500"
-                    : "text-red-500"
+                  message.includes('successfully')
+                    ? 'text-green-500'
+                    : 'text-red-500'
                 }`}
               >
                 {message}

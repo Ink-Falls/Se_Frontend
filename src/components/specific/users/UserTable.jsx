@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   SquarePen,
   Plus,
@@ -9,8 +9,8 @@ import {
   Trash2,
   X,
   RotateCcw,
-} from "lucide-react";
-import RestoreUserModal from "../../common/Modals/Restore/RestoreUserModal";
+} from 'lucide-react';
+import RestoreUserModal from '../../common/Modals/Restore/RestoreUserModal';
 
 const UserTable = ({
   users,
@@ -31,7 +31,7 @@ const UserTable = ({
   onGenerateReport,
   sortConfig,
   onSort,
-  totalItems,
+  totalUsers,
   searchQuery,
 }) => {
   const ROWS_PER_PAGE = 10;
@@ -51,7 +51,7 @@ const UserTable = ({
   };
 
   const handlePageInputSubmit = (e) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       const newPage = parseInt(pageInput);
       if (!isNaN(newPage) && newPage >= 1 && newPage <= totalPages) {
         onPageChange(newPage);
@@ -89,30 +89,30 @@ const UserTable = ({
 
   const getSchoolAbbreviation = (schoolName) => {
     const abbreviations = {
-      1001: "ACES",
-      1002: "UST",
+      1001: 'ACES',
+      1002: 'UST',
     };
     return abbreviations[schoolName] || schoolName;
   };
 
   const getFormattedRole = (role) => {
     const roleMap = {
-      student_teacher: "Student Teacher",
-      admin: "Admin",
-      teacher: "Teacher",
-      learner: "Learner",
+      student_teacher: 'Student Teacher',
+      admin: 'Admin',
+      teacher: 'Teacher',
+      learner: 'Learner',
     };
     return roleMap[role] || role;
   };
 
   const handleRowClick = (user) => {
-    if (user.role !== "admin") {
+    if (user.role !== 'admin') {
       onEdit(user);
     }
   };
 
   const handleRestoreSuccess = (message) => {
-    alert(message || "User restored successfully");
+    alert(message || 'User restored successfully');
     setIsRestoreModalOpen(false);
     window.location.reload();
   };
@@ -156,10 +156,10 @@ const UserTable = ({
 
             <div className="relative py-2 md:py-[0.2vw]">
               <select
-                value={`${sortConfig.key || "none"}-${sortConfig.direction}`}
+                value={`${sortConfig.key || 'none'}-${sortConfig.direction}`}
                 onChange={(e) => {
-                  const [key, direction] = e.target.value.split("-");
-                  onSort(key === "none" ? null : key, direction);
+                  const [key, direction] = e.target.value.split('-');
+                  onSort(key === 'none' ? null : key, direction);
                 }}
                 className="pl-10 md:pl-[2vw] pr-4 md:pr-[1vw] py-2 md:py-[0.5vw] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none w-full md:w-[12vw]"
               >
@@ -293,7 +293,7 @@ const UserTable = ({
                     <div className="text-gray-500 text-sm">
                       {searchQuery
                         ? `No users found matching "${searchQuery}"`
-                        : "No users found matching the selected criteria"}
+                        : 'No users found matching the selected criteria'}
                     </div>
                   </div>
                 </td>
@@ -304,7 +304,7 @@ const UserTable = ({
                   key={user.id}
                   onClick={() => handleRowClick(user)}
                   className={`hover:bg-gray-50 transition-colors ${
-                    user.role !== "admin" ? "cursor-pointer" : ""
+                    user.role !== 'admin' ? 'cursor-pointer' : ''
                   }`}
                 >
                   <td
@@ -354,11 +354,11 @@ const UserTable = ({
         <div className="px-6 py-4 flex items-center justify-between border-t">
           <div className="text-sm text-gray-700">
             {users.length === 0
-              ? "No users to display"
+              ? 'No users to display'
               : `Showing ${(currentPage - 1) * 10 + 1} to ${Math.min(
                   currentPage * 10,
-                  totalItems
-                )} of ${totalItems} users`}
+                  totalUsers
+                )} of ${totalUsers} users`}
           </div>
           <div className="flex space-x-2 items-center">
             <button
