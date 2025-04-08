@@ -127,10 +127,10 @@ function Profile() {
           return;
         }
 
-        if (storedUser.role === "learner") {
+        /*if (storedUser.role === "learner") { // Why different for learner?
           // For learners, use stored data
           setUser(storedUser);
-        } else {
+        } else {*/
           try {
             // For teachers/admins, get fresh data
             const freshData = await getUserById(storedUser.id);
@@ -140,7 +140,7 @@ function Profile() {
             // Fallback to stored data on error
             setUser(storedUser);
           }
-        }
+      //}
       } catch (err) {
         console.error("Profile fetch error:", err);
         setError(err.message || "Failed to load profile");
@@ -246,6 +246,8 @@ function Profile() {
 
       const updatedUser = await updateUser(user.id, editFormData);
       setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+
       setIsEditMode(false);
       setEditMessage({
         type: "success",
