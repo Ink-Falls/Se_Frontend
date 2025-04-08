@@ -1,16 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { Home, Megaphone, BookOpen, ClipboardList, User, LineChart, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Home, Megaphone, BookOpen, ClipboardList, User, LineChart, ChevronDown, ArrowLeft } from "lucide-react";
 import Sidebar from "../../components/common/layout/Sidebar";
-import Header from "../../components/common/layout/Header";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import Header from "../../components/common/layout/Header";
 import { useCourse } from "../../contexts/CourseContext";
+import { getModulesByCourseId, getModuleGrade } from "../../services/moduleService";
+import { getCourseAssessments, getAssessmentSubmissions, getSubmissionDetails } from "../../services/assessmentService";
 
 const TeacherProgressTracker = () => {
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState([]);
-  const [courses, setCourses] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [moduleAssessments, setModuleAssessments] = useState({});
+  const [moduleGrades, setModuleGrades] = useState({});
+  const [expandedModules, setExpandedModules] = useState(new Set());
+  const [error, setError] = useState(null);
+  const [selectedAssessment, setSelectedAssessment] = useState(null);
+  const [studentSubmissions, setStudentSubmissions] = useState({});
+  const [expandedStudents, setExpandedStudents] = useState(new Set());
+  const [studentCount, setStudentCount] = useState(0);
   const { selectedCourse: contextCourse } = useCourse();
+  const navigate = useNavigate();
 
   const navItems = [
     { text: "Home", icon: <Home size={20} />, route: "/Teacher/Dashboard" },
@@ -41,180 +53,468 @@ const TeacherProgressTracker = () => {
     },
   ];
 
-  // Updated mock data with more examples
-  const mockStudents = [
-    {
-      id: 1,
-      name: "John Doe",
-      grade: 85,
-      totalAbsences: 2,
-      modules: {
-        module1: 90,
-        module2: 85,
-        module3: 80,
-      },
-      lastActive: "2024-01-15",
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      grade: 72,
-      totalAbsences: 4,
-      modules: {
-        module1: 65,
-        module2: 78,
-        module3: 73,
-      },
-      lastActive: "2024-01-14",
-    },
-    {
-      id: 3,
-      name: "Alex Johnson",
-      grade: 95,
-      totalAbsences: 1,
-      modules: {
-        module1: 98,
-        module2: 92,
-        module3: 95,
-      },
-      lastActive: "2024-01-15",
-    },
-    {
-      id: 4,
-      name: "Maria Garcia",
-      grade: 68,
-      totalAbsences: 5,
-      modules: {
-        module1: 70,
-        module2: 65,
-        module3: 69,
-      },
-      lastActive: "2024-01-13",
-    },
-    {
-      id: 5,
-      name: "William Chen",
-      grade: 88,
-      totalAbsences: 0,
-      modules: {
-        module1: 85,
-        module2: 90,
-        module3: 89,
-      },
-      lastActive: "2024-01-15",
-    },
-  ];
-
   useEffect(() => {
-    const fetchStudentProgress = async () => {
-      if (!contextCourse?.id) return;
+    const fetchData = async () => {
+      if (!contextCourse?.id) {
+        navigate('/Teacher/Dashboard');
+        return;
+      }
 
       try {
         setLoading(true);
-        // Replace with actual API call
-        setTimeout(() => {
-          setStudents(mockStudents);
-          setLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error("Error fetching student progress:", error);
+        setError(null);
+        
+        // Store student count from the course
+        setStudentCount(contextCourse.studentCount || 0);
+        
+        const modulesResponse = await getModulesByCourseId(contextCourse.id);
+        if (!modulesResponse || !Array.isArray(modulesResponse)) {
+          throw new Error("Failed to fetch modules");
+        }
+
+        const assessmentsByModule = {};
+        const gradesByModule = {};
+
+        for (const module of modulesResponse) {
+          try {
+            const assessmentResponse = await getCourseAssessments(module.module_id, true);
+            if (assessmentResponse.success) {
+              assessmentsByModule[module.module_id] = assessmentResponse.assessments;
+            }
+          } catch (err) {
+            console.warn(`Failed to fetch assessments for module ${module.module_id}:`, err);
+            assessmentsByModule[module.module_id] = [];
+          }
+
+          try {
+            const gradeResponse = await getModuleGrade(module.module_id);
+            gradesByModule[module.module_id] = gradeResponse;
+          } catch (err) {
+            console.warn(`Failed to fetch grades for module ${module.module_id}:`, err);
+            gradesByModule[module.module_id] = null;
+          }
+        }
+
+        setModules(modulesResponse);
+        setModuleAssessments(assessmentsByModule);
+        setModuleGrades(gradesByModule);
+        
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError(err.message || "Failed to load data");
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchStudentProgress();
-  }, [contextCourse]);
+    fetchData();
+  }, [contextCourse?.id, navigate]);
 
-  const handleGenerateReport = () => {
-    console.log("Generate report clicked");
-    // Add logic for generating report
+  const toggleModule = (moduleId) => {
+    setExpandedModules(prev => {
+      const next = new Set(prev);
+      if (next.has(moduleId)) {
+        next.delete(moduleId);
+      } else {
+        next.add(moduleId);
+      }
+      return next;
+    });
   };
 
-  const getScoreStyle = (score) => {
-    if (score >= 75) {
-      return {
-        className: "px-2 py-1 rounded font-medium text-green-700 bg-green-50 border border-green-600",
-      };
+  const toggleStudent = (studentId) => {
+    setExpandedStudents(prev => {
+      const next = new Set(prev);
+      if (next.has(studentId)) {
+        next.delete(studentId);
+      } else {
+        next.add(studentId);
+      }
+      return next;
+    });
+  };
+
+  const getSubmissionScoreClass = (score, passingScore) => {
+    if (score === null || score === undefined) return 'text-gray-400';
+    return score >= passingScore ? 'text-green-600' : 'text-red-600';
+  };
+
+  const calculateSubmissionScore = (submission) => {
+    if (!submission?.answers) return { total: 0, possible: 0 };
+
+    const totalAwarded = submission.answers.reduce((sum, answer) => {
+      if (answer.points_awarded !== null && answer.points_awarded !== undefined) {
+        return sum + (parseFloat(answer.points_awarded) || 0);
+      }
+      return sum;
+    }, 0);
+
+    const totalPossible = submission.assessment.questions.reduce((sum, question) => {
+      return sum + (parseFloat(question.points) || 0);
+    }, 0);
+
+    return { total: totalAwarded, possible: totalPossible };
+  };
+
+  const areAllQuestionsGraded = (submission) => {
+    if (!submission?.answers) return false;
+
+    return submission.answers.every((answer) => {
+      const hasPoints = answer.points_awarded !== null && answer.points_awarded !== undefined;
+      const isAutoGraded = submission.assessment?.questions?.find(
+        (q) => q.id === answer.question_id
+      )?.question_type === "multiple_choice" ||
+      submission.assessment?.questions?.find(
+        (q) => q.id === answer.question_id
+      )?.question_type === "true_false";
+
+      return hasPoints || (isAutoGraded && answer.is_auto_graded);
+    });
+  };
+
+  const fetchStudentSubmissions = async (assessment) => {
+    try {
+      const submissionsResponse = await getAssessmentSubmissions(assessment.id);
+      if (submissionsResponse.success) {
+        const detailedSubmissions = await Promise.all(
+          submissionsResponse.submissions.map(async (sub) => {
+            try {
+              const detailsResponse = await getSubmissionDetails(sub.id);
+              if (detailsResponse.success && detailsResponse.submission) {
+                const scores = calculateSubmissionScore(detailsResponse.submission);
+                const allGraded = areAllQuestionsGraded(detailsResponse.submission);
+
+                return {
+                  id: sub.id,
+                  student: {
+                    name: `${detailsResponse.submission.user?.first_name || ''} ${detailsResponse.submission.user?.last_name || ''}`.trim(),
+                    id: detailsResponse.submission.user?.id
+                  },
+                  status: allGraded ? 'graded' : 'Not Graded',
+                  score: scores.total,
+                  maxScore: scores.possible,
+                  percentage: scores.possible > 0 ? ((scores.total / scores.possible) * 100).toFixed(1) : '0',
+                  submit_time: sub.submit_time,
+                  isLate: detailsResponse.submission.is_late,
+                  fullSubmission: detailsResponse.submission
+                };
+              }
+            } catch (err) {
+              console.error(`Error fetching details for submission ${sub.id}:`, err);
+            }
+            return null;
+          })
+        );
+
+        setStudentSubmissions(prev => ({
+          ...prev,
+          [assessment.id]: detailedSubmissions.filter(Boolean)
+        }));
+      }
+    } catch (err) {
+      console.error("Error fetching student submissions:", err);
     }
+  };
+
+  const countUniqueSubmissions = (assessment) => {
+    if (!assessment) return { submitted: 0, total: contextCourse?.studentCount || 0 };
+    
+    const assessmentSubmissions = studentSubmissions[assessment.id] || [];
+    
+    const uniqueStudents = new Set();
+    assessmentSubmissions.forEach(submission => {
+      if (submission.student?.id) {
+        uniqueStudents.add(submission.student.id);
+      }
+    });
+
     return {
-      className: "px-2 py-1 rounded font-medium text-yellow-600 bg-yellow-50 border border-yellow-500",
+      submitted: uniqueStudents.size,
+      total: contextCourse?.studentCount || 0
     };
   };
 
-  const renderProgressTable = () => (
-    <div className="overflow-x-auto bg-white rounded-lg shadow">
-      <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-800">Student Progress</h2>
-        <button
-          onClick={() => handleGenerateReport()}
-          className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black"
-        >
-          <FileText size={16} />
-          <span>Generate Report</span>
-        </button>
+  const groupSubmissionsByStudent = (submissions) => {
+    return submissions.reduce((acc, submission) => {
+      const studentId = submission.student.id;
+      if (!acc[studentId]) {
+        acc[studentId] = {
+          student: submission.student,
+          submissions: []
+        };
+      }
+      acc[studentId].submissions.push(submission);
+      return acc;
+    }, {});
+  };
+
+  const getTypeStyle = (type) => {
+    switch (type?.toLowerCase()) {
+      case 'quiz':
+        return 'bg-blue-100 text-blue-800 border border-blue-200';
+      case 'exam':
+        return 'bg-purple-100 text-purple-800 border border-purple-200';
+      case 'assignment':
+        return 'bg-green-100 text-green-800 border border-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border border-gray-200';
+    }
+  };
+
+  const getScoreStyle = (score, passingScore, maxScore) => {
+    if (score === null || score === undefined) return 'text-gray-400';
+    const percentage = (score / maxScore) * 100;
+    return percentage >= passingScore ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold';
+  };
+
+  const formatPassingPercentage = (passing, max) => {
+    if (!passing || !max) return 'N/A';
+    const percentage = (passing / max) * 100;
+    return `${percentage.toFixed(1)}%`;
+  };
+
+  const calculateAverageScore = (submissions) => {
+    if (!submissions || submissions.length === 0) return 0;
+    
+    const sum = submissions.reduce((total, submission) => {
+      const score = submission.score || 0;
+      const maxScore = submission.maxScore || 1;
+      return total + ((score / maxScore) * 100);
+    }, 0);
+
+    return sum / submissions.length;
+  };
+
+  const renderStudentSubmissions = (assessment) => {
+    const submissions = studentSubmissions[assessment.id] || [];
+    const groupedSubmissions = groupSubmissionsByStudent(submissions);
+    
+    return (
+      <div className="mt-4 bg-gray-50 rounded-lg p-4">
+        <div className="flex justify-between items-center mb-3">
+          <h4 className="text-lg font-semibold">Student Submissions</h4>
+          <button
+            onClick={() => setSelectedAssessment(null)}
+            className="text-gray-500 hover:text-gray-700 px-2 py-1 rounded"
+          >
+            Close
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 bg-white">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student Name</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Latest Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Best Score</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Attempts</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Submission</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {Object.values(groupedSubmissions).map((group) => {
+                const latestSubmission = group.submissions[0];
+                const bestSubmission = group.submissions.reduce((best, current) => {
+                  if (!best.score || (current.score > best.score)) return current;
+                  return best;
+                }, group.submissions[0]);
+                
+                return (
+                  <React.Fragment key={group.student.id}>
+                    <tr 
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => toggleStudent(group.student.id)}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <ChevronDown 
+                            className={`w-4 h-4 transition-transform ${
+                              expandedStudents.has(group.student.id) ? 'rotate-180' : ''
+                            }`}
+                          />
+                          <span className="font-medium">{group.student.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          latestSubmission.status === 'graded' 
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {latestSubmission.status?.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={getScoreStyle(
+                          bestSubmission.score,
+                          assessment.passing_score,
+                          assessment.max_score
+                        )}>
+                          {bestSubmission.score}/{bestSubmission.maxScore}
+                          <span className="ml-1 text-xs">
+                            ({((bestSubmission.score / bestSubmission.maxScore) * 100).toFixed(1)}%)
+                          </span>
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">{group.submissions.length}</td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {new Date(latestSubmission.submit_time).toLocaleString()}
+                      </td>
+                    </tr>
+                    
+                    {expandedStudents.has(group.student.id) && (
+                      <tr>
+                        <td colSpan="5" className="px-4 py-3">
+                          <div className="bg-gray-50 rounded-lg p-4 mt-2">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-100">
+                                <tr>
+                                  <th className="px-3 py-2 text-xs text-gray-500">Attempt</th>
+                                  <th className="px-3 py-2 text-xs text-gray-500">Score</th>
+                                  <th className="px-3 py-2 text-xs text-gray-500">Status</th>
+                                  <th className="px-3 py-2 text-xs text-gray-500">Submission Time</th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {group.submissions.map((submission, index) => (
+                                  <tr key={submission.id} className="text-sm">
+                                    <td className="px-3 py-2">#{index + 1}</td>
+                                    <td className="px-3 py-2">
+                                      <span className={getSubmissionScoreClass(
+                                        submission.score,
+                                        assessment.passing_score
+                                      )}>
+                                        {submission.score}/{submission.maxScore}
+                                      </span>
+                                    </td>
+                                    <td className="px-3 py-2">
+                                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        submission.status === 'graded' 
+                                          ? 'bg-green-100 text-green-800'
+                                          : 'bg-yellow-100 text-yellow-800'
+                                      }`}>
+                                        {submission.status?.toUpperCase()}
+                                      </span>
+                                    </td>
+                                    <td className="px-3 py-2 text-gray-500">
+                                      {new Date(submission.submit_time).toLocaleString()}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Learner Name
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Grade
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Total Absences
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Module 1
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Module 2
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Module 3
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Last Active
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {students.map((student) => (
-            <tr key={student.id}>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {student.name}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span {...getScoreStyle(student.grade)}>
-                  {student.grade}%
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {student.totalAbsences}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span {...getScoreStyle(student.modules?.module1)}>
-                  {student.modules?.module1 ?? 'N/A'}%
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span {...getScoreStyle(student.modules?.module2)}>
-                  {student.modules?.module2 ?? 'N/A'}%
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span {...getScoreStyle(student.modules?.module3)}>
-                  {student.modules?.module3 ?? 'N/A'}%
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {student.lastActive}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    );
+  };
+
+  const renderModuleProgress = () => (
+    <div className="space-y-6">
+      {modules.map(module => (
+        <div key={module.module_id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div 
+            className="p-6 bg-gray-50 border-l-4 border-yellow-500 flex justify-between items-center cursor-pointer hover:bg-gray-100"
+            onClick={() => toggleModule(module.module_id)}
+          >
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800">{module.name}</h3>
+              <p className="text-sm text-gray-600 mt-1">{module.description}</p>
+              {moduleGrades[module.module_id] && (
+                <div className="flex gap-2 mt-2">
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Average: {moduleGrades[module.module_id].averageScore}%
+                  </span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    moduleGrades[module.module_id].allPassed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {moduleGrades[module.module_id].allPassed ? 'All Passed' : 'Some Failed'}
+                  </span>
+                </div>
+              )}
+            </div>
+            <ChevronDown className={`w-6 h-6 text-gray-400 transform transition-transform duration-200 ${
+              expandedModules.has(module.module_id) ? "rotate-180" : ""
+            }`} />
+          </div>
+
+          {expandedModules.has(module.module_id) && (
+            <div className="p-6">
+              <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
+                <div className="grid grid-cols-6 gap-4 text-sm font-medium text-gray-500">
+                  <div>Assessment</div>
+                  <div>Type</div>
+                  <div>Due Date</div>
+                  <div>Submissions</div>
+                  <div>Average Score</div>
+                  <div>Pass Rate</div>
+                </div>
+              </div>
+
+              {(moduleAssessments[module.module_id] || []).map(assessment => (
+                <div key={assessment.id} className="mb-6 last:mb-0">
+                  <div className="grid grid-cols-6 gap-4 items-center hover:bg-gray-50 p-4 rounded-lg">
+                    <div className="font-medium text-gray-900">{assessment.title}</div>
+                    <div>
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${getTypeStyle(assessment.type)}`}>
+                        {assessment.type?.toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="text-gray-500">{new Date(assessment.due_date).toLocaleDateString()}</div>
+                    <div className="text-gray-500">
+                      {(() => {
+                        const counts = countUniqueSubmissions(assessment);
+                        return `${counts.submitted} / ${counts.total} ${counts.total === 1 ? "Learner" : "Learners"}`;
+                      })()}
+                    </div>
+                    <div className={getSubmissionScoreClass(
+                      calculateAverageScore(studentSubmissions[assessment.id]),
+                      assessment.passing_score
+                    )}>
+                      {calculateAverageScore(studentSubmissions[assessment.id]).toFixed(1)}%
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-500">
+                        {formatPassingPercentage(assessment.passing_score, assessment.max_score)}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setSelectedAssessment(assessment);
+                          fetchStudentSubmissions(assessment);
+                        }}
+                        className="px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100"
+                      >
+                        View Submissions
+                      </button>
+                    </div>
+                  </div>
+                  {selectedAssessment?.id === assessment.id && renderStudentSubmissions(assessment)}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderHeader = () => (
+    <div>
+      <Header
+        title={contextCourse?.name || "Progress Tracker"}
+        subtitle={contextCourse?.code}
+      />
+      <div className="relative z-50">
+        <MobileNavBar navItems={navItems} />
+      </div>
     </div>
   );
 
@@ -226,13 +526,22 @@ const TeacherProgressTracker = () => {
         </div>
 
         <div className="flex-1 p-6 max-md:p-5 overflow-y-auto">
-          <Header title={`Progress Tracker - ${contextCourse?.name || ''}`} />
+          {renderHeader()}
 
           {loading ? (
             <LoadingSpinner />
+          ) : error ? (
+            <div className="text-center py-8">
+              <div className="text-red-500 mb-4">Error: {error}</div>
+              <button 
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
+              >
+                Retry
+              </button>
+            </div>
           ) : (
-            /* Progress Table */
-            renderProgressTable()
+            renderModuleProgress()
           )}
         </div>
 
@@ -242,5 +551,4 @@ const TeacherProgressTracker = () => {
   );
 };
 
-export { TeacherProgressTracker };
 export default TeacherProgressTracker;

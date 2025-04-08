@@ -68,7 +68,7 @@ const TeacherPages = {
   ),
   ProgressTracker: lazy(() =>
     import("./pages/Teacher/TeacherProgressTracker").then((module) => ({
-      default: module.default || module.TeacherProgressTracker,
+      default: module.default,
     }))
   ),
 };

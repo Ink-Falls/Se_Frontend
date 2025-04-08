@@ -84,7 +84,7 @@ const Dashboard = () => {
       code: course.code || "No Code",
       description: course.description,
     });
-    navigate("/Teacher/CourseModules");
+    navigate("/Teacher/ProgressTracker");
   };
 
   // Error State Component
