@@ -1,22 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCourse } from "../../contexts/CourseContext";
-import Sidebar from "../../components/common/layout/Sidebar";
-import Header from "../../components/common/layout/Header";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
-import {
-  Home,
-  Megaphone,
-  BookOpen,
-  ClipboardList,
-  Clock,
-  ArrowLeft,
-  AlertTriangle,
-  Check,
-  Save,
-  FileText,
-  GraduationCap,
-} from "lucide-react";
+import { Clock, AlertTriangle, Check, Save, FileText, X } from "lucide-react";
 import {
   createSubmission,
   saveQuestionAnswer,
@@ -40,6 +26,7 @@ const LearnerAssessmentAttempt = () => {
   const [error, setError] = useState(null);
   const [savingAnswer, setSavingAnswer] = useState(false);
   const [savedAnswers, setSavedAnswers] = useState({});
+  const [showExitModal, setShowExitModal] = useState(false);
 
   const initializationRef = useRef(false);
   const submissionAttemptRef = useRef(false);
@@ -336,21 +323,68 @@ const LearnerAssessmentAttempt = () => {
           );
 
         case "essay":
+          const wordCount =
+            answers[currentQuestion.id]?.textResponse?.trim()?.split(/\s+/)
+              ?.length || 0;
+          const isOverLimit =
+            currentQuestion.word_limit &&
+            wordCount > currentQuestion.word_limit;
+
+          const handleEssayChange = (e) => {
+            const newText = e.target.value;
+            const newWordCount = newText.trim().split(/\s+/).length;
+
+            // Only update if under word limit or if deleting text
+            if (
+              !currentQuestion.word_limit ||
+              newWordCount <= currentQuestion.word_limit ||
+              newText.length <
+                (answers[currentQuestion.id]?.textResponse?.length || 0)
+            ) {
+              handleAnswerChange({ textResponse: newText });
+            }
+          };
+
           return (
             <div className="mt-8">
               {currentQuestion.word_limit && (
-                <p className="text-sm text-gray-500 mb-2">
-                  Word limit: {currentQuestion.word_limit} words
-                </p>
+                <div className="flex justify-between text-sm mb-2">
+                  <p className="text-gray-500">
+                    Word limit: {currentQuestion.word_limit} words
+                  </p>
+                  <p
+                    className={`${
+                      isOverLimit
+                        ? "text-red-500"
+                        : wordCount === currentQuestion.word_limit
+                        ? "text-red-500"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    {wordCount}/{currentQuestion.word_limit} words
+                  </p>
+                </div>
               )}
               <textarea
                 value={answers[currentQuestion.id]?.textResponse || ""}
-                onChange={(e) =>
-                  handleAnswerChange({ textResponse: e.target.value })
-                }
-                className="w-full p-4 border-2 rounded-xl h-40 focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+                onChange={handleEssayChange}
+                className={`w-full p-4 border-2 rounded-xl h-40 focus:border-transparent
+              ${
+                isOverLimit
+                  ? "border-red-300"
+                  : wordCount === currentQuestion.word_limit
+                  ? "border-red-500"
+                  : "border-gray-300"
+              }`}
                 placeholder="Write your essay answer here..."
               />
+              {isOverLimit ? (
+                <p className="mt-1 text-sm text-red-500">
+                  Your response exceeds the word limit
+                </p>
+              ) : wordCount === currentQuestion.word_limit ? (
+                <p className="mt-1 text-sm text-red-500">Word limit reached</p>
+              ) : null}
             </div>
           );
 
@@ -462,7 +496,7 @@ const LearnerAssessmentAttempt = () => {
   const renderHeader = () => {
     return (
       <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-6 text-white shadow-md rounded-t-2xl">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-10">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h2 className="text-2xl font-bold">{assessment?.title}</h2>
@@ -498,66 +532,72 @@ const LearnerAssessmentAttempt = () => {
     );
   };
 
-  const navItems = [
-    { text: "Home", icon: <Home size={20} />, route: "/Learner/Dashboard" },
-    {
-      text: "Modules",
-      icon: <BookOpen size={20} />,
-      route: "/Learner/CourseModules",
-    },
-    {
-      text: "Announcements",
-      icon: <Megaphone size={20} />,
-      route: "/Learner/CourseAnnouncements",
-    },
-    {
-      text: "Assessments",
-      icon: <ClipboardList size={20} />,
-      route: "/Learner/Assessment",
-    },
-    {
-      text: "Grades",
-      icon: <GraduationCap size={20} />,
-      route: "/Learner/Grades",
-    },
-  ];
-
-  return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar navItems={navItems} />
-      <div className="flex-1 overflow-auto">
-        <Header
-          title={selectedCourse?.name || "Assessment"}
-          subtitle={selectedCourse?.code}
-        />
-        <div className="p-6">
-          {loading ? (
-            <div className="flex items-center justify-center min-h-[400px]">
-              <LoadingSpinner />
-            </div>
-          ) : error ? (
-            <div className="max-w-7xl mx-auto text-center py-8 rounded-2xl">
-              <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
-              <h3 className="text-xl font-medium text-gray-900 mt-4 mb-2">
-                {error === "Invalid request"
-                  ? "Maximum number of attempts has been reached for this assessment"
-                  : error}
-              </h3>
-              <button
-                onClick={() => navigate("/Learner/Assessment")}
-                className="mt-4 px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
-              >
-                Back to Assessments
-              </button>
-            </div>
-          ) : (
-            <div className="max-w-7xl mx-auto">
-              {renderHeader()}
-              <div>{renderQuestion()}</div>
-            </div>
-          )}
+  const ExitConfirmationModal = () => {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Exit Assessment?
+          </h3>
+          <p className="text-gray-600 mb-6">
+            Are you sure you want to exit? Your progress will be saved.
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setShowExitModal(false)}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => navigate("/Learner/Assessment")}
+              className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
+            >
+              Confirm Exit
+            </button>
+          </div>
         </div>
       </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      {showExitModal && <ExitConfirmationModal />}
+
+      {loading ? (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <LoadingSpinner />
+        </div>
+      ) : error ? (
+        <div className="max-w-7xl mx-auto text-center py-8 rounded-2xl">
+          <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
+          <h3 className="text-xl font-medium text-gray-900 mt-4 mb-2">
+            {error === "Invalid request"
+              ? "Maximum number of attempts has been reached for this assessment"
+              : error}
+          </h3>
+          <button
+            onClick={() => navigate("/Learner/Assessment")}
+            className="mt-4 px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
+          >
+            Back to Assessments
+          </button>
+        </div>
+      ) : (
+        <div className="max-w-6xl w-full mx-auto relative bg-white rounded-2xl shadow-lg overflow-hidden">
+          <button
+            onClick={() => setShowExitModal(true)}
+            className="absolute top-4 right-4 z-20 p-2 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="Exit assessment"
+          >
+            <X size={24} className="text-gray-600" />
+          </button>
+
+          {renderHeader()}
+          <div>{renderQuestion()}</div>
+        </div>
+      )}
     </div>
   );
 };

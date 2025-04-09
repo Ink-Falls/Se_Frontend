@@ -199,8 +199,8 @@ const AddUserModal = ({ onClose, onSubmit }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
+      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] flex flex-col z-[10000]">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Add New User</h2>
           <button
@@ -380,7 +380,9 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 <option value="1002" data-name="ACES">
                   Asuncion Consunji Elementary School (ACES)
                 </option>
-                <option value="1001" data-name="UST">University of Santo Tomas (UST)</option>
+                <option value="1001" data-name="UST">
+                  University of Santo Tomas (UST)
+                </option>
               </select>
             </div>
 
