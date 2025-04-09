@@ -5,16 +5,62 @@ const courseImages = [
   "/src/assets/courses/course_pic_4.jpg",
   "/src/assets/courses/course_pic_5.jpg",
   "/src/assets/courses/course_pic_6.jpg",
+  "/src/assets/courses/course_pic_12.jpg",
+  "/src/assets/courses/course_pic_13.jpg",
+  "/src/assets/courses/course_pic_14.jpg",
+  "/src/assets/courses/course_pic_15.jpg",
+  "/src/assets/courses/course_pic_16.jpg",
+  "/src/assets/courses/course_pic_17.jpg",
+  "/src/assets/courses/course_pic_18.jpg",
+  "/src/assets/courses/course_pic_19.jpg",
+  "/src/assets/courses/course_pic_20.jpg",
+  "/src/assets/courses/course_pic_21.jpg",
 ];
 
 let lastImageIndex = -1;
 
-export const getRandomCourseImage = () => {
-  let randomIndex;
-  do {
-    randomIndex = Math.floor(Math.random() * courseImages.length);
-  } while (randomIndex === lastImageIndex && courseImages.length > 1);
+export const getRandomCourseImage = (courseName = "") => {
+  // Get all currently assigned images
+  const assignedImages = JSON.parse(
+    localStorage.getItem("courseImages") || "{}"
+  );
 
-  lastImageIndex = randomIndex;
-  return courseImages[randomIndex];
+  if (!courseName) {
+    let randomIndex;
+    do {
+      randomIndex = Math.floor(Math.random() * courseImages.length);
+    } while (randomIndex === lastImageIndex && courseImages.length > 1);
+
+    lastImageIndex = randomIndex;
+    return courseImages[randomIndex];
+  }
+
+  // If this course already has an assigned image, return it
+  if (assignedImages[courseName]) {
+    return assignedImages[courseName];
+  }
+
+  // Get all currently used images
+  const usedImages = Object.values(assignedImages);
+
+  // Find available images that aren't currently assigned
+  const availableImages = courseImages.filter(
+    (img) => !usedImages.includes(img)
+  );
+
+  // If there are available unique images, use one of those
+  if (availableImages.length > 0) {
+    const randomIndex = Math.floor(Math.random() * availableImages.length);
+    const assignedImage = availableImages[randomIndex];
+    assignedImages[courseName] = assignedImage;
+  } else {
+    // If all images are used, fall back to completely random selection
+    const randomIndex = Math.floor(Math.random() * courseImages.length);
+    const assignedImage = courseImages[randomIndex];
+    assignedImages[courseName] = assignedImage;
+  }
+
+  // Store the updated assignments
+  localStorage.setItem("courseImages", JSON.stringify(assignedImages));
+  return assignedImages[courseName];
 };

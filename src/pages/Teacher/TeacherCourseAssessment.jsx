@@ -527,17 +527,36 @@ const TeacherCourseAssessment = () => {
               className="p-6 bg-gray-50 border-l-4 border-yellow-500 flex justify-between items-center cursor-pointer hover:bg-gray-100"
               onClick={() => toggleModule(module.module_id)}
             >
-              <div>
-                <h3 className="text-xl font-semibold text-gray-800">
-                  {module.name}
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  {module.description}
-                </p>
-                <span className="text-xs text-gray-500 mt-2 inline-block">
-                  {moduleAssessments[module.module_id]?.length || 0}{" "}
-                  Assessment(s)
-                </span>
+              <div className="flex items-center gap-8">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-800">
+                    {module.name}
+                  </h3>
+                  <div className="flex items-center gap-4 mt-2">
+                    <span className="text-sm text-gray-500">
+                      <span className="font-medium text-gray-700">
+                        {moduleAssessments[module.module_id]?.length || 0}
+                      </span>{" "}
+                      Assessments
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      <span className="font-medium text-gray-700">
+                        {moduleAssessments[module.module_id]?.filter(
+                          (a) => a.is_published
+                        ).length || 0}
+                      </span>{" "}
+                      Published
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      <span className="font-medium text-gray-700">
+                        {moduleAssessments[module.module_id]?.filter(
+                          (a) => !a.is_published
+                        ).length || 0}
+                      </span>{" "}
+                      Drafts
+                    </span>
+                  </div>
+                </div>
               </div>
               <ChevronDown
                 className={`w-6 h-6 text-gray-400 transform transition-transform duration-200 ${

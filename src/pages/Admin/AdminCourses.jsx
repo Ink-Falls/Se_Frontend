@@ -91,7 +91,7 @@ function AdminCourses() {
 
   // Add cache-related state
   const [cache, setCache] = useState({});
-  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes (fixed multiplication)
 
   const checkCache = (key) => {
     const cached = cache[key];
@@ -366,7 +366,7 @@ function AdminCourses() {
             <h2 className="text-lg font-semibold">
               All Courses ({filteredCourses.length})
             </h2>
-            
+
             <div className="flex flex-col md:flex-row gap-2">
               <div className="relative flex-1 md:w-64">
                 <input
@@ -480,7 +480,7 @@ function AdminCourses() {
                     </span>
                   </div>
 
-                  <p className="text-gray-600 text-sm mb-4">
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2 overflow-hidden">
                     {course.description || "No description available"}
                   </p>
 
