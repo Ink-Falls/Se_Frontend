@@ -16,83 +16,15 @@ import {
   BookOpen,
   ClipboardList,
   User,
-  LineChart
+  LineChart,
+  Hash,
+  Image
 } from 'lucide-react';
 import { Eye, EyeOff } from 'lucide-react';
 import { changePassword } from '../../services/authService'; // Import function
 import MobileNavBar from '../../components/common/layout/MobileNavbar';
 import { getUserProfileImage } from '../../utils/profileImages';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-
-const getNavItems = (role) => {
-  // Base items for admin
-  const adminItems = [
-    { text: 'Users', icon: <Home size={20} />, route: '/Admin/Dashboard' },
-    { text: 'Courses', icon: <Book size={20} />, route: '/Admin/Courses' },
-    {
-      text: 'Enrollments',
-      icon: <Bell size={20} />,
-      route: '/Admin/Enrollments',
-    },
-    {
-      text: 'Announcements',
-      icon: <FileText size={20} />,
-      route: '/Admin/Announcements',
-    },
-  ];
-
-  // Base items for teacher/student_teacher
-  const teacherItems = [
-    { text: "Home", icon: <Home size={20} />, route: "/Teacher/Dashboard" },
-    {
-      text: "Announcements",
-      icon: <Megaphone size={20} />,
-      route: "/Teacher/CourseAnnouncements",
-    },
-    {
-      text: "Modules",
-      icon: <BookOpen size={20} />,
-      route: "/Teacher/CourseModules",
-    },
-    {
-      text: "Assessments",
-      icon: <ClipboardList size={20} />,
-      route: "/Teacher/Assessment",
-    },
-    {
-      text: "Attendance",
-      icon: <User size={20} />,
-      route: "/Teacher/Attendance",
-    },
-    {
-      text: "Progress Tracker",
-      icon: <LineChart size={20} />,
-      route: "/Teacher/ProgressTracker",
-    },
-  ];
-
-  // Base items for learner - Updated to match LearnerDashboard
-  const learnerItems = [
-    { text: 'Courses', icon: <Book size={20} />, route: '/Learner/Dashboard' },
-    {
-      text: 'Notifications',
-      icon: <Bell size={20} />,
-      route: '/Learner/Notifications',
-    },
-  ];
-
-  switch (role?.toLowerCase()) {
-    case 'admin':
-      return adminItems;
-    case 'teacher':
-    case 'student_teacher':
-      return teacherItems;
-    case 'learner':
-      return learnerItems;
-    default:
-      return learnerItems; // Default to learner items
-  }
-};
 
 function Profile() {
   const [user, setUser] = useState(null);
@@ -152,10 +84,6 @@ function Profile() {
           return;
         }
 
-        /*if (storedUser.role === "learner") { // Why different for learner?
-          // For learners, use stored data
-          setUser(storedUser);
-        } else {*/
         try {
           // For teachers/admins, get fresh data
           const freshData = await getUserById(storedUser.id);
@@ -165,7 +93,6 @@ function Profile() {
           // Fallback to stored data on error
           setUser(storedUser);
         }
-        //}
       } catch (err) {
         console.error('Profile fetch error:', err);
         setError(err.message || 'Failed to load profile');
@@ -343,8 +270,46 @@ function Profile() {
     return <div>Error: {error}</div>;
   }
 
-  // Get nav items based on user role
-  const navItems = getNavItems(user?.role);
+  const isTeacher = user?.role === 'teacher' || user?.role === 'student_teacher';
+  const isAdmin = user?.role === 'admin';
+
+  const teacherNavItems = [
+    { text: "Courses", icon: <Book size={20} />, route: "/Teacher/Dashboard" },
+    {
+      text: "Notifications",
+      icon: <Bell size={20} />,
+      route: "/Teacher/Notifications",
+    },
+    {
+      text: "Number Codes (4-6)",
+      icon: <Hash size={20} />,
+      route: "/Teacher/StudentCodeGenerator",
+    },
+    {
+      text: "Picture Codes (1-3)",
+      icon: <Image size={20} />,
+      route: "/Teacher/PictureCodeGenerator",
+    },
+  ];
+
+  const adminNavItems = [
+    { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
+    { text: "Courses", icon: <Book size={20} />, route: "/Admin/Courses" },
+    {
+      text: "Enrollments",
+      icon: <Bell size={20} />,
+      route: "/Admin/Enrollments",
+    },
+    {
+      text: "Announcements",
+      icon: <FileText size={20} />,
+      route: "/Admin/Announcements",
+    },
+  ];
+
+  const defaultNavItems = [];
+
+  const navItems = isAdmin ? adminNavItems : isTeacher ? teacherNavItems : defaultNavItems;
 
   const renderEditModal = () => (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
@@ -504,129 +469,135 @@ function Profile() {
   );
 
   return (
-    <div className="flex h-screen bg-gray-100 relative">
-      <Sidebar navItems={navItems} />
-      <div className="flex-1 p-6 overflow-auto">
-        <Header title="Account" />
-        <MobileNavBar navItems={navItems} />
-        {editMessage.text && (
-          <div
-            className={`mb-4 p-4 rounded-lg ${
-              editMessage.type === 'success'
-                ? 'bg-green-100 text-green-700 border border-green-200'
-                : 'bg-red-100 text-red-700 border border-red-200'
-            }`}
-          >
-            {editMessage.text}
-          </div>
-        )}
-        <div className="mt-6 bg-white rounded-lg shadow-md">
-          {/* Banner */}
-          <div
-            className="h-40 rounded-t-lg bg-cover bg-center"
-            style={{
-              backgroundImage:
-                'url(https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg)',
-            }}
-          ></div>
+    <div className="flex h-screen flex-col bg-gray-100">
+      <div className="flex flex-1 h-[calc(100vh-32px)]">
+        <div className="hidden lg:flex">
+          <Sidebar navItems={navItems} />
+        </div>
 
-          {/* Profile Picture and User Details */}
-          <div className="flex flex-col items-center md:items-start px-8 -mt-16">
-            {renderProfilePicture()}
-            <h2 className="mt-4 text-3xl font-semibold md:ml-8">
-              {`${user.first_name} ${user.last_name}`}
-            </h2>
-            <p className="bg-[#F6BA18] px-3 py-1 rounded-md inline-block md:ml-8 mt-3">
-              {user.role?.charAt(0).toUpperCase() + user.role?.slice(1)}
-            </p>
-          </div>
+        <div className="flex-1 p-6 max-md:p-5 overflow-y-auto">
+          <Header title="Account" />
+          {editMessage.text && (
+            <div
+              className={`mb-4 p-4 rounded-lg ${
+                editMessage.type === 'success'
+                  ? 'bg-green-100 text-green-700 border border-green-200'
+                  : 'bg-red-100 text-red-700 border border-red-200'
+              }`}
+            >
+              {editMessage.text}
+            </div>
+          )}
+          <div className="mt-6 bg-white rounded-lg shadow-md">
+            {/* Banner */}
+            <div
+              className="h-40 rounded-t-lg bg-cover bg-center"
+              style={{
+                backgroundImage:
+                  'url(https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg)',
+              }}
+            ></div>
 
-          <div className="p-[1vw]">
-            {/* Personal Information Section */}
-            <div className="mt-4 mx-6 mb-12">
-              <div className="border-2 border-gray-200 rounded-lg p-6">
-                <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
-                  <h3 className="text-xl font-semibold mb-4 md:mb-0">
-                    Personal Information
-                  </h3>
-                  <div className="flex flex-col md:flex-row gap-2">
-                    <button
-                      aria-label="change_password"
-                      className="px-4 py-2 text-sm bg-[#212529] text-white font-medium rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
-                      onClick={handleOpenModal}
-                    >
-                      Change Password
-                    </button>
-                    <button
-                      className="px-4 py-2 text-sm bg-[#212529] text-white font-medium rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
-                      onClick={handleEditClick}
-                    >
-                      Edit Profile
-                    </button>
+            {/* Profile Picture and User Details */}
+            <div className="flex flex-col items-center md:items-start px-8 -mt-16">
+              {renderProfilePicture()}
+              <h2 className="mt-4 text-3xl font-semibold md:ml-8">
+                {`${user.first_name} ${user.last_name}`}
+              </h2>
+              <p className="bg-[#F6BA18] px-3 py-1 rounded-md inline-block md:ml-8 mt-3">
+                {user.role?.charAt(0).toUpperCase() + user.role?.slice(1)}
+              </p>
+            </div>
+
+            <div className="p-[1vw]">
+              {/* Personal Information Section */}
+              <div className="mt-4 mx-6 mb-12">
+                <div className="border-2 border-gray-200 rounded-lg p-6">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
+                    <h3 className="text-xl font-semibold mb-4 md:mb-0">
+                      Personal Information
+                    </h3>
+                    <div className="flex flex-col md:flex-row gap-2">
+                      <button
+                        aria-label="change_password"
+                        className="px-4 py-2 text-sm bg-[#212529] text-white font-medium rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
+                        onClick={handleOpenModal}
+                      >
+                        Change Password
+                      </button>
+                      <button
+                        className="px-4 py-2 text-sm bg-[#212529] text-white font-medium rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
+                        onClick={handleEditClick}
+                      >
+                        Edit Profile
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-10">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700">
-                      First Name:
-                    </label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {user.first_name}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Last Name:
-                    </label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {user.last_name}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Middle Initial:
-                    </label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {user.middle_initial || 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Email:
-                    </label>
-                    <p className="mt-1 text-sm text-gray-900">{user.email}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Contact Number:
-                    </label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {user.contact_no || 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Birthday:
-                    </label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {user.birth_date
-                        ? new Date(user.birth_date).toLocaleDateString()
-                        : 'N/A'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700">
-                      School:
-                    </label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {getSchoolName(user.school_id)}
-                    </p>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-10">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700">
+                        First Name:
+                      </label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {user.first_name}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Last Name:
+                      </label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {user.last_name}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Middle Initial:
+                      </label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {user.middle_initial || 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Email:
+                      </label>
+                      <p className="mt-1 text-sm text-gray-900">{user.email}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Contact Number:
+                      </label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {user.contact_no || 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Birthday:
+                      </label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {user.birth_date
+                          ? new Date(user.birth_date).toLocaleDateString()
+                          : 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700">
+                        School:
+                      </label>
+                      <p className="mt-1 text-sm text-gray-900">
+                        {getSchoolName(user.school_id)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        <MobileNavBar navItems={navItems} />
       </div>
       {/* Change Password Modal */}
       {isModalOpen && (
