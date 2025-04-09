@@ -93,6 +93,7 @@ const LearnerPages = {
   AssessmentAttempt: lazy(() =>
     import("./pages/Learner/LearnerAssessmentAttempt")
   ),
+  Grades: lazy(() => import("./pages/Learner/LearnerGrades")),
 };
 
 const ErrorPages = {
@@ -375,6 +376,10 @@ function AppRoutes() {
                       <Route
                         path="Assessment/Submission/:id"
                         element={<TeacherPages.StudentSubmissionView />}
+                      />
+                      <Route
+                        path="Grades"
+                        element={<LearnerPages.Grades />}
                       />
                       <Route path="*" element={<ErrorPages.Error404 />} />
                     </Routes>

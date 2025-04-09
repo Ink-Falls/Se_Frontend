@@ -13,6 +13,7 @@ import {
   Award,
   AlertTriangle,
   Lock,
+  GraduationCap,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCourse } from "../../contexts/CourseContext";
@@ -82,6 +83,11 @@ const LearnerCourseAssessment = () => {
       text: "Assessments",
       icon: <ClipboardList size={20} />,
       route: "/Learner/Assessment",
+    },
+    {
+      text: "Grades",
+      icon: <GraduationCap size={20} />,
+      route: "/Learner/Grades",
     },
   ];
 
