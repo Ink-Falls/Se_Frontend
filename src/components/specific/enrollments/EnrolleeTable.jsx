@@ -6,12 +6,13 @@ import {
   Search,
   FileText,
   SquarePen,
-  X, // Add X icon import
+  X,
+  InboxIcon, // Add InboxIcon import
 } from "lucide-react";
 import EnrolleeStatusModal from "/src/components/common/Modals/Edit/EnrolleeStatusModal.jsx";
 import ReportViewerModal from "../../common/Modals/View/ReportViewerModal";
 import { generateEnrollmentReport } from "../../../services/reportService";
-import { getAllEnrollments } from '../../../services/enrollmentService';
+import { getAllEnrollments } from "../../../services/enrollmentService";
 
 function EnrolleeTable({
   enrollees,
@@ -28,10 +29,11 @@ function EnrolleeTable({
   onSearch,
   onSearchCancel,
   searchQuery,
+  showEmptyState = false, // Add default prop
 }) {
   const [selectedIds, setSelectedIds] = useState([]);
   const [filterStatus, setFilterStatus] = useState("All");
-  const [error, setError] = useState(null); // Add this line
+  const [error, setError] = useState(null);
   const [pageInput, setPageInput] = useState(currentPage.toString());
 
   useEffect(() => {
@@ -45,7 +47,11 @@ function EnrolleeTable({
   const handlePageInputSubmit = (e) => {
     if (e.key === "Enter") {
       const newPage = parseInt(pageInput);
-      if (!isNaN(newPage) && newPage >= 1 && newPage <= Math.ceil(filteredEnrollees.length / ROWS_PER_PAGE)) {
+      if (
+        !isNaN(newPage) &&
+        newPage >= 1 &&
+        newPage <= Math.ceil(filteredEnrollees.length / ROWS_PER_PAGE)
+      ) {
         onPageChange(newPage);
       } else {
         setPageInput(currentPage.toString());
@@ -57,7 +63,6 @@ function EnrolleeTable({
     setPageInput(currentPage.toString());
   };
 
-  // State for modals
   const [selectedEnrollee, setSelectedEnrollee] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -66,38 +71,32 @@ function EnrolleeTable({
   const [reportUrl, setReportUrl] = useState(null);
   const [reportError, setReportError] = useState(null);
 
-  // Handle checkbox selection
   const handleCheckboxChange = (id) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
 
-  // Handle delete selected records
   const handleDeleteSelected = () => {
     onDeleteSelected(selectedIds);
     setSelectedIds([]);
   };
 
-  // Handle row click to show details modal
   const handleRowClick = (enrollee) => {
     setSelectedEnrollee(enrollee);
     setShowDetailsModal(true);
   };
 
-  // Handle reject button click in details modal
   const handleReject = () => {
-    setShowDetailsModal(false); // Close details modal
-    setShowRejectModal(true); // Open reject modal
+    setShowDetailsModal(false);
+    setShowRejectModal(true);
   };
 
-  // Handle confirm reject in reject modal
   const handleConfirmReject = async (reason) => {
     try {
       await onReject(selectedEnrollee.id, reason);
       setShowRejectModal(false);
       setSelectedEnrollee(null);
-      // Refresh data through parent component
       if (onReject) {
         await onReject(selectedEnrollee.id);
       }
@@ -106,13 +105,11 @@ function EnrolleeTable({
     }
   };
 
-  // Handle cancel reject in reject modal
   const handleCancelReject = () => {
-    setShowRejectModal(false); // Close reject modal
-    setShowDetailsModal(true); // Reopen details modal
+    setShowRejectModal(false);
+    setShowDetailsModal(true);
   };
 
-  // Handle edit button click
   const handleEditClick = (enrollee, e) => {
     e.stopPropagation();
     setSelectedEnrollee(enrollee);
@@ -122,10 +119,8 @@ function EnrolleeTable({
   const handleCloseModal = async (wasActionTaken = false) => {
     setIsModalOpen(false);
     setSelectedEnrollee(null);
-    // If an action was taken (approve/reject), trigger a data refresh
     if (wasActionTaken) {
-      // This will trigger the parent's refresh logic
-      onFilterChange(currentFilter || '');
+      onFilterChange(currentFilter || "");
     }
   };
 
@@ -133,39 +128,36 @@ function EnrolleeTable({
     try {
       setError(null);
       setReportError(null);
-      setShowReportModal(true); // Show modal first with loading state
-      
-      // Format enrollments data for report
-      const formattedEnrollments = enrollees.map(enrollee => ({
+      setShowReportModal(true);
+
+      const formattedEnrollments = enrollees.map((enrollee) => ({
         id: enrollee.id,
         fullName: enrollee.fullName,
         status: enrollee.status,
-        enrollmentDate: enrollee.enrollmentDate
+        enrollmentDate: enrollee.enrollmentDate,
       }));
 
       const doc = await generateEnrollmentReport(formattedEnrollments);
       if (!doc) {
-        throw new Error('Failed to generate PDF document');
+        throw new Error("Failed to generate PDF document");
       }
 
-      const pdfBlob = doc.output('blob');
+      const pdfBlob = doc.output("blob");
       if (!pdfBlob) {
-        throw new Error('Failed to generate PDF blob');
+        throw new Error("Failed to generate PDF blob");
       }
 
-      // Create object URL and verify it exists
       const pdfUrl = URL.createObjectURL(pdfBlob);
       if (!pdfUrl) {
-        throw new Error('Failed to create blob URL');
+        throw new Error("Failed to create blob URL");
       }
 
-      console.log('PDF URL created:', pdfUrl); // Debug log
+      console.log("PDF URL created:", pdfUrl);
       setReportUrl(pdfUrl);
-      
     } catch (error) {
-      console.error('Error details:', error);
-      setError('Failed to generate enrollment report');
-      setReportError('Failed to generate enrollment report');
+      console.error("Error details:", error);
+      setError("Failed to generate enrollment report");
+      setReportError("Failed to generate enrollment report");
     }
   };
 
@@ -180,7 +172,7 @@ function EnrolleeTable({
 
   const handlePrintReport = () => {
     if (reportUrl) {
-      window.open(reportUrl, '_blank');
+      window.open(reportUrl, "_blank");
     }
   };
 
@@ -192,40 +184,21 @@ function EnrolleeTable({
     }
   };
 
-  // Remove ROWS_PER_PAGE constant since we're using itemsPerPage from props
-  
-  // Remove client-side filtering and pagination logic
-  // const filteredEnrollees = enrollees.filter((enrollee) => {
-  //   if (filterStatus === "All") return true;
-  //   return enrollee.status === filterStatus;
-  // })
-  // .filter((enrollee) =>
-  //   enrollee.fullName.toLowerCase().includes(searchQuery.toLowerCase())
-  // );
-
-  // const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
-  // const endIndex = startIndex + ROWS_PER_PAGE;
-  // const paginatedEnrollees = filteredEnrollees.slice(startIndex, endIndex);
-
-  // Instead, use the enrollees directly since they're already paginated from the server
   const filteredEnrollees = enrollees;
 
-  // Update handleFilterChange to use the parent's filter change handler
   const handleFilterChange = (e) => {
     const status = e.target.value;
     setFilterStatus(status);
     if (onFilterChange) {
-      onFilterChange(status === 'All' ? '' : status);
+      onFilterChange(status === "All" ? "" : status);
     }
   };
 
   const handleSearchChange = (e) => {
     const query = e.target.value;
-    // Remove local filtering and just pass the query to parent
     onSearch(query);
   };
 
-  // Add the getStatusStyle function
   const getStatusStyle = (status) => {
     switch (status.toLowerCase()) {
       case "approved":
@@ -239,14 +212,21 @@ function EnrolleeTable({
     }
   };
 
+  const getEmptyStateMessage = () => {
+    if (searchQuery) {
+      return `No enrollments found matching "${searchQuery}".`;
+    }
+    if (currentFilter) {
+      return `No ${currentFilter.toLowerCase()} enrollments found.`;
+    }
+    return "There are currently no enrollments in the system. New enrollments will appear here once students begin the enrollment process.";
+  };
+
   return (
     <div className="bg-white shadow rounded-lg overflow-hidden">
-      {/* Table Header with Search, Filter, and Actions */}
       <div className="p-4 border-b space-y-4">
-        {/* First row - Actions and Filter */}
         <div className="flex flex-col md:flex-row w-full gap-4 md:items-center md:justify-between">
           <div className="flex flex-col md:flex-row gap-4 md:items-center">
-            {/* Delete Selected Button */}
             {selectedIds.length > 0 && (
               <button
                 onClick={handleDeleteSelected}
@@ -256,10 +236,9 @@ function EnrolleeTable({
               </button>
             )}
 
-            {/* Filter Dropdown */}
             <div className="relative py-2 md:py-[0.2vw]">
               <select
-                value={currentFilter || 'All'}
+                value={currentFilter || "All"}
                 onChange={handleFilterChange}
                 className="pl-10 md:pl-[2vw] pr-4 md:pr-[1vw] py-2 md:py-[0.5vw] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none w-full md:w-[12vw]"
               >
@@ -269,11 +248,13 @@ function EnrolleeTable({
                 <option value="rejected">Rejected</option>
               </select>
               <div className="absolute inset-y-0 left-0 pl-3 md:pl-[0.5vw] flex items-center pointer-events-none">
-                <Filter size={16} className="text-[#475569] md:w-[1vw] md:h-[1vw]" />
+                <Filter
+                  size={16}
+                  className="text-[#475569] md:w-[1vw] md:h-[1vw]"
+                />
               </div>
             </div>
 
-            {/* Search Bar */}
             <div className="relative w-full md:w-[15vw]">
               <input
                 type="text"
@@ -294,8 +275,7 @@ function EnrolleeTable({
             </div>
           </div>
 
-          {/* Generate Report Button - Hidden on mobile */}
-          <button 
+          <button
             onClick={handleGenerateReport}
             className="hidden md:flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black whitespace-nowrap"
           >
@@ -304,8 +284,7 @@ function EnrolleeTable({
           </button>
         </div>
 
-        {/* Generate Report Button - Shown only on mobile */}
-        <button 
+        <button
           onClick={handleGenerateReport}
           className="md:hidden w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black"
         >
@@ -314,95 +293,105 @@ function EnrolleeTable({
         </button>
       </div>
 
-      {/* Table with overflow container */}
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {/* Checkbox for Select All */}
-                <input
-                  type="checkbox"
-                  checked={selectedIds.length === filteredEnrollees.length}
-                  onChange={() => {
-                    if (selectedIds.length === filteredEnrollees.length) {
-                      setSelectedIds([]);
-                    } else {
-                      setSelectedIds(
-                        filteredEnrollees.map((enrollee) => enrollee.id)
-                      );
-                    }
-                  }}
-                />
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                #
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Full Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Enrollment Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredEnrollees.map((enrollee) => (
-              <tr
-                key={enrollee.id}
-                className="hover:bg-gray-50 transition-colors"
-              >
-                {/* Checkbox for Row Selection */}
-                <td
-                  className="px-6 py-4 whitespace-nowrap"
-                  onClick={(e) => e.stopPropagation()}
-                >
+      {showEmptyState && enrollees.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 px-4">
+          <InboxIcon size={64} className="text-gray-300 mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            {searchQuery ? "No Enrollments Found" : "No Enrollments Available"}
+          </h3>
+          <p className="text-gray-500 text-center max-w-md mb-4">
+            {getEmptyStateMessage()}
+          </p>
+        </div>
+      )}
+
+      {(!showEmptyState || enrollees.length > 0) && (
+        <div className="overflow-x-auto bg-white rounded-lg shadow">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <input
                     type="checkbox"
-                    checked={selectedIds.includes(enrollee.id)}
-                    onChange={() => handleCheckboxChange(enrollee.id)}
+                    checked={selectedIds.length === filteredEnrollees.length}
+                    onChange={() => {
+                      if (selectedIds.length === filteredEnrollees.length) {
+                        setSelectedIds([]);
+                      } else {
+                        setSelectedIds(
+                          filteredEnrollees.map((enrollee) => enrollee.id)
+                        );
+                      }
+                    }}
                   />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {enrollee.id}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {enrollee.fullName}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(
-                      enrollee.status
-                    )}`}
-                  >
-                    {enrollee.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {enrollee.enrollmentDate}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    onClick={(e) => handleEditClick(enrollee, e)}
-                    className="text-black hover:text-gray-700"
-                    title="View Details"
-                  >
-                    <SquarePen size={16} className="md:w-[1vw] md:h-[1vw]" />
-                  </button>
-                </td>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  #
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Full Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Enrollment Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredEnrollees.map((enrollee) => (
+                <tr
+                  key={enrollee.id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  <td
+                    className="px-6 py-4 whitespace-nowrap"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(enrollee.id)}
+                      onChange={() => handleCheckboxChange(enrollee.id)}
+                    />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {enrollee.id}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {enrollee.fullName}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(
+                        enrollee.status
+                      )}`}
+                    >
+                      {enrollee.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {enrollee.enrollmentDate}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={(e) => handleEditClick(enrollee, e)}
+                      className="text-black hover:text-gray-700"
+                      title="View Details"
+                    >
+                      <SquarePen size={16} className="md:w-[1vw] md:h-[1vw]" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-      {/* Updated Pagination Controls */}
       <div className="px-6 py-4 flex items-center justify-start md:justify-end border-t">
         <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 items-start md:items-center text-sm md:text-base">
           <button
@@ -427,7 +416,6 @@ function EnrolleeTable({
         </div>
       </div>
 
-      {/* Enrollee Details Modal */}
       {showDetailsModal && selectedEnrollee && (
         <EnrolleeDetailsModal
           enrollee={selectedEnrollee}
@@ -439,7 +427,6 @@ function EnrolleeTable({
         />
       )}
 
-      {/* Reject Enrollee Modal */}
       {showRejectModal && (
         <RejectEnrolleeModal
           onClose={handleCancelReject}
@@ -447,7 +434,6 @@ function EnrolleeTable({
         />
       )}
 
-      {/* Enrollee Status Modal */}
       {isModalOpen && selectedEnrollee && (
         <EnrolleeStatusModal
           enrolleeId={selectedEnrollee.id}
@@ -455,25 +441,27 @@ function EnrolleeTable({
           onApprove={async () => {
             try {
               const result = await onApprove(selectedEnrollee.id);
-              if (result?.message?.includes('approved') || result?.enrollment?.status === 'approved') {
+              if (
+                result?.message?.includes("approved") ||
+                result?.enrollment?.status === "approved"
+              ) {
                 handleCloseModal(true);
               }
               return result;
             } catch (error) {
-              console.error('Error in approval:', error);
+              console.error("Error in approval:", error);
               throw error;
             }
           }}
           onReject={async () => {
             try {
               const result = await onReject(selectedEnrollee.id);
-              // Force refresh regardless of response format
               if (result) {
                 handleCloseModal(true);
               }
               return result;
             } catch (error) {
-              console.error('Error in rejection:', error);
+              console.error("Error in rejection:", error);
               throw error;
             }
           }}

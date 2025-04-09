@@ -29,21 +29,21 @@ import { ChevronDown } from "lucide-react";
 
 const typeColors = {
   quiz: {
-    bg: "#3B82F6", // Blue
+    bg: "from-blue-400 via-blue-500 to-blue-600", // Update to gradient
     text: "white",
     hover: "#2563EB",
     badge: "bg-blue-100 text-blue-800",
     light: "rgba(59, 130, 246, 0.1)",
   },
   exam: {
-    bg: "#8B5CF6", // Purple (changed from pink)
+    bg: "from-violet-400 via-purple-500 to-purple-600", // Update to gradient
     text: "white",
     hover: "#6D28D9",
     badge: "bg-purple-100 text-purple-800",
     light: "rgba(139, 92, 246, 0.1)",
   },
   assignment: {
-    bg: "#10B981", // Green
+    bg: "from-emerald-400 via-emerald-500 to-emerald-600", // Update to gradient
     text: "white",
     hover: "#059669",
     badge: "bg-green-100 text-green-800",
@@ -507,41 +507,71 @@ const LearnerCourseAssessment = () => {
         return (
           <div
             key={module.module_id}
-            className={`bg-white rounded-lg shadow-sm overflow-hidden ${
+            className={`group bg-white rounded-xl border border-gray-200/50 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md ${
               isModuleLocked ? "opacity-75" : ""
             }`}
           >
-            <div className="p-6 bg-gray-50 border-l-4 border-yellow-500 relative">
+            <div className="px-8 py-6 bg-gradient-to-r from-gray-50 via-white to-white relative">
               {isModuleLocked && (
                 <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-[1px] flex flex-col items-center justify-center z-10 rounded-lg transition-all duration-300">
                   <Lock className="h-12 w-12 text-white/90" />
                   <span className="text-white/90 text-sm mt-2">
-                    Pass the previous module to unlock
+                    Complete previous module to unlock
                   </span>
                 </div>
               )}
 
               <div
-                className="flex justify-between items-center cursor-pointer"
+                className="flex justify-between items-start cursor-pointer"
                 onClick={() => toggleModule(module.module_id)}
               >
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-800">
+                <div className="flex-1 pr-8">
+                  <h3 className="text-xl font-semibold text-gray-900 tracking-tight">
                     {module.name}
                   </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {module.description}
-                  </p>
-                  <span className="text-xs text-gray-500 mt-2 inline-block">
-                    {moduleAssessments[module.module_id]?.length || 0}{" "}
-                    Assessment(s)
-                  </span>
+                  <div className="flex flex-wrap gap-4 mt-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="flex h-2 w-2 rounded-full bg-blue-500" />
+                      <span className="text-gray-600 font-medium">
+                        {
+                          moduleAssessments[module.module_id]?.filter(
+                            (assessment) =>
+                              submissions[assessment.id]?.status ===
+                                "submitted" ||
+                              submissions[assessment.id]?.status === "graded"
+                          ).length
+                        }
+                        /{moduleAssessments[module.module_id]?.length || 0}{" "}
+                        Completed
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="flex h-2 w-2 rounded-full bg-green-500" />
+                      <span className="text-gray-600 font-medium">
+                        {
+                          moduleAssessments[module.module_id]?.filter(
+                            (assessment) =>
+                              submissions[assessment.id]?.status === "graded" &&
+                              checkAssessmentPassed(
+                                assessment,
+                                submissions[assessment.id]
+                              )
+                          ).length
+                        }{" "}
+                        Passed
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <ChevronDown
-                  className={`w-6 h-6 text-gray-400 transform transition-transform duration-200 ${
-                    expandedModules.has(module.module_id) ? "rotate-180" : ""
-                  }`}
-                />
+                <div className="relative">
+                  <div
+                    className={`w-8 h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center transition-all duration-300 group-hover:border-gray-300 group-hover:bg-gray-100 ${
+                      expandedModules.has(module.module_id) ? "rotate-180" : ""
+                    }`}
+                  >
+                    <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -579,11 +609,9 @@ const LearnerCourseAssessment = () => {
                           className="w-full rounded-xl shadow-md bg-white hover:shadow-lg transition-all duration-200 overflow-hidden group relative"
                         >
                           <div
-                            style={{ backgroundColor: color.bg }}
-                            className="px-6 py-4 text-white relative overflow-hidden"
+                            className={`px-6 py-4 text-white relative overflow-hidden bg-gradient-to-br ${color.bg}`}
                           >
-                            <div className="absolute top-0 right-0 w-32 h-32 transform translate-x-16 -translate-y-16 rotate-45 bg-white opacity-10 rounded-full" />
-                            <div className="absolute bottom-0 left-0 w-24 h-24 transform -translate-x-12 translate-y-12 rotate-45 bg-white opacity-10 rounded-full" />
+                            <div className="absolute right-0 top-0 -mt-8 -mr-12 h-32 w-32 rotate-12 transform rounded-xl bg-white opacity-10 group-hover:opacity-20 transition-opacity" />
 
                             <div className="flex flex-col gap-2 relative z-10">
                               <div className="flex items-center gap-2">
