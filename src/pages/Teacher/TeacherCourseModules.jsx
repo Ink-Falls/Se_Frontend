@@ -38,6 +38,34 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCourse } from "../../contexts/CourseContext";
 
+const moduleColors = {
+  blue: {
+    bg: "#3B82F6",
+    accent: "#60A5FA",
+    light: "#EFF6FF",
+  },
+  purple: {
+    bg: "#8B5CF6",
+    accent: "#A78BFA",
+    light: "#F5F3FF",
+  },
+  green: {
+    bg: "#22C55E",
+    accent: "#4ADE80",
+    light: "#F0FDF4",
+  },
+  pink: {
+    bg: "#EC4899",
+    accent: "#F472B6",
+    light: "#FDF2F8",
+  },
+  orange: {
+    bg: "#F97316",
+    accent: "#FB923C",
+    light: "#FFF7ED",
+  },
+};
+
 const TeacherCourseModules = () => {
   const { selectedCourse } = useCourse();
   const location = useLocation();
@@ -399,280 +427,189 @@ const TeacherCourseModules = () => {
   };
 
   const renderModulesList = () => (
-    <div className="flex flex-col gap-4 mt-4">
-      {modules.map((module, index) => (
-        <div
-          key={module.id}
-          className="relative bg-white rounded-lg p-5 border-l-4 border-yellow-500 transition-all shadow-sm hover:shadow-lg"
-        >
-          <div className="flex justify-between items-center cursor-pointer">
-            <div className="w-full" onClick={() => toggleModule(module.id)}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-full">
-                  MODULE {index + 1}
-                </span>
-                <span className="text-xs text-gray-500">
-                  {new Date(module.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-              <h3 className="font-bold text-xl text-gray-800 mb-1 group-hover:text-yellow-600 transition-colors">
-                {module.title}
-              </h3>
-              <p className="text-gray-600 text-sm leading-relaxed">
-                {module.description}
-              </p>
-            </div>
+    <div className="space-y-6">
+      {/* Modules List */}
+      <div className="bg-white rounded-lg shadow-sm">
+        <div className="divide-y divide-gray-100">
+          {modules.map((module, index) => {
+            const color =
+              moduleColors[
+                Object.keys(moduleColors)[
+                  index % Object.keys(moduleColors).length
+                ]
+              ];
+            const resourceCount = module.resources?.length || 0;
+            const hasResources = resourceCount > 0;
 
-            <div className="relative flex items-center gap-1">
-              <button
-                onClick={() => handleAddContent(module)}
-                className="p-2 text-gray-600 hover:text-yellow-600 transition-colors"
-                title="Add Content"
+            return (
+              <div
+                key={module.id}
+                className={`p-6 first:rounded-t-lg last:rounded-b-lg ${
+                  hasResources ? `border-${color.bg}` : ""
+                }`}
               >
-                <Plus size={20} />
-              </button>
-              <button
-                className="p-2 text-gray-600 hover:text-yellow-600 transition-colors"
-                onClick={() => toggleModule(module.id)}
-              >
-                <ChevronDown
-                  size={20}
-                  className={`transform transition-transform duration-200 ${
-                    expandedModules.includes(module.id) ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-              <div className="relative">
-                <button
-                  onClick={(e) => toggleDropdown(module.id, e)}
-                  className="menu-btn p-2 text-gray-600 hover:text-yellow-600 transition-colors"
-                >
-                  <MoreVertical size={20} />
-                </button>
-                {dropdownOpen === module.id && (
-                  <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg w-28 z-30 dropdown-menu">
-                    <button
-                      className="flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full"
-                      onClick={() => handleEdit(module)}
-                    >
-                      <Edit size={16} className="mr-2" /> Edit
-                    </button>
-                    <button
-                      className="flex items-center px-4 py-2 text-sm hover:bg-gray-100 w-full text-red-600"
-                      onClick={() => setModuleToDelete(module)}
-                    >
-                      <Trash2 size={16} className="mr-2" /> Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {expandedModules.includes(module.id) && (
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="flex items-center gap-2 text-gray-700 font-semibold">
-                  <FileText size={18} className="text-yellow-500" />
-                  Learning Resources
-                  <span className="text-xs text-gray-500 font-normal">
-                    ({module.resources?.length || 0} items)
-                  </span>
-                </h4>
-              </div>
-              <div className="space-y-3">
-                {module.resources && module.resources.length > 0 ? (
-                  module.resources.map((resource, index) => (
+                <div className="flex items-start gap-4">
+                  {/* Module Number Badge */}
+                  <div className="flex flex-col items-center">
                     <div
-                      key={index}
-                      className="flex items-center bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-all duration-200 group"
+                      className="w-12 h-12 rounded-lg flex items-center justify-center text-lg font-bold text-white transform transition hover:scale-105"
+                      style={{ backgroundColor: color.bg }}
                     >
-                      <div className="p-2 bg-yellow-100 rounded-lg mr-3 flex-shrink-0">
-                        <FileText size={18} className="text-yellow-600" />
+                      {index + 1}
+                    </div>
+                  </div>
+
+                  {/* Module Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-xl font-bold text-gray-800 hover:text-yellow-600 transition-colors">
+                            {module.title}
+                          </h3>
+                          <span
+                            className="px-2 py-1 rounded-full text-xs font-medium"
+                            style={{
+                              backgroundColor: color.light,
+                              color: color.bg,
+                            }}
+                          >
+                            {hasResources
+                              ? `${resourceCount} Resources`
+                              : "No Resources"}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(module.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                          {module.description}
+                        </p>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <a
-                          href={resource.link || resource.content}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block"
-                        >
-                          <h5 className="font-medium text-gray-800 mb-0.5 group-hover:text-yellow-600 truncate">
-                            {resource.title}
-                          </h5>
-                          <p className="text-sm text-gray-500 truncate max-w-full">
-                            {resource.link}
-                          </p>
-                        </a>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <a
-                          href={resource.link || resource.content}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 text-gray-400 hover:text-yellow-600 transition-colors"
-                        >
-                          <ExternalLink size={18} />
-                        </a>
+
+                      {/* Actions Menu */}
+                      <div className="relative">
                         <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setResourceToDelete(resource);
-                          }}
-                          className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                          title="Delete resource"
+                          onClick={(e) => toggleDropdown(module.id, e)}
+                          className="menu-btn p-2 text-gray-600 hover:text-yellow-600 transition-colors rounded-full hover:bg-gray-50"
                         >
-                          <Trash2 size={18} />
+                          <MoreVertical size={20} />
                         </button>
+                        {dropdownOpen === module.id && (
+                          <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg w-36 z-30 dropdown-menu">
+                            <button
+                              className="flex items-center px-4 py-2 text-sm hover:bg-gray-50 w-full"
+                              onClick={() => handleEdit(module)}
+                            >
+                              <Edit size={16} className="mr-2" /> Edit Module
+                            </button>
+                            <button
+                              className="flex items-center px-4 py-2 text-sm hover:bg-red-50 w-full text-red-600"
+                              onClick={() => setModuleToDelete(module)}
+                            >
+                              <Trash2 size={16} className="mr-2" /> Delete
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                    <p className="text-gray-500 mb-2">
-                      No resources available yet
-                    </p>
-                    <button
-                      onClick={() => handleAddContent(module)}
-                      className="text-yellow-600 hover:text-yellow-700 text-sm font-medium inline-flex items-center gap-1"
+
+                    {/* Resources Section - Adjusted margin */}
+                    <div
+                      className="mt-4 rounded-lg p-4 ml-[-4rem]"
+                      style={{ backgroundColor: color.light }}
                     >
-                      <Plus size={16} />
-                      Add your first resource
-                    </button>
+                      <div className="flex justify-between items-center mb-3">
+                        <h4
+                          className="text-sm font-medium"
+                          style={{ color: color.bg }}
+                        >
+                          Learning Resources
+                        </h4>
+                        <button
+                          onClick={() => handleAddContent(module)}
+                          className="text-xs font-medium px-2 py-1 rounded transition-colors"
+                          style={{ color: color.bg, backgroundColor: "white" }}
+                        >
+                          <Plus size={14} className="inline mr-1" />
+                          Add Resource
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {module.resources && module.resources.length > 0 ? (
+                          module.resources.map((resource) => (
+                            <div
+                              key={resource.id}
+                              className="flex items-center bg-white p-3 rounded-lg group hover:shadow-md transition-all duration-200 border border-transparent hover:border-yellow-500"
+                            >
+                              <div
+                                className="p-2 rounded-lg mr-3 transition-colors"
+                                style={{
+                                  backgroundColor: `${color.bg}20`,
+                                  color: color.bg,
+                                }}
+                              >
+                                <FileText size={16} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <a
+                                  href={resource.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block truncate text-sm font-medium text-gray-900 group-hover:text-yellow-600"
+                                >
+                                  {resource.title}
+                                </a>
+                                <p className="text-xs text-gray-500 truncate">
+                                  {resource.link}
+                                </p>
+                              </div>
+                              <button
+                                onClick={() => setResourceToDelete(resource)}
+                                className="p-1.5 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all"
+                                title="Delete resource"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <div
+                            className="col-span-2 text-center py-8 bg-white rounded-lg border-2 border-dashed"
+                            style={{ borderColor: `${color.bg}40` }}
+                          >
+                            <div className="mb-2">
+                              <FileText
+                                size={24}
+                                className="mx-auto"
+                                style={{ color: color.bg }}
+                              />
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">
+                              No resources added yet
+                            </p>
+                            <button
+                              onClick={() => handleAddContent(module)}
+                              className="text-sm font-medium inline-flex items-center"
+                              style={{ color: color.bg }}
+                            >
+                              <Plus size={16} className="mr-1" />
+                              Add your first resource
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })}
         </div>
-      ))}
+      </div>
     </div>
   );
-
-  if (!selectedCourse?.id) {
-    return (
-      <div className="flex h-screen bg-gray-100">
-        <Sidebar navItems={navItems} />
-        <div className="flex-1 p-6">
-          <Header title="Course Modules" />
-          <MobileNavBar navItems={navItems} />
-          <div className="flex flex-col items-center justify-center py-16 px-4">
-            <AlertTriangle size={64} className="text-red-500 mb-4" />
-            <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-              No Course Selected
-            </h3>
-            <p className="text-gray-600 text-center max-w-md mb-8">
-              Please select a course from the dashboard to view its modules.
-            </p>
-            <button
-              onClick={() => navigate("/Teacher/Dashboard")}
-              className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
-            >
-              Return to Dashboard
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex h-screen bg-gray-100">
-        <Sidebar navItems={navItems} />
-        <div className="flex-1 p-6">
-          <Header
-            title={selectedCourse?.name || "Course Modules"}
-            subtitle={selectedCourse?.code}
-          />
-          <MobileNavBar navItems={navItems} />
-          <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-            <div className="w-16 h-16 border-4 border-[#F6BA18] border-t-[#212529] rounded-full animate-spin"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-screen bg-gray-100">
-        <Sidebar navItems={navItems} />
-        <div className="flex-1 p-6">
-          <Header
-            title={selectedCourse?.name || "Course Modules"}
-            subtitle={selectedCourse?.code}
-          />
-          <MobileNavBar navItems={navItems} />
-          <div className="flex flex-col items-center justify-center py-16 px-4">
-            <AlertTriangle size={64} className="text-red-500 mb-4" />
-            <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-              Failed to Load Modules
-            </h3>
-            <p className="text-gray-600 text-center max-w-md mb-8">
-              We encountered an error while trying to fetch the module data.
-              This could be due to network issues or server unavailability.
-            </p>
-            <div className="flex flex-col items-center gap-2">
-              <button
-                onClick={() => window.location.reload()}
-                className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 flex items-center gap-2"
-              >
-                Try Again
-              </button>
-              <span className="text-sm text-gray-500 mt-2">
-                You can try refreshing the page or contact support if the issue
-                persists
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!loading && modules.length === 0) {
-    return (
-      <div className="flex h-screen bg-gray-100">
-        <Sidebar navItems={navItems} />
-        <div className="flex-1 p-6 overflow-auto">
-          <Header
-            title={selectedCourse?.name || "Course Modules"}
-            subtitle={selectedCourse?.code}
-          />
-          <MobileNavBar navItems={navItems} />
-          <div className="relative z-0">
-            <div className="flex flex-col items-center justify-center py-16 px-4">
-              <InboxIcon size={64} className="text-gray-300 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                No Modules Found
-              </h3>
-              <p className="text-gray-500 text-center max-w-md mb-4">
-                There are currently no modules in this course. Get started by
-                creating your first module.
-              </p>
-              <button
-                role="button"
-                aria-label="create-first-module"
-                onClick={() => setIsCreateModuleOpen(true)}
-                className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
-              >
-                Create First Module
-              </button>
-            </div>
-          </div>
-
-          {isCreateModuleOpen && (
-            <CreateModuleModal
-              courseId={selectedCourse.id}
-              onClose={() => setIsCreateModuleOpen(false)}
-              onSubmit={handleCreateModule}
-            />
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -685,41 +622,38 @@ const TeacherCourseModules = () => {
         <div className="relative z-50">
           <MobileNavBar navItems={navItems} />
         </div>
-        <div className="relative z-0">
-          {successMessage && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
-              {successMessage}
-            </div>
-          )}
 
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          <div className="bg-[#212529] rounded-t-lg shadow-md">
-            <BlackHeader title="Modules" count={modules.length}>
-              <button
-                data-testid="open-add-module-modal"
-                aria-label="Add Module"
-                onClick={() => setIsAddModuleOpen(true)}
-                className="p-2 rounded hover:bg-gray-700"
-              >
-                <Plus size={20} />
-              </button>
-              <button
-                onClick={handleSort}
-                className="p-2 rounded hover:bg-gray-700"
-                aria-label="Sort modules"
-              >
-                <ArrowUpDown size={20} />
-              </button>
-            </BlackHeader>
+        {successMessage && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+            {successMessage}
           </div>
+        )}
 
-          {renderModulesList()}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        <div className="bg-[#212529] rounded-t-lg shadow-md">
+          <BlackHeader title="Modules" count={modules.length}>
+            <button
+              onClick={() => setIsAddModuleOpen(true)}
+              className="p-2 rounded hover:bg-gray-700"
+            >
+              <Plus size={20} />
+            </button>
+            <button
+              onClick={handleSort}
+              className="p-2 rounded hover:bg-gray-700"
+              aria-label="Sort modules"
+            >
+              <ArrowUpDown size={20} />
+            </button>
+          </BlackHeader>
         </div>
+
+        {!loading && modules.length > 0 && renderModulesList()}
 
         {editingModule && (
           <EditModuleModal
