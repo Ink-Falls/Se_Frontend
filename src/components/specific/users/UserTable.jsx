@@ -89,8 +89,8 @@ const UserTable = ({
 
   const getSchoolAbbreviation = (schoolName) => {
     const abbreviations = {
-      1001: "ACES",
-      1002: "UST",
+      1001: "UST",
+      1002: "ACES",
     };
     return abbreviations[schoolName] || schoolName;
   };
