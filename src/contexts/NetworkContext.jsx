@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { X } from 'lucide-react';
 
 const NetworkContext = createContext();
 
 const RECONNECT_INTERVAL = 5000; // 5 seconds between reconnection attempts
 
-// Custom alert component with updated colors
-const NetworkAlert = ({ message, type }) => {
+// Custom alert component with updated colors and close button
+const NetworkAlert = ({ message, type, onClose }) => {
   const alertStyles = {
     success: 'bg-green-50 border-green-400 text-green-800', // Good connection
     error: 'bg-red-50 border-red-400 text-red-800',         // No connection
@@ -20,26 +21,39 @@ const NetworkAlert = ({ message, type }) => {
       border-l-4 p-4 z-50 transition-all duration-500 ease-in-out
       ${alertStyles[type] || alertStyles.info}`
     }>
-      <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 mt-1">
-          {type === 'offline' && '📡'}
-          {type === 'success' && '🟢'}
-          {type === 'error' && '🔴'} 
-          {type === 'warning' && '🟡'}
-          {type === 'info' && '🔵'}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 mt-1">
+            {type === 'offline' && '📡'}
+            {type === 'success' && '🟢'}
+            {type === 'error' && '🔴'} 
+            {type === 'warning' && '🟡'}
+            {type === 'info' && '🔵'}
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium mb-2">{message}</p>
+            {type === 'offline' && (
+              <button 
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-[#F6BA18] text-[#212529] rounded-md text-sm font-medium 
+                         hover:bg-[#64748B] hover:text-white transition-colors duration-300"
+              >
+                Retry Connection
+              </button>
+            )}
+          </div>
         </div>
-        <div className="flex-1">
-          <p className="text-sm font-medium mb-2">{message}</p>
-          {type === 'offline' && (
-            <button 
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-[#F6BA18] text-[#212529] rounded-md text-sm font-medium 
-                       hover:bg-[#64748B] hover:text-white transition-colors duration-300"
-            >
-              Retry Connection
-            </button>
-          )}
-        </div>
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className={`p-1 rounded-full transition-colors duration-200 ${
+            type === 'offline' 
+              ? 'text-white hover:bg-gray-700' 
+              : 'text-gray-500 hover:bg-gray-100'
+          }`}
+        >
+          <X size={16} />
+        </button>
       </div>
     </div>
   );
@@ -52,10 +66,15 @@ export function NetworkProvider({ children }) {
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [networkAlert, setNetworkAlert] = useState(null);
 
-  // Show network alert with auto-dismiss for success only
+  // Update showNetworkAlert to include onClose handler
   const showNetworkAlert = useCallback((message, type) => {
-    // Don't auto-dismiss offline alerts
-    setNetworkAlert({ message, type });
+    setNetworkAlert({ 
+      message, 
+      type, 
+      onClose: () => setNetworkAlert(null)
+    });
+    
+    // Only auto-dismiss success alerts
     if (type === 'success') {
       setTimeout(() => setNetworkAlert(null), 3000);
     }
@@ -233,7 +252,8 @@ export function NetworkProvider({ children }) {
       {networkAlert && (
         <NetworkAlert 
           message={networkAlert.message} 
-          type={networkAlert.type} 
+          type={networkAlert.type}
+          onClose={networkAlert.onClose}
         />
       )}
       {children}

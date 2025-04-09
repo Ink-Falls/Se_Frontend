@@ -14,7 +14,7 @@ import {
   AlertTriangle,
   Check,
   Save,
-  FileText, // Add this import
+  FileText,
 } from "lucide-react";
 import {
   createSubmission,
@@ -23,6 +23,7 @@ import {
   getAssessmentById,
   getSubmissionDetails,
 } from "../../services/assessmentService";
+import CountdownTimer from "../../components/assessment/CountdownTimer";
 
 const LearnerAssessmentAttempt = () => {
   const { selectedCourse } = useCourse();
@@ -38,7 +39,6 @@ const LearnerAssessmentAttempt = () => {
   const [error, setError] = useState(null);
   const [savingAnswer, setSavingAnswer] = useState(false);
   const [savedAnswers, setSavedAnswers] = useState({});
-  const [timer, setTimer] = useState(null);
 
   const initializationRef = useRef(false);
   const submissionAttemptRef = useRef(false);
@@ -170,33 +170,6 @@ const LearnerAssessmentAttempt = () => {
     };
   }, [assessment?.id]);
 
-  useEffect(() => {
-    let timerInterval;
-
-    if (!submissionId || timeRemaining === null) return;
-
-    const endTime = Date.now() + timeRemaining * 1000;
-    localStorage.setItem(`assessment_end_${submissionId}`, endTime.toString());
-
-    timerInterval = setInterval(() => {
-      const remaining = Math.floor((endTime - Date.now()) / 1000);
-
-      if (remaining <= 0) {
-        clearInterval(timerInterval);
-        setTimeRemaining(0);
-        handleSubmitAssessment();
-      } else {
-        setTimeRemaining(remaining);
-      }
-    }, 1000);
-
-    return () => {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-      }
-    };
-  }, [submissionId, timeRemaining]);
-
   const handleAnswerChange = (answer) => {
     setAnswers((prev) => ({
       ...prev,
@@ -251,10 +224,6 @@ const LearnerAssessmentAttempt = () => {
         localStorage.removeItem(`assessment_end_${submitId}`);
         localStorage.removeItem(`ongoing_assessment_${assessment.id}`);
         localStorage.removeItem(`timer_${assessment.id}`);
-
-        if (timer) {
-          clearInterval(timer);
-        }
 
         navigate(`/Learner/Assessment/View/${assessment.id}`, {
           state: { assessment, submission: response.submission },
@@ -471,10 +440,6 @@ const LearnerAssessmentAttempt = () => {
   };
 
   const renderHeader = () => {
-    const minutes = Math.floor(timeRemaining / 60);
-    const seconds = timeRemaining % 60;
-    const isLowTime = timeRemaining <= 300;
-
     return (
       <div className="bg-gradient-to-r from-gray-800 to-gray-700 p-6 text-white shadow-md rounded-t-2xl">
         <div className="max-w-7xl mx-auto">
@@ -483,47 +448,12 @@ const LearnerAssessmentAttempt = () => {
               <h2 className="text-2xl font-bold">{assessment?.title}</h2>
               <p className="text-gray-300 mt-1">{assessment?.description}</p>
             </div>
-            <div
-              className={`text-right p-4 rounded-xl backdrop-blur-sm ${
-                isLowTime
-                  ? "bg-red-500/20 border-2 border-red-500/50 animate-pulse"
-                  : "bg-black/30 border border-white/10"
-              }`}
-            >
-              <div className="flex items-center gap-2 justify-center">
-                <Clock
-                  className={`w-5 h-5 ${
-                    isLowTime ? "text-red-300" : "text-yellow-400"
-                  }`}
-                />
-                <div className="font-mono text-2xl font-bold tracking-wider">
-                  <span
-                    className={isLowTime ? "text-red-300" : "text-yellow-400"}
-                  >
-                    {minutes.toString().padStart(2, "0")}
-                  </span>
-                  <span
-                    className={`animate-pulse ${
-                      isLowTime ? "text-red-300" : "text-yellow-400"
-                    }`}
-                  >
-                    :
-                  </span>
-                  <span
-                    className={isLowTime ? "text-red-300" : "text-yellow-400"}
-                  >
-                    {seconds.toString().padStart(2, "0")}
-                  </span>
-                </div>
-              </div>
-              <div
-                className={`text-sm mt-1 ${
-                  isLowTime ? "text-red-200" : "text-gray-300"
-                }`}
-              >
-                {isLowTime ? "Time running out!" : "Time remaining"}
-              </div>
-            </div>
+            <CountdownTimer
+              timeRemaining={timeRemaining}
+              setTimeRemaining={setTimeRemaining}
+              onTimeUp={handleSubmitAssessment}
+              submissionId={submissionId}
+            />
           </div>
           <div className="mt-6">
             <div className="flex justify-between text-sm mb-2">
