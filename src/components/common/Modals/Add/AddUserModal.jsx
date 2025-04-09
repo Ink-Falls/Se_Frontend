@@ -43,6 +43,29 @@ const AddUserModal = ({ onClose, onSubmit }) => {
     return null;
   };
 
+  const validatePassword = (password) => {
+    if (!password) return "Password is required";
+
+    const minLength = 8;
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const hasLetter = /[a-zA-Z]/.test(password);
+
+    if (password.length < minLength) {
+      return "Password must be at least 8 characters long";
+    }
+    if (!hasNumber) {
+      return "Password must contain at least one number";
+    }
+    if (!hasSpecialChar) {
+      return "Password must contain at least one special character";
+    }
+    if (!hasLetter) {
+      return "Password must contain at least one letter";
+    }
+    return null;
+  };
+
   const validateForm = () => {
     const errors = {};
 
@@ -86,17 +109,15 @@ const AddUserModal = ({ onClose, onSubmit }) => {
       errors.birth_date = "Birth date cannot be in the future";
     }
 
-    // Simplified password validation
+    // Enhanced password validation
     if (!formData.password) {
-      errors.password = "Password is required";
-    } else if (formData.password.length < 8) {
-      errors.password = "Password must be at least 8 characters long";
-    } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) {
-      errors.password = "Password must contain at least one special character";
+      errors.password = validatePassword(formData.password);
     }
 
     // Confirm password validation
-    if (formData.password !== formData.confirm_password) {
+    if (!formData.confirm_password) {
+      errors.confirm_password = "Please confirm your password";
+    } else if (formData.password !== formData.confirm_password) {
       errors.confirm_password = "Passwords do not match";
     }
 
@@ -181,6 +202,40 @@ const AddUserModal = ({ onClose, onSubmit }) => {
       const emailError = validateEmail(value);
       if (emailError) {
         setFieldErrors((prev) => ({ ...prev, email: emailError }));
+      }
+    }
+
+    // Validate password as user types
+    if (name === "password") {
+      const passwordError = validatePassword(value);
+      if (passwordError) {
+        setFieldErrors((prev) => ({ ...prev, password: passwordError }));
+      }
+      // Check confirm password match if it exists
+      if (formData.confirm_password) {
+        if (value !== formData.confirm_password) {
+          setFieldErrors((prev) => ({
+            ...prev,
+            confirm_password: "Passwords do not match",
+          }));
+        } else {
+          setFieldErrors((prev) => ({ ...prev, confirm_password: "" }));
+        }
+      }
+    }
+
+    // Validate confirm password as user types
+    if (name === "confirm_password") {
+      if (!value) {
+        setFieldErrors((prev) => ({
+          ...prev,
+          confirm_password: "Please confirm your password",
+        }));
+      } else if (value !== formData.password) {
+        setFieldErrors((prev) => ({
+          ...prev,
+          confirm_password: "Passwords do not match",
+        }));
       }
     }
   };
