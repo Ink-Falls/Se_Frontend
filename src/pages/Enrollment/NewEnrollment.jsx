@@ -1,8 +1,9 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../../assets/images/ARALKADEMYLOGO.png";
 import { createEnrollment } from "../../services/enrollmentService";
 import { Eye, EyeOff } from "lucide-react";
+import ConsentForm from "../../components/enrollment/ConsentForm";
 
 function NewEnrollment() {
   const [formData, setFormData] = useState({
@@ -23,8 +24,13 @@ function NewEnrollment() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  const [showConsent, setShowConsent] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Always show the consent when first loading the page
+    setShowConsent(true);
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -241,6 +247,14 @@ function NewEnrollment() {
     }
   };
 
+  const handleAcceptConsent = () => {
+    setShowConsent(false);
+  };
+
+  const handleDeclineConsent = () => {
+    navigate("/Enrollment"); // Go back to enrollment page
+  };
+
   return (
     <>
       <div
@@ -250,6 +264,14 @@ function NewEnrollment() {
             "url(https://upload.wikimedia.org/wikipedia/commons/7/7b/400_Year_old_Beauty.jpg)",
         }}
       >
+        {/* Show consent modal if needed */}
+        {showConsent && (
+          <ConsentForm 
+            onAccept={handleAcceptConsent} 
+            onDecline={handleDeclineConsent}
+          />
+        )}
+        
         {/* Semi-transparent black overlay */}
         <div className="absolute inset-0 bg-black opacity-30"></div>
 
@@ -269,26 +291,30 @@ function NewEnrollment() {
             Log In
           </button>
         </header>
-        <div className="relative z-10 flex items-center justify-center min-h-screen pb-[15vw] md:pb-[10vw] lg:pb-0">
-          <div className="mt-[10vw] md:mt-[15vw] lg:mt-[0vw] flex flex-col lg:flex-row items-center rounded-lg">
-            <div className="p-[5vw] max-lg:p-[7vw] w-[80vw] lg:p-[2.5vw] lg:w-[60vw] bg-white rounded-lg shadow-2xl relative">
-              <div className="top-[0vw] left-[0vw] h-[1.5vw] lg:top-[0vw] lg:left-[0vw] lg:h-[0.5vw] absolute w-full bg-[#F6BA18] rounded-t-lg"></div>
-              <h2 className="text-[8vw] lg:text-[2vw] max-lg:text-[6vw] font-bold text-left text-[#212529]">
-                Enrollment
-              </h2>
-              <p className="text-[3vw] mb-[5vw] lg:mb-[2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] text-[#64748B] text-left">
-                Please enter all the necessary information to enroll
-              </p>
-              {errors.general && (
-                <p className="text-red-500 text-sm mt-1">{errors.general}</p>
-              )}
-              {successMessage && (
-                <p className="text-green-500 text-sm mt-1">{successMessage}</p>
-              )}
-              <form onSubmit={handleSubmit} className="space-y-[1.5vw]">
-                <div className="flex flex-wrap gap-[2vw]">
-                  {[
-                    {
+        
+        {/* Only show the form if consent has been accepted */}
+        {!showConsent && (
+          <div className="relative z-10 flex items-center justify-center min-h-screen pb-[15vw] md:pb-[10vw] lg:pb-0">
+            <div className="mt-[10vw] md:mt-[15vw] lg:mt-[0vw] flex flex-col lg:flex-row items-center rounded-lg">
+              <div className="p-[5vw] max-lg:p-[7vw] w-[80vw] lg:p-[2.5vw] lg:w-[60vw] bg-white rounded-lg shadow-2xl relative">
+                <div className="top-[0vw] left-[0vw] h-[1.5vw] lg:top-[0vw] lg:left-[0vw] lg:h-[0.5vw] absolute w-full bg-[#F6BA18] rounded-t-lg"></div>
+                <h2 className="text-[8vw] lg:text-[2vw] max-lg:text-[6vw] font-bold text-left text-[#212529]">
+                  Enrollment
+                </h2>
+                <p className="text-[3vw] mb-[5vw] lg:mb-[2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] text-[#64748B] text-left">
+                  Please enter all the necessary information to enroll
+                </p>
+                {errors.general && (
+                  <p className="text-red-500 text-sm mt-1">{errors.general}</p>
+                )}
+                {successMessage && (
+                  <p className="text-green-500 text-sm mt-1">{successMessage}</p>
+                )}
+
+                {/* Enrollment Form */}
+                <form onSubmit={handleSubmit} className="space-y-[1.5vw]">
+                  <div className="flex flex-wrap gap-[2vw]">
+                    {[{
                       label: "First Name",
                       name: "first_name",
                       type: "text",
@@ -335,166 +361,133 @@ function NewEnrollment() {
                       name: "confirm_password",
                       type: "password",
                       required: true,
-                    },
-                  ].map((field) => (
-                    <div
-                      key={field.name}
-                      className="w-full lg:w-[calc(50%-1vw)]"
-                    >
-                      <label
-                        htmlFor={field.name}
-                        className="text-[3vw] block text-[#64748B] lg:text-[0.8vw] max-lg:text-[2.5vw]"
-                      >
-                        {field.label}
-                      </label>
-                      {field.name === "password" ||
-                      field.name === "confirm_password" ? (
-                        <div className="relative">
+                    }].map((field) => (
+                      <div key={field.name} className="w-full lg:w-[calc(50%-1vw)]">
+                        <label htmlFor={field.name} className="text-[3vw] block text-[#64748B] lg:text-[0.8vw] max-lg:text-[2.5vw]">
+                          {field.label}
+                        </label>
+                        {field.name === "password" || field.name === "confirm_password" ? (
+                          <div className="relative">
+                            <input
+                              type={field.name === "password" ? showPassword ? "text" : "password" : showConfirmPassword ? "text" : "password"}
+                              id={field.name}
+                              name={field.name}
+                              value={formData[field.name]}
+                              onChange={handleInputChange}
+                              required={field.required}
+                              className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] max-lg:text-[2.5vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529] pr-[10vw] lg:pr-[3vw]"
+                              placeholder={`Enter your ${field.label.toLowerCase()}`}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => field.name === "password" ? setShowPassword(!showPassword) : setShowConfirmPassword(!showConfirmPassword)}
+                              className="absolute right-[3vw] lg:right-[1vw] top-[55%] transform -translate-y-1/2 text-gray-500"
+                              aria-label={`Toggle ${field.label.toLowerCase()} visibility`}
+                            >
+                              {field.name === "password" ? showPassword ? <EyeOff className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" /> : <Eye className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" /> : showConfirmPassword ? <EyeOff className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" /> : <Eye className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />}
+                            </button>
+                          </div>
+                        ) : (
                           <input
-                            type={
-                              field.name === "password"
-                                ? showPassword
-                                  ? "text"
-                                  : "password"
-                                : showConfirmPassword
-                                ? "text"
-                                : "password"
-                            }
+                            type={field.type}
                             id={field.name}
                             name={field.name}
                             value={formData[field.name]}
-                            onChange={handleInputChange}
+                            onChange={(e) => {
+                              if (field.name === "middle_initial") {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  middle_initial: e.target.value.toUpperCase().slice(0, 2),
+                                }));
+                              } else {
+                                handleInputChange(e);
+                              }
+                            }}
                             required={field.required}
-                            className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] max-lg:text-[2.5vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529] pr-[10vw] lg:pr-[3vw]"
+                            maxLength={field.name === "middle_initial" ? 2 : undefined}
+                            className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] max-lg:text-[2.5vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
                             placeholder={`Enter your ${field.label.toLowerCase()}`}
                           />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              field.name === "password"
-                                ? setShowPassword(!showPassword)
-                                : setShowConfirmPassword(!showConfirmPassword)
-                            }
-                            className="absolute right-[3vw] lg:right-[1vw] top-[55%] transform -translate-y-1/2 text-gray-500"
-                            aria-label={`Toggle ${field.label.toLowerCase()} visibility`}
-                          >
-                            {field.name === "password" ? (
-                              showPassword ? (
-                                <EyeOff className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
-                              ) : (
-                                <Eye className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
-                              )
-                            ) : showConfirmPassword ? (
-                              <EyeOff className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
-                            ) : (
-                              <Eye className="w-[4vw] h-[4vw] lg:w-[1.2vw] lg:h-[1.2vw]" />
-                            )}
-                          </button>
-                        </div>
-                      ) : (
-                        <input
-                          type={field.type}
-                          id={field.name}
-                          name={field.name}
-                          value={formData[field.name]}
-                          onChange={(e) => {
-                            if (field.name === "middle_initial") {
-                              setFormData((prev) => ({
-                                ...prev,
-                                middle_initial: e.target.value
-                                  .toUpperCase()
-                                  .slice(0, 2),
-                              }));
-                            } else {
-                              handleInputChange(e);
-                            }
-                          }}
-                          required={field.required}
-                          maxLength={
-                            field.name === "middle_initial" ? 2 : undefined
-                          }
-                          className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] max-lg:text-[2.5vw] lg:text-[0.8vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
-                          placeholder={`Enter your ${field.label.toLowerCase()}`}
-                        />
-                      )}
-                      <div className="min-h-[0vw]">
-                        {errors[field.name] && (
-                          <p className="text-red-500 mt-1 text-xs">
-                            {errors[field.name]}
-                          </p>
                         )}
+                        <div className="min-h-[0vw]">
+                          {errors[field.name] && (
+                            <p className="text-red-500 mt-1 text-xs">
+                              {errors[field.name]}
+                            </p>
+                          )}
+                        </div>
                       </div>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-[2vw]">
+                    <div className="w-full lg:w-[calc(50%-1vw)]">
+                      <label
+                        htmlFor="school_id"
+                        className="text-[3vw] mt-[0.5vw] max-lg:text-[2.5vw] block text-[#64748B] lg:text-[0.8vw]"
+                      >
+                        School
+                      </label>
+                      <select
+                        id="school_id"
+                        name="school_id"
+                        value={formData.school_id}
+                        onChange={handleInputChange}
+                        required
+                        className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[0.5vw] max-lg:text-[2.5vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                      >
+                        <option value="" disabled>
+                          Select your school
+                        </option>
+                        <option value="1001">
+                          Asuncion Consunji Elementary School (ACES)
+                        </option>
+                        <option value="1002">
+                          University of Santo Tomas (UST)
+                        </option>
+                      </select>
                     </div>
-                  ))}
-                </div>
-                <div className="flex flex-wrap gap-[2vw]">
-                  <div className="w-full lg:w-[calc(50%-1vw)]">
-                    <label
-                      htmlFor="school_id"
-                      className="text-[3vw] mt-[0.5vw] max-lg:text-[2.5vw] block text-[#64748B] lg:text-[0.8vw]"
-                    >
-                      School
-                    </label>
-                    <select
-                      id="school_id"
-                      name="school_id"
-                      value={formData.school_id}
-                      onChange={handleInputChange}
-                      required
-                      className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] lg:px-[0.5vw] max-lg:text-[2.5vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
-                    >
-                      <option value="" disabled>
-                        Select your school
-                      </option>
-                      <option value="1001">
-                        Asuncion Consunji Elementary School (ACES)
-                      </option>
-                      <option value="1002">
-                        University of Santo Tomas (UST)
-                      </option>
-                    </select>
-                  </div>
 
-                  <div className="w-full lg:w-[calc(50%-1vw)]">
-                    <label
-                      htmlFor="year_level"
-                      className="text-[3vw] mt-[0.5vw] max-lg:text-[2.5vw] block text-[#64748B] lg:text-[0.8vw]"
-                    >
-                      Year Level
-                    </label>
-                    <select
-                      id="year_level"
-                      name="year_level"
-                      value={formData.year_level}
-                      onChange={handleInputChange}
-                      required
-                      className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] max-lg:text-[2.5vw]z lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
-                    >
-                      <option value="" disabled>
-                        Select your year level
-                      </option>
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="4">4</option>
-                      <option value="5">5</option>
-                      <option value="6">6</option>
-                    </select>
+                    <div className="w-full lg:w-[calc(50%-1vw)]">
+                      <label
+                        htmlFor="year_level"
+                        className="text-[3vw] mt-[0.5vw] max-lg:text-[2.5vw] block text-[#64748B] lg:text-[0.8vw]"
+                      >
+                        Year Level
+                      </label>
+                      <select
+                        id="year_level"
+                        name="year_level"
+                        value={formData.year_level}
+                        onChange={handleInputChange}
+                        required
+                        className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] max-lg:text-[2.5vw]z lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                      >
+                        <option value="" disabled>
+                          Select your year level
+                        </option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                      </select>
+                    </div>
                   </div>
-                </div>
-                <div className="flex justify-end items-center w-full">
-                  <button
-                    type="submit"
-                    className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] mb-[2vw] mt-[2vw] lg:mb-[0.2vw] lg:mt-[0.2vw] lg:py-[0.4vw] lg:px-[2.5vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Submitting..." : "Submit"}
-                  </button>
-                </div>
-              </form>
+                  <div className="flex justify-end items-center w-full">
+                    <button
+                      type="submit"
+                      className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] mb-[2vw] mt-[2vw] lg:mb-[0.2vw] lg:mt-[0.2vw] lg:py-[0.4vw] lg:px-[2.5vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Submitting..." : "Submit"}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </>
   );
