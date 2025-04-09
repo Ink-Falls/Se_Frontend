@@ -25,6 +25,7 @@ function NewEnrollment() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showConsent, setShowConsent] = useState(true);
+  const [isSubmitSuccess, setIsSubmitSuccess] = useState(false); // New state for tracking successful submission
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -216,6 +217,7 @@ function NewEnrollment() {
     try {
       await createEnrollment(dataToSend);
       setSuccessMessage("Enrollment submitted successfully!");
+      setIsSubmitSuccess(true); // Set submission as successful
       setFormData({
         first_name: "",
         last_name: "",
@@ -242,9 +244,10 @@ function NewEnrollment() {
           general: error.message || "Network error. Please try again.",
         });
       }
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Only set loading false on error
+      // Don't set isSubmitSuccess to true if there was an error
     }
+    // Don't set isLoading to false on success - keep the button disabled
   };
 
   const handleAcceptConsent = () => {
@@ -477,10 +480,14 @@ function NewEnrollment() {
                   <div className="flex justify-end items-center w-full">
                     <button
                       type="submit"
-                      className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] mb-[2vw] mt-[2vw] lg:mb-[0.2vw] lg:mt-[0.2vw] lg:py-[0.4vw] lg:px-[2.5vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
-                      disabled={isLoading}
+                      className={`py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] mb-[2vw] mt-[2vw] lg:mb-[0.2vw] lg:mt-[0.2vw] lg:py-[0.4vw] lg:px-[2.5vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md transition-colors duration-300 ease-in-out ${
+                        isLoading || isSubmitSuccess 
+                          ? "opacity-70 cursor-not-allowed" 
+                          : "hover:bg-[#F6BA18] hover:text-[#212529]"
+                      }`}
+                      disabled={isLoading || isSubmitSuccess}
                     >
-                      {isLoading ? "Submitting..." : "Submit"}
+                      {isLoading ? "Submitting..." : isSubmitSuccess ? "Redirecting..." : "Submit"}
                     </button>
                   </div>
                 </form>
