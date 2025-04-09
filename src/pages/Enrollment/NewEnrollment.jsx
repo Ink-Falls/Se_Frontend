@@ -110,21 +110,48 @@ function NewEnrollment() {
       errors.contact_no = "Contact number must be 11 digits";
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Enhanced email validation
+    const validEmailDomains = [
+      '@gmail.com',
+      '@yahoo.com',
+      '@outlook.com',
+      '@hotmail.com',
+      '@icloud.com',
+      '@protonmail.com',
+      '@aol.com',
+      '@zoho.com',
+      '@mail.com'
+    ];
+    
     if (!formData.email) {
       errors.email = "Email is required";
-    } else if (!emailRegex.test(formData.email)) {
-      errors.email = "Please enter a valid email address";
+    } else {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(formData.email)) {
+        errors.email = "Please enter a valid email address";
+      } else if (!validEmailDomains.some(domain => formData.email.toLowerCase().endsWith(domain))) {
+        errors.email = "Please use a valid email domain (e.g., @gmail.com, @yahoo.com)";
+      }
     }
 
-    // Password validation
+    // Enhanced password validation
     if (!formData.password) {
       errors.password = "Password is required";
-    } else if (formData.password.length < 8) {
-      errors.password = "Password must be at least 8 characters long";
-    } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) {
-      errors.password = "Password must contain at least one special character";
+    } else {
+      const minLength = 8;
+      const hasNumber = /\d/.test(formData.password);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(formData.password);
+      const hasLetter = /[a-zA-Z]/.test(formData.password);
+
+      if (formData.password.length < minLength) {
+        errors.password = "Password must be at least 8 characters long";
+      } else if (!hasNumber) {
+        errors.password = "Password must contain at least one number";
+      } else if (!hasSpecialChar) {
+        errors.password = "Password must contain at least one special character";
+      } else if (!hasLetter) {
+        errors.password = "Password must contain at least one letter";
+      }
     }
 
     if (!formData.confirm_password) {
