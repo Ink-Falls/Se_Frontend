@@ -709,7 +709,7 @@ const LearnerAssessmentView = () => {
           title={selectedCourse?.name || "Assessment"}
           subtitle={selectedCourse?.code}
         />
-        <div className="max-w-7xl mx-auto">
+        <div>
           <div className="mt-4 md:mt-6 bg-white rounded-xl shadow-sm overflow-hidden">
             {renderHeader()}
 

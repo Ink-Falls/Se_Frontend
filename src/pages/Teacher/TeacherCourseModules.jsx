@@ -37,6 +37,7 @@ import {
 } from "../../services/moduleService";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCourse } from "../../contexts/CourseContext";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 const moduleColors = {
   blue: {
@@ -428,7 +429,6 @@ const TeacherCourseModules = () => {
 
   const renderModulesList = () => (
     <div className="space-y-6">
-      {/* Modules List */}
       <div className="bg-white rounded-lg shadow-sm">
         <div className="divide-y divide-gray-100">
           {modules.map((module, index) => {
@@ -446,7 +446,7 @@ const TeacherCourseModules = () => {
                 key={module.id}
                 className={`p-6 first:rounded-t-lg last:rounded-b-lg ${
                   hasResources ? `border-${color.bg}` : ""
-                }`}
+                } group hover:bg-gray-50 transition-colors duration-200`}
               >
                 <div className="flex items-start gap-4">
                   {/* Module Number Badge */}
@@ -462,7 +462,7 @@ const TeacherCourseModules = () => {
                   {/* Module Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
-                      <div>
+                      <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-xl font-bold text-gray-800 hover:text-yellow-600 transition-colors">
                             {module.title}
@@ -487,34 +487,26 @@ const TeacherCourseModules = () => {
                         </p>
                       </div>
 
-                      {/* Actions Menu */}
-                      <div className="relative">
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          onClick={(e) => toggleDropdown(module.id, e)}
-                          className="menu-btn p-2 text-gray-600 hover:text-yellow-600 transition-colors rounded-full hover:bg-gray-50"
+                          onClick={() => handleEdit(module)}
+                          className="p-2 text-gray-600 hover:text-yellow-600 hover:bg-yellow-50 rounded-full transition-colors"
+                          title="Edit module"
                         >
-                          <MoreVertical size={20} />
+                          <Edit size={18} />
                         </button>
-                        {dropdownOpen === module.id && (
-                          <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg w-36 z-30 dropdown-menu">
-                            <button
-                              className="flex items-center px-4 py-2 text-sm hover:bg-gray-50 w-full"
-                              onClick={() => handleEdit(module)}
-                            >
-                              <Edit size={16} className="mr-2" /> Edit Module
-                            </button>
-                            <button
-                              className="flex items-center px-4 py-2 text-sm hover:bg-red-50 w-full text-red-600"
-                              onClick={() => setModuleToDelete(module)}
-                            >
-                              <Trash2 size={16} className="mr-2" /> Delete
-                            </button>
-                          </div>
-                        )}
+                        <button
+                          onClick={() => setModuleToDelete(module)}
+                          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                          title="Delete module"
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </div>
                     </div>
 
-                    {/* Resources Section - Adjusted margin */}
+                    {/* Resources Section */}
                     <div
                       className="mt-4 rounded-lg p-4 ml-[-4rem]"
                       style={{ backgroundColor: color.light }}
@@ -528,7 +520,7 @@ const TeacherCourseModules = () => {
                         </h4>
                         <button
                           onClick={() => handleAddContent(module)}
-                          className="text-xs font-medium px-2 py-1 rounded transition-colors"
+                          className="text-xs font-medium px-3 py-1.5 rounded-full transition-colors hover:bg-white/80"
                           style={{ color: color.bg, backgroundColor: "white" }}
                         >
                           <Plus size={14} className="inline mr-1" />
@@ -611,6 +603,24 @@ const TeacherCourseModules = () => {
     </div>
   );
 
+  const EmptyState = () => (
+    <div className="flex flex-col items-center justify-center py-16 px-4">
+      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        No Modules Yet
+      </h3>
+      <p className="text-gray-500 text-center max-w-md mb-6">
+        Get started by creating your first module for this course.
+      </p>
+      <button
+        onClick={() => setIsAddModuleOpen(true)}
+        className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
+      >
+        <Plus size={20} className="mr-2" />
+        Create Your First Module
+      </button>
+    </div>
+  );
+
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
@@ -653,7 +663,17 @@ const TeacherCourseModules = () => {
           </BlackHeader>
         </div>
 
-        {!loading && modules.length > 0 && renderModulesList()}
+        {loading ? (
+          <LoadingSpinner />
+        ) : error ? (
+          <div className="text-center py-8">
+            <p className="text-red-500">{error}</p>
+          </div>
+        ) : modules.length === 0 ? (
+          <EmptyState />
+        ) : (
+          renderModulesList()
+        )}
 
         {editingModule && (
           <EditModuleModal
