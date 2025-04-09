@@ -47,14 +47,19 @@ const LearnerAssessmentAttempt = () => {
   const initializeAttemptRef = useRef(false);
 
   const fetchQuestionsWithMedia = async (assessmentId) => {
-    console.log("1. fetchQuestionsWithMedia called with assessmentId:", assessmentId);
+    console.log(
+      "1. fetchQuestionsWithMedia called with assessmentId:",
+      assessmentId
+    );
     try {
       const response = await getAssessmentById(assessmentId, true);
       if (response.success) {
-        const questionsWithMedia = response.assessment.questions.map((question) => ({
-          ...question,
-          media_url: question.media_url || null,
-        }));
+        const questionsWithMedia = response.assessment.questions.map(
+          (question) => ({
+            ...question,
+            media_url: question.media_url || null,
+          })
+        );
         setQuestions(questionsWithMedia);
       }
     } catch (error) {
@@ -69,22 +74,26 @@ const LearnerAssessmentAttempt = () => {
       if (response.success && response.submission?.answers) {
         const savedAnswerMap = {};
         const savedAnswersStatus = {};
-        
-        response.submission.answers.forEach(answer => {
+
+        response.submission.answers.forEach((answer) => {
           if (answer.selected_option_id) {
-            savedAnswerMap[answer.question_id] = { optionId: answer.selected_option_id };
+            savedAnswerMap[answer.question_id] = {
+              optionId: answer.selected_option_id,
+            };
           } else if (answer.text_response) {
-            savedAnswerMap[answer.question_id] = { textResponse: answer.text_response };
+            savedAnswerMap[answer.question_id] = {
+              textResponse: answer.text_response,
+            };
           }
           savedAnswersStatus[answer.question_id] = true;
         });
-        
+
         setAnswers(savedAnswerMap);
         setSavedAnswers(savedAnswersStatus);
-        console.log('Loaded saved answers:', savedAnswerMap);
+        console.log("Loaded saved answers:", savedAnswerMap);
       }
     } catch (error) {
-      console.error('Error loading saved answers:', error);
+      console.error("Error loading saved answers:", error);
     }
   };
 
@@ -92,10 +101,10 @@ const LearnerAssessmentAttempt = () => {
     const initializeAttempt = async () => {
       // Guard against double initialization from Strict Mode
       if (initializeAttemptRef.current || submissionCreatedRef.current) {
-        console.log('Initialization already attempted');
+        console.log("Initialization already attempted");
         return;
       }
-      
+
       initializeAttemptRef.current = true;
 
       try {
@@ -108,10 +117,12 @@ const LearnerAssessmentAttempt = () => {
         await fetchQuestionsWithMedia(assessment.id);
 
         // Check for existing submission in localStorage
-        const existingData = localStorage.getItem(`ongoing_assessment_${assessment.id}`);
+        const existingData = localStorage.getItem(
+          `ongoing_assessment_${assessment.id}`
+        );
         if (existingData) {
           const parsed = JSON.parse(existingData);
-          console.log('Found existing submission:', parsed);
+          console.log("Found existing submission:", parsed);
           if (parsed.submissionId) {
             // Load existing submission and its answers
             setSubmissionId(parsed.submissionId);
@@ -122,8 +133,11 @@ const LearnerAssessmentAttempt = () => {
             const currentTime = new Date().getTime();
             const elapsedMilliseconds = currentTime - startTime;
             const totalMilliseconds = assessment.duration_minutes * 60 * 1000;
-            const remainingMilliseconds = Math.max(0, totalMilliseconds - elapsedMilliseconds);
-            
+            const remainingMilliseconds = Math.max(
+              0,
+              totalMilliseconds - elapsedMilliseconds
+            );
+
             setTimeRemaining(Math.floor(remainingMilliseconds / 1000));
             submissionCreatedRef.current = true;
             return;
@@ -132,15 +146,15 @@ const LearnerAssessmentAttempt = () => {
 
         // Continue with new submission creation if no existing one found
         if (location.state.isNewAttempt && !submissionCreatedRef.current) {
-          console.log('Creating new submission attempt');
+          console.log("Creating new submission attempt");
           const submissionResponse = await createSubmission(assessment.id);
-          
+
           // Mark submission as created to prevent duplicates
           submissionCreatedRef.current = true;
-          console.log('New submission created:', submissionResponse);
+          console.log("New submission created:", submissionResponse);
 
           if (!submissionResponse?.success || !submissionResponse?.submission) {
-            throw new Error('Failed to initialize assessment attempt');
+            throw new Error("Failed to initialize assessment attempt");
           }
 
           const currentSubmission = submissionResponse.submission;
@@ -151,12 +165,15 @@ const LearnerAssessmentAttempt = () => {
           const currentTime = new Date().getTime();
           const elapsedMilliseconds = currentTime - startTime;
           const totalMilliseconds = assessment.duration_minutes * 60 * 1000;
-          const remainingMilliseconds = Math.max(0, totalMilliseconds - elapsedMilliseconds);
-          
+          const remainingMilliseconds = Math.max(
+            0,
+            totalMilliseconds - elapsedMilliseconds
+          );
+
           setTimeRemaining(Math.floor(remainingMilliseconds / 1000));
         }
       } catch (err) {
-        console.error('Initialization error:', err);
+        console.error("Initialization error:", err);
         setError(err.message || "Failed to start assessment");
       } finally {
         setLoading(false);
@@ -202,7 +219,9 @@ const LearnerAssessmentAttempt = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
     } else {
-      console.log("12. Last question reached, calling handleSubmitAssessment (#3)");
+      console.log(
+        "12. Last question reached, calling handleSubmitAssessment (#3)"
+      );
       await handleSubmitAssessment();
     }
   };
