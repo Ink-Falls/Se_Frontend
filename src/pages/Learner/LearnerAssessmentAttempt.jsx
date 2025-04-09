@@ -15,6 +15,7 @@ import {
   Check,
   Save,
   FileText,
+  GraduationCap,
 } from "lucide-react";
 import {
   createSubmission,
@@ -513,6 +514,11 @@ const LearnerAssessmentAttempt = () => {
       text: "Assessments",
       icon: <ClipboardList size={20} />,
       route: "/Learner/Assessment",
+    },
+    {
+      text: "Grades",
+      icon: <GraduationCap size={20} />,
+      route: "/Learner/Grades",
     },
   ];
 

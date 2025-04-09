@@ -17,6 +17,7 @@ import {
   FileText,
   ExternalLink,
   Lock,
+  GraduationCap,
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
@@ -75,6 +76,11 @@ const LearnerCourseModules = () => {
       text: "Assessments",
       icon: <ClipboardList size={20} />,
       route: "/Learner/Assessment",
+    },
+    {
+      text: "Grades",
+      icon: <GraduationCap size={20} />,
+      route: "/Learner/Grades",
     },
   ];
 

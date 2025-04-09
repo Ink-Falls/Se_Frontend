@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Check,
   Users,
+  GraduationCap,
 } from "lucide-react";
 import {
   getAssessmentById,
@@ -367,7 +368,12 @@ const LearnerAssessmentView = () => {
     {
       text: "Assessments",
       icon: <ClipboardList size={20} />,
-      route: `/Learner/Assessment/View/${assessment?.id}`, // Update this route to match current page
+      route: `/Learner/Assessment/View/${assessment?.id}`,
+    },
+    {
+      text: "Grades",
+      icon: <GraduationCap size={20} />,
+      route: "/Learner/Grades",
     },
   ];
 
