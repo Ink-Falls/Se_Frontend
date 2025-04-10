@@ -226,6 +226,18 @@ const LearnerAssessmentAttempt = () => {
         throw new Error("Submission ID is required");
       }
 
+      // First, save the current question answer if there is one
+      const currentQuestion = questions[currentQuestionIndex];
+      if (currentQuestion && answers[currentQuestion.id]) {
+        try {
+          console.log("Saving final answer before submission for question:", currentQuestion.id);
+          await saveQuestionAnswer(submitId, currentQuestion.id, answers[currentQuestion.id]);
+        } catch (saveErr) {
+          console.error("Error saving final answer before submission:", saveErr);
+          // Continue with submission even if saving fails
+        }
+      }
+
       const response = await submitAssessment(submitId, assessment.id);
       if (response.success) {
         localStorage.removeItem(`assessment_end_${submitId}`);

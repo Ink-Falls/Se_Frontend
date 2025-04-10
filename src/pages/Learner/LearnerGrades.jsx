@@ -9,6 +9,9 @@ import {
   ChevronDown,
   Award,
   AlertTriangle,
+  Users,
+  CheckCircle,
+  Target,
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
 import Sidebar from "../../components/common/layout/Sidebar";
@@ -337,72 +340,87 @@ const LearnerGrades = () => {
   }, [selectedCourse, navigate]);
 
   const renderStatistics = () => (
-    <div className="relative mb-12">
-      {/* Decorative background elements */}
-      <div className="absolute inset-0 bg-gradient-to-r mt-4 from-indigo-100 via-purple-100 to-pink-100 rounded-3xl transform -skew-y-2" />
-      <div className="absolute inset-0 bg-white/40 backdrop-blur-sm rounded-3xl" />
-
-      {/* Stats grid */}
-      <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 p-8">
-        <div className="group hover:-translate-y-1 transition-all duration-300">
-          <div className="relative bg-gradient-to-br from-sky-400 via-blue-500 to-blue-600 rounded-2xl p-6 shadow-xl shadow-blue-500/20 overflow-hidden">
-            <div className="absolute right-0 top-0 -mt-4 -mr-12 h-32 w-32 rotate-12 transform rounded-xl bg-white opacity-10 group-hover:opacity-20 transition-opacity" />
-            <Award className="w-10 h-10 mb-4 text-blue-100" />
-            <div className="text-4xl font-bold text-white tracking-tighter mb-2">
-              {overallStats.averageScore.toFixed(1)}%
-            </div>
-            <div className="text-sm text-blue-100 font-medium">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-blue-800 text-sm font-medium mb-2">
               Overall Average
-            </div>
+            </h3>
+            <p className="text-3xl font-bold text-blue-900">
+              {overallStats.averageScore.toFixed(1)}%
+            </p>
+          </div>
+          <div className="p-3 bg-blue-200 rounded-lg">
+            <Award size={24} className="text-blue-700" />
           </div>
         </div>
+        <p className="text-blue-600 text-xs mt-4">
+          Your academic performance score
+        </p>
+      </div>
 
-        <div className="group hover:-translate-y-1 transition-all duration-300">
-          <div className="relative bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-600 rounded-2xl p-6 shadow-xl shadow-emerald-500/20 overflow-hidden">
-            <div className="absolute right-0 top-0 -mt-4 -mr-12 h-32 w-32 rotate-12 transform rounded-xl bg-white opacity-10 group-hover:opacity-20 transition-opacity" />
-            <div className="text-4xl font-bold text-white tracking-tighter mb-2">
-              {overallStats.passingRate.toFixed(1)}%
-            </div>
-            <div className="text-sm text-emerald-100 font-medium">
+      <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-emerald-800 text-sm font-medium mb-2">
               Success Rate
-            </div>
-            <div className="text-xs text-emerald-100/80 mt-1">
-              of graded assessments
-            </div>
+            </h3>
+            <p className="text-3xl font-bold text-emerald-900">
+              {overallStats.passingRate.toFixed(1)}%
+            </p>
+          </div>
+          <div className="p-3 bg-emerald-200 rounded-lg">
+            <CheckCircle size={24} className="text-emerald-700" />
           </div>
         </div>
+        <p className="text-emerald-600 text-xs mt-4">
+          Percentage of assessments passed
+        </p>
+      </div>
 
-        <div className="group hover:-translate-y-1 transition-all duration-300">
-          <div className="relative bg-gradient-to-br from-rose-400 via-red-500 to-red-600 rounded-2xl p-6 shadow-xl shadow-red-500/20 overflow-hidden">
-            <div className="absolute right-0 top-0 -mt-4 -mr-12 h-32 w-32 rotate-12 transform rounded-xl bg-white opacity-10 group-hover:opacity-20 transition-opacity" />
-            <div className="text-4xl font-bold text-white tracking-tighter mb-2">
-              {overallStats.completedAssessments}
-            </div>
-            <div className="text-sm text-rose-100 font-medium">
+      <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-rose-800 text-sm font-medium mb-2">
               Completed Tasks
-            </div>
-            <div className="text-xs text-rose-100/80 mt-1">
-              out of {overallStats.totalAssessments}
-            </div>
+            </h3>
+            <p className="text-3xl font-bold text-rose-900">
+              {overallStats.completedAssessments}/
+              {overallStats.totalAssessments}
+            </p>
+          </div>
+          <div className="p-3 bg-rose-200 rounded-lg">
+            <Target size={24} className="text-rose-700" />
           </div>
         </div>
+        <p className="text-rose-600 text-xs mt-4">
+          Assessment completion progress
+        </p>
+      </div>
 
-        <div className="group hover:-translate-y-1 transition-all duration-300">
-          <div className="relative bg-gradient-to-br from-violet-400 via-purple-500 to-purple-600 rounded-2xl p-6 shadow-xl shadow-purple-500/20 overflow-hidden">
-            <div className="absolute right-0 top-0 -mt-4 -mr-12 h-32 w-32 rotate-12 transform rounded-xl bg-white opacity-10 group-hover:opacity-20 transition-opacity" />
-            <div className="text-4xl font-bold text-white tracking-tighter mb-2">
+      <div className="bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-violet-800 text-sm font-medium mb-2">
+              Completion Rate
+            </h3>
+            <p className="text-3xl font-bold text-violet-900">
               {(
                 (overallStats.completedAssessments /
                   Math.max(overallStats.totalAssessments, 1)) *
                 100
               ).toFixed(0)}
               %
-            </div>
-            <div className="text-sm text-purple-100 font-medium">
-              Completion Rate
-            </div>
+            </p>
+          </div>
+          <div className="p-3 bg-violet-200 rounded-lg">
+            <Users size={24} className="text-violet-700" />
           </div>
         </div>
+        <p className="text-violet-600 text-xs mt-4">
+          Progress toward course completion
+        </p>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Sidebar from "../../components/common/layout/Sidebar";
-import { Book, Bell } from "lucide-react";
+import { Book, Bell, Hash, Image } from "lucide-react";
 import Header from "../../components/common/layout/Header";
 import NotificationsComponent from "./NotificationsComponent"; // Fix import path
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
@@ -9,13 +9,23 @@ import { useNavigate } from "react-router-dom";
 const Notifications = () => {
   const navigate = useNavigate();
 
-  // Sidebar Navigation Items (Only for large screens)
+  // Updated navItems to match TeacherDashboard
   const navItems = [
     { text: "Courses", icon: <Book size={20} />, route: "/Teacher/Dashboard" },
     {
       text: "Notifications",
       icon: <Bell size={20} />,
       route: "/Teacher/Notifications",
+    },
+    {
+      text: "Number Codes (4-6)",
+      icon: <Hash size={20} />,
+      route: "/Teacher/StudentCodeGenerator",
+    },
+    {
+      text: "Picture Codes (1-3)",
+      icon: <Image size={20} />,
+      route: "/Teacher/PictureCodeGenerator",
     },
   ];
 

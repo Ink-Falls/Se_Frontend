@@ -108,14 +108,35 @@ function NewEnrollment() {
   };
 
   const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const allowedDomains = [
+      "gmail.com",
+      "yahoo.com",
+      "ust.edu.ph",
+      "hotmail.com",
+      "outlook.com",
+      "icloud.com",
+      "mail.com",
+      "protonmail.com",
+      "edu.ph",
+    ];
 
     if (!email) {
       return "Email is required";
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return "Please enter a valid email address";
+    }
+
+    const domain = email.split("@")[1].toLowerCase();
+    if (
+      !allowedDomains.some(
+        (allowedDomain) =>
+          domain === allowedDomain || domain.endsWith(`.${allowedDomain}`)
+      )
+    ) {
+      return "Please use a valid email domain (e.g. gmail.com, yahoo.com, ust.edu.ph)";
     }
 
     return null;

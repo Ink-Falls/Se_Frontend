@@ -13,9 +13,19 @@ function EditUserModal({ user, onClose, onSave }) {
     setEditedUser(user);
   }, [user]);
 
-  // Add email validation function
+  // Updated email validation function
   const validateEmail = (email) => {
-    const validTLDs = ["com", "edu", "ph", "org", "net", "gov", "edu.ph"];
+    const allowedDomains = [
+      "gmail.com",
+      "yahoo.com",
+      "ust.edu.ph",
+      "hotmail.com",
+      "outlook.com",
+      "icloud.com",
+      "mail.com",
+      "protonmail.com",
+      "edu.ph"
+    ];
 
     if (!email) {
       return "Email is required";
@@ -26,9 +36,9 @@ function EditUserModal({ user, onClose, onSave }) {
       return "Please enter a valid email address";
     }
 
-    const domain = email.split("@")[1];
-    if (!validTLDs.some((tld) => domain.toLowerCase().endsWith(`.${tld}`))) {
-      return "Please enter a valid email domain";
+    const domain = email.split("@")[1].toLowerCase();
+    if (!allowedDomains.some(allowedDomain => domain === allowedDomain || domain.endsWith(`.${allowedDomain}`))) {
+      return "Please use a valid email domain (e.g. gmail.com, yahoo.com, ust.edu.ph)";
     }
 
     return null;
@@ -131,12 +141,49 @@ function EditUserModal({ user, onClose, onSave }) {
     }
   };
 
+  // Determine available role options based on current user role
+  const getRoleOptions = () => {
+    const currentRole = editedUser.role;
+    
+    if (currentRole === "teacher" || currentRole === "student_teacher") {
+      // Teachers and student teachers can only switch between these two roles
+      return [
+        { value: "teacher", label: "Teacher" },
+        { value: "student_teacher", label: "Student Teacher" }
+      ];
+    } else if (currentRole === "learner") {
+      // Learners cannot change their role, so return only their current role
+      return [
+        { value: "learner", label: "Learner" }
+      ];
+    } else if (currentRole === "admin") {
+      // Admins can choose any role
+      return [
+        { value: "admin", label: "Admin" },
+        { value: "teacher", label: "Teacher" },
+        { value: "learner", label: "Learner" },
+        { value: "student_teacher", label: "Student Teacher" }
+      ];
+    }
+    
+    // Default case - all options
+    return [
+      { value: "admin", label: "Admin" },
+      { value: "teacher", label: "Teacher" },
+      { value: "learner", label: "Learner" },
+      { value: "student_teacher", label: "Student Teacher" }
+    ];
+  };
+
   if (!user) return null;
 
   const schoolOptions = [
     { id: "1001", name: "Asuncion Consunji Elementary School (ACES)" },
     { id: "1002", name: "University of Santo Tomas (UST)" },
   ];
+
+  // Get available role options
+  const roleOptions = getRoleOptions();
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -348,32 +395,53 @@ function EditUserModal({ user, onClose, onSave }) {
               )}
             </div>
 
-            <div className="mb-4">
-              <label
-                htmlFor="role"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Role:
-              </label>
-              <select
-                id="role"
-                name="role"
-                value={editedUser.role || ""}
-                onChange={handleInputChange}
-                className={`mt-1 block w-full px-3 py-2 border ${
-                  fieldErrors.role ? "border-red-500" : "border-gray-300"
-                } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
-              >
-                <option value="">Select Role</option>
-                <option value="admin">Admin</option>
-                <option value="teacher">Teacher</option>
-                <option value="learner">Learner</option>
-                <option value="student_teacher">Student Teacher</option>
-              </select>
-              {fieldErrors.role && (
-                <p className="text-red-500 text-xs mt-1">{fieldErrors.role}</p>
-              )}
-            </div>
+            {/* Conditionally render the role field only if there are multiple options */}
+            {roleOptions.length > 1 ? (
+              <div className="mb-4">
+                <label
+                  htmlFor="role"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Role:
+                </label>
+                <select
+                  id="role"
+                  name="role"
+                  value={editedUser.role || ""}
+                  onChange={handleInputChange}
+                  className={`mt-1 block w-full px-3 py-2 border ${
+                    fieldErrors.role ? "border-red-500" : "border-gray-300"
+                  } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                >
+                  <option value="">Select Role</option>
+                  {roleOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors.role && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.role}</p>
+                )}
+              </div>
+            ) : (
+              // If there's only one role option (learner case), show it as read-only
+              roleOptions.length === 1 && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Role:
+                  </label>
+                  <div className="mt-1 px-3 py-2 border border-gray-300 bg-gray-50 rounded-md text-gray-500">
+                    {roleOptions[0].label}
+                  </div>
+                  <input 
+                    type="hidden" 
+                    name="role" 
+                    value={editedUser.role} 
+                  />
+                </div>
+              )
+            )}
           </form>
         </div>
 

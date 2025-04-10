@@ -563,7 +563,7 @@ const LearnerAssessmentView = () => {
             </span>
           </div>
           <div className="text-sm text-gray-300 space-y-1">
-            <p>Duration: {assessment?.duration_minutes} minutes</p>
+            <p>Duration: {assessment?.duration_minutes || 0} {(assessment?.duration_minutes === 1) ? 'minute' : 'minutes'}</p>
             <p>
               Remaining Attempts:{" "}
               {Math.max(

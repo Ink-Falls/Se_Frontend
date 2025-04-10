@@ -2,8 +2,8 @@ import React from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
-import { ArrowLeft, Book, Bell } from "lucide-react";
-import MobileNavBar from "../../components/common/layout/MobileNavbar"; // Import the bottom nav bar
+import { ArrowLeft, Book, Bell, Hash, Image } from "lucide-react";
+import MobileNavBar from "../../components/common/layout/MobileNavbar";
 
 const NotificationPage = () => {
   const navigate = useNavigate();
@@ -11,13 +11,23 @@ const NotificationPage = () => {
   const location = useLocation();
   const notification = location.state?.notification;
 
-  // Sidebar Navigation (Same as TeacherNotification.jsx)
+  // Updated navItems to match TeacherDashboard
   const navItems = [
     { text: "Courses", icon: <Book size={20} />, route: "/Teacher/Dashboard" },
     {
       text: "Notifications",
       icon: <Bell size={20} />,
       route: "/Teacher/Notifications",
+    },
+    {
+      text: "Number Codes (4-6)",
+      icon: <Hash size={20} />,
+      route: "/Teacher/StudentCodeGenerator",
+    },
+    {
+      text: "Picture Codes (1-3)",
+      icon: <Image size={20} />,
+      route: "/Teacher/PictureCodeGenerator",
     },
   ];
 
@@ -50,7 +60,7 @@ const NotificationPage = () => {
       <div className="flex-1 p-4 md:p-6">
         <Header title="Notification" />
 
-        <div className="max-w-full mt-6"> {/* Changed from max-w-3xl to max-w-full */}
+        <div className="max-w-full mt-6">
           <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
             {/* Header */}
             <div className="bg-gray-50 py-4 px-6 flex items-center justify-between border-b">
