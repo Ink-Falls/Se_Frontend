@@ -55,6 +55,17 @@ const getTypeColor = (type) => {
   return typeColors[type?.toLowerCase()] || typeColors.quiz;
 };
 
+const getModuleColor = (index) => {
+  const colors = ["blue", "violet", "emerald"];
+  const colorKey = colors[index % colors.length];
+  const gradientMap = {
+    blue: "border-blue-500",
+    violet: "border-purple-500",
+    emerald: "border-emerald-500",
+  };
+  return gradientMap[colorKey];
+};
+
 const LearnerCourseAssessment = () => {
   const { selectedCourse } = useCourse();
   const navigate = useNavigate();
@@ -494,7 +505,7 @@ const LearnerCourseAssessment = () => {
 
   const renderModuleAssessments = () => (
     <div className="space-y-6">
-      {modules.map((module) => {
+      {modules.map((module, index) => {
         const isModuleLocked = shouldLockModule(module);
         const failedAssessment = isModuleLocked
           ? findFirstFailedAssessment(
@@ -507,9 +518,9 @@ const LearnerCourseAssessment = () => {
         return (
           <div
             key={module.module_id}
-            className={`group bg-white rounded-xl border border-gray-200/50 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md ${
-              isModuleLocked ? "opacity-75" : ""
-            }`}
+            className={`group bg-white rounded-xl border-gray-200/50 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md border-l-[6px] ${getModuleColor(
+              index
+            )} ${isModuleLocked ? "opacity-75" : ""}`}
           >
             <div className="px-8 py-6 bg-gradient-to-r from-gray-50 via-white to-white relative">
               {isModuleLocked && (
@@ -522,7 +533,7 @@ const LearnerCourseAssessment = () => {
               )}
 
               <div
-                className="flex justify-between items-start cursor-pointer"
+                className="flex justify-between items-center cursor-pointer"
                 onClick={() => toggleModule(module.module_id)}
               >
                 <div className="flex-1 pr-8">
@@ -563,7 +574,7 @@ const LearnerCourseAssessment = () => {
                     </div>
                   </div>
                 </div>
-                <div className="relative">
+                <div className="self-center">
                   <div
                     className={`w-8 h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center transition-all duration-300 group-hover:border-gray-300 group-hover:bg-gray-100 ${
                       expandedModules.has(module.module_id) ? "rotate-180" : ""
@@ -695,18 +706,15 @@ const LearnerCourseAssessment = () => {
                             </div>
 
                             <div className="flex items-start md:items-center justify-between gap-4 pt-4 border-t">
-                              <div className="flex items-center mt-1 md:mt-0">
-                                <button
-                                  className="px-2 py-2 md:px-4 md:py-3 text-xs md:text-sm font-medium text-white rounded-md"
-                                  style={{ backgroundColor: color.bg }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleAssessmentClick(assessment);
-                                  }}
-                                >
-                                  View Assessment
-                                </button>
-                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAssessmentClick(assessment);
+                                }}
+                                className={`px-4 py-2 text-sm font-medium text-white rounded-md bg-gradient-to-r ${color.bg} hover:opacity-90 transition-opacity`}
+                              >
+                                View Assessment
+                              </button>
                               {renderSubmissionScore(
                                 submissions[assessment.id],
                                 assessment
