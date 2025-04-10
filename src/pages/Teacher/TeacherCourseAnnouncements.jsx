@@ -37,21 +37,21 @@ const TeacherCourseAnnouncements = () => {
       type: "Test Reminder",
       description: "Your test is scheduled for December 10.",
       time: "10 minutes ago",
-      userImage: booksIcon,
+      userImage: booksIcon, // Matches announcement details
     },
     {
       id: 2,
       type: "Project Reminder",
       description: "Final project is due soon. Submit by December 15.",
       time: "5 minutes ago",
-      userImage: schoolIcon,
+      userImage: schoolIcon, // Matches announcement details
     },
     {
       id: 3,
       type: "Tutoring Available",
       description: "Extra help sessions on Tuesday and Thursday at 3 PM.",
       time: "20 minutes ago",
-      userImage: booksIcon,
+      userImage: booksIcon, // Matches announcement details
     },
     {
       id: 4,
@@ -59,14 +59,14 @@ const TeacherCourseAnnouncements = () => {
       description:
         "Tutoring will be available in the following dates: December 12-14.",
       time: "1 hour ago",
-      userImage: schoolIcon,
+      userImage: booksIcon, // Matches announcement details
     },
     {
       id: 5,
       type: "Project Reminder",
       description: "Project 2 is now deployed.",
       time: "2 hours ago",
-      userImage: booksIcon,
+      userImage: schoolIcon, // Matches announcement details
     },
   ]);
 

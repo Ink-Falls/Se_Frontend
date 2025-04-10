@@ -95,9 +95,9 @@ const NotificationsComponent = ({ notifications = [] }) => {
                   <div className="flex-shrink-0">
                     <img
                       src={
-                        notification.id === 1
+                        notification.id === 2
                           ? admin_icon
-                          : notification.id === 2
+                          : notification.id === 1
                           ? learner_icon
                           : notification.type.toLowerCase().includes("admin")
                           ? admin_icon
