@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import UserStats from 'Se_Frontend/src/components/specific/users/UserStats.jsx';
 
@@ -31,13 +31,23 @@ describe('UserStats', () => {
   it('renders the UserStats component with default values', () => {
     render(<UserStats />);
 
+    // Test that all headings are present
     expect(screen.getByText('Total Users')).toBeInTheDocument();
-    expect(screen.getByText('0')).toBeInTheDocument();
     expect(screen.getByText('Learners')).toBeInTheDocument();
-    expect(screen.getByText('0')).toBeInTheDocument();
     expect(screen.getByText('Teachers')).toBeInTheDocument();
-    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.getByText('Student Teachers')).toBeInTheDocument();
     expect(screen.getByText('Admins')).toBeInTheDocument();
-    expect(screen.getByText('0')).toBeInTheDocument();
+    
+    // Test that all values default to zero by checking the count of "0" elements
+    const zeroElements = screen.getAllByText('0');
+    expect(zeroElements).toHaveLength(5);
+    
+    // Alternative approach: Check each stat section individually
+    const sections = screen.getAllByRole('heading', { level: 2 });
+    sections.forEach(section => {
+      const container = section.parentElement;
+      const valueElement = within(container).getByText('0');
+      expect(valueElement).toBeInTheDocument();
+    });
   });
 });

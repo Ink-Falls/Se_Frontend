@@ -16,17 +16,19 @@ describe('ReportViewerModal', () => {
 
   it('renders the modal when isOpen is true', () => {
     render(<ReportViewerModal isOpen={true} onClose={onClose} pdfUrl={pdfUrl} onPrint={onPrint} onDelete={onDelete} error={null} />);
-    expect(screen.getByText('Users Report')).toBeInTheDocument();
+    expect(screen.getByText('Report')).toBeInTheDocument();
   });
 
   it('does not render the modal when isOpen is false', () => {
     render(<ReportViewerModal isOpen={false} onClose={onClose} pdfUrl={pdfUrl} onPrint={onPrint} onDelete={onDelete} error={null} />);
-    expect(screen.queryByText('Users Report')).not.toBeInTheDocument();
+    expect(screen.queryByText('Report')).not.toBeInTheDocument();
   });
 
   it('handles close button click', () => {
     render(<ReportViewerModal isOpen={true} onClose={onClose} pdfUrl={pdfUrl} onPrint={onPrint} onDelete={onDelete} error={null} />);
-    fireEvent.click(screen.getByRole('button', { name: /close/i }));
+    // Select the close button by finding the button containing the X icon
+    const closeButton = screen.getAllByRole('button')[2]; // Third button in the header
+    fireEvent.click(closeButton);
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -52,5 +54,10 @@ describe('ReportViewerModal', () => {
   it('displays PDF iframe when no error is present', () => {
     render(<ReportViewerModal isOpen={true} onClose={onClose} pdfUrl={pdfUrl} onPrint={onPrint} onDelete={onDelete} error={null} />);
     expect(screen.getByTitle('PDF Report')).toBeInTheDocument();
+  });
+
+  it('renders with custom title when provided', () => {
+    render(<ReportViewerModal isOpen={true} onClose={onClose} pdfUrl={pdfUrl} onPrint={onPrint} onDelete={onDelete} error={null} title="Users Report" />);
+    expect(screen.getByText('Users Report')).toBeInTheDocument();
   });
 });
