@@ -24,7 +24,17 @@ const AddUserModal = ({ onClose, onSubmit }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateEmail = (email) => {
-    const validTLDs = ["com", "edu", "ph", "org", "net", "gov", "edu.ph"];
+    const allowedDomains = [
+      "gmail.com",
+      "yahoo.com",
+      "ust.edu.ph",
+      "hotmail.com",
+      "outlook.com",
+      "icloud.com",
+      "mail.com",
+      "protonmail.com",
+      "edu.ph",
+    ];
 
     if (!email) {
       return "Email is required";
@@ -35,9 +45,14 @@ const AddUserModal = ({ onClose, onSubmit }) => {
       return "Please enter a valid email address";
     }
 
-    const domain = email.split("@")[1];
-    if (!validTLDs.some((tld) => domain.toLowerCase().endsWith(`.${tld}`))) {
-      return "Please enter a valid email domain";
+    const domain = email.split("@")[1].toLowerCase();
+    if (
+      !allowedDomains.some(
+        (allowedDomain) =>
+          domain === allowedDomain || domain.endsWith(`.${allowedDomain}`)
+      )
+    ) {
+      return "Please use a valid email domain (e.g. gmail.com, yahoo.com, ust.edu.ph)";
     }
 
     return null;
@@ -87,10 +102,10 @@ const AddUserModal = ({ onClose, onSubmit }) => {
       errors.middle_initial = "Middle initial must be 1-2 uppercase letters";
     }
 
-    // Email validation
-    errors.email = validateEmail(formData.email);
-    if (!errors.email) {
-      delete errors.email;
+    // Email validation using the updated function
+    const emailError = validateEmail(formData.email);
+    if (emailError) {
+      errors.email = emailError;
     }
 
     // Contact number validation
@@ -144,7 +159,7 @@ const AddUserModal = ({ onClose, onSubmit }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate email before submission
+    // Validate email before submission using the new validation function
     const emailError = validateEmail(formData.email);
     if (emailError) {
       setFieldErrors((prev) => ({ ...prev, email: emailError }));

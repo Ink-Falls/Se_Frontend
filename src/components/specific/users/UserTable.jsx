@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   SquarePen,
   Plus,
@@ -38,6 +38,9 @@ const UserTable = ({
 
   const [pageInput, setPageInput] = useState(currentPage.toString());
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+  const [hoveredUserId, setHoveredUserId] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const tableRef = useRef(null);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -115,6 +118,17 @@ const UserTable = ({
     alert(message || "User restored successfully");
     setIsRestoreModalOpen(false);
     window.location.reload();
+  };
+
+  const handleRowMouseEnter = (e, user) => {
+    if (user.role !== "admin") {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setTooltipPosition({
+        x: rect.left + rect.width / 2,
+        y: rect.top - 8
+      });
+      setHoveredUserId(user.id);
+    }
   };
 
   return (
@@ -243,7 +257,7 @@ const UserTable = ({
         </div>
       </div>
 
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
+      <div className="overflow-x-auto bg-white rounded-lg shadow" ref={tableRef}>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -307,6 +321,8 @@ const UserTable = ({
                 <tr
                   key={user.id}
                   onClick={() => handleRowClick(user)}
+                  onMouseEnter={(e) => handleRowMouseEnter(e, user)}
+                  onMouseLeave={() => setHoveredUserId(null)}
                   className={`hover:bg-gray-50 transition-colors ${
                     user.role !== "admin" ? "cursor-pointer" : ""
                   }`}
@@ -357,12 +373,10 @@ const UserTable = ({
 
         <div className="px-6 py-4 border-t">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            {/* Add total items counter */}
             <p className="text-sm text-gray-600 order-2 sm:order-1">
               Showing {users.length} of {totalUsers} users
             </p>
 
-            {/* Pagination controls */}
             <div className="flex items-center gap-2 order-1 sm:order-2">
               <button
                 onClick={() => onPageChange(currentPage - 1)}
@@ -391,6 +405,23 @@ const UserTable = ({
           </div>
         </div>
       </div>
+
+      {/* Tooltip portal rendered outside of the table to avoid affecting layout */}
+      {hoveredUserId !== null && users.find(u => u.id === hoveredUserId)?.role !== "admin" && (
+        <div 
+          className="fixed z-50 pointer-events-none"
+          style={{
+            left: `${tooltipPosition.x}px`,
+            top: `${tooltipPosition.y}px`,
+            transform: 'translate(-50%, -100%)'
+          }}
+        >
+          <div className="bg-gray-800 px-3 py-1.5 rounded-md text-xs text-white">
+            Click to edit user details
+            <div className="absolute h-2 w-2 bg-gray-800 transform rotate-45 -bottom-1 left-1/2 -translate-x-1/2"></div>
+          </div>
+        </div>
+      )}
 
       {isRestoreModalOpen && (
         <RestoreUserModal
