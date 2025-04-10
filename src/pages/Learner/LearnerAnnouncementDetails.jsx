@@ -14,6 +14,8 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
+import booksIcon from "../../assets/images/icons/books_icon.png";
+import schoolIcon from "../../assets/images/icons/school_icon.png";
 
 const announcements = [
   {
@@ -67,6 +69,22 @@ const announcements = [
       "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
   },
 ];
+
+const getAnnouncementIcon = (id) => {
+  switch (id) {
+    case "1":
+      return booksIcon;
+    case "2":
+      return schoolIcon;
+    case "3":
+    case "4":
+      return booksIcon;
+    case "5":
+      return schoolIcon;
+    default:
+      return "https://via.placeholder.com/48"; // Default placeholder icon
+  }
+};
 
 const LearnerAnnouncementDetails = () => {
   const { id } = useParams();
@@ -144,8 +162,8 @@ const LearnerAnnouncementDetails = () => {
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0">
               <img
-                src={announcement.userImage}
-                alt="Author"
+                src={getAnnouncementIcon(announcement.id)} // Use specific icon based on ID
+                alt="Announcement Icon"
                 className="h-12 w-12 rounded-full border-2 border-gray-200"
               />
             </div>
