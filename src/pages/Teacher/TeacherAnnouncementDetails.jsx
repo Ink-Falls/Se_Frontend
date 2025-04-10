@@ -115,11 +115,7 @@ const AnnouncementDetails = () => {
 
   // Handle save after editing
   const handleSave = () => {
-    console.log("Updated Announcement:", {
-      ...announcement,
-      type: editedType,
-      fullText: editedFullText,
-    });
+   
     setIsEditModalOpen(false); // Close the modal after saving
     // You can update the announcement in your state or API here
   };
@@ -131,7 +127,7 @@ const AnnouncementDetails = () => {
 
   // Handle confirm delete
   const handleConfirmDelete = () => {
-    console.log("Deleted Announcement:", announcement);
+    
     setIsDeleteModalOpen(false); // Close the modal after deletion
     navigate(-1); // Navigate back after deletion
     // You can delete the announcement from your state or API here

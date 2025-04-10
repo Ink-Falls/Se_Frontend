@@ -254,11 +254,6 @@ const LearnerCourseAssessment = () => {
         ? JSON.parse(storedData).submissionId
         : null;
 
-      console.log("View Assessment - Initial check:", {
-        assessmentId: assessment.id,
-        storedSubmissionId: storedSubmissionId,
-      });
-
       // Get current submission from API
       const submissionResponse = await getUserSubmission(assessment.id, true);
       const existingSubmission = submissionResponse?.submission;
@@ -269,14 +264,6 @@ const LearnerCourseAssessment = () => {
         isResumable =
           storedSubmissionId === existingSubmission.id &&
           existingSubmission.status === "in_progress";
-
-        console.log("Submission ID comparison:", {
-          stored: storedSubmissionId,
-          server: existingSubmission.id,
-          matches: storedSubmissionId === existingSubmission.id,
-          status: existingSubmission.status,
-          isResumable: isResumable,
-        });
       }
 
       navigate(`/Learner/Assessment/View/${assessment.id}`, {

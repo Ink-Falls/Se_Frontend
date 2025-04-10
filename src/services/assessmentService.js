@@ -236,7 +236,6 @@ export const createSubmission = async (assessmentId) => {
       const storedSubmission = localStorage.getItem(`ongoing_assessment_${assessmentId}`);
       if (storedSubmission) {
         const parsed = JSON.parse(storedSubmission);
-        console.log('Using submission created by parallel process:', parsed);
         return {
           success: true,
           submission: {
@@ -271,7 +270,6 @@ export const createSubmission = async (assessmentId) => {
       }
 
       // Create new submission with debounce
-      console.log('Creating new submission on server');
       const response = await fetchWithInterceptor(
         `${API_BASE_URL}/assessments/${assessmentId}/submissions`,
         {
@@ -305,7 +303,6 @@ export const createSubmission = async (assessmentId) => {
         JSON.stringify(storageData)
       );
 
-      console.log('New submission stored:', data.submission.id);
       return submissionData;
 
     } finally {

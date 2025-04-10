@@ -30,6 +30,7 @@ import {
   Users,
   ArrowRight,
   AlertCircle,
+  Calendar,
 } from "lucide-react";
 
 // Helper functions
@@ -459,7 +460,6 @@ const TeacherAttendance = () => {
   };
 
   const handleStudentSelect = (student) => {
-    console.log("Selecting student:", student?.id);
     setSelectedStudent(prev => {
       // Toggle selection if clicking the same student again
       if (prev?.id === student.id) return null;
@@ -560,7 +560,7 @@ const TeacherAttendance = () => {
     </div>
   );
 
-  // Render calendar - modified for better visibility of indicators
+  // Render calendar - modified to fix overlapping indicators
   const renderCalendar = () => (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
       <div className="p-6 bg-gradient-to-r from-indigo-600 to-blue-500 text-white">
@@ -681,38 +681,94 @@ const TeacherAttendance = () => {
                   {day.date.getDate()}
                 </div>
                 
-                {/* Assessment period indicator - show start dates */}
-                {startsToday && (
-                  <div className="absolute left-0 top-0 w-0 h-0 border-t-[16px] border-t-blue-500 border-r-[16px] border-r-transparent">
-                    <div className="absolute top-[-16px] left-1 text-[10px] text-white font-bold">
-                      {assessments.filter(a => isDateEqual(day.date, a.created_at || a.createdAt)).length}
+                {/* Corner indicators for start and due dates */}
+                <div className="absolute top-0 left-0 right-0 flex justify-between">
+                  {startsToday && (
+                    <div className="w-0 h-0 border-t-[16px] border-t-blue-500 border-r-[16px] border-r-transparent">
+                      <div className="absolute top-[-16px] left-1 text-[10px] text-white font-bold">
+                        {assessments.filter(a => isDateEqual(day.date, a.created_at || a.createdAt)).length}
+                      </div>
                     </div>
+                  )}
+                  
+                  {dueToday && (
+                    <div className="ml-auto w-0 h-0 border-t-[16px] border-t-red-500 border-l-[16px] border-l-transparent">
+                      <div className="absolute top-[-16px] right-1 text-[10px] text-white font-bold">
+                        {dueTodayAssessments.length}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Assessment details shown for all users, not just when student is selected */}
+                {(dueToday || startsToday) && (
+                  <div className="mt-5 mb-2 text-[9px] space-y-1">
+                    {dueToday && (
+                      <div className="font-medium bg-red-50 text-red-700 px-1 py-0.5 rounded border border-red-200 truncate">
+                        Due: {dueTodayAssessments.map(a => a.title.substring(0, 8) + (a.title.length > 8 ? '...' : '')).join(', ')}
+                      </div>
+                    )}
+                    {startsToday && (
+                      <div className="font-medium bg-blue-50 text-blue-700 px-1 py-0.5 rounded border border-blue-200 truncate">
+                        Start: {assessments
+                          .filter(a => isDateEqual(day.date, a.created_at || a.createdAt))
+                          .map(a => a.title.substring(0, 8) + (a.title.length > 8 ? '...' : ''))
+                          .join(', ')}
+                      </div>
+                    )}
                   </div>
                 )}
                 
-                {/* Assessment due date indicator with count */}
-                {dueToday && (
-                  <div className="absolute right-0 top-0 w-0 h-0 border-t-[16px] border-t-red-500 border-l-[16px] border-l-transparent">
-                    <div className="absolute top-[-16px] right-1 text-[10px] text-white font-bold">
-                      {dueTodayAssessments.length}
-                    </div>
+                {/* Show assessment names always, regardless of student selection */}
+                {dayAssessments.length > 0 && (
+                  <div className="mt-2">
+                    {dayAssessments.slice(0, 2).map((assessment, idx) => (
+                      <div key={assessment.id} className="mt-1 text-[9px] truncate text-gray-600">
+                        {assessment.title.substring(0, 12) + (assessment.title.length > 12 ? '...' : '')}
+                      </div>
+                    ))}
+                    
+                    {dayAssessments.length > 2 && (
+                      <div className="mt-1 text-xs font-medium bg-indigo-100 text-indigo-700 py-0.5 px-1 rounded-md text-center border border-indigo-200">
+                        +{dayAssessments.length - 2} more
+                      </div>
+                    )}
                   </div>
                 )}
                 
-                {/* Enhanced submission indicator showing assessment info */}
+                {/* Student-specific assessment stats - only show when student is selected */}
+                {selectedStudent && dateStatus.details?.assessmentStats && dateStatus.details.assessmentStats.length > 0 && (
+                  <div className="mt-2">
+                    {dateStatus.details.assessmentStats.map((stat, idx) => (
+                      <div 
+                        key={idx}
+                        className={`mb-1 text-[9px] font-medium px-1 py-0.5 rounded border truncate ${
+                          stat.submitted 
+                            ? 'bg-green-50 text-green-700 border-green-200' 
+                            : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                        }`}
+                      >
+                        {stat.title.substring(0, 10) + (stat.title.length > 10 ? '...' : '')}
+                        {stat.submitted && <span className="ml-1">({stat.submissionCount})</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Submission indicators - only show for selected student */}
                 {submittedToday && submittedAssessments.length > 0 && (
                   <div className="absolute bottom-2 right-2 flex items-center gap-1">
                     <div 
-                      className="rounded-full h-6 w-6 flex items-center justify-center text-white text-xs"
+                      className="rounded-full h-5 w-5 flex items-center justify-center text-white text-xs"
                       style={{ 
                         backgroundColor: isLateSubmission ? '#f59e0b' : '#10b981',
                         boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
                       }}
                     >
-                      <Check size={14} />
+                      <Check size={12} />
                     </div>
                     {submittedAssessments.length > 1 && (
-                      <div className="bg-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center border-2"
+                      <div className="bg-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center border-2"
                            style={{ 
                              borderColor: isLateSubmission ? '#f59e0b' : '#10b981',
                              color: isLateSubmission ? '#f59e0b' : '#10b981'
@@ -723,28 +779,9 @@ const TeacherAttendance = () => {
                   </div>
                 )}
                 
-                {/* Due and Start Date Assessment Info */}
-                {(dueToday || startsToday) && selectedStudent && (
-                  <div className="absolute top-7 left-2 right-2 z-10">
-                    {dueToday && (
-                      <div className="mb-1 text-[9px] font-medium bg-red-50 text-red-700 px-1 py-0.5 rounded border border-red-200 truncate">
-                        Due: {dueTodayAssessments.map(a => a.title.substring(0, 10) + (a.title.length > 10 ? '...' : '')).join(', ')}
-                      </div>
-                    )}
-                    {startsToday && (
-                      <div className="text-[9px] font-medium bg-blue-50 text-blue-700 px-1 py-0.5 rounded border border-blue-200 truncate">
-                        Start: {assessments
-                          .filter(a => isDateEqual(day.date, a.created_at || a.createdAt))
-                          .map(a => a.title.substring(0, 10) + (a.title.length > 10 ? '...' : ''))
-                          .join(', ')}
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                {/* Attendance progress bar */}
+                {/* Progress bar - only for selected student with partial completion */}
                 {selectedStudent && dateStatus.status === 'partial' && (
-                  <div className="absolute bottom-1 left-1 right-1 h-3 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="absolute bottom-1 left-1 right-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-yellow-400" 
                       style={{ width: `${dateStatus.progress * 100}%` }}
@@ -752,66 +789,10 @@ const TeacherAttendance = () => {
                   </div>
                 )}
                 
-                {/* Assessment indicators with improved information */}
-                {dayAssessments.slice(0, 2).map((assessment, idx) => {
-                  // Check if this is the first or last day of the assessment period
-                  const isFirstDay = isDateEqual(day.date, assessment.created_at || assessment.createdAt);
-                  const isLastDay = isDateEqual(day.date, assessment.due_date);
-                  const isMiddleDay = !isFirstDay && !isLastDay;
-                  
-                  // Get a student's submission for this assessment, if any
-                  let studentSubmission = null;
-                  if (selectedStudent && attendanceData[selectedStudent.id]) {
-                    studentSubmission = attendanceData[selectedStudent.id].find(s => 
-                      s.assessmentId === assessment.id
-                    );
-                  }
-                  
-                  return (
-                    <div 
-                      key={assessment.id} 
-                      className={`mt-1 truncate text-xs px-2.5 py-1 rounded-md flex items-center ${
-                        studentSubmission 
-                          ? studentSubmission.onTime 
-                            ? 'bg-green-100 text-green-800 border-l-4 border-green-500' 
-                            : 'bg-amber-100 text-amber-800 border-l-4 border-amber-500'
-                          : isFirstDay
-                            ? 'bg-blue-100 text-blue-800 border-l-4 border-blue-500'
-                            : isLastDay
-                              ? 'bg-red-100 text-red-800 border-l-4 border-red-500'
-                              : 'bg-blue-50 text-blue-800'
-                      } ${selectedStudent ? 'font-medium' : ''}`}
-                      title={`${assessment.title} (${formatDate(assessment.created_at || assessment.createdAt)} - ${formatDate(assessment.due_date)})
-                        ${studentSubmission ? `\nSubmitted: ${formatDate(studentSubmission.submissionDate)}
-                        ${studentSubmission.onTime ? '(On time)' : '(Late)'}` : ''}`}
-                    >
-                      {/* Add different icons based on stage */}
-                      {studentSubmission ? (
-                        <Check size={12} className="mr-1 flex-shrink-0" />
-                      ) : isFirstDay ? (
-                        <ArrowRight size={12} className="mr-1 flex-shrink-0" />
-                      ) : isLastDay ? (
-                        <Clock size={12} className="mr-1 flex-shrink-0" />
-                      ) : null}
-                      
-                      <span className="truncate">
-                        {assessment.title.substring(0, 14)}{assessment.title.length > 14 ? '...' : ''}
-                      </span>
-                    </div>
-                  );
-                })}
-                
-                {/* Show "more" indicator if more than 2 assessments */}
-                {dayAssessments.length > 2 && (
-                  <div className="mt-1 text-xs font-medium bg-indigo-100 text-indigo-700 py-1 px-2 rounded-md text-center border border-indigo-200">
-                    +{dayAssessments.length - 2} more assessments
-                  </div>
-                )}
-                
-                {/* Present/Absent icons */}
+                {/* Status indicators - only for selected student */}
                 {selectedStudent && (dateStatus.status === 'present' || dateStatus.status === 'partial') && (
                   <div className="absolute top-2 right-2 bg-green-100 rounded-full p-1">
-                    <Check size={16} className={`${
+                    <Check size={14} className={`${
                       dateStatus.status === 'partial' ? 'text-yellow-500' : 'text-green-500'
                     }`} />
                   </div>
@@ -819,7 +800,7 @@ const TeacherAttendance = () => {
                 
                 {selectedStudent && dateStatus.status === 'absent' && hasAssessments && (
                   <div className="absolute top-2 right-2 bg-red-100 rounded-full p-1">
-                    <X size={16} className="text-red-500" />
+                    <X size={14} className="text-red-500" />
                   </div>
                 )}
               </div>
@@ -863,7 +844,7 @@ const TeacherAttendance = () => {
     </div>
   );
 
-  // Render student list
+  // Render student list with assessment summary
   const renderStudentList = () => (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
       <div className="p-6 bg-gradient-to-r from-violet-600 to-purple-500 text-white">
@@ -923,6 +904,104 @@ const TeacherAttendance = () => {
               <RefreshCw size={20} className={isRefreshing ? "animate-spin" : ""} />
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Assessment Calendar Summary */}
+      <div className="bg-indigo-50 p-4 border-b border-indigo-100">
+        <h3 className="text-sm font-medium text-indigo-800 mb-3">Assessment Summary</h3>
+        <div className="max-h-[200px] overflow-y-auto pr-2">
+          {selectedMonth && (
+            <div className="space-y-2">
+              {assessments
+                .filter(assessment => {
+                  const assessmentMonth = new Date(assessment.created_at || assessment.createdAt).getMonth();
+                  const selectedMonthValue = selectedMonth.getMonth();
+                  return assessmentMonth === selectedMonthValue;
+                })
+                .map(assessment => {
+                  // Get assessment start date
+                  const startDate = new Date(assessment.created_at || assessment.createdAt);
+                  
+                  // Get assessment due date
+                  const dueDate = new Date(assessment.due_date);
+                  
+                  return (
+                    <div key={assessment.id} className="flex flex-col p-3 bg-white rounded-lg border border-indigo-100">
+                      <div className="text-sm font-medium text-gray-800 mb-1">{assessment.title}</div>
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <div className="flex items-center">
+                          <Calendar size={12} className="mr-1 text-indigo-500" />
+                          <span>
+                            {startDate.toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric' 
+                            })}
+                          </span>
+                          <span className="mx-1">→</span>
+                          <span>
+                            {dueDate.toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric' 
+                            })}
+                          </span>
+                        </div>
+                        <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full flex items-center">
+                          <ClipboardList size={10} className="mr-1" />
+                          {assessment.type}
+                        </span>
+                      </div>
+                      
+                      {/* Submission counts by date - NEW SECTION */}
+                      {selectedStudent && attendanceData[selectedStudent.id] && (
+                        <div className="mt-2 pt-2 border-t border-gray-100">
+                          <div className="text-xs font-medium text-gray-500 mb-1">Submissions by this student:</div>
+                          {attendanceData[selectedStudent.id]
+                            .filter(submission => submission.assessmentId === assessment.id)
+                            .map((submission, idx) => {
+                              const submissionDate = new Date(submission.submissionDate);
+                              return (
+                                <div key={idx} className="flex items-center justify-between text-xs">
+                                  <div className="flex items-center">
+                                    <Clock size={10} className="mr-1 text-gray-400" />
+                                    <span>{submissionDate.toLocaleDateString('en-US', { 
+                                      month: 'short', 
+                                      day: 'numeric',
+                                      year: '2-digit' 
+                                    })}</span>
+                                  </div>
+                                  <span className={`px-1.5 py-0.5 rounded ${
+                                    submission.onTime 
+                                      ? 'bg-green-50 text-green-600' 
+                                      : 'bg-yellow-50 text-yellow-600'
+                                  }`}>
+                                    {submission.onTime ? 'On time' : 'Late'}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          {attendanceData[selectedStudent.id].filter(
+                            submission => submission.assessmentId === assessment.id
+                          ).length === 0 && (
+                            <div className="text-xs text-red-500">No submissions</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              
+              {assessments.filter(assessment => {
+                const assessmentMonth = new Date(assessment.created_at || assessment.createdAt).getMonth();
+                const selectedMonthValue = selectedMonth.getMonth();
+                return assessmentMonth === selectedMonthValue;
+              }).length === 0 && (
+                <div className="text-center py-4 text-sm text-gray-500">
+                  No assessments in {selectedMonth.toLocaleDateString('en-US', {month: 'long', year: 'numeric'})}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
