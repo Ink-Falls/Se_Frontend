@@ -58,8 +58,7 @@ function PictureCodeGenerator() {
 
     try {
       const data = await requestPictureCode(studentEmail);
-      console.log("API response:", data); // Log the entire response for debugging
-
+      
       // Handle different response formats
       if (data.pictures) {
         setCodeData(data);
@@ -97,10 +96,7 @@ function PictureCodeGenerator() {
         </div>
       );
     }
-
-    // Log the received pictures for debugging
-    console.log("Received pictures:", pictures);
-
+    
     return (
       <div className="flex items-center justify-center space-x-3">
         {pictures.map((pic, index) => {
