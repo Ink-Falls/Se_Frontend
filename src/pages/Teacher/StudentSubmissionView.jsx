@@ -556,50 +556,44 @@ const StudentSubmissionView = () => {
         <Header title="Student Submission" />
         <MobileNavBar navItems={navItems} />
         <div className="w-full">
-          {" "}
-          {/* Removed max-w-5xl and mx-auto */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 p-8 text-white">
+            <div className="relative bg-gradient-to-r from-gray-800 to-gray-700 p-6 text-white overflow-hidden">
+              {/* Decorative elements */}
+              <div className="absolute top-0 right-0 w-48 h-48 transform translate-x-16 -translate-y-16 rotate-45 bg-yellow-500 opacity-10 rounded-full" />
+              <div className="absolute bottom-0 left-0 w-36 h-36 transform -translate-x-16 translate-y-16 rotate-45 bg-yellow-500 opacity-10 rounded-full" />
+
               <button
                 onClick={() => navigate(-1)}
-                className="flex items-center gap-2 text-gray-100 hover:text-[#F6BA18] transition-colors mb-4 group"
+                className="flex items-center gap-2 text-gray-300 hover:text-[#F6BA18] transition-colors mb-4 group relative z-10"
               >
                 <ArrowLeft
                   size={20}
                   className="group-hover:-translate-x-1 transition-transform"
                 />
-                <span>Back to Assessment</span>
+                <span className="text-sm md:text-base">Back to Assessment</span>
               </button>
 
-              <div className="flex justify-between items-start">
-                <div>
-                  <h1 className="text-3xl font-bold mb-2">
-                    {assessment?.title}
-                  </h1>
-                  <div className="text-gray-200 flex flex-col gap-1">
-                    <p className="flex items-center gap-2">
-                      <span className="font-medium">
-                        Student: {submission?.studentName}
-                      </span>
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <span className="font-medium">
-                        ID: {submission?.studentId}
-                      </span>
-                    </p>
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                <div className="space-y-3">
+                  <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3">
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+                      {assessment?.title}
+                    </h1>
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium w-fit
+                      ${
+                        submission?.status === "Submitted"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {submission?.status}
+                    </span>
                   </div>
-                </div>
-                <div className="flex items-center justify-center min-w-[90px] md:min-w-[120px] mt-2">
-                  <span
-                    className={`inline-flex items-center justify-center px-2 md:px-4 py-1 md:py-2 rounded-full text-xs md:text-sm font-medium w-full
-                    ${
-                      submission?.status === "Submitted"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {submission?.status}
-                  </span>
+                  <div className="text-gray-300 text-sm space-y-1">
+                    <p>Student: {submission?.studentName}</p>
+                    <p>ID: {submission?.studentId}</p>
+                  </div>
                 </div>
               </div>
             </div>

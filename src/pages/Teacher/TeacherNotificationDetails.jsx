@@ -85,9 +85,9 @@ const NotificationPage = () => {
                   <img
                     src={
                       notification.id === 1
-                        ? admin_icon
-                        : notification.id === 2
                         ? learner_icon
+                        : notification.id === 2
+                        ? admin_icon
                         : notification.type.toLowerCase().includes("admin")
                         ? admin_icon
                         : learner_icon
@@ -117,10 +117,8 @@ const NotificationPage = () => {
                     </p>
                     <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
                       <p className="text-gray-600 text-sm leading-relaxed">
-                        Additional details about this notification will be
-                        displayed here. The content can include formatted text,
-                        links, and other relevant information that helps provide
-                        context to the notification.
+                        {notification.details ||
+                          "No additional details are available for this notification."}
                       </p>
                     </div>
                   </div>

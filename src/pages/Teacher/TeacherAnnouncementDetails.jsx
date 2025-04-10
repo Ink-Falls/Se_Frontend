@@ -4,6 +4,8 @@ import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import BlackHeader from "../../components/common/layout/BlackHeader";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
+import booksIcon from "../../assets/images/icons/books_icon.png";
+import schoolIcon from "../../assets/images/icons/school_icon.png";
 import {
   ArrowLeft,
   Trash2,
@@ -41,8 +43,7 @@ const announcements = [
     description: "Your test is scheduled for December 10.",
     fullText: "Make sure to prepare well for the upcoming test on December 10.",
     time: "10 minutes ago",
-    userImage:
-      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+    userImage: booksIcon, // Matches course announcements
   },
   {
     id: "2",
@@ -51,8 +52,7 @@ const announcements = [
     fullText:
       "Don't forget to submit your final project before the deadline on December 15.",
     time: "5 minutes ago",
-    userImage:
-      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+    userImage: schoolIcon, // Matches course announcements
   },
   {
     id: "3",
@@ -61,29 +61,26 @@ const announcements = [
     fullText:
       "Tutoring sessions are available every Tuesday and Thursday at 3 PM.",
     time: "20 minutes ago",
-    userImage:
-      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+    userImage: booksIcon, // Matches course announcements
   },
   {
-    id: "4", // Ensure this is a string
+    id: "4",
     type: "Tutoring Available",
     description:
       "Tutoring will be available in the following dates: December 12-14.",
     fullText:
       "Tutoring sessions will be held on December 12-14. Please check the schedule for details.",
     time: "1 hour ago",
-    userImage:
-      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+    userImage: booksIcon, // Matches course announcements
   },
   {
-    id: "5", // Ensure this is a string
+    id: "5",
     type: "Project Reminder",
     description: "Project 2 is now deployed.",
     fullText:
       "We are excited to announce that Project 2 is now deployed. Please review it and provide your feedback.",
     time: "2 hours ago",
-    userImage:
-      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+    userImage: schoolIcon, // Matches course announcements
   },
 ];
 

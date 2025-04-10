@@ -534,14 +534,21 @@ const TeacherCourseAssessment = () => {
           ).length;
           const unpublishedCount = moduleAssessmentList.length - publishedCount;
 
+          const borderColors = [
+            "border-blue-500",
+            "border-purple-500",
+            "border-green-500",
+          ];
+          const borderColor = borderColors[index % borderColors.length];
+
           return (
             <div
               key={module.module_id}
-              className={`group bg-white rounded-xl border-gray-200/50 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md border-l-[6px] ${getModuleColor(
-                index
-              )}`}
+              className="group bg-white rounded-xl shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md"
             >
-              <div className="px-8 py-6 bg-gradient-to-r from-gray-50 via-white to-white relative">
+              <div
+                className={`px-8 py-6 bg-gradient-to-r from-gray-50 via-white to-white relative border-l-[6px] ${borderColor}`}
+              >
                 <div
                   className="flex justify-between items-center cursor-pointer"
                   onClick={() => toggleModule(module.module_id)}
