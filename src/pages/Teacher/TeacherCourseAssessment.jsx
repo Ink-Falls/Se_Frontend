@@ -328,21 +328,21 @@ const TeacherCourseAssessment = () => {
 
   const typeColors = {
     quiz: {
-      bg: "#3B82F6", // Blue
+      bg: "from-blue-400 via-blue-500 to-blue-600", // Update to gradient
       text: "white",
       hover: "#2563EB",
       badge: "bg-blue-100 text-blue-800",
       light: "rgba(59, 130, 246, 0.1)",
     },
     exam: {
-      bg: "#8B5CF6", // Purple (changed from pink)
+      bg: "from-violet-400 via-purple-500 to-purple-600", // Update to gradient
       text: "white",
       hover: "#6D28D9",
       badge: "bg-purple-100 text-purple-800",
       light: "rgba(139, 92, 246, 0.1)",
     },
     assignment: {
-      bg: "#10B981", // Green
+      bg: "from-emerald-400 via-emerald-500 to-emerald-600", // Update to gradient
       text: "white",
       hover: "#059669",
       badge: "bg-green-100 text-green-800",
@@ -369,12 +369,9 @@ const TeacherCourseAssessment = () => {
         className="w-full rounded-xl shadow-md bg-white hover:shadow-lg transition-all duration-200 overflow-hidden group relative"
       >
         <div
-          style={{ backgroundColor: color.bg }}
-          className="px-6 py-4 text-white relative overflow-hidden"
+          className={`px-6 py-4 text-white relative overflow-hidden bg-gradient-to-br ${color.bg}`}
         >
-          {/* Decorative elements */}
-          <div className="absolute top-0 right-0 w-32 h-32 transform translate-x-16 -translate-y-16 rotate-45 bg-white opacity-10 rounded-full" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 transform -translate-x-12 translate-y-12 rotate-45 bg-white opacity-10 rounded-full" />
+          <div className="absolute right-0 top-0 -mt-8 -mr-12 h-32 w-32 rotate-12 transform rounded-xl bg-white opacity-10 transition-opacity duration-300 ease-in-out group-hover:opacity-25" />
 
           <div className="flex justify-between items-start relative z-10">
             <div>
@@ -486,7 +483,7 @@ const TeacherCourseAssessment = () => {
         {/* Simplified menu dropdown */}
         {showMenu === assessment.id && (
           <div
-            className="absolute right-4 top-16 bg-white rounded-lg shadow-lg z-10 border overflow-hidden min-w-[160px]"
+            className="absolute right-4 top-16 bg-white rounded-lg shadow-xl z-10 border-0 overflow-hidden min-w-[160px] divide-y divide-gray-100"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -494,9 +491,9 @@ const TeacherCourseAssessment = () => {
                 e.stopPropagation();
                 handleEdit(e, assessment);
               }}
-              className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+              className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700 font-medium transition-colors"
             >
-              <Edit2 size={14} className="text-gray-500" />
+              <Edit2 size={14} className="text-gray-400" />
               <span>Edit Assessment</span>
             </button>
             <button
@@ -504,7 +501,7 @@ const TeacherCourseAssessment = () => {
                 e.stopPropagation();
                 handleDelete(e, assessment);
               }}
-              className="w-full px-4 py-2.5 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-600 border-t"
+              className="w-full px-4 py-3 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-600 font-medium transition-colors"
             >
               <Trash2 size={14} />
               <span>Delete Assessment</span>
@@ -518,97 +515,86 @@ const TeacherCourseAssessment = () => {
   const renderModulesWithAssessments = () => {
     return (
       <div className="space-y-6">
-        {modules.map((module) => (
-          <div
-            key={module.module_id}
-            className="bg-white rounded-lg shadow-sm overflow-hidden"
-          >
+        {modules.map((module) => {
+          const moduleAssessmentList =
+            moduleAssessments[module.module_id] || [];
+          const publishedCount = moduleAssessmentList.filter(
+            (a) => a.is_published
+          ).length;
+          const unpublishedCount = moduleAssessmentList.length - publishedCount;
+
+          return (
             <div
-              className="p-6 bg-gray-50 border-l-4 border-yellow-500 flex justify-between items-center cursor-pointer hover:bg-gray-100"
-              onClick={() => toggleModule(module.module_id)}
+              key={module.module_id}
+              className="group bg-white rounded-xl border border-gray-200/50 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md"
             >
-              <div className="flex items-center gap-8">
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-800">
-                    {module.name}
-                  </h3>
-                  <div className="flex items-center gap-4 mt-2">
-                    <span className="text-sm text-gray-500">
-                      <span className="font-medium text-gray-700">
-                        {moduleAssessments[module.module_id]?.length || 0}
-                      </span>{" "}
-                      Assessments
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      <span className="font-medium text-gray-700">
-                        {moduleAssessments[module.module_id]?.filter(
-                          (a) => a.is_published
-                        ).length || 0}
-                      </span>{" "}
-                      Published
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      <span className="font-medium text-gray-700">
-                        {moduleAssessments[module.module_id]?.filter(
-                          (a) => !a.is_published
-                        ).length || 0}
-                      </span>{" "}
-                      Drafts
-                    </span>
+              <div className="px-8 py-6 bg-gradient-to-r from-gray-50 via-white to-white relative">
+                <div
+                  className="flex justify-between items-start cursor-pointer"
+                  onClick={() => toggleModule(module.module_id)}
+                >
+                  <div className="flex-1 pr-8">
+                    <h3 className="text-xl font-semibold text-gray-900 tracking-tight">
+                      {module.name}
+                    </h3>
+                    <div className="flex flex-wrap gap-4 mt-4">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="flex h-2 w-2 rounded-full bg-green-500" />
+                        <span className="text-gray-600 font-medium">
+                          {publishedCount} Published
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="flex h-2 w-2 rounded-full bg-gray-400" />
+                        <span className="text-gray-600 font-medium">
+                          {unpublishedCount} Drafts
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <div
+                      className={`w-8 h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center transition-all duration-300 group-hover:border-gray-300 group-hover:bg-gray-100 ${
+                        expandedModules.has(module.module_id)
+                          ? "rotate-180"
+                          : ""
+                      }`}
+                    >
+                      <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                    </div>
                   </div>
                 </div>
               </div>
-              <ChevronDown
-                className={`w-6 h-6 text-gray-400 transform transition-transform duration-200 ${
-                  expandedModules.has(module.module_id) ? "rotate-180" : ""
-                }`}
-              />
+
+              {expandedModules.has(module.module_id) && (
+                <div className="p-6 bg-gray-50 border-t border-gray-100">
+                  {moduleAssessmentList.length > 0 ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {moduleAssessmentList.map(renderAssessmentCard)}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-200">
+                      <ClipboardList className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+                      <p className="text-gray-600 font-medium mb-4">
+                        No assessments in this module yet
+                      </p>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsCreateModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-2 text-yellow-600 hover:text-yellow-700 font-medium"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add assessment
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-
-            {expandedModules.has(module.module_id) && (
-              <div className="p-6 bg-gray-50 border-t border-gray-100">
-                {moduleAssessments[module.module_id]?.length > 0 ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {moduleAssessments[module.module_id].map(
-                      renderAssessmentCard
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-200">
-                    <ClipboardList
-                      size={24}
-                      className="mx-auto mb-3 text-gray-400"
-                    />
-                    <p className="text-gray-600 font-medium mb-3">
-                      No assessments in this module yet
-                    </p>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsCreateModalOpen(true);
-                      }}
-                      className="text-yellow-600 hover:text-yellow-700 text-sm font-medium inline-flex items-center gap-1.5"
-                    >
-                      <Plus size={16} />
-                      Add your first assessment
-                    </button>
-                  </div>
-                )}
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsCreateModalOpen(true);
-                  }}
-                  className="mt-6 w-full py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-yellow-500 hover:text-yellow-600 transition-colors flex items-center justify-center gap-2 bg-white"
-                >
-                  <Plus size={20} />
-                  Add Assessment to {module.name}
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   };

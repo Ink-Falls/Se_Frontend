@@ -31,18 +31,46 @@ const CreateQuestionModal = ({
     }
   }, [isOpen]);
 
+  const validateMediaUrl = (url) => {
+    if (!url) return true;
+
+    // Image extensions
+    const imageRegex = /\.(jpg|jpeg|png)$/i;
+
+    // Video extensions
+    const videoRegex = /\.(mp4)$/i;
+
+    // YouTube URL patterns
+    const youtubeRegex =
+      /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+
+    return (
+      imageRegex.test(url) || videoRegex.test(url) || youtubeRegex.test(url)
+    );
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    // Allow empty value for word_limit
-    if (name === "word_limit") {
+
+    // Update the state first to allow typing
+    setQuestionData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    // Then validate media_url if needed
+    if (name === "media_url" && value) {
+      if (!validateMediaUrl(value)) {
+        setError(
+          "Warning: URL must be a .jpg, .png, .mp4 file or a valid YouTube link"
+        );
+      } else {
+        setError(null);
+      }
+    } else if (name === "word_limit") {
       setQuestionData((prev) => ({
         ...prev,
         [name]: value === "" ? "" : parseInt(value),
-      }));
-    } else {
-      setQuestionData((prev) => ({
-        ...prev,
-        [name]: value,
       }));
     }
   };
@@ -72,18 +100,6 @@ const CreateQuestionModal = ({
       ...prev,
       options: prev.options.filter((_, i) => i !== index),
     }));
-  };
-
-  const validateMediaUrl = (url) => {
-    if (!url) return true;
-    const imageRegex = /\.(jpg|jpeg|png|gif)$/i;
-    const videoRegex = /\.(mp4|webm|ogg)$/i;
-    return (
-      imageRegex.test(url) ||
-      videoRegex.test(url) ||
-      url.includes("youtube.com") ||
-      url.includes("youtu.be")
-    );
   };
 
   const isVideoUrl = (url) => {
@@ -217,9 +233,20 @@ const CreateQuestionModal = ({
             name="media_url"
             value={questionData.media_url}
             onChange={handleInputChange}
-            className="w-full px-3 py-2 border rounded-md"
-            placeholder="Enter image or video URL"
+            className={`w-full px-3 py-2 border rounded-md ${
+              questionData.media_url &&
+              !validateMediaUrl(questionData.media_url)
+                ? "border-red-500"
+                : "border-gray-300"
+            }`}
+            placeholder="Enter .jpg, .png, .mp4 file URL or YouTube link"
           />
+          {questionData.media_url &&
+            !validateMediaUrl(questionData.media_url) && (
+              <p className="mt-1 text-sm text-red-500">
+                Only .jpg, .png, .mp4 files and YouTube links are allowed
+              </p>
+            )}
           {questionData.media_url && (
             <div className="mt-2">
               {questionData.media_url.match(/\.(jpg|jpeg|png|gif)$/i) ? (

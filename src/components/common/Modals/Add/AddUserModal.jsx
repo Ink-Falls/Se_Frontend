@@ -84,22 +84,23 @@ const AddUserModal = ({ onClose, onSubmit }) => {
       formData.middle_initial &&
       !/^[A-Z]{1,2}$/.test(formData.middle_initial)
     ) {
-      errors.middle_initial =
-        "Middle initial must be up to 2 uppercase letters";
+      errors.middle_initial = "Middle initial must be 1-2 uppercase letters";
     }
 
     // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      errors.email = "Please enter a valid email address";
+    errors.email = validateEmail(formData.email);
+    if (!errors.email) {
+      delete errors.email;
     }
 
     // Contact number validation
-    const phoneRegex = /^(09|\+639)\d{9}$/;
-    const cleanedPhone = formData.contact_no.replace(/[^0-9]/g, "");
-    if (!phoneRegex.test(cleanedPhone)) {
-      errors.contact_no =
-        "Contact number must start with 09 or +639 and be 11 digits";
+    const cleanedPhone = formData.contact_no.replace(/[-\s()]/g, "");
+    if (!cleanedPhone) {
+      errors.contact_no = "Contact number is required";
+    } else if (!cleanedPhone.startsWith("09")) {
+      errors.contact_no = "Contact number must start with 09";
+    } else if (cleanedPhone.length !== 11) {
+      errors.contact_no = "Contact number must be 11 digits";
     }
 
     // Birth date validation
@@ -111,7 +112,13 @@ const AddUserModal = ({ onClose, onSubmit }) => {
 
     // Enhanced password validation
     if (!formData.password) {
-      errors.password = validatePassword(formData.password);
+      errors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+      errors.password = "Password must be at least 8 characters long";
+    } else if (!/\d/.test(formData.password)) {
+      errors.password = "Password must contain at least one number";
+    } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) {
+      errors.password = "Password must contain at least one special character";
     }
 
     // Confirm password validation
@@ -157,6 +164,11 @@ const AddUserModal = ({ onClose, onSubmit }) => {
     try {
       const { confirm_password, ...userData } = formData;
 
+      // Clean data before sending to API
+      if (userData.contact_no) {
+        userData.contact_no = userData.contact_no.replace(/[-\s()]/g, "");
+      }
+
       Object.keys(userData).forEach((key) => {
         if (userData[key] === "" || userData[key] === undefined) {
           delete userData[key];
@@ -189,55 +201,84 @@ const AddUserModal = ({ onClose, onSubmit }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    let newValue = value;
+    let error = null;
+
+    // Handle special cases first
+    if (name === "contact_no") {
+      // Only allow numbers and limit to 11 chars
+      newValue = value.replace(/\D/g, "").slice(0, 11);
+
+      // Validate number
+      if (!newValue) {
+        error = "Contact number is required";
+      } else if (!newValue.startsWith("09")) {
+        error = "Contact number must start with 09";
+      } else if (newValue.length !== 11) {
+        error = "Contact number must be 11 digits";
+      }
+    } else if (name === "middle_initial") {
+      newValue = value.toUpperCase().slice(0, 2);
+      if (newValue && !/^[A-Z]{1,2}$/.test(newValue)) {
+        error = "Middle initial must be 1-2 uppercase letters";
+      }
+    } else {
+      // Handle other validations
+      switch (name) {
+        case "first_name":
+        case "last_name":
+          if (value && !/^[a-zA-Z\s]{2,30}$/.test(value.trim())) {
+            error = `${
+              name === "first_name" ? "First" : "Last"
+            } name must be 2-30 characters and contain only letters`;
+          }
+          break;
+        case "email":
+          error = validateEmail(value);
+          break;
+        case "password":
+          if (!value) {
+            error = "Password is required";
+          } else if (value.length < 8) {
+            error = "Password must be at least 8 characters long";
+          } else if (!/\d/.test(value)) {
+            error = "Password must contain at least one number";
+          } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
+            error = "Password must contain at least one special character";
+          }
+          break;
+        case "confirm_password":
+          if (value !== formData.password) {
+            error = "Passwords do not match";
+          }
+          break;
+        case "birth_date":
+          const birthDate = new Date(value);
+          const today = new Date();
+          if (birthDate > today) {
+            error = "Birth date cannot be in the future";
+          }
+          break;
+      }
+    }
+
+    // Update form data
+    setFormData((prev) => ({ ...prev, [name]: newValue }));
+
+    // Update field errors
+    setFieldErrors((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: error,
+      // Special case for confirm_password when password changes
+      ...(name === "password" && formData.confirm_password
+        ? {
+            confirm_password:
+              formData.confirm_password !== value
+                ? "Passwords do not match"
+                : null,
+          }
+        : {}),
     }));
-
-    // Clear field error when user types
-    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
-
-    // Validate email as user types
-    if (name === "email") {
-      const emailError = validateEmail(value);
-      if (emailError) {
-        setFieldErrors((prev) => ({ ...prev, email: emailError }));
-      }
-    }
-
-    // Validate password as user types
-    if (name === "password") {
-      const passwordError = validatePassword(value);
-      if (passwordError) {
-        setFieldErrors((prev) => ({ ...prev, password: passwordError }));
-      }
-      // Check confirm password match if it exists
-      if (formData.confirm_password) {
-        if (value !== formData.confirm_password) {
-          setFieldErrors((prev) => ({
-            ...prev,
-            confirm_password: "Passwords do not match",
-          }));
-        } else {
-          setFieldErrors((prev) => ({ ...prev, confirm_password: "" }));
-        }
-      }
-    }
-
-    // Validate confirm password as user types
-    if (name === "confirm_password") {
-      if (!value) {
-        setFieldErrors((prev) => ({
-          ...prev,
-          confirm_password: "Please confirm your password",
-        }));
-      } else if (value !== formData.password) {
-        setFieldErrors((prev) => ({
-          ...prev,
-          confirm_password: "Passwords do not match",
-        }));
-      }
-    }
   };
 
   const handleMiddleInitialChange = (e) => {
@@ -402,8 +443,8 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 name="contact_no"
                 value={formData.contact_no}
                 onChange={handleChange}
-                pattern="[0-9]{11}"
                 placeholder="Enter contact number"
+                maxLength={11}
                 className={`mt-1 block w-full rounded-md border ${
                   fieldErrors.contact_no ? "border-red-500" : "border-gray-300"
                 } px-3 py-2`}

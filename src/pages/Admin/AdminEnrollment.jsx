@@ -24,6 +24,7 @@ import {
   deleteEnrollment,
 } from "/src/services/enrollmentService.js";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
+import DeleteModal from "../../components/common/Modals/Delete/DeleteModal";
 
 function AdminEnrollment() {
   const [enrollees, setEnrollees] = useState([]);
@@ -46,6 +47,8 @@ function AdminEnrollment() {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [allEnrolleesData, setAllEnrolleesData] = useState([]);
+  const [enrollmentsToDelete, setEnrollmentsToDelete] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const navItems = [
     { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
@@ -198,15 +201,20 @@ function AdminEnrollment() {
   };
 
   const handleDeleteSelected = async (selectedIds) => {
+    setEnrollmentsToDelete(selectedIds);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
     try {
       // Delete each selected enrollment
-      for (const id of selectedIds) {
+      for (const id of enrollmentsToDelete) {
         await deleteEnrollment(id);
       }
 
       setSuccessMessage(
-        `Successfully deleted ${selectedIds.length} enrollment${
-          selectedIds.length > 1 ? "s" : ""
+        `Successfully deleted ${enrollmentsToDelete.length} enrollment${
+          enrollmentsToDelete.length > 1 ? "s" : ""
         }`
       );
 
@@ -217,6 +225,10 @@ function AdminEnrollment() {
       setFilterStatus("");
       setSearchQuery("");
       setCurrentPage(1);
+
+      // Close modal and clear enrollments to delete
+      setShowDeleteModal(false);
+      setEnrollmentsToDelete(null);
     } catch (error) {
       console.error("Error deleting enrollments:", error);
       setError(error.message || "Failed to delete selected enrollments");
@@ -289,19 +301,6 @@ function AdminEnrollment() {
     }
   };
 
-  const EmptyState = () => (
-    <div className="flex flex-col items-center justify-center py-16 px-4">
-      <InboxIcon size={64} className="text-gray-300 mb-4" />
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">
-        No Enrollments Found
-      </h3>
-      <p className="text-gray-500 text-center max-w-md mb-4">
-        There are currently no enrollments in the system. New enrollments will
-        appear here once students begin the enrollment process.
-      </p>
-    </div>
-  );
-
   const ErrorState = () => (
     <div className="flex flex-col items-center justify-center py-16 px-4">
       <AlertTriangle size={64} className="text-red-500 mb-4" />
@@ -329,12 +328,8 @@ function AdminEnrollment() {
 
   return (
     <div className="flex h-screen bg-gray-100 relative pb-16">
-      {" "}
-      {/* Added pb-16 */}
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto pb-16">
-        {" "}
-        {/* Added pb-16 */}
         <Header title="Manage Enrollments" />
         {/* Add success/error message display */}
         {successMessage && (
@@ -392,11 +387,24 @@ function AdminEnrollment() {
               onSearch={handleSearch}
               onSearchCancel={handleSearchCancel}
               searchQuery={searchQuery}
+              showEmptyState={true} // Add this prop
             />
           )}
         </div>
       </div>
-      x
+      {/* Add Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <DeleteModal
+          onClose={() => {
+            setShowDeleteModal(false);
+            setEnrollmentsToDelete(null);
+          }}
+          onConfirm={confirmDelete}
+          message={`Are you sure you want to delete ${
+            enrollmentsToDelete?.length || 0
+          } selected enrollment(s)? This action cannot be undone.`}
+        />
+      )}
       <MobileNavBar navItems={navItems} />
     </div>
   );

@@ -15,8 +15,14 @@ import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
-import { getModulesByCourseId, getModuleGrade } from "../../services/moduleService";
-import { getCourseAssessments, getUserSubmission } from "../../services/assessmentService";
+import {
+  getModulesByCourseId,
+  getModuleGrade,
+} from "../../services/moduleService";
+import {
+  getCourseAssessments,
+  getUserSubmission,
+} from "../../services/assessmentService";
 
 const LearnerGrades = () => {
   const { selectedCourse } = useCourse();
@@ -121,7 +127,9 @@ const LearnerGrades = () => {
       return (
         <div className="flex flex-col items-end">
           <div className="flex items-center gap-2">
-            <span className="text-yellow-600 font-medium text-sm">Pending Grade</span>
+            <span className="text-yellow-600 font-medium text-sm">
+              Pending Grade
+            </span>
           </div>
           <div className="text-xs text-gray-500 mt-1">Submitted for review</div>
         </div>
@@ -149,9 +157,7 @@ const LearnerGrades = () => {
               >
                 {score}
               </span>
-              <span className="text-base text-gray-500">
-                /{totalPoints}
-              </span>
+              <span className="text-base text-gray-500">/{totalPoints}</span>
             </div>
             <span
               className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -168,7 +174,8 @@ const LearnerGrades = () => {
               <span>Passed ({percentage.toFixed(1)}%)</span>
             ) : (
               <span>
-                Need {(assessment.passing_score - percentage).toFixed(1)}% more to pass
+                Need {(assessment.passing_score - percentage).toFixed(1)}% more
+                to pass
               </span>
             )}
           </div>
@@ -220,7 +227,8 @@ const LearnerGrades = () => {
           if (assessmentsResponse.success && assessmentsResponse.assessments) {
             const moduleAssessments = assessmentsResponse.assessments.filter(
               (assessment) =>
-                assessment.module_id === module.module_id && assessment.is_published
+                assessment.module_id === module.module_id &&
+                assessment.is_published
             );
 
             if (moduleAssessments.length > 0) {
@@ -242,7 +250,8 @@ const LearnerGrades = () => {
 
                     if (submission.status === "graded" && submission.answers) {
                       score = submission.answers.reduce(
-                        (sum, answer) => sum + (parseInt(answer.points_awarded) || 0),
+                        (sum, answer) =>
+                          sum + (parseInt(answer.points_awarded) || 0),
                         0
                       );
 
@@ -312,7 +321,8 @@ const LearnerGrades = () => {
           completedAssessments: completedSubmissions.length,
           averageScore: averageScore,
           highestScore: highestScorePercentage,
-          lowestScore: lowestScorePercentage === 100 ? 0 : lowestScorePercentage,
+          lowestScore:
+            lowestScorePercentage === 100 ? 0 : lowestScorePercentage,
           passingRate: passingRate,
         });
       } catch (err) {
@@ -327,103 +337,185 @@ const LearnerGrades = () => {
   }, [selectedCourse, navigate]);
 
   const renderStatistics = () => (
-    <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white mb-8">
-      <div className="flex items-center justify-between">
-        <Award className="w-8 h-8 opacity-75" />
-        <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded-full">
-          Grade Summary
-        </span>
-      </div>
-      <div className="mt-4">
-        <div className="text-3xl font-bold">{overallStats.averageScore.toFixed(1)}%</div>
-        <div className="text-sm opacity-75">Average Score</div>
+    <div className="relative mb-12">
+      {/* Decorative background elements */}
+      <div className="absolute inset-0 bg-gradient-to-r mt-4 from-indigo-100 via-purple-100 to-pink-100 rounded-3xl transform -skew-y-2" />
+      <div className="absolute inset-0 bg-white/40 backdrop-blur-sm rounded-3xl" />
+
+      {/* Stats grid */}
+      <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 p-8">
+        <div className="group hover:-translate-y-1 transition-all duration-300">
+          <div className="relative bg-gradient-to-br from-sky-400 via-blue-500 to-blue-600 rounded-2xl p-6 shadow-xl shadow-blue-500/20 overflow-hidden">
+            <div className="absolute right-0 top-0 -mt-4 -mr-12 h-32 w-32 rotate-12 transform rounded-xl bg-white opacity-10 group-hover:opacity-20 transition-opacity" />
+            <Award className="w-10 h-10 mb-4 text-blue-100" />
+            <div className="text-4xl font-bold text-white tracking-tighter mb-2">
+              {overallStats.averageScore.toFixed(1)}%
+            </div>
+            <div className="text-sm text-blue-100 font-medium">
+              Overall Average
+            </div>
+          </div>
+        </div>
+
+        <div className="group hover:-translate-y-1 transition-all duration-300">
+          <div className="relative bg-gradient-to-br from-emerald-400 via-emerald-500 to-emerald-600 rounded-2xl p-6 shadow-xl shadow-emerald-500/20 overflow-hidden">
+            <div className="absolute right-0 top-0 -mt-4 -mr-12 h-32 w-32 rotate-12 transform rounded-xl bg-white opacity-10 group-hover:opacity-20 transition-opacity" />
+            <div className="text-4xl font-bold text-white tracking-tighter mb-2">
+              {overallStats.passingRate.toFixed(1)}%
+            </div>
+            <div className="text-sm text-emerald-100 font-medium">
+              Success Rate
+            </div>
+            <div className="text-xs text-emerald-100/80 mt-1">
+              of graded assessments
+            </div>
+          </div>
+        </div>
+
+        <div className="group hover:-translate-y-1 transition-all duration-300">
+          <div className="relative bg-gradient-to-br from-rose-400 via-red-500 to-red-600 rounded-2xl p-6 shadow-xl shadow-red-500/20 overflow-hidden">
+            <div className="absolute right-0 top-0 -mt-4 -mr-12 h-32 w-32 rotate-12 transform rounded-xl bg-white opacity-10 group-hover:opacity-20 transition-opacity" />
+            <div className="text-4xl font-bold text-white tracking-tighter mb-2">
+              {overallStats.completedAssessments}
+            </div>
+            <div className="text-sm text-rose-100 font-medium">
+              Completed Tasks
+            </div>
+            <div className="text-xs text-rose-100/80 mt-1">
+              out of {overallStats.totalAssessments}
+            </div>
+          </div>
+        </div>
+
+        <div className="group hover:-translate-y-1 transition-all duration-300">
+          <div className="relative bg-gradient-to-br from-violet-400 via-purple-500 to-purple-600 rounded-2xl p-6 shadow-xl shadow-purple-500/20 overflow-hidden">
+            <div className="absolute right-0 top-0 -mt-4 -mr-12 h-32 w-32 rotate-12 transform rounded-xl bg-white opacity-10 group-hover:opacity-20 transition-opacity" />
+            <div className="text-4xl font-bold text-white tracking-tighter mb-2">
+              {(
+                (overallStats.completedAssessments /
+                  Math.max(overallStats.totalAssessments, 1)) *
+                100
+              ).toFixed(0)}
+              %
+            </div>
+            <div className="text-sm text-purple-100 font-medium">
+              Completion Rate
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 
   const renderModuleGrades = () => (
-    <div className="space-y-6">
-      {modules.map((module, index) => {
+    <div className="space-y-12">
+      {modules.map((module) => {
         const moduleAssessmentList = moduleAssessments[module.module_id] || [];
-
-        const completedAssessments = moduleAssessmentList.filter((assessment) => {
-          const sub = submissions[assessment.id];
-          return sub && (sub.status === "graded" || sub.status === "submitted");
-        });
-
+        const completedAssessments = moduleAssessmentList.filter(
+          (assessment) =>
+            submissions[assessment.id]?.status === "graded" ||
+            submissions[assessment.id]?.status === "submitted"
+        );
         const gradedAssessments = moduleAssessmentList.filter(
           (assessment) => submissions[assessment.id]?.status === "graded"
         );
-
         const moduleAverage =
           gradedAssessments.length > 0
             ? gradedAssessments.reduce((acc, assessment) => {
                 const submission = submissions[assessment.id];
-                if (submission && submission.status === "graded") {
-                  return acc + (submission.percentage || 0);
-                }
-                return acc;
+                return submission?.status === "graded"
+                  ? acc + (submission.percentage || 0)
+                  : acc;
               }, 0) / gradedAssessments.length
             : 0;
 
         return (
           <div
             key={module.module_id}
-            className="bg-white rounded-lg shadow-sm overflow-hidden"
+            className="relative bg-gradient-to-b from-white to-gray-50/50 rounded-2xl overflow-hidden"
           >
-            <div className="p-6 border-l-4 border-yellow-500">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-800">
-                    {module.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">{module.description}</p>
-                  <div className="text-lg font-bold text-gray-800 mt-2">
-                    Average: {moduleAverage.toFixed(1)}%
-                    {gradedAssessments.length === 0 && <span className="text-sm text-gray-500 ml-2">(No graded assessments yet)</span>}
+            {/* Decorative Elements */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5" />
+            <div className="absolute right-0 top-0 h-64 w-64 transform translate-x-32 -translate-y-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl" />
+
+            <div className="relative">
+              {/* Module Header */}
+              <div className="p-8 pb-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                      {module.name}
+                    </h3>
+                    <div className="flex flex-wrap gap-3 mt-4">
+                      <span className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium inline-flex items-center">
+                        <span className="flex h-2 w-2 rounded-full bg-blue-500 mr-2" />
+                        {completedAssessments.length}/
+                        {moduleAssessmentList.length} Completed
+                      </span>
+                      <span className="px-4 py-1.5 bg-green-50 text-green-600 rounded-lg text-sm font-medium inline-flex items-center">
+                        <span className="flex h-2 w-2 rounded-full bg-green-500 mr-2" />
+                        {
+                          gradedAssessments.filter(
+                            (a) => submissions[a.id]?.isPassed
+                          ).length
+                        }{" "}
+                        Passed
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-base text-gray-500">
-                    {completedAssessments.length} of {moduleAssessmentList.length} completed
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-gray-900">
+                      {moduleAverage.toFixed(1)}%
+                    </div>
+                    <div className="text-sm font-medium text-gray-500">
+                      Module Average
+                    </div>
                   </div>
                 </div>
               </div>
 
+              {/* Assessments List */}
               {moduleAssessmentList.length > 0 && (
-                <div className="mt-6 space-y-4">
-                  {moduleAssessmentList.map((assessment) => {
-                    const submission = submissions[assessment.id];
-                    const status = getStatus(submission);
-
-                    return (
-                      <div
-                        key={assessment.id}
-                        className="bg-gray-50 p-4 rounded-lg"
-                      >
-                        <div className="flex justify-between items-center">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-800">
-                              {assessment.title}
-                            </h4>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                                  status
-                                )}`}
-                              >
-                                {status}
-                              </span>
-                              <span className="text-sm text-gray-600">
-                                Passing: {assessment.passing_score}/{assessment.max_score}
-                              </span>
+                <div className="px-8 pb-8">
+                  <div className="bg-white/50 backdrop-blur-sm rounded-xl divide-y divide-gray-100 border border-gray-100">
+                    {moduleAssessmentList.map((assessment) => {
+                      const submission = submissions[assessment.id];
+                      const status = getStatus(submission);
+                      return (
+                        <div
+                          key={assessment.id}
+                          className="p-4 hover:bg-white transition-colors duration-200"
+                        >
+                          <div className="flex items-center gap-6">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3 mb-1">
+                                <h4 className="font-semibold text-gray-900 truncate">
+                                  {assessment.title}
+                                </h4>
+                                <span
+                                  className={`px-2.5 py-1 rounded-full text-xs font-semibold inline-flex items-center ${getStatusColor(
+                                    status
+                                  )}`}
+                                >
+                                  {status}
+                                </span>
+                              </div>
+                              <div className="text-sm text-gray-500 flex items-center gap-2">
+                                <span>
+                                  Score to Pass: {assessment.passing_score}
+                                </span>
+                                <span>•</span>
+                                <span>Max Score: {assessment.max_score}</span>
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              {renderSubmissionScore(submission, assessment)}
                             </div>
                           </div>
-                          <div>{renderSubmissionScore(submission, assessment)}</div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
@@ -461,7 +553,9 @@ const LearnerGrades = () => {
           />
           <div className="flex flex-col items-center justify-center min-h-[400px]">
             <AlertTriangle className="w-12 h-12 text-red-500 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">{error}</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              {error}
+            </h3>
             <button
               onClick={() => window.location.reload()}
               className="mt-4 px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529]"
@@ -475,9 +569,9 @@ const LearnerGrades = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-50">
       <Sidebar navItems={navItems} />
-      <div className="flex-1 p-6 overflow-auto">
+      <div className="flex-1 p-8 overflow-auto">
         <Header
           title={selectedCourse?.name || "Grades"}
           subtitle={selectedCourse?.code}
