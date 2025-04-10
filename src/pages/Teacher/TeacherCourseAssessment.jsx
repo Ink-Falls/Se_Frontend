@@ -20,12 +20,17 @@ import {
   Trash2,
   ChevronDown,
   RotateCcw,
+  BookCheck,
+  BookMarked,
+  BookmarkCheck,
+  ChevronRight,
+  FileText,
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
 import { useNavigate } from "react-router-dom";
 import CreateAssessmentModal from "../../components/common/Modals/Create/CreateAssessmentModal";
 import EditAssessmentModal from "../../components/common/Modals/Edit/EditAssessmentModal";
-import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // Update this import
+import DeleteModal from "../../components/common/Modals/Delete/DeleteModal";
 import {
   getCourseAssessments,
   deleteAssessment,
@@ -155,7 +160,6 @@ const TeacherCourseAssessment = () => {
     fetchAssessments();
   }, [selectedCourse, navigate]);
 
-  // Add this effect to auto-clear success messages
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(() => {
@@ -167,16 +171,13 @@ const TeacherCourseAssessment = () => {
 
   const handleAssessmentCreated = async (newAssessment) => {
     try {
-      // Add the new assessment to the list immediately
       setAssessments((prev) => [newAssessment, ...prev]);
       setIsCreateModalOpen(false);
-      setSuccessMessage("Assessment created successfully"); // Add success message
-
-      // Optionally refresh the full list
+      setSuccessMessage("Assessment created successfully");
       await fetchAssessments();
     } catch (err) {
       console.error("Error handling new assessment:", err);
-      setError("Failed to create assessment"); // Add error handling
+      setError("Failed to create assessment");
     }
   };
 
@@ -184,7 +185,6 @@ const TeacherCourseAssessment = () => {
     navigate(`/Teacher/Assessment/View/${assessment.id}`, {
       state: {
         assessment,
-        // Add any additional data needed for submissions view
         courseId: selectedCourse?.id,
       },
     });
@@ -196,7 +196,6 @@ const TeacherCourseAssessment = () => {
         assessment,
         submission: {
           ...submission,
-          // Transform the submission data for the view
           id: submission.id,
           studentName: submission.studentName,
           studentId: submission.studentId,
@@ -270,12 +269,9 @@ const TeacherCourseAssessment = () => {
       const response = await deleteAssessment(assessmentToDelete.id);
 
       if (response.success) {
-        // Remove assessment from local state
         setAssessments((prev) =>
           prev.filter((a) => a.id !== assessmentToDelete.id)
         );
-
-        // Fetch updated assessments
         await fetchAssessments();
         setSuccessMessage("Assessment deleted successfully");
       } else {
@@ -285,13 +281,12 @@ const TeacherCourseAssessment = () => {
       console.error("Error deleting assessment:", error);
       setError(error.message || "Failed to delete assessment");
     } finally {
-      setAssessmentToDelete(null); // Clear assessment to delete
+      setAssessmentToDelete(null);
     }
   };
 
   const handleEditSubmit = async (updatedAssessment) => {
     try {
-      // Keep the existing questions count when updating the assessment in state
       const currentAssessment = assessments.find(
         (a) => a.id === updatedAssessment.id
       );
@@ -300,7 +295,6 @@ const TeacherCourseAssessment = () => {
         questions: currentAssessment.questions || [],
       };
 
-      // Update moduleAssessments state
       setModuleAssessments((prev) => {
         const updated = { ...prev };
         Object.keys(updated).forEach((moduleId) => {
@@ -311,7 +305,6 @@ const TeacherCourseAssessment = () => {
         return updated;
       });
 
-      // Update assessments array
       setAssessments((prev) =>
         prev.map((a) =>
           a.id === updatedAssessment.id ? updatedWithQuestions : a
@@ -328,25 +321,46 @@ const TeacherCourseAssessment = () => {
 
   const typeColors = {
     quiz: {
-      bg: "from-blue-400 via-blue-500 to-blue-600", // Update to gradient
+      bg: "from-blue-400 via-blue-500 to-blue-600",
+      solidBg: "bg-blue-500",
+      lightBg: "bg-blue-50",
       text: "white",
       hover: "#2563EB",
       badge: "bg-blue-100 text-blue-800",
       light: "rgba(59, 130, 246, 0.1)",
+      border: "border-blue-200",
+      hoverBg: "hover:bg-blue-50",
+      iconColor: "text-blue-500",
+      gradientText: "text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-blue-700",
+      icon: <ClipboardList />,
     },
     exam: {
-      bg: "from-violet-400 via-purple-500 to-purple-600", // Update to gradient
+      bg: "from-violet-400 via-purple-500 to-purple-600",
+      solidBg: "bg-purple-500",
+      lightBg: "bg-purple-50",
       text: "white",
       hover: "#6D28D9",
       badge: "bg-purple-100 text-purple-800",
       light: "rgba(139, 92, 246, 0.1)",
+      border: "border-purple-200",
+      hoverBg: "hover:bg-purple-50",
+      iconColor: "text-purple-500",
+      gradientText: "text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-purple-700",
+      icon: <BookOpen />,
     },
     assignment: {
-      bg: "from-emerald-400 via-emerald-500 to-emerald-600", // Update to gradient
+      bg: "from-emerald-400 via-emerald-500 to-emerald-600",
+      solidBg: "bg-emerald-500",
+      lightBg: "bg-emerald-50",
       text: "white",
       hover: "#059669",
       badge: "bg-green-100 text-green-800",
       light: "rgba(16, 185, 129, 0.1)",
+      border: "border-emerald-200",
+      hoverBg: "hover:bg-emerald-50",
+      iconColor: "text-emerald-500",
+      gradientText: "text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-emerald-700",
+      icon: <FileText />,
     },
   };
 
@@ -356,154 +370,476 @@ const TeacherCourseAssessment = () => {
 
   const toggleMenu = (e, assessmentId) => {
     e.stopPropagation();
-    setShowMenu((current) => (current === assessmentId ? null : assessmentId));
+    setShowMenu((prev) => (prev === assessmentId ? null : assessmentId));
+  };
+
+  const renderModulesWithAssessments = () => {
+    return (
+      <div className="space-y-8">
+        {modules.map((module) => {
+          const moduleAssessmentList =
+            moduleAssessments[module.module_id] || [];
+          const publishedCount = moduleAssessmentList.filter(
+            (a) => a.is_published
+          ).length;
+          const unpublishedCount = moduleAssessmentList.length - publishedCount;
+          const isExpanded = expandedModules.has(module.module_id);
+
+          const modulePatternIndex = module.module_id % 5;
+          const modulePatterns = [
+            "bg-gradient-to-r from-blue-500/5 to-indigo-500/5",
+            "bg-gradient-to-r from-emerald-500/5 to-teal-500/5",
+            "bg-gradient-to-r from-amber-500/5 to-orange-500/5",
+            "bg-gradient-to-r from-rose-500/5 to-pink-500/5",
+            "bg-gradient-to-r from-violet-500/5 to-purple-500/5",
+          ];
+          const modulePattern = modulePatterns[modulePatternIndex];
+
+          const moduleIconIndex = module.module_id % 4;
+          const moduleIcons = [
+            <BookOpen className="w-6 h-6" />,
+            <BookCheck className="w-6 h-6" />,
+            <BookmarkCheck className="w-6 h-6" />,
+            <BookMarked className="w-6 h-6" />,
+          ];
+          const ModuleIcon = () => moduleIcons[moduleIconIndex];
+
+          return (
+            <div
+              key={module.module_id}
+              className={`group rounded-2xl overflow-hidden transition-all duration-500 ${
+                isExpanded
+                  ? "shadow-lg ring-2 ring-indigo-300 ring-offset-2"
+                  : "shadow hover:shadow-md border border-gray-200"
+              }`}
+            >
+              <div
+                className={`transition-all duration-300 cursor-pointer relative overflow-hidden ${modulePattern}`}
+                onClick={() => toggleModule(module.module_id)}
+              >
+                <div className="absolute inset-0 opacity-30">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`absolute rounded-full ${
+                        isExpanded ? "bg-indigo-200" : "bg-gray-200"
+                      }`}
+                      style={{
+                        width: `${Math.random() * 40 + 10}px`,
+                        height: `${Math.random() * 40 + 10}px`,
+                        left: `${Math.random() * 100}%`,
+                        top: `${Math.random() * 100}%`,
+                        opacity: Math.random() * 0.5,
+                      }}
+                    />
+                  ))}
+                </div>
+
+                <div
+                  className={`px-8 py-6 flex items-start gap-5 relative z-10 ${
+                    isExpanded ? "bg-indigo-50/80" : "group-hover:bg-gray-50/80"
+                  }`}
+                >
+                  <div
+                    className={`relative flex-shrink-0 ${
+                      isExpanded ? "animate-bounce" : ""
+                    }`}
+                  >
+                    <div
+                      className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+                        isExpanded
+                          ? "bg-indigo-100 text-indigo-600 shadow-lg shadow-indigo-200"
+                          : "bg-gray-100 text-gray-600 shadow-sm"
+                      } transform transition-all duration-300 ${
+                        isExpanded ? "rotate-0 scale-110" : "group-hover:scale-105"
+                      }`}
+                    >
+                      <ModuleIcon />
+                    </div>
+                    <div
+                      className={`absolute -top-1 -right-1 w-4 h-4 rounded-full ${
+                        moduleAssessmentList.length > 0
+                          ? "bg-green-500"
+                          : "bg-yellow-500"
+                      } flex items-center justify-center text-[10px] text-white font-bold border-2 border-white`}
+                    >
+                      {moduleAssessmentList.length > 0 ? "✓" : "!"}
+                    </div>
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex items-center">
+                      <h3
+                        className={`text-xl font-bold tracking-tight ${
+                          isExpanded
+                            ? "text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600"
+                            : "text-gray-900 group-hover:text-indigo-700"
+                        } transition-colors duration-300`}
+                      >
+                        {module.name}
+                      </h3>
+                      {moduleAssessmentList.length > 0 && (
+                        <span
+                          className={`ml-3 px-2 py-1 text-xs rounded-full ${
+                            isExpanded
+                              ? "bg-indigo-200 text-indigo-800"
+                              : "bg-gray-200 text-gray-700"
+                          }`}
+                        >
+                          {moduleAssessmentList.length} items
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 mt-3">
+                      <div className="flex items-center">
+                        <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-green-500"
+                            style={{
+                              width: `${
+                                moduleAssessmentList.length > 0
+                                  ? (publishedCount / moduleAssessmentList.length) *
+                                    100
+                                  : 0
+                              }%`,
+                            }}
+                          ></div>
+                        </div>
+                        <span className="ml-2 text-xs text-gray-600">
+                          {publishedCount} Published
+                        </span>
+                      </div>
+
+                      <div className="flex items-center">
+                        <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-yellow-500"
+                            style={{
+                              width: `${
+                                moduleAssessmentList.length > 0
+                                  ? (unpublishedCount /
+                                      moduleAssessmentList.length) *
+                                    100
+                                  : 0
+                              }%`,
+                            }}
+                          ></div>
+                        </div>
+                        <span className="ml-2 text-xs text-gray-600">
+                          {unpublishedCount} Drafts
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`flex-shrink-0 transform transition-transform duration-500 ${
+                      isExpanded ? "rotate-180" : "rotate-0"
+                    }`}
+                  >
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        isExpanded
+                          ? "bg-indigo-500 text-white"
+                          : "bg-gray-100 text-gray-400 group-hover:bg-gray-200 group-hover:text-gray-600"
+                      } transition-colors duration-300`}
+                    >
+                      <ChevronDown size={20} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className={`transition-all duration-500 ease-in-out overflow-hidden ${
+                  isExpanded ? "max-h-[5000px] opacity-100" : "max-h-0 opacity-0"
+                }`}
+              >
+                <div className="p-8 bg-gradient-to-b from-indigo-50/50 to-white">
+                  {moduleAssessmentList.length > 0 ? (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 mb-8">
+                        {moduleAssessmentList.map(renderAssessmentCard)}
+                      </div>
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsCreateModalOpen(true);
+                        }}
+                        className="group flex items-center justify-center p-4 bg-white border-2 border-dashed border-indigo-300 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-300 cursor-pointer"
+                      >
+                        <div className="relative">
+                          <div className="absolute -inset-2 bg-indigo-500 rounded-full opacity-0 blur-lg group-hover:opacity-20 transition-opacity duration-300"></div>
+                          <div className="p-2 bg-indigo-100 rounded-full group-hover:bg-indigo-200 transition-colors duration-300">
+                            <Plus className="h-6 w-6 text-indigo-600" />
+                          </div>
+                        </div>
+                        <span className="ml-3 text-sm font-medium text-gray-700 group-hover:text-indigo-700 transition-colors duration-300">
+                          Add New Assessment to {module.name}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsCreateModalOpen(true);
+                      }}
+                      className="bg-white border-2 border-dashed border-indigo-300 rounded-xl p-8 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-300 cursor-pointer group"
+                    >
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <div className="relative w-32 h-32 mb-4">
+                          <div className="absolute inset-0 bg-indigo-100 rounded-full animate-ping opacity-20"></div>
+                          <div className="absolute inset-0 bg-indigo-50 rounded-full animate-pulse"></div>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-20 h-20 bg-white rounded-full shadow-lg flex items-center justify-center">
+                              <ClipboardList className="h-10 w-10 text-indigo-500" />
+                            </div>
+                          </div>
+                        </div>
+                        <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600 mb-2">
+                          No Assessments in this Module
+                        </h3>
+                        <p className="text-gray-600 text-sm mb-6 max-w-md">
+                          Let's create your first assessment for this module!
+                          Your students will thank you for the learning
+                          opportunity.
+                        </p>
+                        <button className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100 hover:shadow-indigo-200 group-hover:scale-105 transform transition-transform duration-300">
+                          <Plus className="h-5 w-5" />
+                          <span>Create First Assessment</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   const renderAssessmentCard = (assessment) => {
     const color = getTypeColor(assessment.type);
+    const dueDate = new Date(assessment.due_date);
+    const isOverdue = dueDate < new Date();
+    const Icon = color.icon || <ClipboardList />;
 
     return (
       <div
         key={assessment.id}
         onClick={() => handleAssessmentClick(assessment)}
-        className="w-full rounded-xl shadow-md bg-white hover:shadow-lg transition-all duration-200 overflow-hidden group relative"
+        className={`group bg-white rounded-xl overflow-hidden shadow-sm border transition-all duration-300 hover:-translate-y-1 ${color.border} hover:shadow-md`}
       >
-        <div
-          className={`px-6 py-4 text-white relative overflow-hidden bg-gradient-to-br ${color.bg}`}
-        >
-          <div className="absolute right-0 top-0 -mt-8 -mr-12 h-32 w-32 rotate-12 transform rounded-xl bg-white opacity-10 transition-opacity duration-300 ease-in-out group-hover:opacity-25" />
-
-          <div className="flex justify-between items-start relative z-10">
-            <div>
-              <span
-                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${color.badge}`}
-              >
-                {assessment.type?.toUpperCase() || "QUIZ"}
-              </span>
-              <h3 className="text-2xl font-bold tracking-tight mt-2">
-                {assessment.title}
-              </h3>
-            </div>
-            <button
-              onClick={(e) => toggleMenu(e, assessment.id)}
-              className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
-            >
-              <MoreVertical size={20} />
-            </button>
-          </div>
-        </div>
-
-        <div className="px-6 py-4">
-          <p className="text-gray-600 text-sm line-clamp-2 mb-4">
-            {assessment.description}
-          </p>
-
-          <div className="grid grid-cols-2 gap-6 mb-4">
-            <div className="space-y-3">
-              <div className="flex items-center text-sm">
-                <Clock className="w-4 h-4 mr-2" style={{ color: color.bg }} />
-                <span className="text-gray-600 font-medium">
-                  Time Limit: {assessment.duration_minutes} minutes
-                </span>
-              </div>
-              <div className="flex items-center text-sm">
-                <Award className="w-4 h-4 mr-2" style={{ color: color.bg }} />
-                <span className="text-gray-600 font-medium">
-                  Passing: {assessment.passing_score}/{assessment.max_score}
-                </span>
-              </div>
-              <div className="flex items-center text-sm">
-                <RotateCcw
-                  className="w-4 h-4 mr-2"
-                  style={{ color: color.bg }}
-                />
-                <span className="text-gray-600 font-medium">
-                  {assessment.allowed_attempts}{" "}
-                  {assessment.allowed_attempts === 1 ? "attempt" : "attempts"}
-                </span>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center text-sm">
-                <Calendar
-                  className="w-4 h-4 mr-2"
-                  style={{ color: color.bg }}
-                />
-                <span className="text-gray-600 font-medium">
-                  Due: {formatDate(assessment.due_date)}
-                </span>
-              </div>
-              <div className="flex items-center text-sm">
-                <ClipboardList
-                  className="w-4 h-4 mr-2"
-                  style={{ color: color.bg }}
-                />
-                <span className="text-gray-600 font-medium">
-                  {assessment.questions?.length || 0} Questions
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-4 border-t">
-            {/* Change the button to a status indicator */}
+        {/* Card Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <div className="flex items-center">
             <div
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
-                assessment.is_published
-                  ? "bg-green-50 text-green-700"
-                  : "bg-gray-50 text-gray-600"
+              className={`mr-3 ${color.lightBg} w-8 h-8 rounded-lg flex items-center justify-center`}
+            >
+              <div className={`${color.iconColor}`}>
+                {React.cloneElement(Icon, { size: 16 })}
+              </div>
+            </div>
+
+            <span
+              className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${color.badge}`}
+            >
+              {assessment.type?.toUpperCase() || "QUIZ"}
+            </span>
+          </div>
+
+          <div className="flex items-center">
+            <span 
+              className={`mr-2 px-2 py-1 rounded-md text-xs font-medium ${
+                assessment.is_published 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-gray-100 text-gray-700'
               }`}
             >
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  assessment.is_published ? "bg-green-500" : "bg-gray-400"
-                }`}
-              />
-              <span className="text-sm font-medium">
-                {assessment.is_published ? "Published" : "Draft"}
-              </span>
-            </div>
-
+              {assessment.is_published ? "PUBLISHED" : "DRAFT"}
+            </span>
+            
             <button
-              className="text-sm font-semibold flex items-center gap-1 transition-colors"
-              style={{ color: color.bg }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = color.hover)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = color.bg)}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAssessmentClick(assessment);
-              }}
+              onClick={(e) => toggleMenu(e, assessment.id)}
+              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              View Details
-              <ChevronDown className="w-4 h-4 transform -rotate-90" />
+              <MoreVertical size={16} className="text-gray-500" />
             </button>
           </div>
         </div>
 
-        {/* Simplified menu dropdown */}
+        <div className="px-4 py-4">
+          <div className="mb-3">
+            <h3
+              className={`text-lg font-bold line-clamp-1 ${color.gradientText} group-hover:underline`}
+            >
+              {assessment.title}
+            </h3>
+          </div>
+
+          <p className="text-sm text-gray-600 mb-4 line-clamp-2 h-10 italic">
+            {assessment.description || "No description provided"}
+          </p>
+
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div
+              className={`rounded-lg p-3 flex flex-col items-center justify-center border ${color.border} ${color.lightBg}`}
+            >
+              <div className="flex items-center mb-1">
+                <Clock className={`w-4 h-4 mr-1 ${color.iconColor}`} />
+                <span className="text-xs text-gray-500">Time Limit</span>
+              </div>
+              <span className="text-xs font-medium">
+                {assessment.duration_minutes} min
+              </span>
+            </div>
+
+            <div
+              className={`rounded-lg p-3 flex flex-col items-center justify-center border ${color.border} ${color.lightBg}`}
+            >
+              <div className="flex items-center mb-1">
+                <Award className={`w-4 h-4 mr-1 ${color.iconColor}`} />
+                <span className="text-xs text-gray-500">Passing Score</span>
+              </div>
+              <span className="text-xs font-medium">
+                {assessment.passing_score}/{assessment.max_score}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
+            <div className="flex items-center">
+              <RotateCcw className={`w-4 h-4 mr-2 ${color.iconColor}`} />
+              <span>
+                <strong>{assessment.allowed_attempts}</strong>
+                <span className="text-gray-500 ml-1">
+                  {assessment.allowed_attempts === 1 ? "attempt" : "attempts"}
+                </span>
+              </span>
+            </div>
+
+            <div className="flex items-center">
+              <ClipboardList className={`w-4 h-4 mr-2 ${color.iconColor}`} />
+              <span>
+                <strong>{assessment.questions?.length || 0}</strong>
+                <span className="text-gray-500 ml-1">questions</span>
+              </span>
+            </div>
+          </div>
+
+          <div
+            className={`flex items-center justify-between p-3 rounded-lg ${
+              isOverdue
+                ? "bg-red-50 border border-red-100"
+                : "bg-gray-50 border border-gray-100"
+            }`}
+          >
+            <div className="flex items-center">
+              <Calendar
+                className={`w-4 h-4 ${
+                  isOverdue ? "text-red-500" : color.iconColor
+                }`}
+              />
+              <span
+                className={`ml-2 text-xs font-medium ${
+                  isOverdue ? "text-red-600" : "text-gray-700"
+                }`}
+              >
+                {isOverdue ? "Overdue" : "Due"}
+              </span>
+            </div>
+            <span
+              className={`text-xs font-medium ${
+                isOverdue ? "text-red-600" : "text-gray-700"
+              }`}
+            >
+              {dueDate.toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          </div>
+
+          {!isOverdue && (
+            <div className="mt-2 flex justify-center">
+              <div className={`text-xs ${color.iconColor} animate-pulse`}>
+                {(() => {
+                  const now = new Date();
+                  const diff = dueDate.getTime() - now.getTime();
+                  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+                  if (days > 0) {
+                    return `${days} day${days > 1 ? "s" : ""} remaining`;
+                  }
+
+                  const hours = Math.floor(
+                    (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+                  );
+                  return `${hours} hour${hours !== 1 ? "s" : ""} remaining`;
+                })()}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAssessmentClick(assessment);
+            }}
+            className={`w-full py-3 text-center text-sm font-medium text-white bg-gradient-to-r ${color.bg} transition-all hover:shadow-inner`}
+          >
+            <span className="flex items-center justify-center">
+              View Assessment
+              <ChevronRight
+                size={16}
+                className="ml-1 group-hover:translate-x-1 transform transition-transform"
+              />
+            </span>
+          </button>
+        </div>
+
         {showMenu === assessment.id && (
           <div
-            className="absolute right-4 top-16 bg-white rounded-lg shadow-xl z-10 border-0 overflow-hidden min-w-[160px] divide-y divide-gray-100"
+            className="absolute right-3 top-12 bg-white rounded-xl shadow-lg z-20 border border-gray-200 overflow-hidden min-w-[200px]"
             onClick={(e) => e.stopPropagation()}
           >
+            <div
+              className={`py-3 px-4 border-b border-gray-100 bg-gradient-to-r ${color.bg} text-white`}
+            >
+              <span className="text-sm font-medium">Assessment Options</span>
+            </div>
+
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handleEdit(e, assessment);
               }}
-              className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 flex items-center gap-2 text-gray-700 font-medium transition-colors"
+              className={`w-full px-4 py-3 text-left text-sm ${color.hoverBg} flex items-center gap-3 text-gray-700 transition-colors`}
             >
-              <Edit2 size={14} className="text-gray-400" />
+              <div className={`p-1 rounded-lg ${color.lightBg}`}>
+                <Edit2 size={14} className={color.iconColor} />
+              </div>
               <span>Edit Assessment</span>
             </button>
+
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handleDelete(e, assessment);
               }}
-              className="w-full px-4 py-3 text-left text-sm hover:bg-red-50 flex items-center gap-2 text-red-600 font-medium transition-colors"
+              className="w-full px-4 py-3 text-left text-sm hover:bg-red-50 flex items-center gap-3 text-red-600 transition-colors border-t border-gray-100"
             >
-              <Trash2 size={14} />
+              <div className="p-1 rounded-lg bg-red-100">
+                <Trash2 size={14} className="text-red-500" />
+              </div>
               <span>Delete Assessment</span>
             </button>
           </div>
@@ -512,200 +848,108 @@ const TeacherCourseAssessment = () => {
     );
   };
 
-  const renderModulesWithAssessments = () => {
-    return (
-      <div className="space-y-6">
-        {modules.map((module) => {
-          const moduleAssessmentList =
-            moduleAssessments[module.module_id] || [];
-          const publishedCount = moduleAssessmentList.filter(
-            (a) => a.is_published
-          ).length;
-          const unpublishedCount = moduleAssessmentList.length - publishedCount;
-
-          return (
-            <div
-              key={module.module_id}
-              className="group bg-white rounded-xl border border-gray-200/50 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md"
-            >
-              <div className="px-8 py-6 bg-gradient-to-r from-gray-50 via-white to-white relative">
-                <div
-                  className="flex justify-between items-start cursor-pointer"
-                  onClick={() => toggleModule(module.module_id)}
-                >
-                  <div className="flex-1 pr-8">
-                    <h3 className="text-xl font-semibold text-gray-900 tracking-tight">
-                      {module.name}
-                    </h3>
-                    <div className="flex flex-wrap gap-4 mt-4">
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="flex h-2 w-2 rounded-full bg-green-500" />
-                        <span className="text-gray-600 font-medium">
-                          {publishedCount} Published
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="flex h-2 w-2 rounded-full bg-gray-400" />
-                        <span className="text-gray-600 font-medium">
-                          {unpublishedCount} Drafts
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <div
-                      className={`w-8 h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center transition-all duration-300 group-hover:border-gray-300 group-hover:bg-gray-100 ${
-                        expandedModules.has(module.module_id)
-                          ? "rotate-180"
-                          : ""
-                      }`}
-                    >
-                      <ChevronDown className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {expandedModules.has(module.module_id) && (
-                <div className="p-6 bg-gray-50 border-t border-gray-100">
-                  {moduleAssessmentList.length > 0 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {moduleAssessmentList.map(renderAssessmentCard)}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-200">
-                      <ClipboardList className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-                      <p className="text-gray-600 font-medium mb-4">
-                        No assessments in this module yet
-                      </p>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsCreateModalOpen(true);
-                        }}
-                        className="inline-flex items-center gap-2 text-yellow-600 hover:text-yellow-700 font-medium"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add assessment
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  // Update the condition for showing "No Assessments" message
   const hasAnyAssessments = Object.values(moduleAssessments).some(
     (moduleArray) => Array.isArray(moduleArray) && moduleArray.length > 0
   );
 
   return (
-    <div className="flex h-screen bg-gray-100 relative">
-      <Sidebar navItems={navItems} />
-      <div className="flex-1 p-6 overflow-auto">
-        <Header
-          title={selectedCourse?.name || "Course Assessment"}
-          subtitle={selectedCourse?.code}
-        />
-        <div className="sticky top-0 z-50">
-          <MobileNavBar navItems={navItems} />
+    <div className="flex h-screen flex-col bg-gray-100">
+      <div className="flex flex-1 h-[calc(100vh-32px)]">
+        <div className="hidden lg:flex">
+          <Sidebar navItems={navItems} />
         </div>
 
-        {/* Add success message display */}
-        {successMessage && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
-            {successMessage}
-          </div>
-        )}
-
-        {/* Keep existing error display */}
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-            {error}
-          </div>
-        )}
-
-        {loading && (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <LoadingSpinner />
-          </div>
-        )}
-
-        {error && (
-          <div className="flex flex-col items-center justify-center min-h-[400px]">
-            <AlertTriangle size={48} className="text-red-500 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Failed to Load Assessments
-            </h3>
-            <p className="text-gray-500 text-center max-w-md mb-4">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && !hasAnyAssessments && (
-          <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-            <div className="text-gray-400 mb-4">
-              <ClipboardList size={48} className="mx-auto" />
+        <div className="flex-1 p-6 max-md:p-5 overflow-y-auto">
+          <div>
+            <Header
+              title={selectedCourse?.name || "Course Assessment"}
+              subtitle={selectedCourse?.code}
+            />
+            <div className="relative z-50">
+              <MobileNavBar navItems={navItems} />
             </div>
-            <h3 className="text-lg font-medium text-gray-900">
-              No Assessments Available
-            </h3>
-            <p className="text-gray-500 mt-2 mb-6">
-              There are no assessments for this course yet.
-            </p>
-            <button
-              data-testid="create-assessment-button"
-              aria-label="create assessment"
+          </div>
+
+          {successMessage && (
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+              {successMessage}
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="flex items-center justify-center h-[60vh]">
+              <LoadingSpinner />
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4 h-[60vh]">
+              <AlertTriangle size={48} className="text-red-500 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Failed to Load Assessments
+              </h3>
+              <p className="text-gray-600 text-center mb-6">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : !hasAnyAssessments ? (
+            <div
+              className="bg-white border-2 border-dashed border-gray-300 rounded-xl p-8 hover:border-yellow-500 hover:bg-yellow-50 transition-all duration-200 cursor-pointer mt-4"
               onClick={() => setIsCreateModalOpen(true)}
-              className="px-6 py-3 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors inline-flex items-center gap-2"
             >
-              <Plus size={20} />
-              Create Assessment
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && hasAnyAssessments && (
-          <>
-            <div className="flex flex-col gap-4 mt-4">
-              {renderModulesWithAssessments()}
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="p-4 bg-yellow-100 rounded-full mb-4">
+                  <ClipboardList className="h-8 w-8 text-yellow-600" />
+                </div>
+                <h3 className="text-xl font-medium text-gray-900 mb-2">
+                  No Assessments Yet
+                </h3>
+                <p className="text-gray-600 mb-4 max-w-md">
+                  There are no assessments for this course yet. Create your
+                  first assessment to begin evaluating student knowledge.
+                </p>
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors">
+                  <Plus size={16} />
+                  Create First Assessment
+                </div>
+              </div>
             </div>
-          </>
-        )}
-
-        <CreateAssessmentModal
-          isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-          courseId={selectedCourse?.id}
-          onSuccess={handleAssessmentCreated}
-        />
-        {editingAssessment && (
-          <EditAssessmentModal
-            isOpen={!!editingAssessment}
-            assessment={editingAssessment}
-            onClose={() => setEditingAssessment(null)}
-            onSubmit={handleEditSubmit}
-          />
-        )}
-        {assessmentToDelete && (
-          <DeleteModal
-            title="Delete Assessment"
-            message={`Are you sure you want to delete "${assessmentToDelete?.title}"? This will also delete all questions and submissions associated with this assessment. This action cannot be undone.`}
-            onClose={() => setAssessmentToDelete(null)}
-            onConfirm={handleDeleteConfirm}
-          />
-        )}
+          ) : (
+            <div className="mt-4">{renderModulesWithAssessments()}</div>
+          )}
+        </div>
       </div>
+
+      <CreateAssessmentModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        courseId={selectedCourse?.id}
+        onSuccess={handleAssessmentCreated}
+      />
+      {editingAssessment && (
+        <EditAssessmentModal
+          isOpen={!!editingAssessment}
+          assessment={editingAssessment}
+          onClose={() => setEditingAssessment(null)}
+          onSubmit={handleEditSubmit}
+        />
+      )}
+      {assessmentToDelete && (
+        <DeleteModal
+          title="Delete Assessment"
+          message={`Are you sure you want to delete "${assessmentToDelete?.title}"? This will also delete all questions and submissions associated with this assessment. This action cannot be undone.`}
+          onClose={() => setAssessmentToDelete(null)}
+          onConfirm={handleDeleteConfirm}
+        />
+      )}
     </div>
   );
 };
