@@ -132,7 +132,7 @@ export function NetworkProvider({ children }) {
     // Double check online status
     if (!navigator.onLine) return;
 
-    console.log('🌐 Network Status: Online');
+    // console.log('🌐 Network Status: Online');
     setIsOnline(true);
     setLastOnlineTime(Date.now());
     setReconnectAttempts(0);
@@ -155,7 +155,7 @@ export function NetworkProvider({ children }) {
   const handleOffline = useCallback(() => {
     // Only show message and update state if we're not already offline
     if (isOnline) {
-      console.log('🌐 Network Status: Offline');
+      // console.log('🌐 Network Status: Offline');
       setIsOnline(false);
       setConnectionStrength('offline');
       

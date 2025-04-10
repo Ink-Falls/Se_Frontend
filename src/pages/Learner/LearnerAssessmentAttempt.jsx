@@ -34,10 +34,6 @@ const LearnerAssessmentAttempt = () => {
   const initializeAttemptRef = useRef(false);
 
   const fetchQuestionsWithMedia = async (assessmentId) => {
-    console.log(
-      "1. fetchQuestionsWithMedia called with assessmentId:",
-      assessmentId
-    );
     try {
       const response = await getAssessmentById(assessmentId, true);
       if (response.success) {
@@ -77,7 +73,6 @@ const LearnerAssessmentAttempt = () => {
 
         setAnswers(savedAnswerMap);
         setSavedAnswers(savedAnswersStatus);
-        console.log("Loaded saved answers:", savedAnswerMap);
       }
     } catch (error) {
       console.error("Error loading saved answers:", error);
@@ -88,7 +83,6 @@ const LearnerAssessmentAttempt = () => {
     const initializeAttempt = async () => {
       // Guard against double initialization from Strict Mode
       if (initializeAttemptRef.current || submissionCreatedRef.current) {
-        console.log("Initialization already attempted");
         return;
       }
 
@@ -109,7 +103,6 @@ const LearnerAssessmentAttempt = () => {
         );
         if (existingData) {
           const parsed = JSON.parse(existingData);
-          console.log("Found existing submission:", parsed);
           if (parsed.submissionId) {
             // Load existing submission and its answers
             setSubmissionId(parsed.submissionId);
@@ -133,12 +126,10 @@ const LearnerAssessmentAttempt = () => {
 
         // Continue with new submission creation if no existing one found
         if (location.state.isNewAttempt && !submissionCreatedRef.current) {
-          console.log("Creating new submission attempt");
           const submissionResponse = await createSubmission(assessment.id);
 
           // Mark submission as created to prevent duplicates
           submissionCreatedRef.current = true;
-          console.log("New submission created:", submissionResponse);
 
           if (!submissionResponse?.success || !submissionResponse?.submission) {
             throw new Error("Failed to initialize assessment attempt");
@@ -183,12 +174,10 @@ const LearnerAssessmentAttempt = () => {
   };
 
   const handleNextQuestion = async () => {
-    console.log("10. handleNextQuestion called");
     const currentQuestion = questions[currentQuestionIndex];
     const answer = answers[currentQuestion.id];
 
     if (answer) {
-      console.log("11. Saving answer for question:", currentQuestion.id);
       try {
         setSavingAnswer(true);
         await saveQuestionAnswer(submissionId, currentQuestion.id, answer);
@@ -206,20 +195,11 @@ const LearnerAssessmentAttempt = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
     } else {
-      console.log(
-        "12. Last question reached, calling handleSubmitAssessment (#3)"
-      );
       await handleSubmitAssessment();
     }
   };
 
   const handleSubmitAssessment = async (submissionIdOverride = null) => {
-    console.log("13. handleSubmitAssessment called with:", {
-      submissionIdOverride,
-      currentSubmissionId: submissionId,
-      assessmentId: assessment.id,
-    });
-
     try {
       const submitId = submissionIdOverride || submissionId;
       if (!submitId) {
@@ -230,7 +210,6 @@ const LearnerAssessmentAttempt = () => {
       const currentQuestion = questions[currentQuestionIndex];
       if (currentQuestion && answers[currentQuestion.id]) {
         try {
-          console.log("Saving final answer before submission for question:", currentQuestion.id);
           await saveQuestionAnswer(submitId, currentQuestion.id, answers[currentQuestion.id]);
         } catch (saveErr) {
           console.error("Error saving final answer before submission:", saveErr);

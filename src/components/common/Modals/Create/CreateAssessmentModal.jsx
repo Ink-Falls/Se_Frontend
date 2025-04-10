@@ -101,7 +101,6 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
       try {
         setLoadingModules(true);
         const modulesResponse = await getModulesByCourseId(selectedCourse.id);
-        console.log("Modules response:", modulesResponse); // Debug log
 
         // Check if modulesResponse is array and has items
         if (Array.isArray(modulesResponse) && modulesResponse.length > 0) {

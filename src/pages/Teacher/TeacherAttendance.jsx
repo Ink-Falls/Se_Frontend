@@ -459,7 +459,6 @@ const TeacherAttendance = () => {
   };
 
   const handleStudentSelect = (student) => {
-    console.log("Selecting student:", student?.id);
     setSelectedStudent(prev => {
       // Toggle selection if clicking the same student again
       if (prev?.id === student.id) return null;
