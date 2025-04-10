@@ -359,6 +359,17 @@ const TeacherCourseAssessment = () => {
     setShowMenu((current) => (current === assessmentId ? null : assessmentId));
   };
 
+  const getModuleColor = (index) => {
+    const colors = ["blue", "violet", "emerald"];
+    const colorKey = colors[index % colors.length];
+    const gradientMap = {
+      blue: "border-blue-500",
+      violet: "border-purple-500",
+      emerald: "border-emerald-500",
+    };
+    return gradientMap[colorKey];
+  };
+
   const renderAssessmentCard = (assessment) => {
     const color = getTypeColor(assessment.type);
 
@@ -515,7 +526,7 @@ const TeacherCourseAssessment = () => {
   const renderModulesWithAssessments = () => {
     return (
       <div className="space-y-6">
-        {modules.map((module) => {
+        {modules.map((module, index) => {
           const moduleAssessmentList =
             moduleAssessments[module.module_id] || [];
           const publishedCount = moduleAssessmentList.filter(
@@ -526,11 +537,13 @@ const TeacherCourseAssessment = () => {
           return (
             <div
               key={module.module_id}
-              className="group bg-white rounded-xl border border-gray-200/50 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md"
+              className={`group bg-white rounded-xl border-gray-200/50 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md border-l-[6px] ${getModuleColor(
+                index
+              )}`}
             >
               <div className="px-8 py-6 bg-gradient-to-r from-gray-50 via-white to-white relative">
                 <div
-                  className="flex justify-between items-start cursor-pointer"
+                  className="flex justify-between items-center cursor-pointer"
                   onClick={() => toggleModule(module.module_id)}
                 >
                   <div className="flex-1 pr-8">
@@ -552,7 +565,7 @@ const TeacherCourseAssessment = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="relative">
+                  <div className="flex items-center">
                     <div
                       className={`w-8 h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center transition-all duration-300 group-hover:border-gray-300 group-hover:bg-gray-100 ${
                         expandedModules.has(module.module_id)
@@ -568,28 +581,25 @@ const TeacherCourseAssessment = () => {
 
               {expandedModules.has(module.module_id) && (
                 <div className="p-6 bg-gray-50 border-t border-gray-100">
-                  {moduleAssessmentList.length > 0 ? (
+                  {moduleAssessmentList.length > 0 && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {moduleAssessmentList.map(renderAssessmentCard)}
                     </div>
-                  ) : (
-                    <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-200">
-                      <ClipboardList className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-                      <p className="text-gray-600 font-medium mb-4">
-                        No assessments in this module yet
-                      </p>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsCreateModalOpen(true);
-                        }}
-                        className="inline-flex items-center gap-2 text-yellow-600 hover:text-yellow-700 font-medium"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add assessment
-                      </button>
-                    </div>
                   )}
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCreateModalOpen(true);
+                    }}
+                    className="mt-6 w-full p-4 flex items-center justify-center gap-2 text-gray-500 bg-white rounded-lg border-2 border-dashed border-gray-200 hover:bg-gray-50 hover:text-[#212529] transition-colors group"
+                  >
+                    <Plus
+                      size={20}
+                      className="group-hover:scale-110 transition-transform"
+                    />
+                    <span className="font-medium">Add a new assessment</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -616,14 +626,13 @@ const TeacherCourseAssessment = () => {
           <MobileNavBar navItems={navItems} />
         </div>
 
-        {/* Add success message display */}
+        {/* Success and Error Messages */}
         {successMessage && (
           <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
             {successMessage}
           </div>
         )}
 
-        {/* Keep existing error display */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
             {error}
@@ -636,22 +645,14 @@ const TeacherCourseAssessment = () => {
           </div>
         )}
 
-        {error && (
-          <div className="flex flex-col items-center justify-center min-h-[400px]">
-            <AlertTriangle size={48} className="text-red-500 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Failed to Load Assessments
-            </h3>
-            <p className="text-gray-500 text-center max-w-md mb-4">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
-            >
-              Try Again
-            </button>
+        {/* Existing Content */}
+        {!loading && !error && hasAnyAssessments && (
+          <div className="flex flex-col gap-4">
+            {renderModulesWithAssessments()}
           </div>
         )}
 
+        {/* Empty State */}
         {!loading && !error && !hasAnyAssessments && (
           <div className="text-center py-12 bg-white rounded-lg shadow-sm">
             <div className="text-gray-400 mb-4">
@@ -663,30 +664,13 @@ const TeacherCourseAssessment = () => {
             <p className="text-gray-500 mt-2 mb-6">
               There are no assessments for this course yet.
             </p>
-            <button
-              data-testid="create-assessment-button"
-              aria-label="create assessment"
-              onClick={() => setIsCreateModalOpen(true)}
-              className="px-6 py-3 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors inline-flex items-center gap-2"
-            >
-              <Plus size={20} />
-              Create Assessment
-            </button>
           </div>
         )}
 
-        {!loading && !error && hasAnyAssessments && (
-          <>
-            <div className="flex flex-col gap-4 mt-4">
-              {renderModulesWithAssessments()}
-            </div>
-          </>
-        )}
-
+        {/* Modals */}
         <CreateAssessmentModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
-          courseId={selectedCourse?.id}
           onSuccess={handleAssessmentCreated}
         />
         {editingAssessment && (

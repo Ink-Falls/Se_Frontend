@@ -4,6 +4,8 @@ import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import { ArrowLeft, Book, Bell } from "lucide-react";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
+import admin_icon from "/src/assets/images/icons/admin_icon.png";
+import books_icon from "/src/assets/images/icons/books_icon.png";
 
 const NotificationDetails = () => {
   const navigate = useNavigate();
@@ -49,7 +51,9 @@ const NotificationDetails = () => {
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-4 md:p-6">
         <Header title="Notification" />
-        <div className="max-w-full mt-6"> {/* Changed from max-w-3xl to max-w-full */}
+        <div className="max-w-full mt-6">
+          {" "}
+          {/* Changed from max-w-3xl to max-w-full */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
             {/* Header */}
             <div className="bg-gray-50 py-4 px-6 flex items-center justify-between border-b">
@@ -68,7 +72,15 @@ const NotificationDetails = () => {
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
                   <img
-                    src={notification.userImage}
+                    src={
+                      notification.id === 1
+                        ? admin_icon
+                        : notification.id === 2
+                        ? books_icon
+                        : notification.type.toLowerCase().includes("admin")
+                        ? admin_icon
+                        : learner_icon
+                    }
                     alt=""
                     className="h-12 w-12 rounded-full border-2 border-gray-200"
                   />
@@ -86,6 +98,26 @@ const NotificationDetails = () => {
                     <p className="text-gray-900 text-lg font-medium">
                       {notification.description}
                     </p>
+                    {notification.id === 1 && (
+                      <button
+                        onClick={() =>
+                          (window.location.href = "/Learner/Assessment")
+                        }
+                        className="inline-flex items-center mt-5 px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                      >
+                        Go to Assessment
+                      </button>
+                    )}
+                    {notification.id === 2 && (
+                      <button
+                        onClick={() =>
+                          (window.location.href = "/Learner/Course")
+                        }
+                        className="inline-flex mt-5 items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                      >
+                        Go to Course
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

@@ -11,6 +11,7 @@ import {
   Megaphone,
   BookOpen,
   ClipboardList,
+  GraduationCap,
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
 
@@ -44,6 +45,27 @@ const announcements = [
     userImage:
       "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
   },
+  {
+    id: "4",
+    type: "Tutoring Available",
+    description:
+      "Tutoring will be available in the following dates: December 12-14.",
+    fullText:
+      "Tutoring sessions will be held on December 12-14. Please check the schedule for details.",
+    time: "1 hour ago",
+    userImage:
+      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+  },
+  {
+    id: "5",
+    type: "Project Reminder",
+    description: "Project 2 is now deployed.",
+    fullText:
+      "We are excited to announce that Project 2 is now deployed. Please review it and provide your feedback.",
+    time: "2 hours ago",
+    userImage:
+      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+  },
 ];
 
 const LearnerAnnouncementDetails = () => {
@@ -73,11 +95,16 @@ const LearnerAnnouncementDetails = () => {
       icon: <ClipboardList size={20} />,
       route: "/Learner/Assessment",
     },
+    {
+      text: "Grades", // New Grades item
+      icon: <GraduationCap size={20} />,
+      route: "/Learner/Grades",
+    },
   ];
 
   useEffect(() => {
     if (!selectedCourse?.id) {
-      navigate('/Learner/Dashboard');
+      navigate("/Learner/Dashboard");
     }
   }, [selectedCourse, navigate]);
 
@@ -92,9 +119,9 @@ const LearnerAnnouncementDetails = () => {
       <Sidebar navItems={navItems} />
 
       <div className="flex-1 p-6">
-        <Header 
-          title={selectedCourse?.name || "Announcement Details"} 
-          subtitle={selectedCourse?.code} 
+        <Header
+          title={selectedCourse?.name || "Announcement Details"}
+          subtitle={selectedCourse?.code}
         />
 
         <BlackHeader
@@ -127,11 +154,20 @@ const LearnerAnnouncementDetails = () => {
                 <div className="flex items-center space-x-2">
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                      announcement.type.toLowerCase().includes("test")
+                      announcement.type.toLowerCase() === "test reminder"
                         ? "bg-blue-100 text-blue-800 border-blue-200"
-                        : announcement.type.toLowerCase().includes("project")
+                        : announcement.type.toLowerCase() === "project reminder"
                         ? "bg-purple-100 text-purple-800 border-purple-200"
-                        : "bg-green-100 text-green-800 border-green-200"
+                        : announcement.type.toLowerCase() ===
+                          "tutoring available"
+                        ? "bg-green-100 text-green-800 border-green-200"
+                        : announcement.type.toLowerCase() ===
+                          "holiday announcement"
+                        ? "bg-yellow-100 text-yellow-800 border-yellow-200"
+                        : announcement.type.toLowerCase() ===
+                          "new course material"
+                        ? "bg-gray-100 text-gray-800 border-gray-200"
+                        : "bg-gray-50 text-gray-700 border-gray-100"
                     }`}
                   >
                     {announcement.type}
