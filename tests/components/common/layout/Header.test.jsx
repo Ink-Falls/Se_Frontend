@@ -1,7 +1,8 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import Header from 'Se_Frontend/src/components/common/layout/Header.jsx'; // Adjust the import according to your file structure
-import { describe, it, expect } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import Header from 'Se_Frontend/src/components/common/layout/Header.jsx';
+import { describe, it, expect, vi } from 'vitest';
 
 describe('Header Component', () => {
   it('should render the title and current date', () => {
@@ -12,7 +13,12 @@ describe('Header Component', () => {
       day: 'numeric',
     });
 
-    render(<Header title={title} />);
+    // Wrap Header component in MemoryRouter
+    render(
+      <MemoryRouter>
+        <Header title={title} />
+      </MemoryRouter>
+    );
 
    // Check if the title is rendered
    const titleElements = screen.getAllByText(title);
@@ -24,7 +30,12 @@ describe('Header Component', () => {
  });
 
   it('should render the profile image for mobile view', () => {
-    render(<Header title="Test Title" />);
+    // Wrap Header component in MemoryRouter
+    render(
+      <MemoryRouter>
+        <Header title="Test Title" />
+      </MemoryRouter>
+    );
 
     // Check if the profile image is rendered for mobile view
     const profileImage = screen.getAllByAltText('Profile');
@@ -33,7 +44,12 @@ describe('Header Component', () => {
   });
 
   it('should render the profile image for desktop view', () => {
-    render(<Header title="Test Title" />);
+    // Wrap Header component in MemoryRouter
+    render(
+      <MemoryRouter>
+        <Header title="Test Title" />
+      </MemoryRouter>
+    );
 
     // Check if the profile image is rendered for desktop view
     const profileImage = screen.getAllByAltText('Profile');
@@ -42,9 +58,22 @@ describe('Header Component', () => {
   });
 
   it('should render the account text for desktop view', () => {
-    render(<Header title="Test Title" />);
+    // Mock localStorage to return a user
+    const mockUser = { first_name: 'John', last_name: 'Doe', role: 'student' };
+    const getItemSpy = vi.spyOn(Storage.prototype, 'getItem');
+    getItemSpy.mockReturnValue(JSON.stringify(mockUser));
+    
+    // Wrap Header component in MemoryRouter
+    render(
+      <MemoryRouter>
+        <Header title="Test Title" />
+      </MemoryRouter>
+    );
 
     // Check if the account text is rendered for desktop view
-    expect(screen.getByText(/account/i)).toBeInTheDocument();
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    
+    // Clean up the mock
+    getItemSpy.mockRestore();
   });
 });

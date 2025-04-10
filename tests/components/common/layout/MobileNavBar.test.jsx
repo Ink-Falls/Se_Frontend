@@ -1,15 +1,30 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import MobileNavBar from 'Se_Frontend/src/components/common/layout/MobileNavbar.jsx'; // Adjust the import according to your file structure
-import { describe, it, expect } from 'vitest';
+import MobileNavBar from 'Se_Frontend/src/components/common/layout/MobileNavbar.jsx';
+import { describe, it, expect, vi } from 'vitest';
+
+// Mock the useAuth hook
+const mockLogout = vi.fn();
+vi.mock('../../../../src/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    logout: mockLogout,
+    isAuthenticated: true,
+    user: { id: 1, name: 'Test User' },
+    loading: false
+  })
+}));
 
 describe('MobileNavBar Component', () => {
   const renderWithRouter = (initialEntries) => {
     return render(
       <MemoryRouter initialEntries={initialEntries}>
         <Routes>
-          <Route path="*" element={<MobileNavBar />} />
+          <Route path="*" element={<MobileNavBar navItems={[
+            { route: '/Dashboard', icon: <span>Courses</span> },
+            { route: '/Notifications', icon: <span>Notifications</span> },
+            { route: '/Account', icon: <span>Account</span> }
+          ]} />} />
         </Routes>
       </MemoryRouter>
     );
