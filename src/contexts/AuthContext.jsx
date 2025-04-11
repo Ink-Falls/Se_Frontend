@@ -69,8 +69,16 @@ export function AuthProvider({ children }) {
       await logoutUser();
       await tokenService.removeTokens();
       tokenService.clearAutoRefresh();
+      
+      // Clear all localStorage and sessionStorage
       localStorage.clear();
       sessionStorage.clear();
+      
+      // Restore theme preference but set it to light mode
+      localStorage.setItem('aralkademy-theme', 'light');
+      
+      // Update UI to match the light theme
+      document.documentElement.classList.remove('dark');
       
       setAuthState({
         isAuthenticated: false,
@@ -86,8 +94,12 @@ export function AuthProvider({ children }) {
       // Still clear everything on error
       await tokenService.removeTokens();
       tokenService.clearAutoRefresh();
+      
+      // Clear localStorage but preserve theme preference as light mode
       localStorage.clear();
       sessionStorage.clear();
+      localStorage.setItem('aralkademy-theme', 'light');
+      document.documentElement.classList.remove('dark');
       
       setAuthState({
         isAuthenticated: false,

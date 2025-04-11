@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { verifyMagicLinkToken } from "../../services/authService";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import { debounce } from "lodash";
 
 import dogImage from "../../assets/images/picture-codes/dog.png";
@@ -44,6 +45,7 @@ const ID_TO_NAME_MAP = {
 function PictureCodeLogin() {
   const navigate = useNavigate();
   const { checkAuth } = useAuth();
+  const { isDarkMode } = useTheme();
   const [selectedPictures, setSelectedPictures] = useState([]);
   const [pictures, setPictures] = useState(SAMPLE_PICTURES);
   const [isLoading, setIsLoading] = useState(false);
@@ -208,7 +210,7 @@ function PictureCodeLogin() {
     return (
       <div className="text-center p-6">
         <div className="flex justify-center mb-4">
-          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
+          <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-10 w-10 text-green-500"
@@ -225,10 +227,10 @@ function PictureCodeLogin() {
             </svg>
           </div>
         </div>
-        <h3 className="text-[6vw] lg:text-[1.5vw] max-lg:text-[4vw] font-bold mb-4 text-[#212529]">
+        <h3 className="text-[6vw] lg:text-[1.5vw] max-lg:text-[4vw] font-bold mb-4 text-[#212529] dark:text-gray-100">
           Great job!
         </h3>
-        <p className="text-[3vw] mb-4 lg:text-[0.9vw] max-lg:text-[2.5vw] text-[#64748B]">
+        <p className="text-[3vw] mb-4 lg:text-[0.9vw] max-lg:text-[2.5vw] text-[#64748B] dark:text-gray-300">
           You selected the right pictures!
           <br />
           Taking you to your dashboard...
@@ -245,11 +247,11 @@ function PictureCodeLogin() {
       {error && (
         <div
           role="alert"
-          className="bg-red-50 p-3 rounded-md border border-red-200"
+          className="bg-red-50 dark:bg-red-900/30 p-3 rounded-md border border-red-200 dark:border-red-700"
         >
           <p
             name="please select at least 3 pictures"
-            className="text-red-500 text-center text-[3vw] lg:text-[0.9vw] max-lg:text-[2.5vw]"
+            className="text-red-500 dark:text-red-300 text-center text-[3vw] lg:text-[0.9vw] max-lg:text-[2.5vw]"
           >
             {error}
           </p>
@@ -258,9 +260,9 @@ function PictureCodeLogin() {
 
       {/* Selected pictures preview */}
       <div>
-        <div className="mt-2 flex justify-center items-center space-x-2 h-20 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-2">
+        <div className="mt-2 flex justify-center items-center space-x-2 h-20 bg-gray-50 dark:bg-gray-700 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 p-2">
           {selectedPictures.length === 0 ? (
-            <span className="text-gray-400 text-[2.5vw] md:text-sm">
+            <span className="text-gray-400 dark:text-gray-300 text-[2.5vw] md:text-sm">
               Select pictures below
             </span>
           ) : (
@@ -269,7 +271,7 @@ function PictureCodeLogin() {
                 <img
                   src={pic.url}
                   alt={pic.name}
-                  className="w-full h-full object-contain p-1 bg-white rounded border border-gray-200"
+                  className="w-full h-full object-contain p-1 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700"
                 />
                 <button
                   aria-label={`Remove ${pic.name}`}
@@ -295,8 +297,8 @@ function PictureCodeLogin() {
             disabled={selectedPictures.some((p) => p.id === pic.id)}
             className={`aspect-square p-2 rounded-lg border-2 transition-all ${
               selectedPictures.some((p) => p.id === pic.id)
-                ? "border-[#F6BA18] bg-yellow-50 opacity-60"
-                : "border-gray-200 hover:border-[#F6BA18] hover:shadow-md"
+                ? "border-[#F6BA18] bg-yellow-50 dark:bg-yellow-900/30 opacity-60"
+                : "border-gray-200 dark:border-gray-700 hover:border-[#F6BA18] hover:shadow-md dark:hover:shadow-dark-md"
             }`}
           >
             <img
@@ -312,7 +314,7 @@ function PictureCodeLogin() {
         <button
           type="button"
           onClick={handleReset}
-          className="py-2 px-4 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors text-[3.5vw] lg:text-[1.2vw] 2xl:text-[0.8vw] max-lg:text-[2.5vw]"
+          className="py-2 px-4 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-[3.5vw] lg:text-[1.2vw] 2xl:text-[0.8vw] max-lg:text-[2.5vw]"
         >
           Clear
         </button>
@@ -325,7 +327,9 @@ function PictureCodeLogin() {
           className="flex items-center justify-center min-w-[10rem] px-6 py-2 
             font-semibold rounded-md transition-colors duration-300 flex-shrink-0
             text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529] 
-            disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-gray-200"
+            dark:bg-gray-700 dark:hover:bg-[#F6BA18] dark:hover:text-[#212529]
+            disabled:cursor-not-allowed disabled:bg-gray-400 disabled:text-gray-200 
+            dark:disabled:bg-gray-700 dark:disabled:text-gray-500"
         >
           {isLoading ? (
             <div className="flex items-center space-x-2">
