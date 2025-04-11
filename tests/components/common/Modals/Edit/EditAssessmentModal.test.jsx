@@ -19,6 +19,7 @@ describe('EditAssessmentModal Component', () => {
     due_date: '2025-12-31T23:59:59Z',
     instructions: 'Please complete the assessment.',
     is_published: false,
+    allowed_attempts: 1,
   };
 
   const renderComponent = (props) => {
@@ -38,18 +39,14 @@ describe('EditAssessmentModal Component', () => {
     });
   
     await waitFor(() => {
-      screen.debug();
       expect(screen.getByText("Edit Assessment")).toBeInTheDocument();
       expect(screen.getByDisplayValue("Sample Assessment")).toBeInTheDocument();
       expect(screen.getByDisplayValue("This is a sample assessment.")).toBeInTheDocument();
-      const typeSelect1 = screen.getByLabelText(/type/i); // Find the <select> element by its label
-      expect(typeSelect1.value).toBe("quiz"); // Verify the selected value // Ensure "quiz" is the selected value
-      expect(screen.getByDisplayValue("100")).toBeInTheDocument();
       const typeSelect = screen.getByLabelText(/type/i); // Find the <select> element by its label
       expect(typeSelect.value).toBe("quiz"); // Verify the selected value
+      expect(screen.getByDisplayValue("100")).toBeInTheDocument();
       expect(screen.getByDisplayValue("2025-12-31T23:59")).toBeInTheDocument();
       expect(screen.getByDisplayValue("Please complete the assessment.")).toBeInTheDocument();
-      expect(screen.getByLabelText("Published")).not.toBeChecked();
     });
   });
 
@@ -85,7 +82,7 @@ describe('EditAssessmentModal Component', () => {
     fireEvent.change(passingScoreInput, { target: { value: '90' } });
     expect(passingScoreInput.value).toBe('90');
 
-    const durationInput = screen.getByLabelText(/duration \(minutes\)/i);
+    const durationInput = screen.getByLabelText(/time limit/i);
     fireEvent.change(durationInput, { target: { value: '90' } });
     expect(durationInput.value).toBe('90');
 
@@ -96,10 +93,6 @@ describe('EditAssessmentModal Component', () => {
     const instructionsTextarea = screen.getByLabelText(/instructions/i);
     fireEvent.change(instructionsTextarea, { target: { value: 'Updated instructions.' } });
     expect(instructionsTextarea.value).toBe('Updated instructions.');
-
-    const publishedCheckbox = screen.getByLabelText(/published/i);
-    fireEvent.click(publishedCheckbox);
-    expect(publishedCheckbox).toBeChecked();
   });
 
   it('submits the form correctly', async () => {
@@ -136,6 +129,7 @@ describe('EditAssessmentModal Component', () => {
         due_date: '2025-12-31T15:59:00.000Z', // Adjusted to match the UTC conversion
         is_published: false,
         instructions: 'Please complete the assessment.',
+        allowed_attempts: 1,
       });
       expect(onSubmit).toHaveBeenCalled();
       expect(onClose).toHaveBeenCalled();

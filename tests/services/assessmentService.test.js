@@ -144,8 +144,12 @@ describe('Assessment Service', () => {
         success: true,
         submission: { id: 1, status: 'submitted' }
       };
+      
+      const assessmentId = 1;
+      const submissionId = 1;
 
       Storage.prototype.getItem.mockReturnValue(JSON.stringify({
+        submissionId: 1,
         assessmentId: 1
       }));
 
@@ -154,10 +158,10 @@ describe('Assessment Service', () => {
         json: () => Promise.resolve(mockResponse)
       });
 
-      const result = await submitAssessment(1);
+      const result = await submitAssessment(submissionId, assessmentId);
       expect(result.submission.status).toBe('submitted');
       expect(fetchWithInterceptor).toHaveBeenCalledWith(
-        expect.stringContaining('/submissions/1/submit'),
+        expect.stringContaining(`/submissions/${submissionId}/submit`),
         expect.any(Object)
       );
     });

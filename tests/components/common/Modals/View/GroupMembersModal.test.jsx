@@ -43,10 +43,10 @@ describe('GroupMembersModal Component', () => {
   });
 
   it('should display a loading message when isLoading is true', () => {
-    renderComponent(true);
+    renderComponent(true, true);
 
     // Check if the loading message is rendered
-    expect(screen.findByText(/loading members.../i)).toBeInTheDocument();
+    expect(screen.getByText(/loading members.../i)).toBeInTheDocument();
   });
 
   it('should display a message when there are no members', () => {

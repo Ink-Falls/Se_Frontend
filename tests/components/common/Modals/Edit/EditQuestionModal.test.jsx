@@ -77,13 +77,29 @@ describe('EditQuestionModal Component', () => {
   it('adds and removes options for multiple choice questions', () => {
     renderComponent(true);
 
+    // Count initial options
+    const initialOptions = screen.getAllByRole('textbox').filter(input => 
+      input.placeholder && input.placeholder.startsWith('Option')
+    );
+    expect(initialOptions.length).toBe(2);
+
     // Add an option
     fireEvent.click(screen.getByText('Add Option'));
-    expect(screen.getAllByPlaceholderText('Option text').length).toBe(3);
+    
+    // Count options after adding one
+    const optionsAfterAdd = screen.getAllByRole('textbox').filter(input => 
+      input.placeholder && input.placeholder.startsWith('Option')
+    );
+    expect(optionsAfterAdd.length).toBe(3);
 
     // Remove an option
     fireEvent.click(screen.getAllByRole('button', { name: /remove option/i })[0]);
-    expect(screen.getAllByPlaceholderText('Option text').length).toBe(2);
+    
+    // Count options after removing one
+    const optionsAfterRemove = screen.getAllByRole('textbox').filter(input => 
+      input.placeholder && input.placeholder.startsWith('Option')
+    );
+    expect(optionsAfterRemove.length).toBe(2);
   });
 
   it('displays an error message if the update fails', async () => {

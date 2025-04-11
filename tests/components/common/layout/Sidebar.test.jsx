@@ -2,13 +2,34 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import Sidebar from 'Se_Frontend/src/components/common/layout/Sidebar.jsx'; // Adjust the import according to your file structure
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Book, Bell, User } from "lucide-react";
-import { logoutUser } from 'Se_Frontend/src/services/authService.js'; // Adjust the import according to your file structure
+
+// Mock window.location.replace for logout test
+Object.defineProperty(window, 'location', {
+  writable: true,
+  value: { replace: vi.fn() }
+});
 
 vi.mock('Se_Frontend/src/services/authService.js', () => ({
   logoutUser: vi.fn(),
 }));
+
+// Create a mockLogout function we can track
+const mockLogout = vi.fn().mockImplementation(() => Promise.resolve());
+
+// Mock the AuthContext's useAuth hook
+vi.mock('Se_Frontend/src/contexts/AuthContext.jsx', async () => {
+  const actual = await vi.importActual('Se_Frontend/src/contexts/AuthContext.jsx');
+  return {
+    ...actual,
+    useAuth: () => ({
+      logout: mockLogout,
+      user: { name: 'Test User' },
+      isAuthenticated: true
+    })
+  };
+});
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
@@ -26,6 +47,10 @@ const navItems = [
 ];
 
 describe('Sidebar Component', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   const renderWithRouter = (initialEntries) => {
     return render(
       <MemoryRouter initialEntries={initialEntries}>
@@ -51,12 +76,21 @@ describe('Sidebar Component', () => {
     // Check if the sidebar is initially expanded
     expect(screen.getByAltText('ARALKADEMY Logo')).toHaveClass('w-40');
 
-    // Click the toggle button to collapse the sidebar
-    fireEvent.click(screen.getByRole('button', { name: /collapse sidebar/i }));
+    // Get the toggle button by its class since it doesn't have a name
+    const toggleButton = screen.getByRole('button', { 
+      name: '' // The button doesn't have an accessible name
+    });
+    
+    // Click to collapse
+    fireEvent.click(toggleButton);
+    
+    // The logo should now have w-0 class
     expect(screen.getByAltText('ARALKADEMY Logo')).toHaveClass('w-0');
 
-    // Click the toggle button to expand the sidebar
-    fireEvent.click(screen.getByRole('button', { name: /expand sidebar/i }));
+    // Click to expand again
+    fireEvent.click(toggleButton);
+    
+    // The logo should have w-40 class again
     expect(screen.getByAltText('ARALKADEMY Logo')).toHaveClass('w-40');
   });
 
@@ -75,18 +109,16 @@ describe('Sidebar Component', () => {
   it('should handle logout', async () => {
     renderWithRouter(['/Dashboard']);
 
-    // Mock the logout function
-    logoutUser.mockResolvedValueOnce();
-
     // Click the logout button
     fireEvent.click(screen.getByRole('button', { name: /logout/i }));
 
-    // Check if the logout function was called
-    expect(logoutUser).toHaveBeenCalledTimes(1);
-
-    // Check if the user is redirected to the login page
+    // Wait for async operations to complete
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/login');
+      // Check if the logout function was called
+      expect(mockLogout).toHaveBeenCalledTimes(1);
     });
+
+    // Check if location.replace was called with '/login'
+    expect(window.location.replace).toHaveBeenCalledWith('/login');
   });
 });

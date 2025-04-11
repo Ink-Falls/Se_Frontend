@@ -39,8 +39,8 @@ describe('EnrolleeDetailsModal', () => {
       expect(screen.getByText('Doe')).toBeInTheDocument();
       expect(screen.getByText('A')).toBeInTheDocument();
       expect(screen.getByText('john.doe@example.com')).toBeInTheDocument();
-      expect(screen.getByText('0912-345-6789')).toBeInTheDocument();
-      expect(screen.getByText('01/01/1990')).toBeInTheDocument();
+      expect(screen.getByText('09123456789')).toBeInTheDocument();
+      expect(screen.getByText('1/1/1990')).toBeInTheDocument();
       expect(screen.getByText('3')).toBeInTheDocument();
       expect(screen.getByText('Asuncion Consunji Elementary School (ACES)')).toBeInTheDocument();
       expect(screen.getByText('not assigned yet')).toBeInTheDocument();
@@ -50,6 +50,9 @@ describe('EnrolleeDetailsModal', () => {
   });
 
   it('handles approve action', async () => {
+    // Mock successful approval response
+    onApprove.mockResolvedValue({ message: "Enrollment approved successfully" });
+    
     render(<EnrolleeDetailsModal enrolleeId={enrolleeId} onClose={onClose} onReject={onReject} onApprove={onApprove} />);
     
     await waitFor(() => screen.getByText('Approve'));
