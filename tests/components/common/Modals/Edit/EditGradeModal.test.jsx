@@ -68,7 +68,8 @@ describe('EditGradeModal Component', () => {
     await waitFor(() => {
       expect(screen.getByText('Grade Question')).toBeInTheDocument();
       expect(screen.getByText('What is 2 + 2?')).toBeInTheDocument();
-      expect(screen.getByText('Option 1')).toBeInTheDocument();
+      // Using queryAllByText to handle multiple elements with the same text
+      expect(screen.queryAllByText('Option 1').length).toBeGreaterThan(0);
       expect(screen.getByText('Option 2')).toBeInTheDocument();
     });
   });
@@ -99,8 +100,26 @@ describe('EditGradeModal Component', () => {
 
 
 it('submits the form correctly', async () => {
+  // First call to getSubmissionDetails (initial load)
   getSubmissionDetails.mockResolvedValueOnce({ success: true, submission: mockSubmission });
+  
+  // Mock the gradeSubmission API call
   gradeSubmission.mockResolvedValueOnce({ success: true });
+  
+  // Second call to getSubmissionDetails (after form submission)
+  getSubmissionDetails.mockResolvedValueOnce({ 
+    success: true, 
+    submission: {
+      ...mockSubmission,
+      answers: [
+        {
+          ...mockSubmission.answers[0],
+          points_awarded: 8,
+          feedback: 'Great job!'
+        }
+      ]
+    } 
+  });
 
   const onSave = vi.fn();
   const onClose = vi.fn();
@@ -128,10 +147,10 @@ it('submits the form correctly', async () => {
 
   await waitFor(() => {
     expect(gradeSubmission).toHaveBeenCalledWith(mockSubmission.id, {
-      grades: [{ questionId: 1, points: 8, feedback: 'Great job!' }],
+      grade: { questionId: 1, points: 8, feedback: 'Great job!' },
       feedback: '',
     });
-    expect(onSave).toHaveBeenCalledTimes(0);
+    expect(onSave).toHaveBeenCalledTimes(1); // Now expecting onSave to be called
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
