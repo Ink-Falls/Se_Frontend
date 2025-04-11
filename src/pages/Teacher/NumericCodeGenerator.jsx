@@ -11,7 +11,7 @@ function NumericCodeGenerator() {
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) {
-      return "Student email is required";
+      return "Learner email is required";
     }
     if (!emailRegex.test(email)) {
       return "Please enter a valid email address";
@@ -49,10 +49,10 @@ function NumericCodeGenerator() {
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-xl font-bold text-[#212529] mb-4">
-        Generate Student Login Code
+        Generate Learner Login Code
       </h2>
       <p className="text-[#64748B] mb-4">
-        Generate a 6-digit code for student login
+        Generate a 6-digit code for learner login
       </p>
 
       {codeData ? (
@@ -100,7 +100,7 @@ function NumericCodeGenerator() {
               htmlFor="student-email"
               className="block text-[#64748B] mb-1"
             >
-              Student Email
+              Learner Email
             </label>
             <input
               type="email"

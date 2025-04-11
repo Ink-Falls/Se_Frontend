@@ -267,10 +267,6 @@ const LearnerAssessmentView = () => {
           // Check specifically for in-progress submission
           if (submissionResponse.submission?.status === "in_progress") {
             setExistingSubmission(submissionResponse.submission);
-            console.log(
-              "Found in-progress submission:",
-              submissionResponse.submission
-            );
           }
 
           if (submissionResponse.assessment) {
@@ -329,7 +325,6 @@ const LearnerAssessmentView = () => {
         const response = await getUserSubmissionCount(assessment.id, false);
         if (response.success) {
           setSubmissionCount(response.count || 0);
-          console.log("Submission count updated:", response.count); // Debugging
         }
       } catch (err) {
         console.error("Error fetching submission count:", err);
@@ -476,12 +471,6 @@ const LearnerAssessmentView = () => {
       setLoading(true);
       const submissionResponse = await getUserSubmission(assessment.id, true);
 
-      console.log("Latest submission fetch:", {
-        success: submissionResponse.success,
-        hasSubmission: !!submissionResponse.submission,
-        submissionStatus: submissionResponse.submission?.status,
-      });
-
       if (submissionResponse.success && submissionResponse.submission) {
         setLatestSubmission(submissionResponse.submission);
       }
@@ -585,12 +574,6 @@ const LearnerAssessmentView = () => {
     const storedSubmissionId = storedData
       ? JSON.parse(storedData).submissionId
       : null;
-
-    console.log("Submission Status Check:", {
-      storedSubmissionId,
-      hasStoredData: !!storedData,
-      initialSubmission: !!initialSubmission,
-    });
 
     if (storedSubmissionId) {
       // Override the completed submission view if there's a stored submission

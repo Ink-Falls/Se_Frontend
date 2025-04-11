@@ -5,6 +5,8 @@ import Header from "../../components/common/layout/Header";
 import NotificationsComponent from "./NotificationsComponent"; // Fix import path
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import { useNavigate } from "react-router-dom";
+import books_icon from "/src/assets/images/icons/books_icon.png";
+import school_icon from "/src/assets/images/icons/school_icon.png";
 
 const Notifications = () => {
   const navigate = useNavigate();
@@ -36,17 +38,14 @@ const Notifications = () => {
       type: "New Submission",
       description: "New Submission for Activity 1 - Environmental Science",
       time: "10 minutes ago",
-      userImage:
-        "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+      userImage: books_icon,
     },
     {
       id: 2,
       type: "New Announcement",
-      description:
-        "A new announcement regarding upcoming events has been posted.",
+      description: "Semesteral Break Starts on December 15",
       time: "30 minutes ago",
-      userImage:
-        "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+      userImage: school_icon,
     },
   ];
 

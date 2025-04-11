@@ -4,6 +4,8 @@ import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import BlackHeader from "../../components/common/layout/BlackHeader";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
+import booksIcon from "../../assets/images/icons/books_icon.png";
+import schoolIcon from "../../assets/images/icons/school_icon.png";
 import {
   ArrowLeft,
   Trash2,
@@ -17,12 +19,20 @@ import {
 } from "lucide-react";
 import Modal from "../../components/common/Button/Modal"; // Import the Modal component
 import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // Import the DeleteModal component
-import { useCourse } from '../../contexts/CourseContext';
+import { useCourse } from "../../contexts/CourseContext";
 const navItems = [
   { text: "Home", icon: <Home size={20} />, route: "/Teacher/Dashboard" },
-  { text: "Announcements", icon: <Megaphone size={20} />, route: "/Teacher/Announcements" },
+  {
+    text: "Announcements",
+    icon: <Megaphone size={20} />,
+    route: "/Teacher/Announcements",
+  },
   { text: "Courses", icon: <BookOpen size={20} />, route: "/Teacher/Courses" },
-  { text: "Assessments", icon: <ClipboardList size={20} />, route: "/Teacher/Assessments" },
+  {
+    text: "Assessments",
+    icon: <ClipboardList size={20} />,
+    route: "/Teacher/Assessments",
+  },
   { text: "Users", icon: <User size={20} />, route: "/Teacher/Users" },
   { text: "Reports", icon: <LineChart size={20} />, route: "/Teacher/Reports" },
 ];
@@ -33,8 +43,7 @@ const announcements = [
     description: "Your test is scheduled for December 10.",
     fullText: "Make sure to prepare well for the upcoming test on December 10.",
     time: "10 minutes ago",
-    userImage:
-      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+    userImage: booksIcon, // Matches course announcements
   },
   {
     id: "2",
@@ -43,8 +52,7 @@ const announcements = [
     fullText:
       "Don't forget to submit your final project before the deadline on December 15.",
     time: "5 minutes ago",
-    userImage:
-      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+    userImage: schoolIcon, // Matches course announcements
   },
   {
     id: "3",
@@ -53,8 +61,26 @@ const announcements = [
     fullText:
       "Tutoring sessions are available every Tuesday and Thursday at 3 PM.",
     time: "20 minutes ago",
-    userImage:
-      "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+    userImage: booksIcon, // Matches course announcements
+  },
+  {
+    id: "4",
+    type: "Tutoring Available",
+    description:
+      "Tutoring will be available in the following dates: December 12-14.",
+    fullText:
+      "Tutoring sessions will be held on December 12-14. Please check the schedule for details.",
+    time: "1 hour ago",
+    userImage: booksIcon, // Matches course announcements
+  },
+  {
+    id: "5",
+    type: "Project Reminder",
+    description: "Project 2 is now deployed.",
+    fullText:
+      "We are excited to announce that Project 2 is now deployed. Please review it and provide your feedback.",
+    time: "2 hours ago",
+    userImage: schoolIcon, // Matches course announcements
   },
 ];
 
@@ -69,7 +95,7 @@ const AnnouncementDetails = () => {
 
   useEffect(() => {
     if (!selectedCourse?.id) {
-      navigate('/Teacher/Dashboard');
+      navigate("/Teacher/Dashboard");
       return;
     }
   }, [selectedCourse, navigate]);
@@ -89,11 +115,7 @@ const AnnouncementDetails = () => {
 
   // Handle save after editing
   const handleSave = () => {
-    console.log("Updated Announcement:", {
-      ...announcement,
-      type: editedType,
-      fullText: editedFullText,
-    });
+   
     setIsEditModalOpen(false); // Close the modal after saving
     // You can update the announcement in your state or API here
   };
@@ -105,7 +127,7 @@ const AnnouncementDetails = () => {
 
   // Handle confirm delete
   const handleConfirmDelete = () => {
-    console.log("Deleted Announcement:", announcement);
+    
     setIsDeleteModalOpen(false); // Close the modal after deletion
     navigate(-1); // Navigate back after deletion
     // You can delete the announcement from your state or API here
@@ -151,11 +173,11 @@ const AnnouncementDetails = () => {
 
       <div className="flex-1 p-6">
         {/* Header (Same as TeacherCoursePage) */}
-        <Header 
-          title={selectedCourse?.name || 'Announcement Details'} 
-          subtitle={selectedCourse?.code} 
+        <Header
+          title={selectedCourse?.name || "Announcement Details"}
+          subtitle={selectedCourse?.code}
         />
-      <MobileNavBar navItems={navItems} />
+        <MobileNavBar navItems={navItems} />
 
         {/* BlackHeader with Back Button before Title */}
         <BlackHeader
@@ -190,7 +212,7 @@ const AnnouncementDetails = () => {
           </button>
         </BlackHeader>
 
-        {/* Modified Announcement Details Box */}
+        {/* Updated Announcement Details Box */}
         <div className="bg-white p-10 rounded-lg shadow-md">
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0">
@@ -205,11 +227,20 @@ const AnnouncementDetails = () => {
                 <div className="flex items-center space-x-2">
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                      announcement.type.toLowerCase().includes("test")
+                      announcement.type.toLowerCase() === "test reminder"
                         ? "bg-blue-100 text-blue-800 border-blue-200"
-                        : announcement.type.toLowerCase().includes("project")
+                        : announcement.type.toLowerCase() === "project reminder"
                         ? "bg-purple-100 text-purple-800 border-purple-200"
-                        : "bg-green-100 text-green-800 border-green-200"
+                        : announcement.type.toLowerCase() ===
+                          "tutoring available"
+                        ? "bg-green-100 text-green-800 border-green-200"
+                        : announcement.type.toLowerCase() ===
+                          "holiday announcement"
+                        ? "bg-yellow-100 text-yellow-800 border-yellow-200"
+                        : announcement.type.toLowerCase() ===
+                          "new course material"
+                        ? "bg-gray-100 text-gray-800 border-gray-200"
+                        : "bg-gray-50 text-gray-700 border-gray-100"
                     }`}
                   >
                     {announcement.type}

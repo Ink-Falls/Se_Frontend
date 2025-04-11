@@ -152,7 +152,6 @@ function EnrolleeTable({
         throw new Error("Failed to create blob URL");
       }
 
-      console.log("PDF URL created:", pdfUrl);
       setReportUrl(pdfUrl);
     } catch (error) {
       console.error("Error details:", error);

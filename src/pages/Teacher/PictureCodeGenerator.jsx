@@ -36,7 +36,7 @@ function PictureCodeGenerator() {
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) {
-      return "Student email is required";
+      return "Learner email is required";
     }
     if (!emailRegex.test(email)) {
       return "Please enter a valid email address";
@@ -58,8 +58,7 @@ function PictureCodeGenerator() {
 
     try {
       const data = await requestPictureCode(studentEmail);
-      console.log("API response:", data); // Log the entire response for debugging
-
+      
       // Handle different response formats
       if (data.pictures) {
         setCodeData(data);
@@ -97,10 +96,7 @@ function PictureCodeGenerator() {
         </div>
       );
     }
-
-    // Log the received pictures for debugging
-    console.log("Received pictures:", pictures);
-
+    
     return (
       <div className="flex items-center justify-center space-x-3">
         {pictures.map((pic, index) => {
@@ -149,7 +145,7 @@ function PictureCodeGenerator() {
         Generate Picture Login Code
       </h2>
       <p className="text-[#64748B] mb-4">
-        Generate a picture sequence for young students (Grades 1-3)
+        Generate a picture sequence for young learners (Grades 1-3)
       </p>
 
       {codeData ? (
@@ -166,7 +162,7 @@ function PictureCodeGenerator() {
             <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
               <h4 className="font-semibold text-sm mb-2">Instructions:</h4>
               <ol className="text-sm text-left list-decimal pl-5 space-y-1">
-                <li>Show the student this exact sequence of pictures</li>
+                <li>Show the learner this exact sequence of pictures</li>
                 <li>
                   On the login screen, they should select these pictures in
                   order
@@ -200,7 +196,7 @@ function PictureCodeGenerator() {
               htmlFor="student-email"
               className="block text-[#64748B] mb-1"
             >
-              Student Email
+              Learner Email
             </label>
             <input
               type="email"
@@ -209,7 +205,7 @@ function PictureCodeGenerator() {
               onChange={(e) => setStudentEmail(e.target.value)}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
-              placeholder="Enter student email"
+              placeholder="Enter learner email"
             />
           </div>
 
