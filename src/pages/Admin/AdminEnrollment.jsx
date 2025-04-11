@@ -103,16 +103,15 @@ function AdminEnrollment() {
 
       if (response.message === "Enrollment approved successfully") {
         setSuccessMessage("Enrollment successfully approved!");
-
-        // Refresh both the paginated data and overall stats
+        // Refresh both paginated data and overall stats
         await Promise.all([fetchEnrollments(), fetchOverallStats()]);
-
-        return response; // Return response so modal knows operation succeeded
       }
+
+      return response; // Return response so modal knows operation succeeded
     } catch (error) {
       console.error("Approval error:", error);
-      setError(error.message || "Failed to approve enrollment");
-      throw error; // Rethrow to let modal know operation failed
+      // Remove setting error state here and just rethrow
+      throw error; // Let modal handle the error display
     }
   };
 
@@ -220,17 +219,15 @@ function AdminEnrollment() {
         }`
       );
 
-      // Refresh both enrollment data and stats simultaneously
-      await Promise.all([fetchEnrollments(), fetchOverallStats()]);
-
-      // Reset any filters/search
+      // Reset states
       setFilterStatus("");
       setSearchQuery("");
       setCurrentPage(1);
-
-      // Close modal and clear enrollments to delete
       setShowDeleteModal(false);
       setEnrollmentsToDelete(null);
+
+      // Refresh the page to fetch latest data
+      window.location.reload();
     } catch (error) {
       console.error("Error deleting enrollments:", error);
       setError(error.message || "Failed to delete selected enrollments");
