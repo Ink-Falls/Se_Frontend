@@ -5,7 +5,6 @@ import React, { createContext, useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "/src/assets/images/ARALKADEMYLOGO.png";
 import { useAuth } from '../../../contexts/AuthContext';
-import ThemeToggle from '../ThemeToggle';
 import { useTheme } from '../../../contexts/ThemeContext';
 
 const SidebarContext = createContext();
@@ -87,12 +86,6 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
         </SidebarContext.Provider>
 
         <div className="mt-auto px-3 py-3">
-          {/* Theme toggle button */}
-          {expanded && (
-            <div className="mb-3 px-4 py-2">
-              <ThemeToggle className="w-full flex justify-center items-center gap-2" />
-            </div>
-          )}
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
