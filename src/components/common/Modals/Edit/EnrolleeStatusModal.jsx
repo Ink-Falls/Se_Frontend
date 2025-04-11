@@ -37,7 +37,7 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
 
   const handleApprove = async () => {
     try {
-      setApprovalError(null); // Clear any previous error
+      setApprovalError(null);
 
       if (!enrollee.year_level) {
         setApprovalError("Cannot approve: Year level is missing");
@@ -50,8 +50,8 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
       }
     } catch (error) {
       console.error("Error in approval process:", error);
+      // Display the specific error message from the service
       setApprovalError(error.message || "Failed to complete approval process");
-      // Keep modal open so user can see error
     }
   };
 
@@ -268,7 +268,7 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
 
         {/* Add error message display */}
         {approvalError && (
-          <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
+          <div className="mt-4 mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
             {approvalError}
           </div>
         )}
