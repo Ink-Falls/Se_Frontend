@@ -659,18 +659,25 @@ const TeacherCourseAssessment = () => {
           </div>
         )}
 
-        {/* Empty State */}
+        {/* No Assessments State with Add First Assessment Button */}
         {!loading && !error && !hasAnyAssessments && (
           <div className="text-center py-12 bg-white rounded-lg shadow-sm">
             <div className="text-gray-400 mb-4">
               <ClipboardList size={48} className="mx-auto" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
               No Assessments Available
             </h3>
-            <p className="text-gray-500 mt-2 mb-6">
+            <p className="text-gray-500 mb-6">
               There are no assessments for this course yet.
             </p>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-[#212529] hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300"
+            >
+              <Plus size={20} className="mr-2" />
+              Create Your First Assessment
+            </button>
           </div>
         )}
 

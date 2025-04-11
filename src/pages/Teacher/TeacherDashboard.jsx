@@ -83,7 +83,7 @@ const Dashboard = () => {
       name: course.name,
       code: course.code || "No Code",
       description: course.description,
-      studentCount: course.studentCount
+      studentCount: course.studentCount,
     });
     navigate("/Teacher/CourseModules");
   };
@@ -177,11 +177,11 @@ const Dashboard = () => {
                   {/* Content Section */}
                   <div className="p-5 flex-grow flex flex-col">
                     <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-800 group-hover:text-yellow-600 transition-colors">
+                      <div className="w-full max-w-full">
+                        <h3 className="text-lg font-semibold text-gray-800 group-hover:text-yellow-600 transition-colors truncate">
                           {course.name}
                         </h3>
-                        <p className="text-sm font-medium text-gray-500">
+                        <p className="text-sm font-medium text-gray-500 truncate">
                           {course.code}
                         </p>
                       </div>

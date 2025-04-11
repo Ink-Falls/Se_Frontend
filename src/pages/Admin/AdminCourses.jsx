@@ -490,6 +490,7 @@ function AdminCourses() {
                   <div className="mb-3">
                     {/* Add dark mode text color */}
                     <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">
+
                       {course.name}
                     </h3>
                     {/* Add dark mode styles for badge */}
