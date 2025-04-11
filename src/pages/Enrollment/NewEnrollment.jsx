@@ -532,10 +532,10 @@ function NewEnrollment() {
                           Select your school
                         </option>
                         <option value="1001">
-                          Asuncion Consunji Elementary School (ACES)
+                          University of Santo Tomas (UST)
                         </option>
                         <option value="1002">
-                          University of Santo Tomas (UST)
+                          Asuncion Consunji Elementary School (ACES)
                         </option>
                       </select>
                     </div>

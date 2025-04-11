@@ -112,14 +112,14 @@ const EnrolleeDetailsModal = ({ enrolleeId, onClose, onReject, onApprove }) => {
   const getSchoolInfo = (schoolId) => {
     const schools = {
       1001: {
-        name: "Asuncion Consunji Elementary School (ACES)",
-        contact: "not assigned yet",
-        address: "Brgy. Imelda, Samal, Bataan",
-      },
-      1002: {
         name: "University of Santo Tomas (UST)",
         contact: "(02) 3406 1611",
         address: "España Blvd, Sampaloc, Manila",
+      },
+      1002: {
+        name: "Asuncion Consunji Elementary School (ACES)",
+        contact: "not assigned yet",
+        address: "Brgy. Imelda, Samal, Bataan",
       },
     };
     return schools[schoolId] || { name: "N/A", contact: "N/A", address: "N/A" };
