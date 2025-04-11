@@ -71,6 +71,7 @@ const TeacherPages = {
       default: module.default,
     }))
   ),
+  Attendance: lazy(() => import("./pages/Teacher/TeacherAttendance")),
 };
 
 const LearnerPages = {
@@ -319,6 +320,14 @@ function AppRoutes() {
                         element={
                           <ProtectedRoute>
                             <TeacherPages.ProgressTracker />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="Attendance"
+                        element={
+                          <ProtectedRoute>
+                            <TeacherPages.Attendance />
                           </ProtectedRoute>
                         }
                       />

@@ -33,11 +33,10 @@ function PictureCodeGeneratorPage() {
         <MobileNavBar navItems={navItems} />
 
         <div className="p-6">
-          <h1 className="text-2xl font-bold mb-6">Picture Code Generator</h1>
           <p className="text-gray-600 mb-6">
-            Generate picture sequences for young learners (grades 1-3). Students
-            can use these picture sequences to log in without needing to remember
-            passwords.
+            Generate picture sequences for young learners (grades 1-3). Learners
+            can use these picture sequences to log in without needing to
+            remember passwords.
           </p>
 
           <div className="max-w-md mx-auto">
@@ -46,13 +45,13 @@ function PictureCodeGeneratorPage() {
 
           <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-lg font-semibold mb-3">
-              Instructions for Student Picture Login:
+              Instructions for Learner Picture Login:
             </h2>
             <ol className="list-decimal pl-6 space-y-2">
-              <li>Generate a picture sequence for the student</li>
-              <li>Show the picture sequence to the student</li>
-              <li>Direct the student to the login page</li>
-              <li>The student can select the pictures in the correct order</li>
+              <li>Generate a picture sequence for the learner</li>
+              <li>Show the picture sequence to the learner</li>
+              <li>Direct the learner to the login page</li>
+              <li>The learner can select the pictures in the correct order</li>
               <li>Picture sequences expire after 15 minutes</li>
             </ol>
           </div>

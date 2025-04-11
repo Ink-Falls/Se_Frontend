@@ -17,6 +17,8 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
+import booksIcon from "../../assets/images/icons/books_icon.png";
+import schoolIcon from "../../assets/images/icons/school_icon.png";
 
 const TeacherCourseAnnouncements = () => {
   const { selectedCourse } = useCourse();
@@ -35,24 +37,36 @@ const TeacherCourseAnnouncements = () => {
       type: "Test Reminder",
       description: "Your test is scheduled for December 10.",
       time: "10 minutes ago",
-      userImage:
-        "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+      userImage: booksIcon, // Matches announcement details
     },
     {
       id: 2,
       type: "Project Reminder",
       description: "Final project is due soon. Submit by December 15.",
       time: "5 minutes ago",
-      userImage:
-        "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+      userImage: schoolIcon, // Matches announcement details
     },
     {
       id: 3,
       type: "Tutoring Available",
       description: "Extra help sessions on Tuesday and Thursday at 3 PM.",
       time: "20 minutes ago",
-      userImage:
-        "https://images.rawpixel.com/image_800/cHJpdmF0ZS9sci9pbWFnZXMvd2Vic2l0ZS8yMDIyLTA2L3RwMjAxLXNhc2ktMjkta20xa25vNzkuanBn.jpg",
+      userImage: booksIcon, // Matches announcement details
+    },
+    {
+      id: 4,
+      type: "Tutoring Available",
+      description:
+        "Tutoring will be available in the following dates: December 12-14.",
+      time: "1 hour ago",
+      userImage: booksIcon, // Matches announcement details
+    },
+    {
+      id: 5,
+      type: "Project Reminder",
+      description: "Project 2 is now deployed.",
+      time: "2 hours ago",
+      userImage: schoolIcon, // Matches announcement details
     },
   ]);
 
@@ -122,7 +136,7 @@ const TeacherCourseAnnouncements = () => {
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-6">
         <Header
-           data-testid="course-title"
+          data-testid="course-title"
           title={selectedCourse?.name || "Course"}
           subtitle={selectedCourse?.code}
         />
@@ -149,12 +163,31 @@ const TeacherCourseAnnouncements = () => {
           <AnnouncementsComponent
             announcements={announcements}
             onAnnouncementClick={(id) =>
-              navigate(`/Teacher/NotificationDetails/${id}`, {
+              navigate(`/Teacher/AnnouncementDetails/${id}`, {
                 state: {
                   notification: announcements.find((ann) => ann.id === id),
                 },
               })
             }
+            renderAnnouncement={(announcement) => (
+              <span
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                  announcement.type.toLowerCase() === "test reminder"
+                    ? "bg-blue-100 text-blue-800 border-blue-200"
+                    : announcement.type.toLowerCase() === "project reminder"
+                    ? "bg-purple-100 text-purple-800 border-purple-200"
+                    : announcement.type.toLowerCase() === "tutoring available"
+                    ? "bg-green-100 text-green-800 border-green-200"
+                    : announcement.type.toLowerCase() === "holiday announcement"
+                    ? "bg-yellow-100 text-yellow-800 border-yellow-200"
+                    : announcement.type.toLowerCase() === "new course material"
+                    ? "bg-gray-100 text-gray-800 border-gray-200"
+                    : "bg-gray-50 text-gray-700 border-gray-100"
+                }`}
+              >
+                {announcement.type}
+              </span>
+            )}
             onEdit={handleEditAnnouncement} // Pass edit handler
             onDelete={setAnnouncementToDelete} // Pass delete handler
           />
@@ -164,20 +197,28 @@ const TeacherCourseAnnouncements = () => {
       {/* Modals */}
       {isModalOpen && (
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-          <h2 data-testid="modal-title" className="text-xl font-semibold mb-4">Add New Announcement</h2>
+          <h2 data-testid="modal-title" className="text-xl font-semibold mb-4">
+            Add New Announcement
+          </h2>
           <form className="flex flex-col">
-            <label htmlFor="announcement_title" className="font-medium mb-2 text-gray-700">
+            <label
+              htmlFor="announcement_title"
+              className="font-medium mb-2 text-gray-700"
+            >
               Announcement Title
             </label>
             <input
-              id= "announcement_title"
+              id="announcement_title"
               name="announcement_title"
               type="text"
               placeholder="Enter title"
               className="border p-2 rounded mb-4"
             />
 
-            <label htmlFor="description" className="font-medium mb-2 text-gray-700">
+            <label
+              htmlFor="description"
+              className="font-medium mb-2 text-gray-700"
+            >
               Description
             </label>
             <textarea

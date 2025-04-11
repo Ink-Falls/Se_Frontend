@@ -89,8 +89,6 @@ const GroupMembersModal = ({ isOpen, onClose, group, members, isLoading, onMembe
           ) : (
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
               {members.map((member) => {
-  console.log("Member Data:", member); // Logs the member object
-  console.log("Mapped School Name:", schoolMapping[member.school_id]); // Logs the mapped school name
 
   return (
     <div

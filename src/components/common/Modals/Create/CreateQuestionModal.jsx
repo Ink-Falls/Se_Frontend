@@ -207,7 +207,6 @@ const CreateQuestionModal = ({
           throw new Error("Invalid question type");
       }
 
-      console.log("Formatted question data:", basicData);
       await onSubmit(basicData);
       // If we get here, submission was successful
       onClose();

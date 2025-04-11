@@ -4,6 +4,8 @@ import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import { ArrowLeft, Book, Bell, Hash, Image } from "lucide-react";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
+import admin_icon from "/src/assets/images/icons/admin_icon.png";
+import learner_icon from "/src/assets/images/icons/learner_icon.png";
 
 const NotificationPage = () => {
   const navigate = useNavigate();
@@ -81,7 +83,15 @@ const NotificationPage = () => {
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
                   <img
-                    src={notification.userImage}
+                    src={
+                      notification.id === 1
+                        ? learner_icon
+                        : notification.id === 2
+                        ? admin_icon
+                        : notification.type.toLowerCase().includes("admin")
+                        ? admin_icon
+                        : learner_icon
+                    }
                     alt=""
                     className="h-12 w-12 rounded-full border-2 border-gray-200"
                   />
@@ -107,10 +117,8 @@ const NotificationPage = () => {
                     </p>
                     <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
                       <p className="text-gray-600 text-sm leading-relaxed">
-                        Additional details about this notification will be
-                        displayed here. The content can include formatted text,
-                        links, and other relevant information that helps provide
-                        context to the notification.
+                        {notification.details ||
+                          "No additional details are available for this notification."}
                       </p>
                     </div>
                   </div>
