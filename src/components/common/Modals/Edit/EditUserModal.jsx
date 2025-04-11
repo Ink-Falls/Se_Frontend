@@ -178,8 +178,8 @@ function EditUserModal({ user, onClose, onSave }) {
   if (!user) return null;
 
   const schoolOptions = [
-    { id: "1001", name: "Asuncion Consunji Elementary School (ACES)" },
-    { id: "1002", name: "University of Santo Tomas (UST)" },
+    { id: "1001", name: "University of Santo Tomas (UST)" },
+    { id: "1002", name: "Asuncion Consunji Elementary School (ACES)" },
   ];
 
   // Get available role options
