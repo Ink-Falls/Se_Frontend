@@ -2,16 +2,19 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { useAuth } from "../../../contexts/AuthContext";
+import { useTheme } from "../../../contexts/ThemeContext";
+import ThemeToggle from "../ThemeToggle";
 
 const MobileNavBar = ({ navItems }) => {
   const location = useLocation();
   const { logout } = useAuth();
+  const { isDarkMode } = useTheme();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const getActiveStyle = (path) =>
     location.pathname === path
       ? "text-[#F6BA18]"
-      : "text-white hover:text-[#F6BA18]";
+      : isDarkMode ? "text-gray-200 hover:text-[#F6BA18]" : "text-white hover:text-[#F6BA18]";
 
   const handleLogout = async () => {
     try {
@@ -29,7 +32,7 @@ const MobileNavBar = ({ navItems }) => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 w-full bg-[#212529] shadow-lg border-t flex justify-around py-3 lg:hidden">
+    <div className="fixed bottom-0 left-0 w-full bg-[#212529] dark:bg-gray-900 shadow-lg border-t dark:border-gray-700 flex justify-around py-3 lg:hidden">
       {navItems?.map((item, index) => (
         <Link
           key={index}
@@ -39,10 +42,16 @@ const MobileNavBar = ({ navItems }) => {
           {item.icon}
         </Link>
       ))}
+      
+      {/* Theme Toggle Button */}
+      <div className="flex flex-col items-center">
+        <ThemeToggle className="!p-1" />
+      </div>
+      
       <button
         onClick={handleLogout}
         disabled={isLoggingOut}
-        className="flex flex-col items-center text-white hover:text-[#F6BA18]"
+        className="flex flex-col items-center text-white dark:text-gray-200 hover:text-[#F6BA18]"
       >
         {isLoggingOut ? (
           <>

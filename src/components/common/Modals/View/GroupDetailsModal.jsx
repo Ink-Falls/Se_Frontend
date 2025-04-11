@@ -11,8 +11,10 @@ import {
 } from "../../../../services/groupService";
 import GroupMembersModal from "./GroupMembersModal";
 import EditGroupModal from "../Edit/EditGroupModal";
+import { useTheme } from "../../../../contexts/ThemeContext";
 
 const GroupDetailsModal = ({ isOpen, onClose }) => {
+  const { isDarkMode } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [existingGroups, setExistingGroups] = useState([]);
@@ -246,27 +248,27 @@ const GroupDetailsModal = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
       <div
-        className={`bg-white rounded-2xl shadow-lg w-full max-w-[700px] max-h-[90vh] relative ${
+        className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg dark:shadow-dark-xl w-full max-w-[700px] max-h-[90vh] relative transition-colors ${
           animate ? "opacity-100 scale-100" : "opacity-0 scale-95"
         }`}
       >
         <div className="overflow-y-auto h-full max-h-[90vh] px-4 md:px-8 py-6 pr-6 md:pr-10">
           <button
             aria-label="Close"
-            className="absolute top-6 right-4 md:right-8 text-gray-500 hover:text-gray-700"
+            className="absolute top-6 right-4 md:right-8 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
             onClick={onClose}
           >
             <X size={24} />
           </button>
 
-          <h2 className="text-2xl font-bold mb-6">Group List</h2>
+          <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100 transition-colors">Group List</h2>
 
           <div className="flex flex-col md:flex-row gap-2 md:space-x-4 mb-6">
             <button
               className={`px-4 py-2 rounded-lg flex-1 md:flex-none ${
                 activeTab === "groups"
                   ? "bg-[#F6BA18] text-white"
-                  : "bg-gray-100 text-gray-600"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
               }`}
               onClick={() => setActiveTab("groups")}
             >
@@ -276,7 +278,7 @@ const GroupDetailsModal = ({ isOpen, onClose }) => {
               className={`px-4 py-2 rounded-lg flex-1 md:flex-none ${
                 activeTab === "members"
                   ? "bg-[#F6BA18] text-white"
-                  : "bg-gray-100 text-gray-600"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
               }`}
               onClick={() => setActiveTab("members")}
             >
@@ -286,13 +288,13 @@ const GroupDetailsModal = ({ isOpen, onClose }) => {
 
           {/* Error and Success Messages */}
           {error && (
-            <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
+            <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg transition-colors">
               {error}
             </div>
           )}
 
           {successMessage && (
-            <div className="mb-4 p-3 bg-green-100 text-green-600 rounded-lg">
+            <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg transition-colors">
               {successMessage}
             </div>
           )}
@@ -301,15 +303,15 @@ const GroupDetailsModal = ({ isOpen, onClose }) => {
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
-                  <Users size={20} />
-                  <h3 className="text-lg font-semibold">
+                  <Users size={20} className="text-gray-700 dark:text-gray-300 transition-colors" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 transition-colors">
                     Existing Groups ({existingGroups?.length || 0})
                   </h3>
                 </div>
                 {selectedGroups.length > 0 && (
                   <button
                     onClick={handleDeleteSelected}
-                    className="flex items-center gap-2 px-3 py-1 text-red-600 hover:text-red-800"
+                    className="flex items-center gap-2 px-3 py-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
                   >
                     <Trash2 size={18} />
                     <span>Delete Selected ({selectedGroups.length})</span>
@@ -321,33 +323,33 @@ const GroupDetailsModal = ({ isOpen, onClose }) => {
                 {existingGroups.map((group) => (
                   <div
                     key={group.id}
-                    className="flex items-center space-x-4 bg-gray-50 p-3 rounded-lg"
+                    className="flex items-center space-x-4 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg transition-colors"
                   >
                     <input
                       type="checkbox"
                       checked={selectedGroups.includes(group.id)}
                       onChange={() => handleGroupSelect(group.id)}
-                      className="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                      className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-yellow-600 focus:ring-yellow-500 dark:bg-gray-600 dark:checked:bg-yellow-500"
                     />
                     <div className="flex flex-1 items-center justify-between">
                       <div className="flex flex-col">
-                        <span className="font-medium">{group.name}</span>
-                        <div className="flex gap-4 text-sm text-gray-600">
+                        <span className="font-medium text-gray-900 dark:text-gray-100 transition-colors">{group.name}</span>
+                        <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400 transition-colors">
                           <span className="capitalize">{group.groupType}</span>
                           <span>|</span>
                           <span>ID: {group.id}</span>
                           {/* Add members list if this group's members are loaded */}
                           {selectedGroupMembers.length > 0 &&
                             group.id === selectedGroupMembers[0]?.groupId && (
-                              <div className="mt-2 pl-4 border-l-2 border-gray-200">
-                                <p className="text-sm font-medium text-gray-600 mb-1">
+                              <div className="mt-2 pl-4 border-l-2 border-gray-200 dark:border-gray-600 transition-colors">
+                                <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 transition-colors">
                                   Members:
                                 </p>
                                 <div className="space-y-1">
                                   {selectedGroupMembers.map((member) => (
                                     <div
                                       key={member.id}
-                                      className="flex items-center justify-between text-sm text-gray-600 p-2 hover:bg-gray-100 rounded"
+                                      className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
                                     >
                                       <span>
                                         {member.first_name} {member.last_name} (
@@ -357,7 +359,7 @@ const GroupDetailsModal = ({ isOpen, onClose }) => {
                                         onClick={() =>
                                           handleRemoveMember(group, member)
                                         }
-                                        className="p-1 text-red-500 hover:text-red-700 rounded-full hover:bg-red-50 transition-colors"
+                                        className="p-1 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                                         disabled={loadingMembers}
                                         title="Remove member"
                                       >
@@ -373,7 +375,7 @@ const GroupDetailsModal = ({ isOpen, onClose }) => {
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => handleViewMembers(group)}
-                          className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800"
+                          className="px-3 py-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                           disabled={loadingMembers}
                         >
                           {loadingMembers ? (
@@ -384,16 +386,16 @@ const GroupDetailsModal = ({ isOpen, onClose }) => {
                         </button>
                         <button
                           onClick={() => handleUpdateGroup(group)}
-                          className="p-1 text-gray-600 hover:text-yellow-600"
+                          className="p-1 text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-500 transition-colors"
                         >
                           <PencilIcon size={16} />
                         </button>
                         <span
                           className={`px-2 py-1 text-xs font-medium rounded-full ${
                             group.groupType === "learner"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-green-100 text-green-800"
-                          }`}
+                              ? "bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300"
+                              : "bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300"
+                          } transition-colors`}
                         >
                           {group.groupType}
                         </span>
@@ -407,15 +409,15 @@ const GroupDetailsModal = ({ isOpen, onClose }) => {
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
-                  <Users size={20} />
-                  <h3 className="text-lg font-semibold">
+                  <Users size={20} className="text-gray-700 dark:text-gray-300 transition-colors" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 transition-colors">
                     Available Members ({availableMembers.length})
                   </h3>
                 </div>
                 <select
                   value={memberType}
-                  onChange={handleMemberTypeChange} // Use the new handler
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                  onChange={handleMemberTypeChange}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors"
                 >
                   <option value="learner">Learners</option>
                   <option value="student_teacher">Student Teachers</option>
@@ -431,7 +433,7 @@ const GroupDetailsModal = ({ isOpen, onClose }) => {
                     );
                     setSelectedGroupForAssignment(group);
                   }}
-                  className="px-3 py-2 border border-gray-300 rounded-lg"
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors"
                 >
                   <option value="">Select a group to assign to...</option>
                   {getCompatibleGroups(memberType).map((group) => (
@@ -444,16 +446,14 @@ const GroupDetailsModal = ({ isOpen, onClose }) => {
 
               {isLoading ? (
                 <div className="flex items-center justify-center py-4">
-                  <Loader className="animate-spin" size={24} />
+                  <Loader className="animate-spin text-gray-700 dark:text-gray-300" size={24} />
                 </div>
               ) : (
                 <div className="max-h-[200px] md:max-h-[300px] overflow-y-auto pr-2">
-                  {" "}
-                  {/* Added max height and scroll */}
                   {availableMembers.map((member) => (
                     <div
                       key={member.id}
-                      className="flex items-center justify-between bg-gray-50 p-3 rounded-lg mb-2"
+                      className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg mb-2 transition-colors"
                     >
                       <div className="flex items-center space-x-3">
                         <input
@@ -462,13 +462,13 @@ const GroupDetailsModal = ({ isOpen, onClose }) => {
                           onChange={() =>
                             handleSelectAvailableMember(member.id)
                           }
-                          className="h-4 w-4 rounded border-gray-300"
+                          className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-600 dark:checked:bg-yellow-500"
                         />
                         <div className="flex flex-col">
-                          <span className="font-medium">
+                          <span className="font-medium text-gray-900 dark:text-gray-100 transition-colors">
                             {member.first_name} {member.last_name}
                           </span>
-                          <div className="text-sm text-gray-600 flex gap-2">
+                          <div className="text-sm text-gray-600 dark:text-gray-400 flex gap-2 transition-colors">
                             <span>{member.email}</span>
                             {member.school_id && (
                               <span>• {schoolMapping[member.school_id]}</span>
@@ -483,7 +483,7 @@ const GroupDetailsModal = ({ isOpen, onClose }) => {
 
               {selectedAvailableMembers.length > 0 && (
                 <div className="flex justify-end mt-4 items-center gap-4">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-600 dark:text-gray-400 transition-colors">
                     {selectedGroupForAssignment
                       ? `Assigning to: ${selectedGroupForAssignment.name}`
                       : "Please select a group"}
@@ -491,7 +491,7 @@ const GroupDetailsModal = ({ isOpen, onClose }) => {
                   <button
                     onClick={handleAssignMembers}
                     disabled={assigningMembers || !selectedGroupForAssignment}
-                    className="px-4 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#F6BA18] hover:text-black transition-colors disabled:opacity-50"
+                    className="px-4 py-2 bg-[#212529] dark:bg-[#333333] text-white rounded-lg hover:bg-[#F6BA18] dark:hover:bg-[#F6BA18] hover:text-black transition-colors disabled:opacity-50"
                   >
                     {assigningMembers
                       ? "Assigning..."
