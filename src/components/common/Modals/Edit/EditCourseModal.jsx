@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { AlertTriangle } from "lucide-react";
+import { useTheme } from "../../../../contexts/ThemeContext";
 
 const EditCourseModal = ({
   course,
@@ -9,6 +10,7 @@ const EditCourseModal = ({
   learnerGroups,
   studentTeacherGroups,
 }) => {
+  const { isDarkMode } = useTheme();
   const [editedCourse, setEditedCourse] = useState(course);
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,11 +51,11 @@ const EditCourseModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-2xl p-6">
-        <h2 className="text-xl font-semibold mb-4">Edit Course</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl p-6 transition-colors">
+        <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Edit Course</h2>
 
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-center gap-2">
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-300 rounded-lg flex items-center gap-2">
             <AlertTriangle size={20} />
             <span>{error}</span>
           </div>
@@ -62,7 +64,7 @@ const EditCourseModal = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Name
               </label>
               <input
@@ -71,13 +73,13 @@ const EditCourseModal = ({
                 onChange={(e) =>
                   setEditedCourse({ ...editedCourse, name: e.target.value })
                 }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Description
               </label>
               <textarea
@@ -88,13 +90,13 @@ const EditCourseModal = ({
                     description: e.target.value,
                   })
                 }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 rows={3}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Teacher
               </label>
               <select
@@ -102,7 +104,7 @@ const EditCourseModal = ({
                 onChange={(e) =>
                   setEditedCourse({ ...editedCourse, user_id: e.target.value })
                 }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 required
               >
                 <option value="">Select a teacher</option>
@@ -115,7 +117,7 @@ const EditCourseModal = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Learner Group
               </label>
               <select
@@ -126,7 +128,7 @@ const EditCourseModal = ({
                     learner_group_id: e.target.value,
                   })
                 }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 required
               >
                 <option value="">Select a learner group</option>
@@ -139,7 +141,7 @@ const EditCourseModal = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Student Teacher Group
               </label>
               <select
@@ -150,7 +152,7 @@ const EditCourseModal = ({
                     student_teacher_group_id: e.target.value,
                   })
                 }
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 required
               >
                 <option value="">Select a student teacher group</option>
@@ -167,14 +169,14 @@ const EditCourseModal = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
               disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 disabled:opacity-50 transition-colors"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Saving..." : "Save Changes"}
