@@ -472,7 +472,7 @@ function AdminCourses() {
                 {/* Course Content */}
                 <div className="p-5 flex-grow flex flex-col">
                   <div className="mb-3">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-1">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-1 truncate">
                       {course.name}
                     </h3>
                     <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded inline-block">
