@@ -54,7 +54,7 @@ describe('Profile Component', () => {
     email: 'john.doe@example.com',
     contact_no: '1234567890',
     birth_date: '1990-01-01',
-    school_id: 1001,
+    school_id: 1002,
     role: 'learner',
   };
 

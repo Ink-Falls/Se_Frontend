@@ -422,10 +422,11 @@ const requestPictureCode = async (studentEmail) => {
  * @async
  * @function verifyMagicLinkToken
  * @param {string} token - The token from the magic link
+ *  * @param {string} [tokenType="magic_link"] - The type of token being verified
  * @returns {Promise<object>} - User data and tokens
  * @throws {Error} - If the verification fails
  */
-const verifyMagicLinkToken = async (token) => {
+const verifyMagicLinkToken = async (token, tokenType = "magic_link") => {
   try {
     const response = await fetchWithInterceptor(
       `${API_BASE_URL}/auth/passwordless/verify`,
