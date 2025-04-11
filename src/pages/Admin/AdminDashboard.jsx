@@ -26,6 +26,7 @@ import ReportViewerModal from "../../components/common/Modals/View/ReportViewerM
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import { getAllCourses } from "/src/services/courseService.js";
 import { getGroupsByType } from "/src/services/groupService.js";
+import { useTheme } from "../../contexts/ThemeContext";
 
 function AdminDashboard() {
   const [courses, setCourses] = useState([]);
@@ -62,6 +63,7 @@ function AdminDashboard() {
   const [reportError, setReportError] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [allUsersData, setAllUsersData] = useState([]); // Add this new state
+  const { isDarkMode } = useTheme();
 
   // Add new state for sorting
   const [sortConfig, setSortConfig] = useState({
@@ -527,21 +529,21 @@ function AdminDashboard() {
   const ErrorState = () => (
     <div className="flex flex-col items-center justify-center py-16 px-4">
       <AlertTriangle size={64} className="text-red-500 mb-4" />
-      <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+      <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
         Failed to Load Users
       </h3>
-      <p className="text-gray-600 text-center max-w-md mb-8">
+      <p className="text-gray-600 dark:text-gray-300 text-center max-w-md mb-8">
         We encountered an error while trying to fetch the user data. This could
         be due to network issues or server unavailability.
       </p>
       <div className="flex flex-col items-center gap-2">
         <button
           onClick={() => window.location.reload()}
-          className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 flex items-center gap-2"
+          className="px-6 py-2 bg-[#212529] text-white dark:bg-gray-700 rounded-md hover:bg-[#F6BA18] hover:text-[#212529] dark:hover:bg-[#F6BA18] transition-colors duration-300 flex items-center gap-2"
         >
           Refresh Page
         </button>
-        <span className="text-sm text-gray-500 mt-2">
+        <span className="text-sm text-gray-500 dark:text-gray-400 mt-2">
           You can try refreshing the page or contact support if the issue
           persists
         </span>
@@ -560,12 +562,12 @@ function AdminDashboard() {
 
   return (
     <>
-      <div className="flex h-screen bg-gray-100 pb-8">
+      <div className="flex h-screen bg-gray-100 dark:bg-gray-900 transition-colors pb-8">
         <Sidebar navItems={navItems} />
         <div className="flex-1 p-6 overflow-auto pb-16">
           <Header title="Users" />
           {successMessage && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+            <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 rounded-lg">
               {successMessage}
             </div>
           )}
@@ -575,10 +577,10 @@ function AdminDashboard() {
               {[...Array(5)].map((_, i) => (
                 <div
                   key={i}
-                  className="bg-white p-6 rounded-lg shadow animate-pulse"
+                  className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow animate-pulse"
                 >
-                  <div className="h-4 bg-gray-200 rounded-full w-20 mb-3"></div>
-                  <div className="h-8 bg-gray-200 rounded-full w-16"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-20 mb-3"></div>
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-16"></div>
                 </div>
               ))}
             </div>
@@ -592,15 +594,15 @@ function AdminDashboard() {
               totalAdmins={stats.totalAdmins}
             />
           )}
-          <div className="bg-white shadow rounded-lg p-6">
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 transition-colors">
             {isLoading ? (
               <div className="space-y-4">
-                <div className="h-8 bg-gray-200 rounded-full w-1/4 animate-pulse"></div>
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-1/4 animate-pulse"></div>
                 <div className="space-y-3">
                   {[...Array(5)].map((_, i) => (
                     <div
                       key={i}
-                      className="h-16 bg-gray-200 rounded-lg animate-pulse"
+                      className="h-16 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"
                     ></div>
                   ))}
                 </div>

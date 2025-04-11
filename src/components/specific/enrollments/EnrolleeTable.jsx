@@ -13,6 +13,7 @@ import EnrolleeStatusModal from "/src/components/common/Modals/Edit/EnrolleeStat
 import ReportViewerModal from "../../common/Modals/View/ReportViewerModal";
 import { generateEnrollmentReport } from "../../../services/reportService";
 import { getAllEnrollments } from "../../../services/enrollmentService";
+import { useTheme } from "../../../contexts/ThemeContext"; // Import useTheme
 
 function EnrolleeTable({
   enrollees,
@@ -35,6 +36,7 @@ function EnrolleeTable({
   const [filterStatus, setFilterStatus] = useState("All");
   const [error, setError] = useState(null);
   const [pageInput, setPageInput] = useState(currentPage.toString());
+  const { isDarkMode } = useTheme(); // Get theme state
 
   useEffect(() => {
     setPageInput(currentPage.toString());
@@ -201,13 +203,17 @@ function EnrolleeTable({
   const getStatusStyle = (status) => {
     switch (status.toLowerCase()) {
       case "approved":
-        return "bg-green-100 text-green-800";
+        // Add dark mode styles
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300";
       case "rejected":
-        return "bg-red-100 text-red-800";
+        // Add dark mode styles
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
+        // Add dark mode styles
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300";
       default:
-        return "bg-gray-100 text-gray-800";
+        // Add dark mode styles
+        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
     }
   };
 
@@ -222,14 +228,17 @@ function EnrolleeTable({
   };
 
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
-      <div className="p-4 border-b space-y-4">
+    // Add dark mode background and shadow
+    <div className="bg-white dark:bg-gray-800 shadow dark:shadow-dark-md rounded-lg overflow-hidden">
+      {/* Add dark mode border */}
+      <div className="p-4 border-b dark:border-gray-700 space-y-4">
         <div className="flex flex-col md:flex-row w-full gap-4 md:items-center md:justify-between">
           <div className="flex flex-col md:flex-row gap-4 md:items-center">
             {selectedIds.length > 0 && (
               <button
                 onClick={handleDeleteSelected}
-                className="text-red-600 hover:text-red-900"
+                // Add dark mode text color
+                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
               >
                 <Trash2 size={16} className="md:w-[1vw] md:h-[1vw]" />
               </button>
@@ -239,7 +248,8 @@ function EnrolleeTable({
               <select
                 value={currentFilter || "All"}
                 onChange={handleFilterChange}
-                className="pl-10 md:pl-[2vw] pr-4 md:pr-[1vw] py-2 md:py-[0.5vw] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] appearance-none w-full md:w-[12vw]"
+                // Add dark mode styles for select
+                className="pl-10 md:pl-[2vw] pr-4 md:pr-[1vw] py-2 md:py-[0.5vw] border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] dark:focus:ring-yellow-500 appearance-none w-full md:w-[12vw] bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
               >
                 <option value="">All</option>
                 <option value="approved">Approved</option>
@@ -247,9 +257,10 @@ function EnrolleeTable({
                 <option value="rejected">Rejected</option>
               </select>
               <div className="absolute inset-y-0 left-0 pl-3 md:pl-[0.5vw] flex items-center pointer-events-none">
+                {/* Add dark mode text color for icon */}
                 <Filter
                   size={16}
-                  className="text-[#475569] md:w-[1vw] md:h-[1vw]"
+                  className="text-[#475569] dark:text-gray-400 md:w-[1vw] md:h-[1vw]"
                 />
               </div>
             </div>
@@ -260,13 +271,16 @@ function EnrolleeTable({
                 placeholder="Search enrollees..."
                 value={searchQuery}
                 onChange={handleSearchChange}
-                className="w-full pl-10 md:pl-[2vw] pr-4 md:pr-[1vw] py-2 md:py-[0.5vw] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18]"
+                // Add dark mode styles for input
+                className="w-full pl-10 md:pl-[2vw] pr-10 md:pr-[2.5vw] py-2 md:py-[0.5vw] border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6BA18] dark:focus:ring-yellow-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
-              <Search className="absolute left-3 md:left-[0.5vw] top-1/2 -translate-y-1/2 text-[#475569] w-5 h-5 md:w-[1vw] md:h-[1vw]" />
+              {/* Add dark mode text color for icon */}
+              <Search className="absolute left-3 md:left-[0.5vw] top-1/2 -translate-y-1/2 text-[#475569] dark:text-gray-400 w-5 h-5 md:w-[1vw] md:h-[1vw]" />
               {searchQuery && (
                 <button
                   onClick={onSearchCancel}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  // Add dark mode text color for cancel button
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 >
                   <X size={16} />
                 </button>
@@ -276,7 +290,8 @@ function EnrolleeTable({
 
           <button
             onClick={handleGenerateReport}
-            className="hidden md:flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black whitespace-nowrap"
+            // Add dark mode styles for button
+            className="hidden md:flex items-center gap-2 px-4 py-2 bg-[#212529] dark:bg-gray-700 text-white dark:text-gray-200 rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] dark:hover:bg-[#F6BA18] hover:text-black dark:hover:text-black whitespace-nowrap"
           >
             <FileText size={16} className="md:w-[1vw] md:h-[1vw]" />
             <span>Generate Report</span>
@@ -285,7 +300,8 @@ function EnrolleeTable({
 
         <button
           onClick={handleGenerateReport}
-          className="md:hidden w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] hover:text-black"
+          // Add dark mode styles for mobile button
+          className="md:hidden w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#212529] dark:bg-gray-700 text-white dark:text-gray-200 rounded-lg text-sm transition duration-300 hover:bg-[#F6BA18] dark:hover:bg-[#F6BA18] hover:text-black dark:hover:text-black"
         >
           <FileText size={16} />
           <span>Generate Report</span>
@@ -293,26 +309,33 @@ function EnrolleeTable({
       </div>
 
       {showEmptyState && enrollees.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 px-4">
-          <InboxIcon size={64} className="text-gray-300 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        // Add dark mode styles for empty state
+        <div className="flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-gray-800">
+          <InboxIcon size={64} className="text-gray-300 dark:text-gray-600 mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
             {searchQuery ? "No Enrollments Found" : "No Enrollments Available"}
           </h3>
-          <p className="text-gray-500 text-center max-w-md mb-4">
+          <p className="text-gray-500 dark:text-gray-400 text-center max-w-md mb-4">
             {getEmptyStateMessage()}
           </p>
         </div>
       )}
 
       {(!showEmptyState || enrollees.length > 0) && (
-        <div className="overflow-x-auto bg-white rounded-lg shadow">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        // Add dark mode background and shadow
+        <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-dark-md">
+          {/* Add dark mode border */}
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            {/* Add dark mode background and text color */}
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* Add dark mode text color */}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   <input
                     type="checkbox"
-                    checked={selectedIds.length === filteredEnrollees.length}
+                    // Add dark mode styles for checkbox
+                    className="rounded border-gray-300 dark:border-gray-600 text-[#F6BA18] focus:ring-[#F6BA18] dark:bg-gray-700 dark:focus:ring-yellow-500 dark:checked:bg-yellow-500"
+                    checked={selectedIds.length === filteredEnrollees.length && filteredEnrollees.length > 0}
                     onChange={() => {
                       if (selectedIds.length === filteredEnrollees.length) {
                         setSelectedIds([]);
@@ -324,28 +347,35 @@ function EnrolleeTable({
                     }}
                   />
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* Add dark mode text color */}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   #
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* Add dark mode text color */}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Full Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* Add dark mode text color */}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* Add dark mode text color */}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Enrollment Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* Add dark mode text color */}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            {/* Add dark mode background and border */}
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredEnrollees.map((enrollee) => (
                 <tr
                   key={enrollee.id}
-                  className="hover:bg-gray-50 transition-colors"
+                  // Add dark mode hover background
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                 >
                   <td
                     className="px-6 py-4 whitespace-nowrap"
@@ -353,18 +383,23 @@ function EnrolleeTable({
                   >
                     <input
                       type="checkbox"
+                      // Add dark mode styles for checkbox
+                      className="rounded border-gray-300 dark:border-gray-600 text-[#F6BA18] focus:ring-[#F6BA18] dark:bg-gray-700 dark:focus:ring-yellow-500 dark:checked:bg-yellow-500"
                       checked={selectedIds.includes(enrollee.id)}
                       onChange={() => handleCheckboxChange(enrollee.id)}
                     />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {/* Add dark mode text color */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {enrollee.id}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {/* Add dark mode text color */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {enrollee.fullName}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
+                      // Use updated getStatusStyle function
                       className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusStyle(
                         enrollee.status
                       )}`}
@@ -372,13 +407,15 @@ function EnrolleeTable({
                       {enrollee.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {/* Add dark mode text color */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {enrollee.enrollmentDate}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
                       onClick={(e) => handleEditClick(enrollee, e)}
-                      className="text-black hover:text-gray-700"
+                      // Add dark mode text color
+                      className="text-black dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100"
                       title="View Details"
                     >
                       <SquarePen size={16} className="md:w-[1vw] md:h-[1vw]" />
@@ -391,24 +428,28 @@ function EnrolleeTable({
         </div>
       )}
 
-      <div className="px-6 py-4 flex items-center justify-start md:justify-end border-t">
+      {/* Add dark mode border and background */}
+      <div className="px-6 py-4 flex items-center justify-start md:justify-end border-t dark:border-gray-700 bg-white dark:bg-gray-800">
         <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 items-start md:items-center text-sm md:text-base">
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1 || enrollees.length === 0}
-            className="w-full md:w-auto px-2 md:px-3 py-0.5 md:py-1 rounded border bg-white text-gray-600 
-                     hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
+            // Add dark mode styles for pagination button
+            className="w-full md:w-auto px-2 md:px-3 py-0.5 md:py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300
+                     hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
           >
             Previous
           </button>
-          <span className="px-2 md:px-4 py-0.5 md:py-1 text-gray-600 whitespace-nowrap text-sm md:text-base">
+          {/* Add dark mode text color */}
+          <span className="px-2 md:px-4 py-0.5 md:py-1 text-gray-600 dark:text-gray-400 whitespace-nowrap text-sm md:text-base">
             Page {currentPage} of {totalPages || 1}
           </span>
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage >= totalPages || enrollees.length === 0}
-            className="w-full md:w-auto px-2 md:px-3 py-0.5 md:py-1 rounded border bg-white text-gray-600 
-                     hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
+            // Add dark mode styles for pagination button
+            className="w-full md:w-auto px-2 md:px-3 py-0.5 md:py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300
+                     hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
           >
             Next
           </button>

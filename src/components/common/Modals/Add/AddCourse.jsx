@@ -4,8 +4,10 @@ import { createCourse } from "../../../../services/courseService";
 import { getTeachers } from "../../../../services/userService";
 import { getGroupsByType } from "../../../../services/groupService";
 import { X, AlertTriangle } from "lucide-react";
+import { useTheme } from "../../../../contexts/ThemeContext";
 
 const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
+  const { isDarkMode } = useTheme();
   const initialFormState = {
     name: "",
     description: "",
@@ -112,22 +114,22 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
   return (
     <Modal isOpen={isOpen} onClose={handleClose}>
       <div className="flex flex-col max-h-[80vh]">
-        <div className="bg-white px-6 py-4 border-b sticky top-0 z-10">
-          <h2 className="text-2xl font-bold">Add New Course</h2>
+        <div className="bg-white dark:bg-gray-800 px-6 py-4 border-b dark:border-gray-700 sticky top-0 z-10 transition-colors">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 transition-colors">Add New Course</h2>
         </div>
 
-        <div className="p-6 overflow-y-auto">
+        <div className="p-6 overflow-y-auto bg-white dark:bg-gray-800 transition-colors">
           {error && (
             <div
               role="alert"
-              className="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-center gap-2"
+              className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-red-600 dark:text-red-400 rounded-lg flex items-center gap-2 transition-colors"
             >
               <AlertTriangle size={20} />
               <span>{error}</span>
             </div>
           )}
           {successMessage && (
-            <div className="bg-green-50 text-green-500 p-4 rounded mb-4">
+            <div className="bg-green-50 dark:bg-green-900/20 text-green-500 dark:text-green-400 p-4 rounded mb-4 transition-colors">
               {successMessage}
             </div>
           )}
@@ -136,7 +138,7 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors"
                 data-testid="course-name-label"
               >
                 Course Name
@@ -147,7 +149,7 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors"
                 required
                 data-testid="course-name-input"
               />
@@ -156,7 +158,7 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
             <div>
               <label
                 htmlFor="description"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors"
               >
                 Description
               </label>
@@ -165,7 +167,7 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors"
                 rows={3}
                 required
               />
@@ -174,18 +176,22 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
             <div>
               <label
                 htmlFor="user_id"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors"
               >
                 Select Teacher
               </label>
-              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg divide-y">
+              <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-700 transition-colors">
                 {availableTeachers.map((teacher) => (
                   <div
                     key={teacher.id}
                     className={`p-4 cursor-pointer transition-colors duration-200 ${
                       formData.user_id === teacher.id.toString()
-                        ? "bg-yellow-50 border-l-4 border-yellow-500"
-                        : "hover:bg-gray-50"
+                        ? isDarkMode 
+                          ? "bg-yellow-900/30 border-l-4 border-yellow-500" 
+                          : "bg-yellow-50 border-l-4 border-yellow-500"
+                        : isDarkMode 
+                          ? "hover:bg-gray-700" 
+                          : "hover:bg-gray-50"
                     }`}
                     onClick={() =>
                       setFormData((prev) => ({
@@ -196,10 +202,10 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-gray-900 dark:text-gray-100 transition-colors">
                           {`${teacher.first_name} ${teacher.last_name}`}
                         </p>
-                        <p className="text-sm text-gray-500">{teacher.email}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors">{teacher.email}</p>
                       </div>
                       <div className="w-5">
                         {formData.user_id === teacher.id.toString() && (
@@ -215,18 +221,22 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
             <div>
               <label
                 htmlFor="learner_group_id"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors"
               >
                 Select Learner Group
               </label>
-              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg divide-y">
+              <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-700 transition-colors">
                 {learnerGroups.map((group) => (
                   <div
                     key={group.id}
                     className={`p-4 cursor-pointer transition-colors duration-200 ${
                       formData.learner_group_id === group.id.toString()
-                        ? "bg-yellow-50 border-l-4 border-yellow-500"
-                        : "hover:bg-gray-50"
+                        ? isDarkMode 
+                          ? "bg-yellow-900/30 border-l-4 border-yellow-500" 
+                          : "bg-yellow-50 border-l-4 border-yellow-500"
+                        : isDarkMode 
+                          ? "hover:bg-gray-700" 
+                          : "hover:bg-gray-50"
                     }`}
                     onClick={() =>
                       setFormData((prev) => ({
@@ -237,10 +247,10 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-gray-900 dark:text-gray-100 transition-colors">
                           {group.name}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors">
                           Group ID: {group.id}
                         </p>
                       </div>
@@ -258,18 +268,22 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
             <div>
               <label
                 htmlFor="student_teacher_group_id"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors"
               >
                 Select Student Teacher Group
               </label>
-              <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg divide-y">
+              <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-700 transition-colors">
                 {studentTeacherGroups.map((group) => (
                   <div
                     key={group.id}
                     className={`p-4 cursor-pointer transition-colors duration-200 ${
                       formData.student_teacher_group_id === group.id.toString()
-                        ? "bg-yellow-50 border-l-4 border-yellow-500"
-                        : "hover:bg-gray-50"
+                        ? isDarkMode 
+                          ? "bg-yellow-900/30 border-l-4 border-yellow-500" 
+                          : "bg-yellow-50 border-l-4 border-yellow-500"
+                        : isDarkMode 
+                          ? "hover:bg-gray-700" 
+                          : "hover:bg-gray-50"
                     }`}
                     onClick={() =>
                       setFormData((prev) => ({
@@ -280,10 +294,10 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-gray-900 dark:text-gray-100 transition-colors">
                           {group.name}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors">
                           Group ID: {group.id}
                         </p>
                       </div>
@@ -304,14 +318,14 @@ const AddCourse = ({ isOpen, onClose, onCourseAdded }) => {
                 type="button"
                 onClick={handleClose}
                 disabled={isLoading}
-                className="px-4 py-2 border rounded-md hover:bg-gray-50 mr-2"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 mr-2 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:opacity-50"
+                className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:opacity-50 transition-colors"
               >
                 {isLoading ? "Creating..." : "Create Course"}
               </button>

@@ -6,3 +6,74 @@
 html {
   font-family: "Poppins", sans-serif;
 }
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 transition-colors duration-200;
+  }
+
+  .dark body {
+    @apply bg-gray-900 text-gray-100;
+  }
+
+  /* Base form elements in dark mode */
+  .dark input:not([type="checkbox"]):not([type="radio"]),
+  .dark select,
+  .dark textarea {
+    @apply bg-gray-800 border-gray-700 text-white;
+  }
+
+  /* Button styles based on theme */
+  .btn-primary {
+    @apply bg-[#F6BA18] hover:bg-[#e5ad16] text-black font-medium py-2 px-4 rounded transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white font-medium py-2 px-4 rounded transition-colors;
+  }
+
+  /* Card styles with dark mode support */
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 transition-colors;
+  }
+  
+  /* Table styles with dark mode */
+  table {
+    @apply w-full text-left border-collapse;
+  }
+  
+  .table-header {
+    @apply bg-gray-100 dark:bg-gray-800 border-b dark:border-gray-700;
+  }
+  
+  .table-row {
+    @apply border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/60;
+  }
+  
+  .table-cell {
+    @apply px-4 py-3;
+  }
+  
+  /* Form element styles */
+  .form-input {
+    @apply bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md p-2 focus:ring-2 focus:ring-[#F6BA18] focus:border-transparent outline-none transition-colors;
+  }
+  
+  .form-label {
+    @apply block text-gray-700 dark:text-gray-300 font-medium mb-1;
+  }
+  
+  /* Modal styles */
+  .modal {
+    @apply bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-xl;
+  }
+  
+  /* Dropdown menu styles */
+  .dropdown-menu {
+    @apply bg-white dark:bg-gray-800 shadow-md border dark:border-gray-700 rounded-md;
+  }
+  
+  .dropdown-item {
+    @apply px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer;
+  }
+}

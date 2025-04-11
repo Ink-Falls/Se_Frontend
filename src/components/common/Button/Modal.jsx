@@ -1,9 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 const Modal = ({ isOpen, onClose, children }) => {
   const modalRef = useRef(null);
+  const { isDarkMode } = useTheme();
 
   useEffect(() => {
     if (isOpen) {
@@ -39,21 +41,21 @@ const Modal = ({ isOpen, onClose, children }) => {
       <div className="flex min-h-screen items-center justify-center p-4">
         <div
           ref={modalRef}
-          className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl p-6"
+          className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl dark:shadow-dark-xl w-full max-w-2xl transition-colors"
           tabIndex={-1}
           onKeyDown={handleKeyDown}
         >
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 rounded-full p-1"
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-500 rounded-full p-1 transition-colors"
             aria-label="Close modal"
           >
             <X size={24} />
           </button>
 
           {/* Modal content */}
-          <div className="mt-2">
+          <div>
             {children}
           </div>
         </div>

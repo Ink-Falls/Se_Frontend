@@ -3,7 +3,8 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CourseProvider } from "./contexts/CourseContext";
 import { AppProvider } from "./contexts/AppContext";
-import { NetworkProvider } from "./contexts/NetworkContext"; // Add this import
+import { NetworkProvider } from "./contexts/NetworkContext";
+import { ThemeProvider } from "./contexts/ThemeContext";  // Import ThemeProvider
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import LoadingSpinner from "./components/common/LoadingSpinner";
 import {
@@ -413,13 +414,15 @@ function App() {
       <ErrorBoundary>
         <MaintenanceProvider>
           <NetworkProvider>
-            <AppProvider>
-              <AuthProvider>
-                <CourseProvider>
-                  <AppRoutes /> 
-                </CourseProvider>
-              </AuthProvider>
-            </AppProvider>
+            <ThemeProvider> {/* Add ThemeProvider here instead of in main.jsx */}
+              <AppProvider>
+                <AuthProvider>
+                  <CourseProvider>
+                    <AppRoutes /> 
+                  </CourseProvider>
+                </AuthProvider>
+              </AppProvider>
+            </ThemeProvider>
           </NetworkProvider>
         </MaintenanceProvider>
       </ErrorBoundary>
