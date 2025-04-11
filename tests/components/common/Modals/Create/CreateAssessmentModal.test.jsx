@@ -2,22 +2,37 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CreateAssessmentModal from 'Se_Frontend/src/components/common/Modals/Create/CreateAssessmentModal.jsx';
 import { createAssessment } from 'Se_Frontend/src/services/assessmentService';
+import React from 'react';
+
+// Mock the useCourse hook
+vi.mock('Se_Frontend/src/contexts/CourseContext', () => {
+  return {
+    useCourse: () => ({
+      selectedCourse: { id: 1, name: 'Test Course' }
+    })
+  };
+});
 
 vi.mock('Se_Frontend/src/services/assessmentService', () => ({
   createAssessment: vi.fn(),
 }));
 
+vi.mock('Se_Frontend/src/services/moduleService', () => ({
+  getModulesByCourseId: vi.fn().mockResolvedValue([
+    { module_id: 1, name: 'Module 1' },
+    { module_id: 2, name: 'Module 2' },
+  ]),
+}));
+
 describe('CreateAssessmentModal Component', () => {
   const mockOnClose = vi.fn();
   const mockOnSuccess = vi.fn();
-  const courseId = 1;
-
+  
   const renderComponent = (isOpen) => {
-    render(
+    return render(
       <CreateAssessmentModal
         isOpen={isOpen}
         onClose={mockOnClose}
-        courseId={courseId}
         onSuccess={mockOnSuccess}
       />
     );
@@ -33,16 +48,16 @@ describe('CreateAssessmentModal Component', () => {
     // Check if the modal title is rendered
     expect(screen.getByText('Create New Assessment')).toBeInTheDocument();
 
-    // Check if the form fields are rendered
-    expect(screen.getByLabelText('Title')).toBeInTheDocument();
-    expect(screen.getByLabelText('Description')).toBeInTheDocument();
-    expect(screen.getByLabelText('Type')).toBeInTheDocument();
-    expect(screen.getByLabelText('Duration (minutes)')).toBeInTheDocument();
-    expect(screen.getByLabelText('Maximum Score')).toBeInTheDocument();
-    expect(screen.getByLabelText('Passing Score')).toBeInTheDocument();
-    expect(screen.getByLabelText('Due Date')).toBeInTheDocument();
-    expect(screen.getByLabelText('Publish immediately')).toBeInTheDocument();
-    expect(screen.getByLabelText('Instructions')).toBeInTheDocument();
+    // Check for form fields with regex to make matching more flexible
+    expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/type/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/time limit/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/maximum score/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/passing score/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/due date/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/instructions/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/allowed attempts/i)).toBeInTheDocument();
   });
 
   it('does not render the modal when closed', () => {
@@ -55,8 +70,8 @@ describe('CreateAssessmentModal Component', () => {
   it('handles input changes', () => {
     renderComponent(true);
 
-    const titleInput = screen.getByLabelText('Title');
-    const descriptionInput = screen.getByLabelText('Description');
+    const titleInput = screen.getByLabelText(/title/i);
+    const descriptionInput = screen.getByLabelText(/description/i);
 
     fireEvent.change(titleInput, { target: { value: 'Test Assessment' } });
     fireEvent.change(descriptionInput, { target: { value: 'Test Description' } });
@@ -71,14 +86,18 @@ describe('CreateAssessmentModal Component', () => {
     renderComponent(true);
 
     // Fill out the form
-    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Test Assessment' } });
-    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Test Description' } });
-    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'quiz' } });
-    fireEvent.change(screen.getByLabelText('Duration (minutes)'), { target: { value: '60' } });
-    fireEvent.change(screen.getByLabelText('Maximum Score'), { target: { value: '100' } });
-    fireEvent.change(screen.getByLabelText('Passing Score'), { target: { value: '60' } });
-    fireEvent.change(screen.getByLabelText('Due Date'), { target: { value: '2025-03-23T10:00' } });
-    fireEvent.change(screen.getByLabelText('Instructions'), { target: { value: 'Test Instructions' } });
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Test Assessment' } });
+    fireEvent.change(screen.getByLabelText(/description/i), { target: { value: 'Test Description' } });
+    fireEvent.change(screen.getByLabelText(/type/i), { target: { value: 'quiz' } });
+    fireEvent.change(screen.getByLabelText(/time limit/i), { target: { value: '60' } });
+    fireEvent.change(screen.getByLabelText(/maximum score/i), { target: { value: '100' } });
+    fireEvent.change(screen.getByLabelText(/passing score/i), { target: { value: '60' } });
+    fireEvent.change(screen.getByLabelText(/due date/i), { target: { value: '2025-03-23T10:00' } });
+    fireEvent.change(screen.getByLabelText(/instructions/i), { target: { value: 'Test Instructions' } });
+    
+    // Set module (need to select first option)
+    const moduleSelect = screen.getByLabelText(/module/i);
+    fireEvent.change(moduleSelect, { target: { value: '1' } });
 
     // Submit the form
     fireEvent.click(screen.getByText('Create Assessment'));
@@ -95,14 +114,18 @@ describe('CreateAssessmentModal Component', () => {
     renderComponent(true);
 
     // Fill out the form
-    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Test Assessment' } });
-    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Test Description' } });
-    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'quiz' } });
-    fireEvent.change(screen.getByLabelText('Duration (minutes)'), { target: { value: '60' } });
-    fireEvent.change(screen.getByLabelText('Maximum Score'), { target: { value: '100' } });
-    fireEvent.change(screen.getByLabelText('Passing Score'), { target: { value: '60' } });
-    fireEvent.change(screen.getByLabelText('Due Date'), { target: { value: '2025-03-23T10:00' } });
-    fireEvent.change(screen.getByLabelText('Instructions'), { target: { value: 'Test Instructions' } });
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Test Assessment' } });
+    fireEvent.change(screen.getByLabelText(/description/i), { target: { value: 'Test Description' } });
+    fireEvent.change(screen.getByLabelText(/type/i), { target: { value: 'quiz' } });
+    fireEvent.change(screen.getByLabelText(/time limit/i), { target: { value: '60' } });
+    fireEvent.change(screen.getByLabelText(/maximum score/i), { target: { value: '100' } });
+    fireEvent.change(screen.getByLabelText(/passing score/i), { target: { value: '60' } });
+    fireEvent.change(screen.getByLabelText(/due date/i), { target: { value: '2025-03-23T10:00' } });
+    fireEvent.change(screen.getByLabelText(/instructions/i), { target: { value: 'Test Instructions' } });
+    
+    // Set module (need to select first option)
+    const moduleSelect = screen.getByLabelText(/module/i);
+    fireEvent.change(moduleSelect, { target: { value: '1' } });
 
     // Submit the form
     fireEvent.click(screen.getByText('Create Assessment'));

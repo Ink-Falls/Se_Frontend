@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CreateContentModal from 'Se_Frontend/src/components/common/Modals/Create/CreateContentModal.jsx';
 
 describe('CreateContentModal', () => {
@@ -29,40 +29,51 @@ describe('CreateContentModal', () => {
   });
 
   it('shows error message for empty title', async () => {
-    render(<CreateContentModal moduleId="1" onClose={onClose} onSubmit={onSubmit} />);
-    fireEvent.click(screen.getByText('Add Resource'));
+    render(<CreateContentModal moduleId="1" onClose={onClose} onSubmit={onSubmit} testMode={true} />);
+    
+    // Submit the form
+    const submitButton = screen.getByText('Add Resource');
+    fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText((content, element) => content.includes('Resource title is required'))).toBeInTheDocument();
+      const errorMessage = screen.getByTestId('error-message');
+      expect(errorMessage).toBeInTheDocument();
+      expect(errorMessage.textContent).toBe('Resource title is required');
     });
   });
 
   it("shows error message for empty URL", async () => {
-    const onClose = vi.fn();
-    const onSubmit = vi.fn();
-
-    render(<CreateContentModal moduleId="1" onClose={onClose} onSubmit={onSubmit} />);
+    render(<CreateContentModal moduleId="1" onClose={onClose} onSubmit={onSubmit} testMode={true} />);
 
     // Fill title but leave URL empty
     fireEvent.change(screen.getByPlaceholderText("Enter resource title"), { target: { value: "Test Title" } });
 
-    // Click submit
-    fireEvent.click(screen.getByText("Add Resource"));
+    // Submit the form
+    const submitButton = screen.getByText('Add Resource');
+    fireEvent.click(submitButton);
 
-    // ✅ Ensure the error message appears after re-render
     await waitFor(() => {
-      expect(screen.getByText("Resource URL is required")).toBeInTheDocument();
+      const errorMessage = screen.getByTestId('error-message');
+      expect(errorMessage).toBeInTheDocument();
+      expect(errorMessage.textContent).toBe('Resource URL is required');
     });
   });
 
   it('shows error message for invalid URL', async () => {
-    render(<CreateContentModal moduleId="1" onClose={onClose} onSubmit={onSubmit} />);
+    render(<CreateContentModal moduleId="1" onClose={onClose} onSubmit={onSubmit} testMode={true} />);
+    
+    // Fill in form with invalid URL
     fireEvent.change(screen.getByPlaceholderText('Enter resource title'), { target: { value: 'Test Title' } });
     fireEvent.change(screen.getByPlaceholderText('Enter resource URL'), { target: { value: 'invalid-url' } });
-    fireEvent.click(screen.getByText('Add Resource'));
+    
+    // Submit the form
+    const submitButton = screen.getByText('Add Resource');
+    fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Please enter a valid URL')).toBeInTheDocument();
+      const errorMessage = screen.getByTestId('error-message');
+      expect(errorMessage).toBeInTheDocument();
+      expect(errorMessage.textContent).toBe('Please enter a valid URL');
     });
   });
 

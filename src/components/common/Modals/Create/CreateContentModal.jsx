@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
 
-const CreateContentModal = ({ moduleId, onClose, onSubmit }) => {
+const CreateContentModal = ({ moduleId, onClose, onSubmit, testMode = false }) => {
   const [formData, setFormData] = useState({
     title: "",
     content: "", // This will store the URL
@@ -97,12 +97,12 @@ const CreateContentModal = ({ moduleId, onClose, onSubmit }) => {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg">
+          <div className="mb-4 p-3 bg-red-100 text-red-600 rounded-lg" data-testid="error-message">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" role="form" noValidate={testMode}>
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Resource Title
