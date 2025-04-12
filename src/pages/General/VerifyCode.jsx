@@ -1,45 +1,45 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import logo from "/src/assets/images/ARALKADEMYLOGO.png";
-import { verifyResetCode, forgotPassword } from "../../services/authService"; // Import function
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import logo from '/src/assets/images/ARALKADEMYLOGO.png';
+import { verifyResetCode, forgotPassword } from '../../services/authService'; // Import function
 
 function EnterCode() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [code, setCode] = useState("");
-  const [message, setMessage] = useState("");
+  const [code, setCode] = useState('');
+  const [message, setMessage] = useState('');
   const [isExpired, setIsExpired] = useState(false);
   const [resendAttempts, setResendAttempts] = useState(0);
-  const [resendMessage, setResendMessage] = useState("");
+  const [resendMessage, setResendMessage] = useState('');
 
   const email = location.state?.email;
 
   useEffect(() => {
     if (!email) {
-      navigate("/ForgotPassword");
+      navigate('/ForgotPassword');
     }
   }, [email]);
 
   const handleVerifyCode = async () => {
     if (!code) {
-      setMessage("Please enter the verification code.");
+      setMessage('Please enter the verification code.');
       return;
     }
 
     if (!email) {
-      setMessage("Error: No email found. Please restart the process.");
+      setMessage('Error: No email found. Please restart the process.');
       return;
     }
 
-    setResendMessage("");
+    setResendMessage('');
 
     try {
       await verifyResetCode(email, code);
-      setMessage("Code verified! Redirecting...");
-      navigate("/ChangePassword", { state: { email }, replace: true });
+      setMessage('Code verified! Redirecting...');
+      navigate('/ChangePassword', { state: { email }, replace: true });
     } catch (error) {
-      setMessage(error.message || "Invalid code. Please try again.");
-      if (error.message === "Reset code has expired") {
+      setMessage(error.message || 'Invalid code. Please try again.');
+      if (error.message === 'Reset code has expired') {
         setIsExpired(true);
       }
     }
@@ -48,16 +48,16 @@ function EnterCode() {
   const handleResendCode = async () => {
     if (resendAttempts >= 2) return;
 
-    setMessage("");
-    setResendMessage("");
+    setMessage('');
+    setResendMessage('');
 
     try {
       await forgotPassword(email);
-      setResendMessage("A new code has been sent to your email.");
+      setResendMessage('A new code has been sent to your email.');
       setIsExpired(false);
       setResendAttempts((prev) => prev + 1);
     } catch (error) {
-      setResendMessage("Failed to resend code. Please try again later.");
+      setResendMessage('Failed to resend code. Please try again later.');
     }
   };
 
@@ -66,7 +66,7 @@ function EnterCode() {
       className="min-h-screen bg-cover bg-center"
       style={{
         backgroundImage:
-          "url(https://upload.wikimedia.org/wikipedia/commons/7/7b/400_Year_old_Beauty.jpg)",
+          'url(https://upload.wikimedia.org/wikipedia/commons/7/7b/400_Year_old_Beauty.jpg)',
       }}
     >
       {/* Header */}
@@ -77,7 +77,7 @@ function EnterCode() {
           className="h-[5vw] lg:h-[2.5vw]"
         />
         <button
-          onClick={() => navigate("/enroll")}
+          onClick={() => navigate('/Enrollment')}
           className="text-[4vw] py-[1vw] px-[6vw] lg:text-[1vw] max-lg:text-[2.5vw] lg:py-[0.5vw] lg:px-[2vw] bg-[#F6BA18] text-[#212529] font-bold rounded-md hover:bg-[#64748B] hover:text-white transition duration-300"
         >
           Enroll
@@ -104,7 +104,9 @@ function EnterCode() {
             onChange={(e) => setCode(e.target.value)}
           />
           {message && <p className="text-red-500 mt-2">{message}</p>}
-          {resendMessage && <p className="text-green-500 mt-2">{resendMessage}</p>}
+          {resendMessage && (
+            <p className="text-green-500 mt-2">{resendMessage}</p>
+          )}
 
           {/* Verify & Resend Buttons */}
           <div className="flex justify-end mt-[4vw] lg:mt-[2vw] gap-2">
@@ -120,7 +122,7 @@ function EnterCode() {
               ) : (
                 // Show Back to Forgot Password if attempts exhausted
                 <button
-                  onClick={() => navigate("/ForgotPassword", { replace: true })}
+                  onClick={() => navigate('/ForgotPassword', { replace: true })}
                   className="py-[1.5vw] px-[7vw] text-[3.5vw] max-lg:text-[2.5vw] lg:py-[0.4vw] lg:px-[3vw] lg:text-[1vw] bg-[#212529] text-[#FFFFFF] font-semibold rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 ease-in-out"
                 >
                   Back to Forgot Password
@@ -142,6 +144,4 @@ function EnterCode() {
   );
 }
 
-
 export default EnterCode;
-
