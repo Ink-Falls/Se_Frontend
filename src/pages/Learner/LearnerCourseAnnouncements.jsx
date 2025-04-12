@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
@@ -12,7 +11,6 @@ import {
   ClipboardList,
   ArrowUpDown,
   GraduationCap,
-  AlertCircle,
   Clock
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
@@ -91,9 +89,17 @@ const LearnerCourseAnnouncements = () => {
       );
       
       setAnnouncements(announcementData);
+      // Only set error if there's an actual error, not for empty announcements
+      setError(null);
     } catch (err) {
       console.error("Failed to fetch announcements:", err);
-      setError(err.message || "Failed to load announcements");
+      // Check if the error is due to no announcements found
+      if (err.response?.status === 404) {
+        setAnnouncements([]);
+        setError(null);
+      } else {
+        setError(err.message || "Failed to load announcements");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -166,13 +172,6 @@ const LearnerCourseAnnouncements = () => {
           </BlackHeader>
           <MobileNavBar navItems={navItems} />
 
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center">
-              <AlertCircle size={20} className="mr-2" />
-              {error}
-            </div>
-          )}
-          
           {isLoading ? (
             <div className="flex items-center justify-center h-40">
               <div className="w-12 h-12 border-4 border-[#F6BA18] border-t-[#212529] rounded-full animate-spin"></div>
