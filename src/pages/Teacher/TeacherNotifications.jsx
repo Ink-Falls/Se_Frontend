@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/common/layout/Sidebar";
 import { Book, Bell, Hash, Image, AlertCircle, Clock } from "lucide-react";
@@ -101,10 +100,14 @@ const Notifications = () => {
               {error}
             </div>
           ) : announcements.length === 0 ? (
-            <div className="p-6 text-center">
-              <Bell size={32} className="mx-auto text-gray-400 mb-3" />
-              <h3 className="text-lg font-medium text-gray-900 mb-1">No notifications</h3>
-              <p className="text-sm text-gray-500">You don't have any notifications at this time.</p>
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              <div className="rounded-full bg-gray-100 p-3 mb-4">
+                <Bell size={32} className="text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-1">No notifications found</h3>
+              <p className="text-sm text-gray-500 max-w-md">
+                You don't have any notifications at this time. Check back later for updates.
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-gray-200">

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
@@ -470,7 +469,11 @@ const TeacherCourseAnnouncements = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700"
+                    className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${
+                      !newAnnouncement.title.trim() || !newAnnouncement.message.trim() || isLoading
+                        ? "bg-yellow-300 cursor-not-allowed opacity-50"
+                        : "bg-yellow-600 hover:bg-yellow-700"
+                    }`}
                     disabled={
                       !newAnnouncement.title.trim() || 
                       !newAnnouncement.message.trim() || 
