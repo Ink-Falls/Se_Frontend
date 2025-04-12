@@ -1,44 +1,76 @@
-import React, { useState, useEffect } from "react";
-import { X, Loader } from "lucide-react";
-import { createAssessment } from "../../../../services/assessmentService";
-import { getModulesByCourseId } from "../../../../services/moduleService";
-import { useCourse } from "../../../../contexts/CourseContext"; // Add this import
+import React, { useState, useEffect } from 'react';
+import { X, Loader } from 'lucide-react';
+import { createAssessment } from '../../../../services/assessmentService';
+import { getModulesByCourseId } from '../../../../services/moduleService';
+import { useCourse } from '../../../../contexts/CourseContext'; // Add this import
 
 const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
   const { selectedCourse } = useCourse(); // Add this line
 
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    module_id: "",
-    type: "quiz",
+    title: '',
+    description: '',
+    module_id: '',
+    type: 'quiz',
     max_score: 100,
     passing_score: 60,
-    duration_minutes: 60,
-    due_date: "",
+    duration_minutes: 30,
+    due_date: '',
     is_published: false,
-    instructions: "",
-    allowed_attempts: 1,
+    instructions: '',
+    allowed_attempts: 3,
   });
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [moduleOptions, setModuleOptions] = useState([]);
   const [loadingModules, setLoadingModules] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    // Special validation for duration_minutes
+    if (name === 'duration_minutes') {
+      // Allow empty input for clearing
+      if (value === '') {
+        setFormData((prev) => ({ ...prev, duration_minutes: '' }));
+        setError('Time limit must be greater than 0 minutes');
+        return;
+      }
+
+      const numValue = parseInt(value);
+
+      // Check for zero and negative values
+      if (numValue <= 0) {
+        setFormData((prev) => ({ ...prev, duration_minutes: value }));
+        setError('Time limit must be greater than 0 minutes');
+        return;
+      }
+
+      setFormData((prev) => ({ ...prev, duration_minutes: numValue }));
+      setError('');
+      return;
+    }
+
+    // Handle other fields
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
+    setError('');
 
     try {
+      // Add validation for time limit
+      if (parseInt(formData.duration_minutes) <= 0) {
+        setError('Time limit must be greater than 0 minutes');
+        setIsLoading(false);
+        return;
+      }
+
       const assessmentData = {
         ...formData,
         module_id: parseInt(formData.module_id),
@@ -57,16 +89,16 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
         throw new Error(response.message);
       }
     } catch (err) {
-      console.error("Assessment creation error:", err);
+      console.error('Assessment creation error:', err);
       // Handle specific API errors
       if (err.response?.status === 400) {
-        setError(err.response.data.message || "Invalid assessment data");
+        setError(err.response.data.message || 'Invalid assessment data');
       } else if (err.response?.status === 403) {
         setError("You don't have permission to create assessments");
       } else if (err.response?.status === 409) {
-        setError("An assessment with this title already exists");
+        setError('An assessment with this title already exists');
       } else {
-        setError(err.message || "Failed to create assessment");
+        setError(err.message || 'Failed to create assessment');
       }
     } finally {
       setIsLoading(false);
@@ -77,19 +109,19 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
   useEffect(() => {
     if (!isOpen) {
       setFormData({
-        title: "",
-        description: "",
-        module_id: "",
-        type: "quiz",
+        title: '',
+        description: '',
+        module_id: '',
+        type: 'quiz',
         max_score: 100,
         passing_score: 60,
-        duration_minutes: 60,
-        due_date: "",
+        duration_minutes: 30,
+        due_date: '',
         is_published: false,
-        instructions: "",
-        allowed_attempts: 1,
+        instructions: '',
+        allowed_attempts: 3,
       });
-      setError("");
+      setError('');
     }
   }, [isOpen]);
 
@@ -111,11 +143,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
             }))
           );
         } else {
-          setError("No modules available for this course");
+          setError('No modules available for this course');
         }
       } catch (error) {
-        console.error("Error fetching modules:", error);
-        setError("Failed to load modules");
+        console.error('Error fetching modules:', error);
+        setError('Failed to load modules');
       } finally {
         setLoadingModules(false);
       }
@@ -157,7 +189,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                   htmlFor="module_id"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Module <span className="text-red-500">*</span>
+                  Module
                 </label>
                 <select
                   id="module_id"
@@ -182,7 +214,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                   htmlFor="title"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Title <span className="text-red-500">*</span>
+                  Title
                 </label>
                 <input
                   id="title"
@@ -200,7 +232,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                   htmlFor="description"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Description <span className="text-red-500">*</span>
+                  Description
                 </label>
                 <textarea
                   id="description"
@@ -209,7 +241,6 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                   onChange={handleInputChange}
                   rows={2}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                  required
                 />
               </div>
 
@@ -218,7 +249,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                   htmlFor="type"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Type <span className="text-red-500">*</span>
+                  Type
                 </label>
                 <select
                   id="type"
@@ -238,7 +269,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                   htmlFor="duration"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Time Limit (minutes) <span className="text-red-500">*</span>
+                  Time Limit (minutes)
                 </label>
                 <input
                   id="duration"
@@ -246,6 +277,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                   name="duration_minutes"
                   value={formData.duration_minutes}
                   onChange={handleInputChange}
+                  onKeyPress={(e) => {
+                    if (e.key === '-' || e.key === 'e' || e.key === '.') {
+                      e.preventDefault();
+                    }
+                  }}
                   min="1"
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   required
@@ -257,7 +293,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                   htmlFor="max_score"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Maximum Score <span className="text-red-500">*</span>
+                  Maximum Score
                 </label>
                 <input
                   id="max_score"
@@ -265,6 +301,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                   name="max_score"
                   value={formData.max_score}
                   onChange={handleInputChange}
+                  onKeyPress={(e) => {
+                    if (e.key === '-' || e.key === 'e' || e.key === '.') {
+                      e.preventDefault();
+                    }
+                  }}
                   min="1"
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   required
@@ -276,7 +317,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                   htmlFor="pass_score"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Passing Score <span className="text-red-500">*</span>
+                  Passing Score
                 </label>
                 <input
                   id="pass_score"
@@ -284,6 +325,11 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                   name="passing_score"
                   value={formData.passing_score}
                   onChange={handleInputChange}
+                  onKeyPress={(e) => {
+                    if (e.key === '-' || e.key === 'e' || e.key === '.') {
+                      e.preventDefault();
+                    }
+                  }}
                   min="1"
                   max={formData.max_score}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
@@ -296,7 +342,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                   htmlFor="due_date"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Due Date <span className="text-red-500">*</span>
+                  Due Date
                 </label>
                 <input
                   id="due_date"
@@ -314,7 +360,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                   htmlFor="instruction"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Instructions <span className="text-red-500">*</span>
+                  Instructions
                 </label>
                 <textarea
                   id="instruction"
@@ -332,15 +378,21 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                   htmlFor="allowed_attempts"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Allowed Attempts <span className="text-red-500">*</span>
+                  Allowed Attempts
                 </label>
                 <input
                   id="allowed_attempts"
                   type="number"
                   name="allowed_attempts"
                   min="1"
+                  max="10"
                   value={formData.allowed_attempts}
                   onChange={handleInputChange}
+                  onKeyPress={(e) => {
+                    if (e.key === '-' || e.key === 'e' || e.key === '.') {
+                      e.preventDefault();
+                    }
+                  }}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   required
                 />
@@ -371,7 +423,7 @@ const CreateAssessmentModal = ({ isOpen, onClose, onSuccess }) => {
                   Creating...
                 </>
               ) : (
-                "Create Assessment"
+                'Create Assessment'
               )}
             </button>
           </div>

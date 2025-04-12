@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from "react";
-import { X, Loader } from "lucide-react";
-import { editAssessment } from "../../../../services/assessmentService";
+import React, { useState, useEffect } from 'react';
+import { X, Loader } from 'lucide-react';
+import { editAssessment } from '../../../../services/assessmentService';
 
 const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    type: "quiz",
+    title: '',
+    description: '',
+    type: 'quiz',
     max_score: 100,
     passing_score: 60,
-    duration_minutes: 60,
-    due_date: "",
-    instructions: "",
-    allowed_attempts: 1,
+    duration_minutes: 30,
+    due_date: '',
+    instructions: '',
+    allowed_attempts: 3,
   });
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (assessment) {
       try {
-        let formattedDate = "";
+        let formattedDate = '';
         if (assessment.due_date) {
           const dueDate =
             assessment.due_date instanceof Date
@@ -30,41 +30,96 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
           if (!isNaN(dueDate.getTime())) {
             formattedDate = dueDate.toISOString().substring(0, 16);
           } else {
-            console.warn("Invalid date:", assessment.due_date);
+            console.warn('Invalid date:', assessment.due_date);
           }
         }
 
         setFormData({
           ...assessment,
           due_date: formattedDate,
-          instructions: assessment.instructions || "",
-          type: assessment.type || "quiz",
+          instructions: assessment.instructions || '',
+          type: assessment.type || 'quiz',
           max_score: assessment.max_score || 100,
           passing_score: assessment.passing_score || 60,
           duration_minutes: assessment.duration_minutes || 60,
           allowed_attempts: assessment.allowed_attempts || 1,
         });
       } catch (err) {
-        console.error("Error formatting assessment data:", err);
-        setError("Error preparing form data. Please try again.");
+        console.error('Error formatting assessment data:', err);
+        setError('Error preparing form data. Please try again.');
       }
     }
   }, [assessment]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+
+    // Special validation for duration_minutes
+    if (name === 'duration_minutes') {
+      // Allow empty input for clearing
+      if (value === '') {
+        setFormData((prev) => ({ ...prev, duration_minutes: '' }));
+        setError('Time limit must be greater than 0 minutes');
+        return;
+      }
+
+      const numValue = parseInt(value);
+
+      // Check for zero and negative values
+      if (numValue <= 0) {
+        setFormData((prev) => ({ ...prev, duration_minutes: value }));
+        setError('Time limit must be greater than 0 minutes');
+        return;
+      }
+
+      setFormData((prev) => ({ ...prev, duration_minutes: numValue }));
+      setError('');
+      return;
+    }
+
+    // Handle other numeric fields
+    if (
+      name === 'max_score' ||
+      name === 'passing_score' ||
+      name === 'allowed_attempts'
+    ) {
+      const parsedValue = parseInt(value);
+      if (isNaN(parsedValue) || parsedValue <= 0) {
+        setError(
+          `${name
+            .split('_')
+            .join(' ')
+            .replace(/^\w/, (c) => c.toUpperCase())} must be greater than 0`
+        );
+        return;
+      }
+      setFormData((prev) => ({ ...prev, [name]: parsedValue }));
+      setError('');
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
+    setError('');
 
     try {
+      // Add validation for time limit
+      if (parseInt(formData.duration_minutes) <= 0) {
+        setError('Time limit must be greater than 0 minutes');
+        setIsLoading(false);
+        return;
+      }
+
       // Add validation for passing score
       if (parseInt(formData.passing_score) > parseInt(formData.max_score)) {
-        setError("Passing score cannot be greater than maximum score");
+        setError('Passing score cannot be greater than maximum score');
         setIsLoading(false);
         return;
       }
@@ -77,7 +132,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
         passing_score: parseInt(formData.passing_score),
         duration_minutes: parseInt(formData.duration_minutes),
         due_date: new Date(formData.due_date).toISOString(),
-        instructions: formData.instructions?.trim() || "",
+        instructions: formData.instructions?.trim() || '',
         allowed_attempts: parseInt(formData.allowed_attempts),
         is_published: assessment.is_published,
       };
@@ -88,11 +143,11 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
         onSubmit(response.assessment);
         onClose();
       } else {
-        throw new Error(response.message || "Failed to update assessment");
+        throw new Error(response.message || 'Failed to update assessment');
       }
     } catch (err) {
-      console.error("Error updating assessment:", err);
-      setError(err.message || "Failed to update assessment");
+      console.error('Error updating assessment:', err);
+      setError(err.message || 'Failed to update assessment');
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +182,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                   htmlFor="title"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Title <span className="text-red-500">*</span>
+                  Title
                 </label>
                 <input
                   id="title"
@@ -148,7 +203,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                   htmlFor="description"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Description <span className="text-red-500">*</span>
+                  Description
                 </label>
                 <textarea
                   id="description"
@@ -158,7 +213,6 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                   }
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   rows={4}
-                  required
                 />
               </div>
             </div>
@@ -190,18 +244,19 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                   htmlFor="duration_minutes"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Time Limit (minutes) <span className="text-red-500">*</span>
+                  Time Limit (minutes)
                 </label>
                 <input
                   id="duration_minutes"
                   type="number"
+                  name="duration_minutes"
                   value={formData.duration_minutes}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      duration_minutes: e.target.value,
-                    })
-                  }
+                  onChange={handleInputChange}
+                  onKeyPress={(e) => {
+                    if (e.key === '-' || e.key === 'e' || e.key === '.') {
+                      e.preventDefault();
+                    }
+                  }}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   required
                 />
@@ -214,7 +269,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                   htmlFor="max_score"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Max Score <span className="text-red-500">*</span>
+                  Max Score
                 </label>
                 <input
                   id="max_score"
@@ -233,7 +288,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                   htmlFor="pass_score"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Passing Score <span className="text-red-500">*</span>
+                  Passing Score
                 </label>
                 <input
                   id="pass_score"
@@ -255,7 +310,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                   htmlFor="allowed_attempts"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Allowed Attempts <span className="text-red-500">*</span>
+                  Allowed Attempts
                 </label>
                 <input
                   id="allowed_attempts"
@@ -277,7 +332,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                 />
                 <p className="mt-1 text-xs text-gray-500">
                   Current setting: {formData.allowed_attempts} attempt
-                  {formData.allowed_attempts !== 1 ? "s" : ""}
+                  {formData.allowed_attempts !== 1 ? 's' : ''}
                 </p>
               </div>
 
@@ -286,7 +341,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                   htmlFor="due_date"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Due Date <span className="text-red-500">*</span>
+                  Due Date
                 </label>
                 <input
                   id="due_date"
@@ -344,7 +399,7 @@ const EditAssessmentModal = ({ isOpen, assessment, onClose, onSubmit }) => {
                   Saving...
                 </>
               ) : (
-                "Save Changes"
+                'Save Changes'
               )}
             </button>
           </div>
