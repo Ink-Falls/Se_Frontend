@@ -1,17 +1,55 @@
-import React from "react";
+
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
-import { ArrowLeft, Book, Bell, Hash, Image } from "lucide-react";
+import { ArrowLeft, Book, Bell, Hash, Image, Clock, AlertCircle } from "lucide-react";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import admin_icon from "/src/assets/images/icons/admin_icon.png";
 import learner_icon from "/src/assets/images/icons/learner_icon.png";
+import { getAnnouncementById } from "../../services/announcementService";
 
 const NotificationPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
-  const notification = location.state?.notification;
+  const notificationFromState = location.state?.notification;
+  
+  const [notification, setNotification] = useState(notificationFromState);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Fetch the notification data if not provided in location state
+  useEffect(() => {
+    if (!notificationFromState && id) {
+      fetchAnnouncementData();
+    }
+  }, [id, notificationFromState]);
+
+  // Fetch announcement data using announcement ID
+  const fetchAnnouncementData = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Try to get the announcement directly by ID
+      const response = await getAnnouncementById(id);
+      const announcementData = response.announcement || response;
+      
+      if (announcementData && (announcementData.title || announcementData.message)) {
+        setNotification(announcementData);
+        setIsLoading(false);
+        return;
+      } else {
+        throw new Error("Announcement not found");
+      }
+    } catch (err) {
+      console.error("Failed to fetch notification details:", err);
+      setError(err.message || "Failed to load notification details");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Updated navItems to match TeacherDashboard
   const navItems = [
@@ -33,6 +71,18 @@ const NotificationPage = () => {
     },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="flex h-screen bg-gray-100">
+        <Sidebar navItems={navItems} />
+        <div className="flex-1 p-4 md:p-6 flex items-center justify-center">
+          <div className="w-16 h-16 border-4 border-[#F6BA18] border-t-[#212529] rounded-full animate-spin"></div>
+        </div>
+        <MobileNavBar navItems={navItems} />
+      </div>
+    );
+  }
+
   if (!notification) {
     return (
       <div className="flex h-screen bg-gray-100">
@@ -52,6 +102,7 @@ const NotificationPage = () => {
             </div>
           </div>
         </div>
+        <MobileNavBar navItems={navItems} />
       </div>
     );
   }
@@ -61,10 +112,17 @@ const NotificationPage = () => {
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-4 md:p-6">
         <Header title="Notification" />
+        
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center">
+            <AlertCircle size={20} className="mr-2" />
+            {error}
+          </div>
+        )}
 
         <div className="max-w-full mt-6">
           <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
-            {/* Header */}
+            {/* Header with Back button */}
             <div className="bg-gray-50 py-4 px-6 flex items-center justify-between border-b">
               <div className="flex items-center space-x-2">
                 <h2 className="text-lg font-semibold text-gray-800">Details</h2>
@@ -84,13 +142,10 @@ const NotificationPage = () => {
                 <div className="flex-shrink-0">
                   <img
                     src={
-                      notification.id === 1
-                        ? learner_icon
-                        : notification.id === 2
+                      notification.userImage ||
+                      (notification.type && notification.type.toLowerCase().includes("admin")
                         ? admin_icon
-                        : notification.type.toLowerCase().includes("admin")
-                        ? admin_icon
-                        : learner_icon
+                        : learner_icon)
                     }
                     alt=""
                     className="h-12 w-12 rounded-full border-2 border-gray-200"
@@ -100,20 +155,21 @@ const NotificationPage = () => {
                   <div className="flex items-center space-x-2">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                        notification.type.toLowerCase().includes("submission")
+                        notification.type && notification.type.toLowerCase().includes("submission")
                           ? "bg-blue-100 text-blue-800 border-blue-200"
                           : "bg-yellow-100 text-yellow-800 border-yellow-200"
                       }`}
                     >
-                      {notification.type}
+                      {notification.type || notification.title}
                     </span>
-                    <span className="text-xs text-gray-500">
-                      {notification.time}
+                    <span className="flex items-center text-xs text-gray-500">
+                      <Clock size={12} className="mr-1" />
+                      {notification.time || new Date(notification.createdAt || Date.now()).toLocaleString()}
                     </span>
                   </div>
                   <div className="mt-4 prose max-w-none">
                     <p className="text-gray-900 text-lg font-medium">
-                      {notification.description}
+                      {notification.description || notification.message}
                     </p>
                     <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
                       <p className="text-gray-600 text-sm leading-relaxed">
@@ -122,7 +178,6 @@ const NotificationPage = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-6 flex justify-end"></div>
                 </div>
               </div>
             </div>

@@ -1,9 +1,9 @@
+
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import BlackHeader from "../../components/common/layout/BlackHeader";
-import AnnouncementsComponent from "../Teacher/AnnouncementsComponent";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import {
   Home,
@@ -12,19 +12,23 @@ import {
   ClipboardList,
   ArrowUpDown,
   GraduationCap,
+  AlertCircle,
+  Clock
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
 import { useAuth } from "../../contexts/AuthContext";
+import { getAnnouncementsByCourse } from "../../services/announcementService";
 import booksIcon from "../../assets/images/icons/books_icon.png";
 import schoolIcon from "../../assets/images/icons/school_icon.png";
 
 const LearnerCourseAnnouncements = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const { selectedCourse } = useCourse();
-  const { logout } = useAuth();
-  const courseTitle = location.state?.courseTitle || "Course Name";
-  const courseCode = location.state?.courseCode || "COURSE 101";
+  const { user } = useAuth();
+  const [announcements, setAnnouncements] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isSorted, setIsSorted] = useState(false);
 
   const navItems = [
     { text: "Home", icon: <Home size={20} />, route: "/Learner/Dashboard" },
@@ -50,53 +54,93 @@ const LearnerCourseAnnouncements = () => {
     },
   ];
 
-  const [announcements, setAnnouncements] = useState([
-    {
-      id: 1,
-      type: "Test Reminder",
-      description: "Your test is scheduled for December 10.",
-      time: "10 minutes ago",
-      userImage: booksIcon,
-    },
-    {
-      id: 2,
-      type: "Project Reminder",
-      description: "Final project is due soon. Submit by December 15.",
-      time: "5 minutes ago",
-      userImage: schoolIcon,
-    },
-    {
-      id: 3,
-      type: "Tutoring Available",
-      description: "Extra help sessions on Tuesday and Thursday at 3 PM.",
-      time: "20 minutes ago",
-      userImage: booksIcon,
-    },
-    {
-      id: 4,
-      type: "Tutoring Available",
-      description:
-        "Tutoring will be available in the following dates: December 12-14.",
-      time: "1 hour ago",
-      userImage: schoolIcon,
-    },
-    {
-      id: 5,
-      type: "Project Reminder",
-      description: "Project 2 is now deployed.",
-      time: "2 hours ago",
-      userImage: booksIcon,
-    },
-  ]);
+  useEffect(() => {
+    if (!selectedCourse?.id) {
+      navigate("/Learner/Dashboard");
+      return;
+    }
+    
+    fetchAnnouncements();
+  }, [selectedCourse, navigate]);
 
-  const [isSorted, setIsSorted] = useState(false);
+  const fetchAnnouncements = async () => {
+    if (!selectedCourse?.id) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await getAnnouncementsByCourse(selectedCourse.id);
+      
+      let announcementData = [];
+      if (Array.isArray(response)) {
+        console.log("Response is an array with length:", response.length);
+        announcementData = response;
+      } else if (response && typeof response === "object") {
+        console.log("Response is an object with keys:", Object.keys(response));
+        announcementData = response.announcements || response.data || [];
+      } else {
+        console.warn("Unexpected response format:", response);
+        announcementData = [];
+      }
+      
+      // Sort by creation date (newest first)
+      announcementData.sort((a, b) => 
+        new Date(b.createdAt || b.created_at || 0) - 
+        new Date(a.createdAt || a.created_at || 0)
+      );
+      
+      setAnnouncements(announcementData);
+    } catch (err) {
+      console.error("Failed to fetch announcements:", err);
+      setError(err.message || "Failed to load announcements");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSort = () => {
     const sortedAnnouncements = [...announcements].sort((a, b) => {
-      return isSorted ? a.id - b.id : b.id - a.id;
+      return isSorted
+        ? new Date(a.createdAt || a.created_at || 0) - new Date(b.createdAt || b.created_at || 0)
+        : new Date(b.createdAt || b.created_at || 0) - new Date(a.createdAt || a.created_at || 0);
     });
     setAnnouncements(sortedAnnouncements);
     setIsSorted(!isSorted);
+  };
+
+  const renderAnnouncementItems = () => {
+    return announcements.map((announcement) => (
+      <div
+        key={announcement.announcement_id || announcement.id}
+        className="group p-6 hover:bg-gray-50 transition-colors duration-150 cursor-pointer border-b border-gray-200 last:border-b-0"
+        onClick={() => navigate(`/Learner/AnnouncementDetails/${announcement.announcement_id || announcement.id}`)}
+      >
+        <div className="flex items-start space-x-4">
+          <div className="flex-shrink-0">
+            <img
+              src={announcement.course_id ? booksIcon : schoolIcon}
+              alt="Icon"
+              className="h-12 w-12 rounded-full border-2 border-gray-200"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center space-x-2">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                {announcement.title}
+              </span>
+              <span className="flex items-center text-xs text-gray-500">
+                <Clock size={12} className="mr-1" />
+                {new Date(announcement.createdAt || announcement.created_at).toLocaleDateString()}
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-gray-900 font-medium line-clamp-2">
+              {announcement.message}
+            </p>
+          </div>
+        </div>
+      </div>
+    ));
   };
 
   return (
@@ -112,40 +156,46 @@ const LearnerCourseAnnouncements = () => {
         <div className="bg-white rounded-lg shadow-md">
           <BlackHeader title="Announcements" count={announcements.length}>
             <button
-              aria-label="Sort by newest first"
+              aria-label="Sort announcements"
               onClick={handleSort}
               className="p-2 rounded hover:bg-gray-700"
+              title={isSorted ? "Sort newest first" : "Sort oldest first"}
             >
               <ArrowUpDown size={20} />
             </button>
           </BlackHeader>
           <MobileNavBar navItems={navItems} />
 
-          <AnnouncementsComponent
-            announcements={announcements}
-            onAnnouncementClick={(id) => {
-              navigate(`/Learner/AnnouncementDetails/${id}`);
-            }}
-            renderAnnouncement={(announcement) => (
-              <span
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                  announcement.type.toLowerCase() === "test reminder"
-                    ? "bg-blue-100 text-blue-800 border-blue-200"
-                    : announcement.type.toLowerCase() === "project reminder"
-                    ? "bg-purple-100 text-purple-800 border-purple-200"
-                    : announcement.type.toLowerCase() === "tutoring available"
-                    ? "bg-green-100 text-green-800 border-green-200"
-                    : announcement.type.toLowerCase() === "holiday announcement"
-                    ? "bg-yellow-100 text-yellow-800 border-yellow-200"
-                    : announcement.type.toLowerCase() === "new course material"
-                    ? "bg-gray-100 text-gray-800 border-gray-200"
-                    : "bg-gray-50 text-gray-700 border-gray-100"
-                }`}
-              >
-                {announcement.type}
-              </span>
-            )}
-          />
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center">
+              <AlertCircle size={20} className="mr-2" />
+              {error}
+            </div>
+          )}
+          
+          {isLoading ? (
+            <div className="flex items-center justify-center h-40">
+              <div className="w-12 h-12 border-4 border-[#F6BA18] border-t-[#212529] rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            <>
+              {(!announcements || announcements.length === 0) ? (
+                <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                  <div className="rounded-full bg-gray-100 p-3 mb-4">
+                    <Megaphone size={32} className="text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">No announcements found</h3>
+                  <p className="text-sm text-gray-500 max-w-md">
+                    There are no announcements yet for this course.
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-200">
+                  {renderAnnouncementItems()}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

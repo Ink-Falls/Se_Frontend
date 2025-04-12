@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
@@ -16,163 +17,304 @@ import {
   ClipboardList,
   User,
   LineChart,
+  AlertCircle
 } from "lucide-react";
-import Modal from "../../components/common/Button/Modal"; // Import the Modal component
-import DeleteModal from "../../components/common/Modals/Delete/DeleteModal"; // Import the DeleteModal component
+import Modal from "../../components/common/Button/Modal";
+import DeleteModal from "../../components/common/Modals/Delete/DeleteModal";
 import { useCourse } from "../../contexts/CourseContext";
-const navItems = [
-  { text: "Home", icon: <Home size={20} />, route: "/Teacher/Dashboard" },
-  {
-    text: "Announcements",
-    icon: <Megaphone size={20} />,
-    route: "/Teacher/Announcements",
-  },
-  { text: "Courses", icon: <BookOpen size={20} />, route: "/Teacher/Courses" },
-  {
-    text: "Assessments",
-    icon: <ClipboardList size={20} />,
-    route: "/Teacher/Assessments",
-  },
-  { text: "Users", icon: <User size={20} />, route: "/Teacher/Users" },
-  { text: "Reports", icon: <LineChart size={20} />, route: "/Teacher/Reports" },
-];
-const announcements = [
-  {
-    id: "1",
-    type: "Test Reminder",
-    description: "Your test is scheduled for December 10.",
-    fullText: "Make sure to prepare well for the upcoming test on December 10.",
-    time: "10 minutes ago",
-    userImage: booksIcon, // Matches course announcements
-  },
-  {
-    id: "2",
-    type: "Project Reminder",
-    description: "Final project is due soon. Submit by December 15.",
-    fullText:
-      "Don't forget to submit your final project before the deadline on December 15.",
-    time: "5 minutes ago",
-    userImage: schoolIcon, // Matches course announcements
-  },
-  {
-    id: "3",
-    type: "Tutoring Available",
-    description: "Extra help sessions on Tuesday and Thursday at 3 PM.",
-    fullText:
-      "Tutoring sessions are available every Tuesday and Thursday at 3 PM.",
-    time: "20 minutes ago",
-    userImage: booksIcon, // Matches course announcements
-  },
-  {
-    id: "4",
-    type: "Tutoring Available",
-    description:
-      "Tutoring will be available in the following dates: December 12-14.",
-    fullText:
-      "Tutoring sessions will be held on December 12-14. Please check the schedule for details.",
-    time: "1 hour ago",
-    userImage: booksIcon, // Matches course announcements
-  },
-  {
-    id: "5",
-    type: "Project Reminder",
-    description: "Project 2 is now deployed.",
-    fullText:
-      "We are excited to announce that Project 2 is now deployed. Please review it and provide your feedback.",
-    time: "2 hours ago",
-    userImage: schoolIcon, // Matches course announcements
-  },
-];
+import { useAuth } from "../../contexts/AuthContext";
+import {
+  getAnnouncementById,
+  updateAnnouncement,
+  deleteAnnouncement,
+  getAnnouncementsByCourse
+} from "../../services/announcementService";
 
-const AnnouncementDetails = () => {
+const TeacherAnnouncementDetails = () => {
   const { id } = useParams();
   const { selectedCourse } = useCourse();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // State for edit modal
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // State for delete modal
-  const [editedType, setEditedType] = useState(""); // State for edited type
-  const [editedFullText, setEditedFullText] = useState(""); // State for edited full text
+  const [announcement, setAnnouncement] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [editedTitle, setEditedTitle] = useState("");
+  const [editedMessage, setEditedMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const navItems = [
+    {
+      text: "Home",
+      icon: <Home size={20} />,
+      route: "/Teacher/Dashboard",
+    },
+    {
+      text: "Announcements",
+      icon: <Megaphone size={20} />,
+      route: "/Teacher/CourseAnnouncements",
+    },
+    {
+      text: "Modules",
+      icon: <BookOpen size={20} />,
+      route: "/Teacher/CourseModules",
+    },
+    {
+      text: "Assessments",
+      icon: <ClipboardList size={20} />,
+      route: "/Teacher/Assessment",
+    },
+    {
+      text: "Attendance",
+      icon: <User size={20} />,
+      route: "/TeacherAttendance",
+    },
+    {
+      text: "Progress Tracker",
+      icon: <LineChart size={20} />,
+      route: "/TeacherProgress",
+    },
+  ];
+
+  const getUserIdFromLocalStorage = () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return null;
+      
+      const tokenPayload = JSON.parse(atob(token.split(".")[1]));
+      return tokenPayload?.id || null;
+    } catch (err) {
+      console.error("Error parsing user ID from token:", err);
+      return null;
+    }
+  };
 
   useEffect(() => {
-    if (!selectedCourse?.id) {
+    const fetchAnnouncement = async () => {
+      if (!id) {
+        setError("Announcement ID not found");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await getAnnouncementById(id);
+        
+        const announcementData = response.announcement || response;
+        
+        if (!announcementData || (!announcementData.title && !announcementData.message)) {
+          throw new Error("Invalid announcement data received");
+        }
+        
+        setAnnouncement(announcementData);
+        setEditedTitle(announcementData.title);
+        setEditedMessage(announcementData.message);
+      } catch (err) {
+        console.error("Failed to fetch announcement details:", err);
+        setError(err.message || "Failed to load announcement details");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAnnouncement();
+  }, [id]);
+
+  useEffect(() => {
+    if (!selectedCourse?.id && !isLoading) {
       navigate("/Teacher/Dashboard");
-      return;
     }
-  }, [selectedCourse, navigate]);
+  }, [selectedCourse, navigate, isLoading]);
 
-  const announcement = announcements.find((ann) => ann.id === id);
+  const handleEdit = () => {
+    if (!announcement) return;
+    
+    setEditedTitle(announcement.title);
+    setEditedMessage(announcement.message);
+    setIsEditModalOpen(true);
+  };
 
-  if (!announcement) {
-    return <div className="text-center mt-20">Announcement not found</div>;
+  const handleSave = async () => {
+    if (!announcement?.announcement_id) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const updateData = {
+        title: editedTitle,
+        message: editedMessage,
+        course_id: announcement.course_id || selectedCourse?.id,
+      };
+      
+      const response = await updateAnnouncement(announcement.announcement_id, updateData);
+      
+      // Update the local announcement data with the response
+      const updatedAnnouncement = response.announcement || response;
+      setAnnouncement(updatedAnnouncement);
+      
+      setIsEditModalOpen(false);
+      setSuccessMessage("Announcement updated successfully!");
+    } catch (err) {
+      console.error("Failed to update announcement:", err);
+      setError(err.message || "Failed to update announcement");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = () => {
+    if (!announcement) return;
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!announcement?.announcement_id) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      await deleteAnnouncement(announcement.announcement_id);
+      setIsDeleteModalOpen(false);
+      setSuccessMessage("Announcement deleted successfully!");
+      
+      // Navigate back to announcements list after a brief delay
+      setTimeout(() => {
+        navigate('/Teacher/CourseAnnouncements');
+      }, 1500);
+    } catch (err) {
+      console.error("Failed to delete announcement:", err);
+      setError(err.message || "Failed to delete announcement");
+      setIsLoading(false);
+    }
+  };
+
+  const renderEditModal = () => {
+    if (!isEditModalOpen) return null;
+    
+    return (
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+      >
+        <div className="p-6">
+          <h2 className="text-2xl font-bold mb-4">Edit Announcement</h2>
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center">
+              <AlertCircle size={18} className="mr-2 flex-shrink-0" />
+              <span className="text-sm">{error}</span>
+            </div>
+          )}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSave();
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Title <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500"
+                placeholder="Enter announcement title"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Message <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={editedMessage}
+                onChange={(e) => setEditedMessage(e.target.value)}
+                rows={4}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500"
+                placeholder="Enter announcement message"
+                required
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700 transition-colors disabled:opacity-50"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Saving...
+                  </div>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </Modal>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen bg-gray-100">
+        <Sidebar navItems={navItems} />
+        <div className="flex-1 p-6 flex items-center justify-center">
+          <div className="w-16 h-16 border-4 border-[#F6BA18] border-t-[#212529] rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
   }
 
-  // Handle edit button click
-  const handleEdit = () => {
-    setEditedType(announcement.type); // Initialize with current type
-    setEditedFullText(announcement.fullText); // Initialize with current full text
-    setIsEditModalOpen(true); // Open the edit modal
-  };
-
-  // Handle save after editing
-  const handleSave = () => {
-   
-    setIsEditModalOpen(false); // Close the modal after saving
-    // You can update the announcement in your state or API here
-  };
-
-  // Handle delete button click
-  const handleDelete = () => {
-    setIsDeleteModalOpen(true); // Open the delete modal
-  };
-
-  // Handle confirm delete
-  const handleConfirmDelete = () => {
-    
-    setIsDeleteModalOpen(false); // Close the modal after deletion
-    navigate(-1); // Navigate back after deletion
-    // You can delete the announcement from your state or API here
-  };
+  if (error || !announcement) {
+    return (
+      <div className="flex h-screen bg-gray-100">
+        <Sidebar navItems={navItems} />
+        <div className="flex-1 p-6">
+          <Header
+            title="Announcement Details"
+            subtitle={selectedCourse?.code}
+          />
+          <div className="bg-white p-10 rounded-lg shadow-md text-center">
+            <AlertCircle size={48} className="mx-auto text-red-500 mb-4" />
+            <h2 className="text-xl font-medium mb-2">Error Loading Announcement</h2>
+            <p className="text-gray-600 mb-6">{error || "Announcement not found"}</p>
+            <button
+              onClick={() => navigate(-1)}
+              className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar - Matches TeacherCoursePage */}
-      <Sidebar
-        navItems={[
-          {
-            text: "Home",
-            icon: <Home size={20} />,
-            route: "/Teacher/Dashboard", // Update this route
-          },
-          {
-            text: "Announcements",
-            icon: <Megaphone size={20} />,
-            route: "/Teacher/CourseAnnouncements",
-          },
-          {
-            text: "Modules",
-            icon: <BookOpen size={20} />,
-            route: "/Teacher/CourseModules", // Update route path
-          },
-          {
-            text: "Assessments",
-            icon: <ClipboardList size={20} />,
-            route: "/Teacher/Assessment",
-          },
-          {
-            text: "Attendance",
-            icon: <User size={20} />,
-            route: "/TeacherAttendance",
-          },
-          {
-            text: "Progress Tracker",
-            icon: <LineChart size={20} />,
-            route: "/TeacherProgress",
-          },
-        ]}
-      />
+      {/* Sidebar */}
+      <Sidebar navItems={navItems} />
 
       <div className="flex-1 p-6">
-        {/* Header (Same as TeacherCoursePage) */}
+        {/* Header */}
         <Header
           title={selectedCourse?.name || "Announcement Details"}
           subtitle={selectedCourse?.code}
@@ -190,7 +332,7 @@ const AnnouncementDetails = () => {
               >
                 <ArrowLeft size={20} />
               </button>
-              <span>{announcement.type}</span>
+              <span>Announcement Details</span>
             </div>
           }
         >
@@ -217,116 +359,62 @@ const AnnouncementDetails = () => {
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0">
               <img
-                src={announcement.userImage}
+                src={announcement.course_id ? booksIcon : schoolIcon}
                 alt="Author"
                 className="h-12 w-12 rounded-full border-2 border-gray-200"
               />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-2">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                      announcement.type.toLowerCase() === "test reminder"
-                        ? "bg-blue-100 text-blue-800 border-blue-200"
-                        : announcement.type.toLowerCase() === "project reminder"
-                        ? "bg-purple-100 text-purple-800 border-purple-200"
-                        : announcement.type.toLowerCase() ===
-                          "tutoring available"
-                        ? "bg-green-100 text-green-800 border-green-200"
-                        : announcement.type.toLowerCase() ===
-                          "holiday announcement"
-                        ? "bg-yellow-100 text-yellow-800 border-yellow-200"
-                        : announcement.type.toLowerCase() ===
-                          "new course material"
-                        ? "bg-gray-100 text-gray-800 border-gray-200"
-                        : "bg-gray-50 text-gray-700 border-gray-100"
-                    }`}
-                  >
-                    {announcement.type}
+              <div className="flex flex-col mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">{announcement.title}</h2>
+                <div className="flex items-center mt-1 space-x-2">
+                  <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                    {announcement.course_id ? "Course Announcement" : "Global Announcement"}
                   </span>
                   <span className="text-xs text-gray-500">
-                    {announcement.time}
+                    {new Date(announcement.createdAt).toLocaleString()}
                   </span>
                 </div>
+                
+                {announcement.user && (
+                  <span className="text-xs text-gray-500 mt-1">
+                    By: {announcement.user.first_name} {announcement.user.last_name}
+                  </span>
+                )}
               </div>
-              <div className="space-y-4">
-                <p className="text-gray-900 text-lg font-medium">
-                  {announcement.description}
-                </p>
-                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    {announcement.fullText}
-                  </p>
+              
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                <p className="text-gray-700 whitespace-pre-wrap">{announcement.message}</p>
+              </div>
+              
+              {announcement.course && (
+                <div className="mt-4 text-sm text-gray-600">
+                  <span className="font-medium">Course:</span> {announcement.course.name || announcement.course_id}
                 </div>
+              )}
+              
+              <div className="mt-2 text-xs text-gray-500">
+                Last Updated: {new Date(announcement.updatedAt || announcement.createdAt).toLocaleString()}
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Edit Modal */}
-      {isEditModalOpen && (
-        <Modal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-        >
-          <h2 className="text-xl font-semibold mb-4">Edit Announcement</h2>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSave();
-            }}
-          >
-            <label className="font-medium mb-2 text-gray-700">Type</label>
-            <input
-              type="text"
-              value={editedType}
-              onChange={(e) => setEditedType(e.target.value)}
-              className="w-full px-3 mt-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all"
-              placeholder="Enter announcement type"
-            />
-
-            <label className="font-medium mt-4 block text-gray-700">
-              Full Text
-            </label>
-            <textarea
-              value={editedFullText}
-              onChange={(e) => setEditedFullText(e.target.value)}
-              className="w-full px-3 mt-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all"
-              rows="4"
-              placeholder="Enter full text"
-            />
-
-            <div className="mt-6 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setIsEditModalOpen(false)}
-                className="mr-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600"
-              >
-                Save
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {/* Delete Modal */}
+      {/* Modals */}
+      {renderEditModal()}
+      
       {isDeleteModalOpen && (
         <DeleteModal
-          isOpen={isDeleteModalOpen}
+          title="Delete Announcement"
+          message={`Are you sure you want to delete "${announcement.title}"? This action cannot be undone.`}
           onClose={() => setIsDeleteModalOpen(false)}
           onConfirm={handleConfirmDelete}
+          isLoading={isLoading}
         />
       )}
     </div>
   );
 };
 
-export default AnnouncementDetails;
+export default TeacherAnnouncementDetails;

@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CourseProvider } from "./contexts/CourseContext";
 import { AppProvider } from "./contexts/AppContext";
-import { NetworkProvider } from "./contexts/NetworkContext"; // Add this import
+import { NetworkProvider } from "./contexts/NetworkContext";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import LoadingSpinner from "./components/common/LoadingSpinner";
 import {
@@ -38,6 +38,7 @@ const AdminPages = {
   Courses: lazy(() => import("./pages/Admin/AdminCourses")),
   Enrollment: lazy(() => import("./pages/Admin/AdminEnrollment")),
   Announcements: lazy(() => import("./pages/Admin/AdminAnnouncements")),
+  AnnouncementDetails: lazy(() => import("./pages/Admin/AdminAnnouncementDetails.jsx")),
 };
 
 const TeacherPages = {
@@ -239,6 +240,10 @@ function AppRoutes() {
                       <Route
                         path="Announcements"
                         element={<AdminPages.Announcements />}
+                      />
+                      <Route
+                        path="AnnouncementDetails/:id"
+                        element={<AdminPages.AnnouncementDetails />}
                       />
                       <Route path="*" element={<ErrorPages.Error404 />} />
                     </Routes>

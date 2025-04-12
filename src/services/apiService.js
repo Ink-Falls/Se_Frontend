@@ -309,7 +309,26 @@ const fetchWithInterceptor = async (url, options = {}, retryCount = 0) => {
       
       switch (response.status) {
         case 400:
-          throw new Error(errorData.error?.message || 'Invalid request');
+          // Extract detailed validation errors if available
+          let errorMessage = 'Invalid request';
+          if (errorData?.error?.details) {
+            const details = errorData.error.details;
+            const firstDetailKey = Object.keys(details)[0];
+            if (firstDetailKey && details[firstDetailKey]) {
+              // Use the specific message from the details
+              errorMessage = details[firstDetailKey]; 
+            } else if (errorData.error.message) {
+              // Fallback to the main error message if details are empty/unexpected
+              errorMessage = errorData.error.message;
+            }
+          } else if (errorData?.error?.message) {
+             // Fallback if no details object exists
+             errorMessage = errorData.error.message;
+          } else if (errorData?.message) {
+            // Fallback for other 400 error structures
+            errorMessage = errorData.message;
+          }
+          throw new Error(errorMessage);
         case 401:
           // Already handled above
           throw new Error(errorData.message || 'Unauthorized');
