@@ -366,6 +366,13 @@ const TeacherCourseAnnouncements = () => {
             </div>
           )}
           
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center">
+              <AlertCircle size={20} className="mr-2" />
+              {error}
+            </div>
+          )}
+          
           {isLoading ? (
             <div className="flex items-center justify-center h-40">
               <div className="w-12 h-12 border-4 border-[#F6BA18] border-t-[#212529] rounded-full animate-spin"></div>
@@ -406,6 +413,12 @@ const TeacherCourseAnnouncements = () => {
           >
             <div className="p-6">
               <h2 className="text-2xl font-bold mb-4">Add New Announcement</h2>
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center">
+                  <AlertCircle size={18} className="mr-2 flex-shrink-0" />
+                  <span className="text-sm">{error}</span>
+                </div>
+              )}
               <form onSubmit={(e) => {
                 e.preventDefault();
                 handleAddAnnouncement();
@@ -488,6 +501,12 @@ const TeacherCourseAnnouncements = () => {
           >
             <div className="p-6">
               <h2 className="text-2xl font-bold mb-4">Edit Announcement</h2>
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-center">
+                  <AlertCircle size={18} className="mr-2" />
+                  <span>{error}</span>
+                </div>
+              )}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
