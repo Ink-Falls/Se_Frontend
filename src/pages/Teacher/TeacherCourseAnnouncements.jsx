@@ -6,6 +6,7 @@ import BlackHeader from "../../components/common/layout/BlackHeader";
 import AnnouncementsComponent from "./AnnouncementsComponent";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import Modal from "../../components/common/Button/Modal";
+import DeleteModal from "../../components/common/Modals/Delete/DeleteModal";
 import {
   Home,
   Megaphone,
@@ -15,7 +16,10 @@ import {
   LineChart,
   Plus,
   ArrowUpDown,
-  AlertCircle
+  AlertCircle,
+  Edit,
+  Trash2,
+  Clock
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -44,6 +48,8 @@ const TeacherCourseAnnouncements = () => {
   const [error, setError] = useState(null);
   const [isSorted, setIsSorted] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [editingAnnouncement, setEditingAnnouncement] = useState(null);
+  const [announcementToDelete, setAnnouncementToDelete] = useState(null);
 
   const navItems = [
     {
@@ -180,6 +186,83 @@ const TeacherCourseAnnouncements = () => {
     }
   };
 
+  const handleEditAnnouncement = async (announcement) => {
+    setEditingAnnouncement(announcement);
+  };
+
+  const saveAnnouncementChanges = async () => {
+    if (!editingAnnouncement) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const updateData = {
+        title: editingAnnouncement.title,
+        message: editingAnnouncement.message,
+        course_id: selectedCourse.id
+      };
+
+      const response = await updateAnnouncement(
+        editingAnnouncement.announcement_id,
+        updateData
+      );
+
+      const updatedAnnouncement = response.announcement || response;
+
+      setAnnouncements((prev) =>
+        prev.map((a) =>
+          a.announcement_id === editingAnnouncement.announcement_id
+            ? updatedAnnouncement
+            : a
+        )
+      );
+
+      setEditingAnnouncement(null);
+      setSuccessMessage("Announcement updated successfully!");
+
+      // Refresh announcements list
+      fetchAnnouncements();
+    } catch (err) {
+      console.error("Failed to update announcement:", err);
+      setError(err.message || "Failed to update announcement");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteAnnouncement = (announcement) => {
+    setAnnouncementToDelete(announcement);
+  };
+
+  const confirmDelete = async () => {
+    if (!announcementToDelete) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await deleteAnnouncement(announcementToDelete.announcement_id);
+
+      setAnnouncements((prev) =>
+        prev.filter(
+          (a) => a.announcement_id !== announcementToDelete.announcement_id
+        )
+      );
+
+      setAnnouncementToDelete(null);
+      setSuccessMessage("Announcement deleted successfully!");
+
+      // Refresh announcements list
+      fetchAnnouncements();
+    } catch (err) {
+      console.error("Failed to delete announcement:", err);
+      setError(err.message || "Failed to delete announcement");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Auto-hide success message after 5 seconds
   useEffect(() => {
     if (successMessage) {
@@ -187,6 +270,66 @@ const TeacherCourseAnnouncements = () => {
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
+
+  const renderAnnouncementItems = () => {
+    return announcements.map((announcement) => (
+      <div
+        key={announcement.announcement_id || announcement.id}
+        className="group p-6 hover:bg-gray-50 transition-colors duration-150 cursor-pointer border-b border-gray-200 last:border-b-0"
+      >
+        <div className="flex items-start space-x-4">
+          <div className="flex-shrink-0">
+            <img
+              src={announcement.course_id ? booksIcon : schoolIcon}
+              alt="Icon"
+              className="h-12 w-12 rounded-full border-2 border-gray-200"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                  {announcement.title}
+                </span>
+                <span className="flex items-center text-xs text-gray-500">
+                  <Clock size={12} className="mr-1" />
+                  {new Date(announcement.createdAt || announcement.created_at).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditAnnouncement(announcement);
+                  }}
+                  className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                  title="Edit Announcement"
+                >
+                  <Edit size={18} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteAnnouncement(announcement);
+                  }}
+                  className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                  title="Delete Announcement"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
+            <p 
+              className="mt-2 text-sm text-gray-900 font-medium line-clamp-2"
+              onClick={() => navigate(`/Teacher/AnnouncementDetails/${announcement.announcement_id || announcement.id}`)}
+            >
+              {announcement.message}
+            </p>
+          </div>
+        </div>
+      </div>
+    ));
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -254,12 +397,9 @@ const TeacherCourseAnnouncements = () => {
                   </button>
                 </div>
               ) : (
-                <AnnouncementsComponent
-                  announcements={announcements}
-                  onAnnouncementClick={(id) => 
-                    navigate(`/Teacher/AnnouncementDetails/${id}`)
-                  }
-                />
+                <div className="divide-y divide-gray-200">
+                  {renderAnnouncementItems()}
+                </div>
               )}
             </>
           )}
@@ -347,6 +487,103 @@ const TeacherCourseAnnouncements = () => {
               </form>
             </div>
           </Modal>
+        )}
+
+        {/* Edit Announcement Modal */}
+        {editingAnnouncement && (
+          <Modal
+            isOpen={!!editingAnnouncement}
+            onClose={() => setEditingAnnouncement(null)}
+          >
+            <div className="p-6">
+              <h2 className="text-2xl font-bold mb-4">Edit Announcement</h2>
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-center">
+                  <AlertCircle size={18} className="mr-2" />
+                  <span>{error}</span>
+                </div>
+              )}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  saveAnnouncementChanges();
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editingAnnouncement?.title || ""}
+                    onChange={(e) =>
+                      setEditingAnnouncement((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
+                    }
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500"
+                    placeholder="Enter announcement title"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Message <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={editingAnnouncement?.message || ""}
+                    onChange={(e) =>
+                      setEditingAnnouncement((prev) => ({
+                        ...prev,
+                        message: e.target.value,
+                      }))
+                    }
+                    rows={4}
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500"
+                    placeholder="Enter announcement content"
+                    required
+                  />
+                </div>
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEditingAnnouncement(null)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700 transition-colors disabled:opacity-50"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Saving...
+                      </div>
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </Modal>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {announcementToDelete && (
+          <DeleteModal
+            title="Delete Announcement"
+            message={`Are you sure you want to delete "${announcementToDelete.title}"? This action cannot be undone.`}
+            onClose={() => setAnnouncementToDelete(null)}
+            onConfirm={confirmDelete}
+            isLoading={isLoading}
+          />
         )}
       </div>
     </div>

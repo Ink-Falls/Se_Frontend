@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import BlackHeader from "../../components/common/layout/BlackHeader";
-import AnnouncementsComponent from "../Teacher/AnnouncementsComponent";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import {
   Home,
@@ -12,11 +11,14 @@ import {
   ClipboardList,
   ArrowUpDown,
   GraduationCap,
-  AlertCircle
+  AlertCircle,
+  Clock
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { getAnnouncementsByCourse } from "../../services/announcementService";
+import booksIcon from "../../assets/images/icons/books_icon.png";
+import schoolIcon from "../../assets/images/icons/school_icon.png";
 
 const LearnerCourseAnnouncements = () => {
   const navigate = useNavigate();
@@ -106,6 +108,40 @@ const LearnerCourseAnnouncements = () => {
     setIsSorted(!isSorted);
   };
 
+  const renderAnnouncementItems = () => {
+    return announcements.map((announcement) => (
+      <div
+        key={announcement.announcement_id || announcement.id}
+        className="group p-6 hover:bg-gray-50 transition-colors duration-150 cursor-pointer border-b border-gray-200 last:border-b-0"
+        onClick={() => navigate(`/Learner/AnnouncementDetails/${announcement.announcement_id || announcement.id}`)}
+      >
+        <div className="flex items-start space-x-4">
+          <div className="flex-shrink-0">
+            <img
+              src={announcement.course_id ? booksIcon : schoolIcon}
+              alt="Icon"
+              className="h-12 w-12 rounded-full border-2 border-gray-200"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center space-x-2">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                {announcement.title}
+              </span>
+              <span className="flex items-center text-xs text-gray-500">
+                <Clock size={12} className="mr-1" />
+                {new Date(announcement.createdAt || announcement.created_at).toLocaleDateString()}
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-gray-900 font-medium line-clamp-2">
+              {announcement.message}
+            </p>
+          </div>
+        </div>
+      </div>
+    ));
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
@@ -153,12 +189,9 @@ const LearnerCourseAnnouncements = () => {
                   </p>
                 </div>
               ) : (
-                <AnnouncementsComponent
-                  announcements={announcements}
-                  onAnnouncementClick={(id) => {
-                    navigate(`/Learner/AnnouncementDetails/${id}`);
-                  }}
-                />
+                <div className="divide-y divide-gray-200">
+                  {renderAnnouncementItems()}
+                </div>
               )}
             </>
           )}

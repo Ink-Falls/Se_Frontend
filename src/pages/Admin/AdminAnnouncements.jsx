@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "/src/components/common/layout/Sidebar.jsx";
 import Header from "/src/components/common/layout/Header.jsx";
 import Modal from "../../components/common/Button/Modal";
@@ -12,48 +13,33 @@ import {
   Bell,
   FileText,
   ArrowUpDown,
-  AlertCircle
+  AlertCircle,
+  Clock
 } from "lucide-react";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import BlackHeader from "../../components/common/layout/BlackHeader";
 import admin_icon from "/src/assets/images/icons/admin_icon.png";
-import { useTheme } from "../../contexts/ThemeContext"; // Import useTheme
+import { useTheme } from "../../contexts/ThemeContext";
+import { useAuth } from "../../contexts/AuthContext";
+import {
+  createAnnouncement,
+  getAnnouncementsByUser,
+  updateAnnouncement,
+  deleteAnnouncement
+} from "../../services/announcementService";
 
 function AdminAnnouncements() {
-  const { isDarkMode } = useTheme(); // Get theme state
-  const [announcements, setAnnouncements] = useState([
-    {
-      id: 1,
-      title: "Class Cancellation",
-      content:
-        "Due to unforeseen circumstances, the class scheduled for October 5th has been canceled. Please check your email for further details.",
-      date: "2023-10-01",
-      poster: {
-        name: "Dr. John Doe",
-        profilePicture: "https://i.imgur.com/RTMTvNB.png",
-      },
-    },
-    {
-      id: 2,
-      title: "Holiday Schedule",
-      content:
-        "Please note that the office will be closed from December 24th to January 1st for the holiday season. We will resume operations on January 2nd.",
-      date: "2023-12-15",
-      poster: {
-        name: "Dr. Jane Smith",
-        profilePicture: "https://i.imgur.com/RTMTvNB.png",
-      },
-    },
-  ]);
-
+  const { user } = useAuth();
+  const { isDarkMode } = useTheme();
+  const navigate = useNavigate();
+  const [announcements, setAnnouncements] = useState([]);
   const [editingAnnouncement, setEditingAnnouncement] = useState(null);
-  const [viewingAnnouncement, setViewingAnnouncement] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const [isAddAnnouncementOpen, setIsAddAnnouncementOpen] = useState(false);
   const [newAnnouncement, setNewAnnouncement] = useState({
     title: "",
     message: "",
-    course_id: 0, // 0 for global announcements
+    course_id: 0,
   });
   const [announcementToDelete, setAnnouncementToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,61 +53,33 @@ function AdminAnnouncements() {
     setDropdownOpen(dropdownOpen === id ? null : id);
   };
 
-  const getUserIdFromLocalStorage = () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return null;
-
-      const tokenPayload = JSON.parse(atob(token.split(".")[1]));
-      return tokenPayload?.id || null;
-    } catch (err) {
-      console.error("Error parsing user ID from token:", err);
-      return null;
-    }
-  };
-
   const fetchAnnouncements = async () => {
-    const userId = user?.id || getUserIdFromLocalStorage();
+    let userId;
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      userId = storedUser.id;
+    } catch (error) {
+      console.error("Error parsing user data from localStorage:", error);
+    }
 
     if (!userId) {
-      console.warn(
-        "No user ID available from context or localStorage, cannot fetch announcements"
-      );
+      console.warn("No user ID available, cannot fetch announcements");
       setIsLoading(false);
       setError("User ID not found. Please try logging in again.");
       return;
     }
 
-    console.log("Using user ID for announcements:", userId);
     setIsLoading(true);
     setError(null);
 
     try {
       const response = await getAnnouncementsByUser(userId);
-
-      let announcementData = [];
-      if (Array.isArray(response)) {
-        console.log("Response is an array with length:", response.length);
-        announcementData = response;
-      } else if (response && typeof response === "object") {
-        console.log("Response is an object with keys:", Object.keys(response));
-        announcementData = response.announcements || response.data || [];
-        console.log("Extracted data array length:", announcementData.length);
-      } else {
-        console.warn("Unexpected response format:", response);
-        announcementData = [];
-      }
-
-      console.log(
-        "First announcement object (if exists):",
-        announcementData.length > 0
-          ? JSON.stringify(announcementData[0])
-          : "No announcements"
-      );
+      const announcementData = Array.isArray(response) ? response : [];
 
       if (announcementData.length > 0) {
-        console.log("Sample announcement ID:", announcementData[0].announcement_id);
-        console.log("Sample announcement title:", announcementData[0].title);
+        console.log("Successfully fetched announcements:", announcementData.length);
+      } else {
+        console.log("No announcements found or invalid response format");
       }
 
       announcementData.sort(
@@ -129,16 +87,10 @@ function AdminAnnouncements() {
           new Date(b.createdAt || b.created_at || 0) -
           new Date(a.createdAt || a.created_at || 0)
       );
-
-      console.log(
-        "Setting announcements state with data count:",
-        announcementData.length
-      );
       setAnnouncements(announcementData);
       setFilteredAnnouncements(announcementData);
     } catch (err) {
       console.error("Failed to fetch announcements:", err);
-      console.error("Error details:", err.stack);
       setError(err.message || "Failed to load announcements");
       setAnnouncements([]);
       setFilteredAnnouncements([]);
@@ -148,19 +100,17 @@ function AdminAnnouncements() {
   };
 
   useEffect(() => {
-    const userId = user?.id || getUserIdFromLocalStorage();
-
-    console.log("User context ID:", user?.id);
-    console.log("localStorage user ID:", getUserIdFromLocalStorage());
-    console.log("Using user ID:", userId);
-
-    if (userId) {
-      fetchAnnouncements();
-    }
-  }, [user?.id]);
+    fetchAnnouncements();
+  }, []);
 
   const refreshAnnouncements = async () => {
-    const userId = user?.id || getUserIdFromLocalStorage();
+    let userId;
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      userId = storedUser.id;
+    } catch (error) {
+      console.error("Error parsing user data from localStorage:", error);
+    }
 
     if (!userId) {
       setError("User ID not found. Please try logging in again.");
@@ -172,47 +122,17 @@ function AdminAnnouncements() {
 
     try {
       const response = await getAnnouncementsByUser(userId);
-
-      let announcementData = [];
-      if (Array.isArray(response)) {
-        console.log("Response is an array with length:", response.length);
-        announcementData = response;
-      } else if (response && typeof response === "object") {
-        console.log("Response is an object with keys:", Object.keys(response));
-        announcementData = response.announcements || response.data || [];
-        console.log("Extracted data array length:", announcementData.length);
-      } else {
-        console.warn("Unexpected response format:", response);
-        announcementData = [];
-      }
-
-      console.log(
-        "First announcement object (if exists):",
-        announcementData.length > 0
-          ? JSON.stringify(announcementData[0])
-          : "No announcements"
-      );
-
-      if (announcementData.length > 0) {
-        console.log("Sample announcement ID:", announcementData[0].announcement_id);
-        console.log("Sample announcement title:", announcementData[0].title);
-      }
+      const announcementData = Array.isArray(response) ? response : [];
 
       announcementData.sort(
         (a, b) =>
           new Date(b.createdAt || b.created_at || 0) -
           new Date(a.createdAt || a.created_at || 0)
       );
-
-      console.log(
-        "Setting announcements state with data count:",
-        announcementData.length
-      );
       setAnnouncements(announcementData);
       setFilteredAnnouncements(announcementData);
     } catch (err) {
       console.error("Failed to fetch announcements:", err);
-      console.error("Error details:", err.stack);
       setError(err.message || "Failed to load announcements");
       setAnnouncements([]);
       setFilteredAnnouncements([]);
@@ -272,58 +192,12 @@ function AdminAnnouncements() {
   ];
 
   const handleEdit = (announcement) => {
-    viewAnnouncementById(announcement.announcement_id, true);
+    setEditingAnnouncement(announcement);
     setDropdownOpen(null);
   };
 
-  const viewAnnouncementDetails = async (announcementId) => {
-    try {
-      setIsLoading(true);
-      const response = await getAnnouncementById(announcementId);
-
-      const announcementData = response.announcement || response;
-
-      if (
-        !announcementData ||
-        (!announcementData.title && !announcementData.message)
-      ) {
-        throw new Error("Invalid announcement data received");
-      }
-
-      setViewingAnnouncement(announcementData);
-    } catch (err) {
-      console.error("Failed to fetch announcement details:", err);
-      setError(err.message || "Failed to load announcement details");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const viewAnnouncementById = async (announcementId, forEditing = false) => {
-    try {
-      setIsLoading(true);
-      const response = await getAnnouncementById(announcementId);
-
-      const announcementData = response.announcement || response;
-
-      if (
-        !announcementData ||
-        (!announcementData.title && !announcementData.message)
-      ) {
-        throw new Error("Invalid announcement data received");
-      }
-
-      if (forEditing) {
-        setEditingAnnouncement(announcementData);
-      } else {
-        setViewingAnnouncement(announcementData);
-      }
-    } catch (err) {
-      console.error("Failed to fetch announcement details:", err);
-      setError(err.message || "Failed to load announcement details");
-    } finally {
-      setIsLoading(false);
-    }
+  const viewAnnouncementById = (announcementId) => {
+    navigate(`/Admin/AnnouncementDetails/${announcementId}`);
   };
 
   const saveAnnouncementChanges = async () => {
@@ -336,7 +210,6 @@ function AdminAnnouncements() {
       const updateData = {
         title: editingAnnouncement.title,
         message: editingAnnouncement.message,
-        course_id: editingAnnouncement.course_id || 0,
       };
 
       const response = await updateAnnouncement(
@@ -401,14 +274,19 @@ function AdminAnnouncements() {
     setError(null);
 
     try {
+      let userId;
+      try {
+        const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+        userId = storedUser.id;
+        console.log("User ID retrieved from localStorage:", userId);
+      } catch (error) {
+        console.error("Error parsing user data from localStorage:", error);
+      }
+
       const announcementData = {
         title: newAnnouncement.title,
         message: newAnnouncement.message,
       };
-
-      if (newAnnouncement.course_id > 0) {
-        announcementData.course_id = newAnnouncement.course_id;
-      }
 
       const response = await createAnnouncement(announcementData);
       const createdAnnouncement = response.announcement || response;
@@ -435,12 +313,69 @@ function AdminAnnouncements() {
     setSearchTerm(e.target.value);
   };
 
-  const getCreatorName = (announcement) => {
-    if (!announcement.user) return "Unknown";
-
-    return `${announcement.user.first_name || ""} ${
-      announcement.user.last_name || ""
-    }`.trim() || "Unknown";
+  const renderAnnouncementItems = () => {
+    return filteredAnnouncements.map((announcement) => (
+      <div
+        key={announcement.announcement_id || announcement.id}
+        className="group p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 cursor-pointer"
+        onClick={() => viewAnnouncementById(announcement.announcement_id || announcement.id)}
+      >
+        <div className="flex items-start space-x-4">
+          <div className="flex-shrink-0">
+            <img
+              src={admin_icon}
+              alt="Admin"
+              className="h-12 w-12 rounded-full border-2 border-gray-200 dark:border-gray-600"
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
+                  {announcement.title}
+                </span>
+                <span className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                  <Clock size={12} className="mr-1" />
+                  {new Date(announcement.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit(announcement);
+                  }}
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
+                  title="Edit Announcement"
+                >
+                  <Edit size={18} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAnnouncementToDelete(announcement);
+                  }}
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
+                  title="Delete Announcement"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
+            <p className="mt-2 text-sm text-gray-900 dark:text-gray-100 font-medium line-clamp-2">
+              {announcement.message}
+            </p>
+            {announcement.course_id > 0 && (
+              <div className="mt-2">
+                <span className="text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
+                  Course Specific
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    ));
   };
 
   return (
@@ -488,55 +423,32 @@ function AdminAnnouncements() {
             </div>
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredAnnouncements.map((announcement) => (
-                <div
-                  key={announcement.id}
-                  className="group p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 cursor-pointer"
+              {renderAnnouncementItems()}
+            </div>
+          )}
+
+          {!isLoading && filteredAnnouncements.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              <div className="rounded-full bg-gray-100 dark:bg-gray-700 p-3 mb-4">
+                <FileText size={32} className="text-gray-400 dark:text-gray-500" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
+                No announcements found
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
+                {searchTerm 
+                  ? "No announcements match your search criteria. Try using different keywords."
+                  : "There are no announcements yet. Click the '+' button to create your first announcement."}
+              </p>
+              {!searchTerm && (
+                <button
+                  onClick={() => setIsAddAnnouncementOpen(true)}
+                  className="mt-4 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
                 >
-                  <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0">
-                      <img
-                        src={admin_icon}
-                        alt="Admin"
-                        className="h-12 w-12 rounded-full border-2 border-gray-200 dark:border-gray-600"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600">
-                            {announcement.title}
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {announcement.date}
-                          </span>
-                        </div>
-                        <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleEdit(announcement)}
-                            className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors"
-                            title="Edit Announcement"
-                          >
-                            <Edit size={18} />
-                          </button>
-                          <button
-                            onClick={() =>
-                              setAnnouncementToDelete(announcement)
-                            }
-                            className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
-                            title="Delete Announcement"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </div>
-                      <p className="mt-2 text-sm text-gray-900 dark:text-gray-100 font-medium">
-                        {announcement.content}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  <Plus size={16} className="mr-2" />
+                  Add New Announcement
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -584,23 +496,6 @@ function AdminAnnouncements() {
                     placeholder="Enter announcement content"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Course (Optional)
-                  </label>
-                  <select
-                    value={newAnnouncement.course_id}
-                    onChange={(e) =>
-                      setNewAnnouncement({
-                        ...newAnnouncement,
-                        course_id: Number(e.target.value),
-                      })
-                    }
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500"
-                  >
-                    <option value={0}>Global (All Courses)</option>
-                  </select>
-                </div>
                 <div className="flex justify-end gap-3">
                   <button
                     type="button"
@@ -634,111 +529,6 @@ function AdminAnnouncements() {
           </Modal>
         )}
 
-        {viewingAnnouncement && (
-          <Modal
-            isOpen={!!viewingAnnouncement}
-            onClose={() => setViewingAnnouncement(null)}
-          >
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold">Announcement Details</h2>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => {
-                      setEditingAnnouncement(viewingAnnouncement);
-                      setViewingAnnouncement(null);
-                    }}
-                    className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                    title="Edit Announcement"
-                  >
-                    <Edit size={18} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setAnnouncementToDelete(viewingAnnouncement);
-                      setViewingAnnouncement(null);
-                    }}
-                    className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                    title="Delete Announcement"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-200 pt-4">
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0">
-                    <img
-                      src={admin_icon}
-                      alt="Admin"
-                      className="h-12 w-12 rounded-full border-2 border-gray-200"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <h3 className="text-lg font-medium text-gray-900">
-                        {viewingAnnouncement.title}
-                      </h3>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        By:{" "}
-                        {viewingAnnouncement.user
-                          ? `${viewingAnnouncement.user.first_name} ${viewingAnnouncement.user.last_name}`
-                          : "Unknown"}
-                      </span>
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        Created:{" "}
-                        {new Date(viewingAnnouncement.createdAt).toLocaleString()}
-                      </span>
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        Type:{" "}
-                        {viewingAnnouncement.course_id
-                          ? "Course Specific"
-                          : "Global"}
-                      </span>
-                    </div>
-
-                    <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                      <p className="text-gray-700 whitespace-pre-wrap">
-                        {viewingAnnouncement.message}
-                      </p>
-                    </div>
-
-                    {viewingAnnouncement.course && (
-                      <div className="text-xs text-gray-500">
-                        Course:{" "}
-                        {viewingAnnouncement.course.name ||
-                          `ID: ${viewingAnnouncement.course_id}`}
-                      </div>
-                    )}
-
-                    <div className="text-xs text-gray-500 mt-2">
-                      Last Updated:{" "}
-                      {new Date(
-                        viewingAnnouncement.updatedAt ||
-                          viewingAnnouncement.createdAt
-                      ).toLocaleDateString()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setViewingAnnouncement(null)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </Modal>
-        )}
-
         {editingAnnouncement && (
           <Modal
             isOpen={!!editingAnnouncement}
@@ -746,6 +536,12 @@ function AdminAnnouncements() {
           >
             <div className="p-6">
               <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Edit Announcement</h2>
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 rounded-lg flex items-center">
+                  <AlertCircle size={18} className="mr-2" />
+                  <span>{error}</span>
+                </div>
+              )}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -755,7 +551,7 @@ function AdminAnnouncements() {
               >
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Title
+                    Title <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -768,11 +564,12 @@ function AdminAnnouncements() {
                     }
                     className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 focus:border-yellow-500 dark:focus:border-yellow-500 focus:outline-none focus:ring-yellow-500 dark:focus:ring-yellow-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                     placeholder="Enter announcement title"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Content
+                    Content <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     value={editingAnnouncement?.message || ""}
@@ -785,38 +582,31 @@ function AdminAnnouncements() {
                     rows={4}
                     className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 focus:border-yellow-500 dark:focus:border-yellow-500 focus:outline-none focus:ring-yellow-500 dark:focus:ring-yellow-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                     placeholder="Enter announcement content"
+                    required
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Course
-                  </label>
-                  <select
-                    value={editingAnnouncement?.course_id || 0}
-                    onChange={(e) =>
-                      setEditingAnnouncement((prev) => ({
-                        ...prev,
-                        course_id: Number(e.target.value),
-                      }))
-                    }
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500"
-                  >
-                    <option value={0}>Global (All Courses)</option>
-                  </select>
                 </div>
                 <div className="flex justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => setEditingAnnouncement(null)}
                     className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    disabled={isLoading}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700 transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700 transition-colors disabled:opacity-50"
+                    disabled={isLoading}
                   >
-                    Save Changes
+                    {isLoading ? (
+                      <div className="flex items-center">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Saving...
+                      </div>
+                    ) : (
+                      "Save Changes"
+                    )}
                   </button>
                 </div>
               </form>

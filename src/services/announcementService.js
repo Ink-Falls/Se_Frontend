@@ -429,3 +429,122 @@ export const getAnnouncementsByUser = async (userId) => {
     throw error;
   }
 };
+
+/**
+ * Gets all courses assigned to a user
+ * @async
+ * @function getCoursesByUserId
+ * @param {number} userId - The ID of the user (optional, will use from localStorage if not provided)
+ * @returns {Promise<Array>} Array of course objects assigned to the user
+ * @throws {Error} If the API request fails
+ */
+export const getCoursesByUserId = async (userId) => {
+  try {
+    // If no userId provided, try to get it from the token
+    if (!userId) {
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+          userId = tokenPayload.id;
+          console.log("Extracted user ID from token:", userId);
+        }
+      } catch (e) {
+        console.error("Could not extract user ID from token:", e);
+      }
+    }
+
+    if (!userId) {
+      console.error("No user ID available for getCoursesByUserId");
+      return []; // Return empty array instead of throwing error
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Authentication token not found");
+    }
+
+    console.log(`Fetching courses for user ID: ${userId}`);
+    
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/courses/user/${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch user courses");
+    }
+
+    const courses = await response.json();
+    console.log(`Successfully fetched ${courses.length} courses for user ${userId}`);
+    return courses;
+  } catch (error) {
+    console.error(`Error in getCoursesByUserId for user ${userId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Gets all announcements from courses a user is enrolled in
+ * @async
+ * @function getAnnouncementsFromUserCourses
+ * @param {number} userId - The ID of the user (optional, will use from localStorage if not provided)
+ * @returns {Promise<Array>} Array of announcement objects from user's courses
+ * @throws {Error} If the API request fails
+ */
+export const getAnnouncementsFromUserCourses = async (userId) => {
+  try {
+    // Get all courses for the user
+    const courses = await getCoursesByUserId(userId);
+    if (!courses || courses.length === 0) {
+      console.log("No courses found for user");
+      return [];
+    }
+    
+    console.log(`Found ${courses.length} courses, fetching announcements for each`);
+    
+    // Fetch announcements for each course in parallel
+    const announcementPromises = courses.map(course => 
+      getAnnouncementsByCourse(course.id)
+        .catch(err => {
+          console.error(`Error fetching announcements for course ${course.id}:`, err);
+          return []; // Return empty array if there's an error for a specific course
+        })
+    );
+    
+    // Wait for all promises to resolve
+    const courseAnnouncementsArrays = await Promise.all(announcementPromises);
+    
+    // Flatten the array of arrays and add course info to each announcement
+    const allAnnouncements = courseAnnouncementsArrays
+      .flat()
+      .filter(announcement => announcement) // Filter out null/undefined
+      .map(announcement => {
+        // Find the course this announcement belongs to
+        const course = courses.find(c => c.id === announcement.course_id);
+        return {
+          ...announcement,
+          course_name: course?.name,
+          course_description: course?.description
+        };
+      });
+    
+    // Sort by creation date (newest first)
+    allAnnouncements.sort((a, b) => 
+      new Date(b.createdAt || b.created_at || 0) - 
+      new Date(a.createdAt || a.created_at || 0)
+    );
+    
+    console.log(`Successfully aggregated ${allAnnouncements.length} announcements from all courses`);
+    return allAnnouncements;
+  } catch (error) {
+    console.error("Error fetching announcements from user courses:", error);
+    throw error;
+  }
+};

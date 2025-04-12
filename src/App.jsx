@@ -39,6 +39,7 @@ const AdminPages = {
   Courses: lazy(() => import("./pages/Admin/AdminCourses")),
   Enrollment: lazy(() => import("./pages/Admin/AdminEnrollment")),
   Announcements: lazy(() => import("./pages/Admin/AdminAnnouncements")),
+  AnnouncementDetails: lazy(() => import("./pages/Admin/AdminAnnouncementDetails")),
 };
 
 const TeacherPages = {
@@ -240,6 +241,10 @@ function AppRoutes() {
                       <Route
                         path="Announcements"
                         element={<AdminPages.Announcements />}
+                      />
+                      <Route
+                        path="AnnouncementDetails/:id"
+                        element={<AdminPages.AnnouncementDetails />}
                       />
                       <Route path="*" element={<ErrorPages.Error404 />} />
                     </Routes>

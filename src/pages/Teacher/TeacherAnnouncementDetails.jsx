@@ -41,6 +41,7 @@ const TeacherAnnouncementDetails = () => {
   const [editedMessage, setEditedMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const navItems = [
     {
@@ -148,13 +149,14 @@ const TeacherAnnouncementDetails = () => {
         course_id: announcement.course_id || selectedCourse?.id,
       };
       
-      await updateAnnouncement(announcement.announcement_id, updateData);
+      const response = await updateAnnouncement(announcement.announcement_id, updateData);
       
-      // Refresh the announcement data
-      const refreshedData = await getAnnouncementById(announcement.announcement_id);
-      setAnnouncement(refreshedData.announcement || refreshedData);
+      // Update the local announcement data with the response
+      const updatedAnnouncement = response.announcement || response;
+      setAnnouncement(updatedAnnouncement);
       
       setIsEditModalOpen(false);
+      setSuccessMessage("Announcement updated successfully!");
     } catch (err) {
       console.error("Failed to update announcement:", err);
       setError(err.message || "Failed to update announcement");
@@ -177,12 +179,96 @@ const TeacherAnnouncementDetails = () => {
     try {
       await deleteAnnouncement(announcement.announcement_id);
       setIsDeleteModalOpen(false);
-      navigate(-1); // Navigate back after deletion
+      setSuccessMessage("Announcement deleted successfully!");
+      
+      // Navigate back to announcements list after a brief delay
+      setTimeout(() => {
+        navigate('/Teacher/CourseAnnouncements');
+      }, 1500);
     } catch (err) {
       console.error("Failed to delete announcement:", err);
       setError(err.message || "Failed to delete announcement");
       setIsLoading(false);
     }
+  };
+
+  const renderEditModal = () => {
+    if (!isEditModalOpen) return null;
+    
+    return (
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+      >
+        <div className="p-6">
+          <h2 className="text-2xl font-bold mb-4">Edit Announcement</h2>
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center">
+              <AlertCircle size={18} className="mr-2 flex-shrink-0" />
+              <span className="text-sm">{error}</span>
+            </div>
+          )}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSave();
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Title <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500"
+                placeholder="Enter announcement title"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Message <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={editedMessage}
+                onChange={(e) => setEditedMessage(e.target.value)}
+                rows={4}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500"
+                placeholder="Enter announcement message"
+                required
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700 transition-colors disabled:opacity-50"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Saving...
+                  </div>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </Modal>
+    );
   };
 
   if (isLoading) {
@@ -314,72 +400,9 @@ const TeacherAnnouncementDetails = () => {
         </div>
       </div>
 
-      {/* Edit Modal */}
-      {isEditModalOpen && (
-        <Modal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-        >
-          <h2 className="text-xl font-semibold mb-4">Edit Announcement</h2>
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center">
-              <AlertCircle size={18} className="mr-2 flex-shrink-0" />
-              <span className="text-sm">{error}</span>
-            </div>
-          )}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSave();
-            }}
-          >
-            <label className="block text-sm font-medium text-gray-700">Title</label>
-            <input
-              type="text"
-              value={editedTitle}
-              onChange={(e) => setEditedTitle(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500"
-              placeholder="Enter announcement title"
-              required
-            />
-
-            <label className="block text-sm font-medium text-gray-700 mt-4">Message</label>
-            <textarea
-              value={editedMessage}
-              onChange={(e) => setEditedMessage(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500"
-              rows="4"
-              placeholder="Enter announcement message"
-              required
-            />
-
-            <div className="mt-6 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setIsEditModalOpen(false)}
-                className="mr-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                disabled={isLoading}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <div className="flex items-center">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Saving...
-                  </div>
-                ) : "Save Changes"}
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {/* Delete Modal */}
+      {/* Modals */}
+      {renderEditModal()}
+      
       {isDeleteModalOpen && (
         <DeleteModal
           title="Delete Announcement"

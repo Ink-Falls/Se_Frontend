@@ -1,37 +1,112 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
-import { ArrowLeft, Book, Bell } from "lucide-react";
+import { ArrowLeft, Book, Bell, Clock, AlertCircle, BookOpen } from "lucide-react";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import admin_icon from "/src/assets/images/icons/admin_icon.png";
 import books_icon from "/src/assets/images/icons/books_icon.png";
-
-const getNotificationStyles = (type) => {
-  switch (type.toLowerCase()) {
-    case "course update":
-      return "bg-blue-100 text-blue-800 border-blue-200";
-    case "assignment due":
-      return "bg-yellow-100 text-yellow-800 border-yellow-200";
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-200";
-  }
-};
+import { getAnnouncementById, getCoursesByUserId } from "../../services/announcementService";
 
 const NotificationDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
-  const notification = location.state?.notification;
+  const notificationFromState = location.state?.notification;
+  
+  const [notification, setNotification] = useState(notificationFromState);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [userCourses, setUserCourses] = useState([]);
 
   const navItems = [
     { text: "Courses", icon: <Book size={20} />, route: "/Learner/Dashboard" },
     {
-      text: "Notifications",
+      text: "Notifications", 
       icon: <Bell size={20} />,
-      route: "/Learner/Notifications", // Change this to match notifications
+      route: "/Learner/Notifications",
     },
   ];
+
+  // Fetch the notification data if not provided in location state
+  useEffect(() => {
+    if (!notificationFromState && id) {
+      fetchAnnouncementData();
+    }
+  }, [id, notificationFromState]);
+
+  // Fetch user courses to check for redirection options
+  useEffect(() => {
+    const fetchUserCourses = async () => {
+      try {
+        const courses = await getCoursesByUserId();
+        setUserCourses(courses);
+      } catch (err) {
+        console.error("Failed to fetch user courses:", err);
+      }
+    };
+    
+    fetchUserCourses();
+  }, []);
+
+  // Fetch announcement data using announcement ID
+  const fetchAnnouncementData = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Try to get the announcement directly by ID
+      const response = await getAnnouncementById(id);
+      const announcementData = response.announcement || response;
+      
+      if (announcementData && (announcementData.title || announcementData.message)) {
+        // If the announcement has a course_id, determine if it belongs to user's courses
+        if (announcementData.course_id) {
+          // Add isCourse flag for styling
+          announcementData.isCourse = true;
+          
+          // Fetch courses to get course name if not already in the data
+          if (!announcementData.course_name) {
+            try {
+              const courses = await getCoursesByUserId();
+              const course = courses.find(c => c.id === announcementData.course_id);
+              if (course) {
+                announcementData.course_name = course.name;
+              }
+            } catch (err) {
+              console.error("Error fetching course details:", err);
+            }
+          }
+        } else {
+          // This is a global announcement
+          announcementData.isGlobal = true;
+        }
+        
+        setNotification(announcementData);
+        setIsLoading(false);
+        return;
+      } else {
+        throw new Error("Announcement not found");
+      }
+    } catch (err) {
+      console.error("Failed to fetch notification details:", err);
+      setError(err.message || "Failed to load notification details");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen bg-gray-100">
+        <Sidebar navItems={navItems} />
+        <div className="flex-1 p-4 md:p-6 flex items-center justify-center">
+          <div className="w-16 h-16 border-4 border-[#F6BA18] border-t-[#212529] rounded-full animate-spin"></div>
+        </div>
+        <MobileNavBar navItems={navItems} />
+      </div>
+    );
+  }
 
   if (!notification) {
     return (
@@ -43,7 +118,6 @@ const NotificationDetails = () => {
             <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 p-6 text-center">
               <p className="text-gray-500">Notification not found.</p>
               <button
-                aria-label="Back to Notifications"
                 className="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
                 onClick={() => navigate("/Learner/Notifications")}
               >
@@ -53,20 +127,30 @@ const NotificationDetails = () => {
             </div>
           </div>
         </div>
+        <MobileNavBar navItems={navItems} />
       </div>
     );
   }
+
+  // Find if this announcement belongs to a course the user is enrolled in
+  const relatedCourse = userCourses.find(course => course.id === notification.course_id);
 
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-4 md:p-6">
         <Header title="Notification" />
+        
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center">
+            <AlertCircle size={20} className="mr-2" />
+            {error}
+          </div>
+        )}
+
         <div className="max-w-full mt-6">
-          {" "}
-          {/* Changed from max-w-3xl to max-w-full */}
           <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
-            {/* Header */}
+            {/* Header with Back button */}
             <div className="bg-gray-50 py-4 px-6 flex items-center justify-between border-b">
               <div className="flex items-center space-x-2">
                 <h2 className="text-lg font-semibold text-gray-800">Details</h2>
@@ -79,19 +163,13 @@ const NotificationDetails = () => {
                 Back
               </button>
             </div>
+
+            {/* Content */}
             <div className="p-6">
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
                   <img
-                    src={
-                      notification.id === 1
-                        ? admin_icon
-                        : notification.id === 2
-                        ? books_icon
-                        : notification.type.toLowerCase().includes("admin")
-                        ? admin_icon
-                        : learner_icon
-                    }
+                    src={notification.isCourse ? books_icon : admin_icon}
                     alt=""
                     className="h-12 w-12 rounded-full border-2 border-gray-200"
                   />
@@ -99,40 +177,62 @@ const NotificationDetails = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2">
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getNotificationStyles(
-                        notification.type
-                      )}`}
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                        notification.isCourse
+                          ? "bg-blue-100 text-blue-800 border-blue-200"
+                          : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                      }`}
                     >
-                      {notification.type}
+                      {notification.type || notification.title}
                     </span>
-                    <span className="text-xs text-gray-500">
-                      {notification.time}
+                    <span className="flex items-center text-xs text-gray-500">
+                      <Clock size={12} className="mr-1" />
+                      {notification.time || new Date(notification.createdAt || Date.now()).toLocaleString()}
                     </span>
                   </div>
+                  
+                  {/* Course information if present */}
+                  {(notification.course_name || notification.course_id) && (
+                    <div className="flex items-center mt-2 text-sm text-gray-600">
+                      <BookOpen size={16} className="mr-2" />
+                      <span>
+                        Course: {notification.course_name || `Course ID: ${notification.course_id}`}
+                      </span>
+                    </div>
+                  )}
+                  
                   <div className="mt-4 prose max-w-none">
                     <p className="text-gray-900 text-lg font-medium">
-                      {notification.description}
+                      {notification.description || notification.message}
                     </p>
-                    {notification.id === 1 && (
-                      <button
-                        onClick={() =>
-                          (window.location.href = "/Learner/Assessment")
-                        }
-                        className="inline-flex items-center mt-5 px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-                      >
-                        Go to Assessment
-                      </button>
-                    )}
-                    {notification.id === 2 && (
-                      <button
-                        onClick={() =>
-                          (window.location.href = "/Learner/Course")
-                        }
-                        className="inline-flex mt-5 items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-                      >
-                        Go to Course
-                      </button>
-                    )}
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                      <p className="text-gray-600 text-sm leading-relaxed">
+                        {notification.details ||
+                          "No additional details are available for this notification."}
+                      </p>
+                    </div>
+                    
+                    {/* Navigation buttons based on notification type */}
+                    <div className="mt-6 flex flex-wrap gap-3">
+                      {relatedCourse && (
+                        <button
+                          onClick={() => navigate(`/Learner/CourseModules/${relatedCourse.id}`)}
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                        >
+                          <BookOpen size={16} className="mr-2" />
+                          Go to Course
+                        </button>
+                      )}
+                      
+                      {notification.type === "Assignment Due" && (
+                        <button
+                          onClick={() => navigate("/Learner/Assessment")}
+                          className="inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                        >
+                          Go to Assignment
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
