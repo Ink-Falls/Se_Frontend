@@ -482,13 +482,7 @@ const TeacherCourseModules = () => {
                           : "No Resources"}
                       </span>
                       <span className="text-xs text-gray-500">
-                        {new Date(module.createdAt).toLocaleString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        {new Date(module.createdAt).toLocaleDateString()}
                       </span>
                     </div>
                     <p className="text-gray-600 text-sm mb-4 leading-relaxed">
