@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/common/layout/Sidebar";
-import { Book, Bell, Hash, Image, AlertCircle, Clock } from "lucide-react";
+import { Book, Bell, Hash, Image, Clock } from "lucide-react";
 import Header from "../../components/common/layout/Header";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import { useNavigate } from "react-router-dom";
@@ -10,8 +10,7 @@ import admin_icon from "/src/assets/images/icons/admin_icon.png";
 const Notifications = () => {
   const navigate = useNavigate();
   const [announcements, setAnnouncements] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Updated navItems to match TeacherDashboard
   const navItems = [
@@ -40,8 +39,6 @@ const Notifications = () => {
 
   const fetchGlobalAnnouncements = async () => {
     setIsLoading(true);
-    setError(null);
-    
     try {
       const response = await getGlobalAnnouncements();
       
@@ -66,7 +63,9 @@ const Notifications = () => {
       setAnnouncements(announcementData);
     } catch (err) {
       console.error("Failed to fetch global announcements:", err);
-      setError(err.message || "Failed to load announcements");
+      if (err.response?.status === 404) {
+        setAnnouncements([]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -93,11 +92,6 @@ const Notifications = () => {
           {isLoading ? (
             <div className="flex items-center justify-center h-40">
               <div className="w-12 h-12 border-4 border-[#F6BA18] border-t-[#212529] rounded-full animate-spin"></div>
-            </div>
-          ) : error ? (
-            <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center">
-              <AlertCircle size={20} className="mr-2" />
-              {error}
             </div>
           ) : announcements.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
