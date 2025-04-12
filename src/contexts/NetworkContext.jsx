@@ -8,7 +8,15 @@ const RECONNECT_INTERVAL = 5000; // 5 seconds between reconnection attempts
 
 // Custom alert component with updated colors and close button
 const NetworkAlert = ({ message, type, onClose }) => {
-  const { isDarkMode } = useTheme(); // Get theme state
+  // Use a default theme value if ThemeContext is not available
+  let isDarkMode = false;
+  try {
+    const theme = useTheme();
+    isDarkMode = theme?.isDarkMode;
+  } catch (error) {
+    // If ThemeContext is not available, default to light mode
+    isDarkMode = document.documentElement.classList.contains('dark');
+  }
 
   // Define styles with dark mode variants
   const alertStyles = {
@@ -61,6 +69,25 @@ const NetworkAlert = ({ message, type, onClose }) => {
       </div>
     </div>
   );
+};
+
+// Create a wrapper component that checks if ThemeProvider is available
+const ThemedNetworkAlert = (props) => {
+  try {
+    return <NetworkAlert {...props} />;
+  } catch (error) {
+    // Fallback to a simpler alert without theme if ThemeContext is not available
+    return (
+      <div className="fixed top-4 right-4 max-w-sm w-full bg-white shadow-lg rounded-lg border-l-4 border-blue-500 p-4 z-50">
+        <div className="flex justify-between">
+          <p className="text-sm font-medium">{props.message}</p>
+          <button onClick={props.onClose} className="text-gray-500">
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 };
 
 export function NetworkProvider({ children }) {
@@ -252,9 +279,9 @@ export function NetworkProvider({ children }) {
         reconnectAttempts,
       }}
     >
-      {/* Network Alert */}
+      {/* Network Alert - Using the wrapper component instead */}
       {networkAlert && (
-        <NetworkAlert 
+        <ThemedNetworkAlert 
           message={networkAlert.message} 
           type={networkAlert.type}
           onClose={networkAlert.onClose}
