@@ -421,7 +421,12 @@ const TeacherCourseModules = () => {
 
   const handleSort = () => {
     const sortedModules = [...modules].sort((a, b) => {
-      return isSorted ? a.id - b.id : b.id - a.id;
+      const dateA = new Date(a.createdAt);
+      const dateB = new Date(b.createdAt);
+      
+      // Compare dates - when isSorted is false, newest first (descending)
+      // when isSorted is true, oldest first (ascending)
+      return isSorted ? dateA - dateB : dateB - dateA;
     });
     setModules(sortedModules);
     setIsSorted(!isSorted);
@@ -461,49 +466,51 @@ const TeacherCourseModules = () => {
 
                   {/* Module Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-xl font-bold text-gray-800 hover:text-yellow-600 transition-colors">
-                            {module.title}
-                          </h3>
-                          <span
-                            className="px-2 py-1 rounded-full text-xs font-medium"
-                            style={{
-                              backgroundColor: color.light,
-                              color: color.bg,
-                            }}
-                          >
-                            {hasResources
-                              ? `${resourceCount} Resources`
-                              : "No Resources"}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {new Date(module.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                          {module.description}
-                        </p>
-                      </div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-xl font-bold text-gray-800 hover:text-yellow-600 transition-colors">
+                        {module.title}
+                      </h3>
+                      <span
+                        className="px-2 py-1 rounded-full text-xs font-medium"
+                        style={{
+                          backgroundColor: color.light,
+                          color: color.bg,
+                        }}
+                      >
+                        {hasResources
+                          ? `${resourceCount} Resources`
+                          : "No Resources"}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(module.createdAt).toLocaleString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                      {module.description}
+                    </p>
 
-                      {/* Action Buttons */}
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => handleEdit(module)}
-                          className="p-2 text-gray-600 hover:text-yellow-600 hover:bg-yellow-50 rounded-full transition-colors"
-                          title="Edit module"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        <button
-                          onClick={() => setModuleToDelete(module)}
-                          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                          title="Delete module"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleEdit(module)}
+                        className="p-2 text-gray-600 hover:text-yellow-600 hover:bg-yellow-50 rounded-full transition-colors"
+                        title="Edit module"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button
+                        onClick={() => setModuleToDelete(module)}
+                        className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                        title="Delete module"
+                      >
+                        <Trash2 size={18} />
+                      </button>
                     </div>
 
                     {/* Resources Section */}
