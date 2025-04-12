@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "/src/assets/images/ARALKADEMYLOGO.png";
 import { useAuth } from '../../../contexts/AuthContext';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 const SidebarContext = createContext();
 
@@ -24,6 +25,7 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
   const location = useLocation();  // Get the current route path
   const navigate = useNavigate();   // For programmatic navigation
   const { logout, user } = useAuth(); // Add useAuth hook
+  const { isDarkMode } = useTheme(); // Get dark mode state
 
   /**
    * Handles user logout.
@@ -47,11 +49,11 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
 
   return (
     <aside
-      className={`fixed lg:relative h-screen flex justify-center items-center bg-gray-100 z-50 transform transition-transform duration-300 ease-in-out ${
+      className={`fixed lg:relative h-screen flex justify-center items-center bg-gray-100 dark:bg-gray-800 z-50 transform transition-transform duration-300 ease-in-out ${
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       } lg:translate-x-0`}
     >
-      <nav className="h-full flex flex-col bg-[#212529] border-r">
+      <nav className="h-full flex flex-col bg-[#212529] dark:bg-gray-900 border-r dark:border-gray-700">
         <div className="p-5 pt-7 pb-1 flex justify-between items-center">
           <img
             src={logo}
@@ -62,9 +64,9 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
           />
           <button
             onClick={() => setExpanded((curr) => !curr)}
-            className="p-1 rounded-lg bg-gray-50 hover:bg-gray-100 border-2 border-gray-300"
+            className="p-1 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border-2 border-gray-300 dark:border-gray-600"
           >
-            {expanded ? <ChevronFirst /> : <ChevronLast />}
+            {expanded ? <ChevronFirst className="dark:text-gray-300" /> : <ChevronLast className="dark:text-gray-300" />}
           </button>
         </div>
 
@@ -87,7 +89,7 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="flex w-full py-3 px-4 my-5 font-medium items-center text-gray-50 hover:bg-[#F6BA18] hover:text-black rounded-md p-2 transition-colors group"
+            className="flex w-full py-3 px-4 my-2 font-medium items-center text-gray-50 hover:bg-[#F6BA18] hover:text-black rounded-md p-2 transition-colors group"
           >
             {isLoggingOut ? (
               <div className="flex items-center justify-center w-full gap-2">
@@ -131,13 +133,14 @@ Sidebar.propTypes = {
 export function SidebarItem({ icon, text, route }) {
   const { expanded, currentPath } = useContext(SidebarContext);
   const isActive = currentPath === route; // Check if the current route matches the item's route
+  const { isDarkMode } = useTheme();
 
   return (
     <li
       className={`relative flex items-center py-3 px-4 my-4 font-medium rounded-md cursor-pointer transition-all group ${
         isActive
           ? "bg-[#F6BA18] text-black"
-          : "hover:bg-[#F6BA18] text-gray-50 hover:text-black"
+          : "hover:bg-[#F6BA18] text-gray-50 dark:text-gray-200 hover:text-black"
       }`}
     >
       <Link to={route} className="flex items-center w-full">

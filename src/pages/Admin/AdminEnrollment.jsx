@@ -25,6 +25,7 @@ import {
 } from "/src/services/enrollmentService.js";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import DeleteModal from "../../components/common/Modals/Delete/DeleteModal";
+import { useTheme } from "../../contexts/ThemeContext"; // Import useTheme
 
 function AdminEnrollment() {
   const [enrollees, setEnrollees] = useState([]);
@@ -49,6 +50,7 @@ function AdminEnrollment() {
   const [allEnrolleesData, setAllEnrolleesData] = useState([]);
   const [enrollmentsToDelete, setEnrollmentsToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const { isDarkMode } = useTheme(); // Get theme state
 
   const navItems = [
     { text: "Users", icon: <Home size={20} />, route: "/Admin/Dashboard" },
@@ -101,16 +103,15 @@ function AdminEnrollment() {
 
       if (response.message === "Enrollment approved successfully") {
         setSuccessMessage("Enrollment successfully approved!");
-
-        // Refresh both the paginated data and overall stats
+        // Refresh both paginated data and overall stats
         await Promise.all([fetchEnrollments(), fetchOverallStats()]);
-
-        return response; // Return response so modal knows operation succeeded
       }
+
+      return response; // Return response so modal knows operation succeeded
     } catch (error) {
       console.error("Approval error:", error);
-      setError(error.message || "Failed to approve enrollment");
-      throw error; // Rethrow to let modal know operation failed
+      // Remove setting error state here and just rethrow
+      throw error; // Let modal handle the error display
     }
   };
 
@@ -218,17 +219,15 @@ function AdminEnrollment() {
         }`
       );
 
-      // Refresh both enrollment data and stats simultaneously
-      await Promise.all([fetchEnrollments(), fetchOverallStats()]);
-
-      // Reset any filters/search
+      // Reset states
       setFilterStatus("");
       setSearchQuery("");
       setCurrentPage(1);
-
-      // Close modal and clear enrollments to delete
       setShowDeleteModal(false);
       setEnrollmentsToDelete(null);
+
+      // Refresh the page to fetch latest data
+      window.location.reload();
     } catch (error) {
       console.error("Error deleting enrollments:", error);
       setError(error.message || "Failed to delete selected enrollments");
@@ -302,23 +301,25 @@ function AdminEnrollment() {
   };
 
   const ErrorState = () => (
+    // Add dark mode styles to ErrorState
     <div className="flex flex-col items-center justify-center py-16 px-4">
-      <AlertTriangle size={64} className="text-red-500 mb-4" />
-      <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+      <AlertTriangle size={64} className="text-red-500 dark:text-red-400 mb-4" />
+      <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
         Failed to Load Enrollments
       </h3>
-      <p className="text-gray-600 text-center max-w-md mb-8">
+      <p className="text-gray-600 dark:text-gray-400 text-center max-w-md mb-8">
         We encountered an error while trying to fetch the enrollment data. This
         could be due to network issues or server unavailability.
       </p>
       <div className="flex flex-col items-center gap-2">
         <button
           onClick={() => window.location.reload()}
-          className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors duration-300 flex items-center gap-2"
+          // Add dark mode styles for button
+          className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] dark:bg-gray-700 dark:hover:bg-[#F6BA18] dark:hover:text-[#212529] transition-colors duration-300 flex items-center gap-2"
         >
           Refresh Page
         </button>
-        <span className="text-sm text-gray-500 mt-2">
+        <span className="text-sm text-gray-500 dark:text-gray-400 mt-2">
           You can try refreshing the page or contact support if the issue
           persists
         </span>
@@ -327,36 +328,41 @@ function AdminEnrollment() {
   );
 
   return (
-    <div className="flex h-screen bg-gray-100 relative pb-16">
+    // Add dark mode background and dark class conditionally
+    <div className={`flex h-screen bg-gray-100 dark:bg-dark-bg-primary relative pb-16 ${isDarkMode ? 'dark' : ''}`}>
       <Sidebar navItems={navItems} />
-      <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto pb-16">
+      {/* Add dark mode background */}
+      <div className="flex-1 p-[2vw] md:p-[1vw] overflow-auto pb-16 bg-gray-100 dark:bg-dark-bg-primary">
         <Header title="Manage Enrollments" />
-        {/* Add success/error message display */}
+        {/* Add dark mode styles for success/error messages */}
         {successMessage && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+          <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 rounded-lg">
             {successMessage}
           </div>
         )}
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+        {error && !loading && (
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg">
             {error}
           </div>
         )}
-        {/* EnrolleeStats section */}
+        {/* EnrolleeStats section - Add dark mode styles for loading state */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {[...Array(4)].map((_, i) => (
               <div
                 key={i}
-                className="bg-white p-6 rounded-lg shadow animate-pulse"
+                // Add dark mode background for pulse effect
+                className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow dark:shadow-dark-md animate-pulse"
               >
-                <div className="h-4 bg-gray-200 rounded-full w-20 mb-3"></div>
-                <div className="h-8 bg-gray-200 rounded-full w-16"></div>
+                {/* Add dark mode background for pulse elements */}
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-full w-20 mb-3"></div>
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-full w-16"></div>
               </div>
             ))}
           </div>
         ) : (
           <div className="mt-4">
+            {/* Assuming EnrolleeStats handles its own dark mode */}
             <EnrolleeStats
               totalEnrollees={overallStats.total}
               approvedEnrollees={overallStats.approved}
@@ -365,12 +371,14 @@ function AdminEnrollment() {
             />
           </div>
         )}
-        <div className="bg-white shadow rounded-lg p-6">
+        {/* Add dark mode background and shadow to main content container */}
+        <div className="bg-white dark:bg-gray-800 shadow dark:shadow-dark-md rounded-lg p-6">
           {loading ? (
             <LoadingSpinner />
           ) : error ? (
             <ErrorState />
           ) : (
+            /* Assuming EnrolleeTable handles its own dark mode */
             <EnrolleeTable
               enrollees={enrollees}
               onEdit={handleEdit}
@@ -392,7 +400,7 @@ function AdminEnrollment() {
           )}
         </div>
       </div>
-      {/* Add Delete Confirmation Modal */}
+      {/* Assuming DeleteModal handles its own dark mode */}
       {showDeleteModal && (
         <DeleteModal
           onClose={() => {
@@ -405,6 +413,7 @@ function AdminEnrollment() {
           } selected enrollment(s)? This action cannot be undone.`}
         />
       )}
+      {/* Assuming MobileNavBar handles its own dark mode */}
       <MobileNavBar navItems={navItems} />
     </div>
   );

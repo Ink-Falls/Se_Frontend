@@ -9,6 +9,7 @@ import icon from "../../assets/images/ARALKADEMYICON.png";
 import nstpLogo from "../../assets/images/NSTPLOGO.png";
 import { Eye, EyeOff, Key, Mail, Hash, Image } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext"; // Import useTheme hook
 import MagicLinkLogin from "../Auth/MagicLinkLogin";
 import NumericCodeLogin from "../Auth/NumericCodeLogin";
 import PictureCodeLogin from "../Auth/PictureCodeLogin";
@@ -20,6 +21,9 @@ import PictureCodeLogin from "../Auth/PictureCodeLogin";
  * @returns {JSX.Element} The Login page JSX.
  */
 function Login() {
+  // Get theme state
+  const { isDarkMode } = useTheme();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [captchaResponse, setCaptchaResponse] = useState(null);
@@ -267,16 +271,16 @@ function Login() {
               </p>
             </div>
 
-            {/* Right side: Login form */}
-            <div className="p-[5vw] max-lg:p-[7vw] w-[80vw] lg:p-[3vw] lg:w-[30vw] bg-white rounded-lg shadow-2xl relative">
+            {/* Right side: Login form - Add dark mode styles */}
+            <div className="p-[5vw] max-lg:p-[7vw] w-[80vw] lg:p-[3vw] lg:w-[30vw] bg-white dark:bg-gray-800 rounded-lg shadow-2xl dark:shadow-dark-xl relative transition-colors">
               {/* Yellow top border */}
               <div className="top-[0vw] left-[0vw] h-[1.5vw] lg:top-[0vw] lg:left-[0vw] lg:h-[0.5vw] absolute w-full bg-[#F6BA18] rounded-t-lg"></div>
 
-              {/* Login form header */}
-              <h2 className="text-[2vw] lg:text-[2vw] max-lg:text-[6vw] font-bold text-left text-[#212529]">
+              {/* Login form header - Add dark mode text */}
+              <h2 className="text-[2vw] lg:text-[2vw] max-lg:text-[6vw] font-bold text-left text-[#212529] dark:text-gray-100 transition-colors">
                 Log In
               </h2>
-              <p className="text-[3vw] mb-[5vw] lg:mb-[2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] text-[#64748B] text-left">
+              <p className="text-[3vw] mb-[5vw] lg:mb-[2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] text-[#64748B] dark:text-gray-300 text-left transition-colors">
                 {loginMethod === "password" &&
                   "Please enter your email and password to proceed"}
                 {loginMethod === "magic-link" &&
@@ -294,17 +298,17 @@ function Login() {
                   {/* Display error message */}
                   {error && (
                     <p
-                      className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw]"
+                      className="text-red-500 dark:text-red-400 text-left text-[0.8vw] max-lg:text-[2.5vw] transition-colors"
                       data-testid="error-message"
                     >
                       {error}
                     </p>
                   )}
-                  {/* Email input */}
+                  {/* Email input - Add dark mode styles */}
                   <div>
                     <label
                       htmlFor="email"
-                      className="text-[3vw] block text-[#64748B] lg:text-[0.8vw] max-lg:text-[2.5vw]"
+                      className="text-[3vw] block text-[#64748B] dark:text-gray-300 lg:text-[0.8vw] max-lg:text-[2.5vw] transition-colors"
                     >
                       Email
                     </label>
@@ -315,13 +319,13 @@ function Login() {
                       onChange={(e) => setEmail(e.target.value)}
                       onBlur={() => handleBlur("email")}
                       required
-                      className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+                      className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] dark:focus:ring-yellow-500 placeholder-[#64748B] dark:placeholder-gray-400 text-[#212529] dark:text-gray-100 bg-white dark:bg-gray-700 transition-colors"
                       placeholder="Enter your email"
                       data-testid="email-input"
                     />
                     {validationErrors.email && (
                       <p
-                        className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw] mt-1"
+                        className="text-red-500 dark:text-red-400 text-left text-[0.8vw] max-lg:text-[2.5vw] mt-1 transition-colors"
                         data-testid="email-error"
                       >
                         {validationErrors.email}
@@ -329,11 +333,11 @@ function Login() {
                     )}
                   </div>
 
-                  {/* Password input */}
+                  {/* Password input - Add dark mode styles */}
                   <div>
                     <label
                       htmlFor="password"
-                      className="mt-[5vw] text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:mt-[0vw] block text-[#64748B]"
+                      className="mt-[5vw] text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:mt-[0vw] block text-[#64748B] dark:text-gray-300 transition-colors"
                     >
                       Password
                     </label>
@@ -345,14 +349,15 @@ function Login() {
                         onChange={(e) => setPassword(e.target.value)}
                         onBlur={() => handleBlur("password")}
                         required
-                        className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529] pr-[10vw] lg:pr-[3vw]"
+                        className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border border-[#64748B] dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] dark:focus:ring-yellow-500 placeholder-[#64748B] dark:placeholder-gray-400 text-[#212529] dark:text-gray-100 bg-white dark:bg-gray-700 pr-[10vw] lg:pr-[3vw] transition-colors"
                         placeholder="Enter your password"
                         data-testid="password-input"
                       />
+                      {/* Dark mode styles for password toggle */}
                       <button
                         type="button"
                         onClick={handleTogglePassword}
-                        className="absolute right-[3vw] lg:right-[1vw] top-[55%] transform -translate-y-1/2 text-gray-500"
+                        className="absolute right-[3vw] lg:right-[1vw] top-[55%] transform -translate-y-1/2 text-gray-500 dark:text-gray-300 transition-colors"
                         aria-label="Toggle password visibility"
                         data-testid="password-toggle"
                       >
@@ -365,7 +370,7 @@ function Login() {
                     </div>
                     {validationErrors.password && (
                       <p
-                        className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw] mt-1"
+                        className="text-red-500 dark:text-red-400 text-left text-[0.8vw] max-lg:text-[2.5vw] mt-1 transition-colors"
                         data-testid="password-error"
                       >
                         {validationErrors.password}
@@ -373,12 +378,12 @@ function Login() {
                     )}
                   </div>
 
-                  {/* Forgot password button */}
+                  {/* Forgot password button - Add dark mode styles */}
                   <div className="text-right mt-[0.5vw]">
                     <button
                       type="button"
                       onClick={handleForgotPassword}
-                      className="text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] text-[#64748B] hover:underline focus:outline-none"
+                      className="text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw] text-[#64748B] dark:text-gray-300 hover:underline focus:outline-none transition-colors"
                     >
                       Forgot Password?
                     </button>
@@ -396,11 +401,12 @@ function Login() {
                         ref={recaptchaRef}
                         sitekey={RECAPTCHA_SITE_KEY}
                         onChange={handleCaptchaChange}
+                        theme={isDarkMode ? "dark" : "light"} // Add theme prop that changes based on current theme state
                       />
                     </div>
                   </div>
 
-                  {/* Submit button */}
+                  {/* Submit button - Already has dark mode styles */}
                   <div className="flex justify-center mt-[0.5vw]">
                     <button
                       type="submit"
@@ -462,18 +468,19 @@ function Login() {
                 <PictureCodeLogin />
               )}
 
-              {/* Login method options at bottom */}
-              <div className="mt-8 pt-4 border-t">
-                <p className="text-[2.5vw] lg:text-[0.8vw] text-gray-500 text-center mb-4">
+              {/* Login method options at bottom - Add dark mode styles */}
+              <div className="mt-8 pt-4 border-t dark:border-gray-700 transition-colors">
+                <p className="text-[2.5vw] lg:text-[0.8vw] text-gray-500 dark:text-gray-400 text-center mb-4 transition-colors">
                   Or choose another way to log in:
                 </p>
                 <div className="grid grid-cols-4 gap-4">
+                  {/* Password login option - Add dark mode styles */}
                   <button
                     onClick={() => setLoginMethod("password")}
                     className={`flex flex-col items-center gap-2 p-2 rounded-lg transition-all ${
                       loginMethod === "password"
-                        ? "bg-yellow-50 text-[#F6BA18]"
-                        : "hover:bg-gray-50 text-gray-600"
+                        ? "bg-yellow-50 dark:bg-yellow-900/20 text-[#F6BA18]"
+                        : "hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
                     }`}
                   >
                     <Key className="w-[6vw] h-[6vw] lg:w-[2vw] lg:h-[2vw]" />
@@ -482,12 +489,13 @@ function Login() {
                     </span>
                   </button>
 
+                  {/* Magic Link login option - Add dark mode styles */}
                   <button
                     onClick={() => setLoginMethod("magic-link")}
                     className={`flex flex-col items-center gap-2 p-2 rounded-lg transition-all ${
                       loginMethod === "magic-link"
-                        ? "bg-yellow-50 text-[#F6BA18]"
-                        : "hover:bg-gray-50 text-gray-600"
+                        ? "bg-yellow-50 dark:bg-yellow-900/20 text-[#F6BA18]"
+                        : "hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
                     }`}
                   >
                     <Mail className="w-[6vw] h-[6vw] lg:w-[2vw] lg:h-[2vw]" />
@@ -496,12 +504,13 @@ function Login() {
                     </span>
                   </button>
 
+                  {/* Numeric Code login option - Add dark mode styles */}
                   <button
                     onClick={() => setLoginMethod("numeric-code")}
                     className={`flex flex-col items-center gap-2 p-2 rounded-lg transition-all ${
                       loginMethod === "numeric-code"
-                        ? "bg-yellow-50 text-[#F6BA18]"
-                        : "hover:bg-gray-50 text-gray-600"
+                        ? "bg-yellow-50 dark:bg-yellow-900/20 text-[#F6BA18]"
+                        : "hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
                     }`}
                   >
                     <Hash className="w-[6vw] h-[6vw] lg:w-[2vw] lg:h-[2vw]" />
@@ -510,12 +519,13 @@ function Login() {
                     </span>
                   </button>
 
+                  {/* Picture Code login option - Add dark mode styles */}
                   <button
                     onClick={() => setLoginMethod("picture-code")}
                     className={`flex flex-col items-center gap-2 p-2 rounded-lg transition-all ${
                       loginMethod === "picture-code"
-                        ? "bg-yellow-50 text-[#F6BA18]"
-                        : "hover:bg-gray-50 text-gray-600"
+                        ? "bg-yellow-50 dark:bg-yellow-900/20 text-[#F6BA18]"
+                        : "hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
                     }`}
                   >
                     <Image className="w-[6vw] h-[6vw] lg:w-[2vw] lg:h-[2vw]" />

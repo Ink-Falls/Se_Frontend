@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
 import { createUser } from "../../../../services/userService";
+import { useTheme } from "../../../../contexts/ThemeContext";
 
 const AddUserModal = ({ onClose, onSubmit }) => {
+  const { isDarkMode } = useTheme();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -311,12 +313,12 @@ const AddUserModal = ({ onClose, onSubmit }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] flex flex-col z-[10000]">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] flex flex-col z-[10000] shadow-xl dark:shadow-dark-xl transition-colors">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Add New User</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 transition-colors">Add New User</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
           >
             <X size={20} />
           </button>
@@ -324,18 +326,18 @@ const AddUserModal = ({ onClose, onSubmit }) => {
 
         <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-red-700 dark:text-red-400 px-4 py-3 rounded relative transition-colors">
               {error}
             </div>
           )}
           {fieldErrors.general && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-red-700 dark:text-red-400 px-4 py-3 rounded relative transition-colors">
               {fieldErrors.general}
             </div>
           )}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
                 First Name
               </label>
               <input
@@ -345,19 +347,19 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 onChange={handleChange}
                 placeholder="Enter first name"
                 className={`mt-1 block w-full rounded-md border ${
-                  fieldErrors.first_name ? "border-red-500" : "border-gray-300"
-                } px-3 py-2`}
+                  fieldErrors.first_name ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                } px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors`}
                 required
               />
               {fieldErrors.first_name && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-red-500 dark:text-red-400 text-xs mt-1 transition-colors">
                   {fieldErrors.first_name}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
                 Last Name
               </label>
               <input
@@ -367,19 +369,19 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 onChange={handleChange}
                 placeholder="Enter last name"
                 className={`mt-1 block w-full rounded-md border ${
-                  fieldErrors.last_name ? "border-red-500" : "border-gray-300"
-                } px-3 py-2`}
+                  fieldErrors.last_name ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                } px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors`}
                 required
               />
               {fieldErrors.last_name && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-red-500 dark:text-red-400 text-xs mt-1 transition-colors">
                   {fieldErrors.last_name}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
                 Middle Initial
               </label>
               <input
@@ -397,18 +399,18 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 className={`mt-1 block w-full rounded-md border ${
                   fieldErrors.middle_initial
                     ? "border-red-500"
-                    : "border-gray-300"
-                } px-3 py-2`}
+                    : "border-gray-300 dark:border-gray-600"
+                } px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors`}
               />
               {fieldErrors.middle_initial && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-red-500 dark:text-red-400 text-xs mt-1 transition-colors">
                   {fieldErrors.middle_initial}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
                 Birth Date
               </label>
               <input
@@ -417,20 +419,20 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 value={formData.birth_date}
                 onChange={handleChange}
                 className={`mt-1 block w-full rounded-md border ${
-                  fieldErrors.birth_date ? "border-red-500" : "border-gray-300"
-                } px-3 py-2`}
+                  fieldErrors.birth_date ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                } px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors`}
                 required
                 placeholder="Select birth date"
               />
               {fieldErrors.birth_date && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-red-500 dark:text-red-400 text-xs mt-1 transition-colors">
                   {fieldErrors.birth_date}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
                 Email
               </label>
               <input
@@ -440,17 +442,17 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 onChange={handleChange}
                 placeholder="Enter email"
                 className={`mt-1 block w-full rounded-md border ${
-                  fieldErrors.email ? "border-red-500" : "border-gray-300"
-                } px-3 py-2`}
+                  fieldErrors.email ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                } px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors`}
                 required
               />
               {fieldErrors.email && (
-                <p className="text-red-500 text-xs mt-1">{fieldErrors.email}</p>
+                <p className="text-red-500 dark:text-red-400 text-xs mt-1 transition-colors">{fieldErrors.email}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
                 Contact Number
               </label>
               <input
@@ -461,19 +463,19 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 placeholder="Enter contact number"
                 maxLength={11}
                 className={`mt-1 block w-full rounded-md border ${
-                  fieldErrors.contact_no ? "border-red-500" : "border-gray-300"
-                } px-3 py-2`}
+                  fieldErrors.contact_no ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                } px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors`}
                 required
               />
               {fieldErrors.contact_no && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-red-500 dark:text-red-400 text-xs mt-1 transition-colors">
                   {fieldErrors.contact_no}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
                 School
               </label>
               <select
@@ -482,7 +484,7 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 name="school_id"
                 value={formData.school_id}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-gray-500 dark:text-gray-300 bg-white dark:bg-gray-700 transition-colors"
                 required
               >
                 <option value="" disabled>
@@ -498,7 +500,7 @@ const AddUserModal = ({ onClose, onSubmit }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
                 Role
               </label>
               <select
@@ -507,7 +509,7 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 id="role"
                 value={formData.role}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-gray-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-gray-500 dark:text-gray-300 bg-white dark:bg-gray-700 transition-colors"
                 required
               >
                 <option value="" disabled>
@@ -522,7 +524,7 @@ const AddUserModal = ({ onClose, onSubmit }) => {
             {formData.role === "student_teacher" && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
                     Section
                   </label>
                   <input
@@ -532,18 +534,18 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                     onChange={handleChange}
                     placeholder="Enter section"
                     className={`mt-1 block w-full rounded-md border ${
-                      fieldErrors.section ? "border-red-500" : "border-gray-300"
-                    } px-3 py-2`}
+                      fieldErrors.section ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                    } px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors`}
                     required
                   />
                   {fieldErrors.section && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 dark:text-red-400 text-xs mt-1 transition-colors">
                       {fieldErrors.section}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
                     Department
                   </label>
                   <input
@@ -555,12 +557,12 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                     className={`mt-1 block w-full rounded-md border ${
                       fieldErrors.department
                         ? "border-red-500"
-                        : "border-gray-300"
-                    } px-3 py-2`}
+                        : "border-gray-300 dark:border-gray-600"
+                    } px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors`}
                     required
                   />
                   {fieldErrors.department && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 dark:text-red-400 text-xs mt-1 transition-colors">
                       {fieldErrors.department}
                     </p>
                   )}
@@ -569,7 +571,7 @@ const AddUserModal = ({ onClose, onSubmit }) => {
             )}
 
             <div className="col-span-2 relative">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
                 Password
               </label>
               <div className="relative">
@@ -580,28 +582,28 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                   onChange={handleChange}
                   placeholder="Enter password"
                   className={`mt-1 block w-full rounded-md border ${
-                    fieldErrors.password ? "border-red-500" : "border-gray-300"
-                  } px-3 py-2 pr-10`}
+                    fieldErrors.password ? "border-red-500" : "border-gray-300 dark:border-gray-600"
+                  } px-3 py-2 pr-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors`}
                   required
                   minLength="8"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 mt-1 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 right-0 mt-1 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
               {fieldErrors.password && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-red-500 dark:text-red-400 text-xs mt-1 transition-colors">
                   {fieldErrors.password}
                 </p>
               )}
             </div>
 
             <div className="col-span-2 relative">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
                 Confirm Password
               </label>
               <div className="relative">
@@ -614,14 +616,14 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                   className={`mt-1 block w-full rounded-md border ${
                     fieldErrors.confirm_password
                       ? "border-red-500"
-                      : "border-gray-300"
-                  } px-3 py-2 pr-10`}
+                      : "border-gray-300 dark:border-gray-600"
+                  } px-3 py-2 pr-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors`}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 mt-1 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 right-0 mt-1 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                 >
                   {showConfirmPassword ? (
                     <EyeOff size={20} />
@@ -631,25 +633,25 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 </button>
               </div>
               {fieldErrors.confirm_password && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-red-500 dark:text-red-400 text-xs mt-1 transition-colors">
                   {fieldErrors.confirm_password}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
+          <div className="flex justify-end space-x-3 mt-6 pt-4 border-t dark:border-gray-700 transition-colors">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 bg-black text-white rounded-md hover:bg-[#F6BA18] disabled:opacity-50"
+              className="px-4 py-2 bg-black dark:bg-gray-900 text-white rounded-md hover:bg-[#F6BA18] dark:hover:bg-[#F6BA18] hover:text-black disabled:opacity-50 transition-colors"
             >
               {isLoading ? "Creating..." : "Add User"}
             </button>

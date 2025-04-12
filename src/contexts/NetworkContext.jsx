@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
+import { useTheme } from './ThemeContext'; // Import useTheme
 
 const NetworkContext = createContext();
 
@@ -7,17 +8,28 @@ const RECONNECT_INTERVAL = 5000; // 5 seconds between reconnection attempts
 
 // Custom alert component with updated colors and close button
 const NetworkAlert = ({ message, type, onClose }) => {
+  // Use a default theme value if ThemeContext is not available
+  let isDarkMode = false;
+  try {
+    const theme = useTheme();
+    isDarkMode = theme?.isDarkMode;
+  } catch (error) {
+    // If ThemeContext is not available, default to light mode
+    isDarkMode = document.documentElement.classList.contains('dark');
+  }
+
+  // Define styles with dark mode variants
   const alertStyles = {
-    success: 'bg-green-50 border-green-400 text-green-800', // Good connection
-    error: 'bg-red-50 border-red-400 text-red-800',         // No connection
-    warning: 'bg-yellow-50 border-yellow-400 text-yellow-800', // Slow connection
-    info: 'bg-blue-50 border-blue-400 text-blue-800',        // Fluctuating connection
-    offline: 'bg-[#212529] border-[#F6BA18] text-white' // Updated offline style
+    success: 'bg-green-50 dark:bg-green-900/30 border-green-400 dark:border-green-600 text-green-800 dark:text-green-300',
+    error: 'bg-red-50 dark:bg-red-900/30 border-red-400 dark:border-red-600 text-red-800 dark:text-red-300',
+    warning: 'bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400 dark:border-yellow-600 text-yellow-800 dark:text-yellow-300',
+    info: 'bg-blue-50 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600 text-blue-800 dark:text-blue-300',
+    offline: 'bg-[#212529] dark:bg-gray-800 border-[#F6BA18] dark:border-yellow-500 text-white dark:text-gray-100' // Adjusted offline for dark
   };
 
   return (
     <div className={`
-      fixed top-4 right-4 max-w-sm w-full shadow-lg rounded-lg pointer-events-auto
+      fixed top-4 right-4 max-w-sm w-full shadow-lg dark:shadow-dark-lg rounded-lg pointer-events-auto
       border-l-4 p-4 z-50 transition-all duration-500 ease-in-out
       ${alertStyles[type] || alertStyles.info}`
     }>
@@ -36,7 +48,7 @@ const NetworkAlert = ({ message, type, onClose }) => {
               <button 
                 onClick={() => window.location.reload()}
                 className="px-4 py-2 bg-[#F6BA18] text-[#212529] rounded-md text-sm font-medium 
-                         hover:bg-[#64748B] hover:text-white transition-colors duration-300"
+                         hover:bg-[#64748B] hover:text-white dark:bg-yellow-500 dark:text-black dark:hover:bg-yellow-400 transition-colors duration-300"
               >
                 Retry Connection
               </button>
@@ -48,8 +60,8 @@ const NetworkAlert = ({ message, type, onClose }) => {
           onClick={onClose}
           className={`p-1 rounded-full transition-colors duration-200 ${
             type === 'offline' 
-              ? 'text-white hover:bg-gray-700' 
-              : 'text-gray-500 hover:bg-gray-100'
+              ? 'text-white dark:text-gray-300 hover:bg-gray-700 dark:hover:bg-gray-600' 
+              : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
           }`}
         >
           <X size={16} />
@@ -57,6 +69,25 @@ const NetworkAlert = ({ message, type, onClose }) => {
       </div>
     </div>
   );
+};
+
+// Create a wrapper component that checks if ThemeProvider is available
+const ThemedNetworkAlert = (props) => {
+  try {
+    return <NetworkAlert {...props} />;
+  } catch (error) {
+    // Fallback to a simpler alert without theme if ThemeContext is not available
+    return (
+      <div className="fixed top-4 right-4 max-w-sm w-full bg-white shadow-lg rounded-lg border-l-4 border-blue-500 p-4 z-50">
+        <div className="flex justify-between">
+          <p className="text-sm font-medium">{props.message}</p>
+          <button onClick={props.onClose} className="text-gray-500">
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 };
 
 export function NetworkProvider({ children }) {
@@ -248,9 +279,9 @@ export function NetworkProvider({ children }) {
         reconnectAttempts,
       }}
     >
-      {/* Network Alert */}
+      {/* Network Alert - Using the wrapper component instead */}
       {networkAlert && (
-        <NetworkAlert 
+        <ThemedNetworkAlert 
           message={networkAlert.message} 
           type={networkAlert.type}
           onClose={networkAlert.onClose}

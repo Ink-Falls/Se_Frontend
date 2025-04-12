@@ -17,7 +17,7 @@ import fetchWithInterceptor from "./apiService";
  * @returns {Promise<Array<object>>} Array of enrollment objects.
  * @throws {Error} If the API request fails or authentication is missing.
  */
-const getAllEnrollments = async (page = 1, limit = 10, status = '') => {
+const getAllEnrollments = async (page = 1, limit = 10, status = "") => {
   try {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -27,7 +27,7 @@ const getAllEnrollments = async (page = 1, limit = 10, status = '') => {
     const queryParams = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
-      ...(status && { status: status.toLowerCase() })
+      ...(status && { status: status.toLowerCase() }),
     }).toString();
 
     const response = await fetchWithInterceptor(
@@ -103,7 +103,20 @@ const approveEnrollment = async (enrollmentId) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error("Server error response:", errorData);
+
+      // Handle specific 409 conflict case for duplicate email
+      if (
+        response.status === 409 ||
+        errorData.message?.toLowerCase().includes("email already exists")
+      ) {
+        // Change this to be a specific error object that can be identified
+        const error = new Error(
+          "Cannot approve: A user with this email already exists in the system"
+        );
+        error.code = "EMAIL_EXISTS";
+        throw error;
+      }
+
       throw new Error(errorData.message || "Failed to approve enrollment");
     }
 
@@ -143,7 +156,6 @@ const rejectEnrollment = async (enrollmentId) => {
       enrollmentId,
       adminId,
     };
-
 
     const response = await fetchWithInterceptor(url, {
       method: "PATCH",
@@ -298,5 +310,5 @@ export {
   rejectEnrollment,
   deleteEnrollment,
   getEnrollmentById,
-  createEnrollment, 
+  createEnrollment,
 };
