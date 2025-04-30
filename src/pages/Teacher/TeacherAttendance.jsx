@@ -870,7 +870,7 @@ const TeacherAttendance = () => {
           ))}
         </div>
 
-        {/* Calendar days grid with date click handling - keep functionality, just update styling */}
+        {/* Calendar days grid with date click handling */}
         <div className="grid grid-cols-7 gap-1.5">
           {calendarDays.map((day, i) => {
             const dateStr = day.date.toISOString().split('T')[0];
@@ -944,25 +944,40 @@ const TeacherAttendance = () => {
                   {day.date.getDate()}
                 </div>
                 
-                {/* Keep existing indicators and content */}
+                {/* Show different indicators based on attendance mode */}
                 {attendanceMode === "manual" && hasManualAttendance && (
                   <div className="mt-2 text-xs">
-                    <div className="text-green-600 font-medium">
-                      Present: {presentCount}/{totalStudents}
-                    </div>
-                    {lateCount > 0 && (
-                      <div className="text-yellow-600 font-medium">
-                        Late: {lateCount}/{totalStudents}
+                    {presentCount === 0 && absentCount === 0 && lateCount === 0 ? (
+                      <div className="bg-indigo-100 border border-indigo-300 text-indigo-800 font-medium px-2 py-1 rounded flex items-center justify-center space-x-1 shadow-sm">
+                        <AlertCircle size={12} />
+                        <span>Not marked</span>
                       </div>
-                    )}
-                    {absentCount > 0 && (
-                      <div className="text-red-600 font-medium">
-                        Absent: {absentCount}/{totalStudents}
-                      </div>
+                    ) : (
+                      <>
+                        <div className="text-green-600 font-medium">
+                          Present: {presentCount}/{totalStudents}
+                        </div>
+                        {lateCount > 0 && (
+                          <div className="text-yellow-600 font-medium">
+                            Late: {lateCount}/{totalStudents}
+                          </div>
+                        )}
+                        {absentCount > 0 && (
+                          <div className="text-red-600 font-medium">
+                            Absent: {absentCount}/{totalStudents}
+                          </div>
+                        )}
+                        {totalStudents > (presentCount + absentCount + lateCount) && (
+                          <div className="text-amber-600 font-medium">
+                            Unmarked: {totalStudents - (presentCount + absentCount + lateCount)}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
                 
+                {/* Keep existing assessment indicators if in assessment mode */}
                 {attendanceMode === "assessment" && (
                   <>
                     {/* Corner indicators for start and due dates */}
@@ -1282,7 +1297,7 @@ const TeacherAttendance = () => {
                       
                       <button
                         onClick={(e) => handleViewSubmissionHistory(student, e)}
-                        className="p-2 rounded-md border border-gray-200 bg-white hover:bg-[#F6BA18] hover:text-[#212529] hover:border-[#F6BA18] text-gray-600 transition-colors shadow-sm"
+                        className="p-2 rounded-md border border-gray-200 bg-white hover:bg-[#F6BA18] hover:text-[#212529] hover:border-[#F6BA18] text-gray-600 transition-colors"
                         title="View submission history"
                       >
                         <FileText size={18} />

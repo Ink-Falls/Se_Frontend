@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
@@ -68,12 +67,12 @@ const TeacherAnnouncementDetails = () => {
     {
       text: "Attendance",
       icon: <User size={20} />,
-      route: "/TeacherAttendance",
+      route: "/Teacher/Attendance", // Fixed: added "Teacher/" prefix
     },
     {
       text: "Progress Tracker",
       icon: <LineChart size={20} />,
-      route: "/TeacherProgress",
+      route: "/Teacher/ProgressTracker", // Fixed: updated to match TeacherAttendance.jsx
     },
   ];
 

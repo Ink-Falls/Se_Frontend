@@ -75,12 +75,12 @@ const TeacherCourseAnnouncements = () => {
     {
       text: "Attendance",
       icon: <User size={20} />,
-      route: "/TeacherAttendance",
+      route: "/Teacher/Attendance", // Fixed: added "Teacher/" prefix
     },
     {
       text: "Progress Tracker",
       icon: <LineChart size={20} />,
-      route: "/TeacherProgress",
+      route: "/Teacher/ProgressTracker", // Fixed: updated to match TeacherAttendance.jsx
     },
   ];
 
@@ -88,7 +88,7 @@ const TeacherCourseAnnouncements = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return null;
-      
+
       const tokenPayload = JSON.parse(atob(token.split(".")[1]));
       return tokenPayload?.id || null;
     } catch (err) {
@@ -102,19 +102,19 @@ const TeacherCourseAnnouncements = () => {
       navigate("/Teacher/Dashboard");
       return;
     }
-    
+
     fetchAnnouncements();
   }, [selectedCourse]);
 
   const fetchAnnouncements = async () => {
     if (!selectedCourse?.id) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await getAnnouncementsByCourse(selectedCourse.id);
-      
+
       let announcementData = [];
       if (Array.isArray(response)) {
         console.log("Response is an array with length:", response.length);
@@ -126,13 +126,13 @@ const TeacherCourseAnnouncements = () => {
         console.warn("Unexpected response format:", response);
         announcementData = [];
       }
-      
+
       // Sort by creation date (newest first)
-      announcementData.sort((a, b) => 
-        new Date(b.createdAt || b.created_at || 0) - 
+      announcementData.sort((a, b) =>
+        new Date(b.createdAt || b.created_at || 0) -
         new Date(a.createdAt || a.created_at || 0)
       );
-      
+
       setAnnouncements(announcementData);
     } catch (err) {
       console.error("Failed to fetch announcements:", err);
@@ -152,10 +152,10 @@ const TeacherCourseAnnouncements = () => {
 
   const handleAddAnnouncement = async () => {
     if (!newAnnouncement.title.trim() || !newAnnouncement.message.trim()) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // For teacher roles, include course_id
       const announcementData = {
@@ -163,9 +163,9 @@ const TeacherCourseAnnouncements = () => {
         message: newAnnouncement.message,
         course_id: selectedCourse.id // Use the selected course ID
       };
-      
+
       const response = await createAnnouncement(announcementData);
-      
+
       // Reset form and close modal
       setIsModalOpen(false);
       setNewAnnouncement({
@@ -173,9 +173,9 @@ const TeacherCourseAnnouncements = () => {
         message: "",
         course_id: 0
       });
-      
+
       setSuccessMessage("Announcement created successfully!");
-      
+
       // Refresh the announcements list
       fetchAnnouncements();
     } catch (err) {
@@ -319,7 +319,7 @@ const TeacherCourseAnnouncements = () => {
                 </button>
               </div>
             </div>
-            <p 
+            <p
               className="mt-2 text-sm text-gray-900 font-medium line-clamp-2"
               onClick={() => navigate(`/Teacher/AnnouncementDetails/${announcement.announcement_id || announcement.id}`)}
             >
@@ -340,7 +340,7 @@ const TeacherCourseAnnouncements = () => {
           subtitle={selectedCourse?.code}
         />
         <MobileNavBar navItems={navItems} />
-        
+
         {/* Announcements Section */}
         <div className="bg-white rounded-lg shadow-md">
           <BlackHeader title="Announcements" count={announcements.length}>
@@ -365,14 +365,14 @@ const TeacherCourseAnnouncements = () => {
               {successMessage}
             </div>
           )}
-          
+
           {error && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center">
               <AlertCircle size={20} className="mr-2" />
               {error}
             </div>
           )}
-          
+
           {isLoading ? (
             <div className="flex items-center justify-center h-40">
               <div className="w-12 h-12 border-4 border-[#F6BA18] border-t-[#212529] rounded-full animate-spin"></div>
@@ -469,14 +469,13 @@ const TeacherCourseAnnouncements = () => {
                   </button>
                   <button
                     type="submit"
-                    className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${
-                      !newAnnouncement.title.trim() || !newAnnouncement.message.trim() || isLoading
+                    className={`px-4 py-2 text-sm font-medium text-white rounded-md transition-colors ${!newAnnouncement.title.trim() || !newAnnouncement.message.trim() || isLoading
                         ? "bg-yellow-300 cursor-not-allowed opacity-50"
                         : "bg-yellow-600 hover:bg-yellow-700"
-                    }`}
+                      }`}
                     disabled={
-                      !newAnnouncement.title.trim() || 
-                      !newAnnouncement.message.trim() || 
+                      !newAnnouncement.title.trim() ||
+                      !newAnnouncement.message.trim() ||
                       isLoading
                     }
                   >
