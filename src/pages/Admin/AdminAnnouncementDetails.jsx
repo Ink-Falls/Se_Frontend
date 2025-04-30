@@ -157,7 +157,7 @@ function AdminAnnouncementDetails() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen bg-gray-100 dark:bg-dark-bg-primary">
+      <div className="flex h-screen bg-gray-100">
         <Sidebar navItems={navItems} />
         <div className="flex-1 p-6 flex items-center justify-center">
           <div className="w-16 h-16 border-4 border-[#F6BA18] border-t-[#212529] rounded-full animate-spin"></div>
@@ -168,14 +168,14 @@ function AdminAnnouncementDetails() {
 
   if (error || !announcement) {
     return (
-      <div className="flex h-screen bg-gray-100 dark:bg-dark-bg-primary">
+      <div className="flex h-screen bg-gray-100">
         <Sidebar navItems={navItems} />
         <div className="flex-1 p-6">
           <Header title="Announcement Details" />
-          <div className="bg-white dark:bg-gray-800 p-10 rounded-lg shadow-md text-center">
+          <div className="bg-white p-10 rounded-lg shadow-md text-center">
             <AlertCircle size={48} className="mx-auto text-red-500 mb-4" />
-            <h2 className="text-xl font-medium mb-2 text-gray-900 dark:text-gray-100">Error Loading Announcement</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">{error || "Announcement not found"}</p>
+            <h2 className="text-xl font-medium mb-2 text-gray-900">Error Loading Announcement</h2>
+            <p className="text-gray-600 mb-6">{error || "Announcement not found"}</p>
             <button
               onClick={() => navigate("/Admin/Announcements")}
               className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
@@ -189,13 +189,13 @@ function AdminAnnouncementDetails() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-dark-bg-primary">
+    <div className="flex h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
       <div className="flex-1 p-6 overflow-y-auto pb-20 md:pb-32 lg:pb-6">
-        <Header title={<span className="text-xl md:text-2xl dark:text-gray-100">Announcement Details</span>} />
+        <Header title={<span className="text-xl md:text-2xl">Announcement Details</span>} />
         
         {successMessage && (
-          <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 rounded-lg">
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
             {successMessage}
           </div>
         )}
@@ -232,36 +232,36 @@ function AdminAnnouncementDetails() {
           </button>
         </BlackHeader>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-dark-md mt-6">
+        <div className="bg-white rounded-lg shadow-md mt-6">
           <div className="p-6">
             <div className="flex items-start space-x-4">
               <div className="flex-shrink-0">
                 <img
                   src={admin_icon}
                   alt="Admin"
-                  className="h-12 w-12 rounded-full border-2 border-gray-200 dark:border-gray-600"
+                  className="h-12 w-12 rounded-full border-2 border-gray-200"
                 />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2 mb-2">
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  <h3 className="text-lg font-medium text-gray-900">
                     {announcement.title}
                   </h3>
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-3">
-                  <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 px-2 py-1 rounded">
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                     By:{" "}
                     {announcement.user
                       ? `${announcement.user.first_name} ${announcement.user.last_name}`
                       : "Unknown"}
                   </span>
-                  <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 px-2 py-1 rounded flex items-center">
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded flex items-center">
                     <Clock size={12} className="mr-1" />
                     Created:{" "}
                     {new Date(announcement.createdAt).toLocaleString()}
                   </span>
-                  <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 px-2 py-1 rounded">
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                     Type:{" "}
                     {announcement.course_id
                       ? "Course Specific"
@@ -269,21 +269,21 @@ function AdminAnnouncementDetails() {
                   </span>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg mb-4">
-                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                  <p className="text-gray-700 whitespace-pre-wrap">
                     {announcement.message}
                   </p>
                 </div>
 
                 {announcement.course && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className="text-xs text-gray-500">
                     Course:{" "}
                     {announcement.course.name ||
                       `ID: ${announcement.course_id}`}
                   </div>
                 )}
 
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center">
+                <div className="text-xs text-gray-500 mt-2 flex items-center">
                   <Clock size={12} className="mr-1" />
                   Last Updated:{" "}
                   {new Date(
@@ -303,9 +303,9 @@ function AdminAnnouncementDetails() {
             onClose={() => setIsEditModalOpen(false)}
           >
             <div className="p-6">
-              <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Edit Announcement</h2>
+              <h2 className="text-2xl font-bold mb-4 text-gray-900">Edit Announcement</h2>
               {error && (
-                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 rounded-lg flex items-center">
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-center">
                   <AlertCircle size={18} className="mr-2" />
                   <span>{error}</span>
                 </div>
@@ -318,27 +318,27 @@ function AdminAnnouncementDetails() {
                 className="space-y-4"
               >
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-gray-700">
                     Title <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={editedTitle}
                     onChange={(e) => setEditedTitle(e.target.value)}
-                    className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 focus:border-yellow-500 dark:focus:border-yellow-500 focus:outline-none focus:ring-yellow-500 dark:focus:ring-yellow-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500 bg-white text-gray-900"
                     placeholder="Enter announcement title"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-medium text-gray-700">
                     Content <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     value={editedMessage}
                     onChange={(e) => setEditedMessage(e.target.value)}
                     rows={4}
-                    className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 focus:border-yellow-500 dark:focus:border-yellow-500 focus:outline-none focus:ring-yellow-500 dark:focus:ring-yellow-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-yellow-500 focus:outline-none focus:ring-yellow-500 bg-white text-gray-900"
                     placeholder="Enter announcement content"
                     required
                   />
@@ -347,7 +347,7 @@ function AdminAnnouncementDetails() {
                   <button
                     type="button"
                     onClick={() => setIsEditModalOpen(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
                     disabled={isLoading}
                   >
                     Cancel
