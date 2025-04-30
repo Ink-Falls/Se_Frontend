@@ -1,5 +1,7 @@
 import { getAllCourses } from "./courseService";
 import { getGroupMembers } from "./groupService";
+import { API_BASE_URL } from "../utils/constants";
+import fetchWithInterceptor from "./apiService";
 
 /**
  * Service for handling attendance-related operations
@@ -95,6 +97,168 @@ export const getLearnerRoster = async (courseId) => {
   }
 };
 
+/**
+ * Creates a new attendance record
+ * @async
+ * @function createAttendance
+ * @param {Object} attendanceData - The attendance data
+ * @param {number} attendanceData.courseId - The ID of the course
+ * @param {string} attendanceData.date - The date of attendance (YYYY-MM-DD)
+ * @returns {Promise<Object>} The created attendance record
+ * @throws {Error} If the API request fails
+ */
+export const createAttendance = async (attendanceData) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Authentication token not found");
+    }
+
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/attendance`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(attendanceData),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create attendance record");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error creating attendance:", error);
+    throw error;
+  }
+};
+
+/**
+ * Fetches attendance records for a course on a specific date
+ * @async
+ * @function getAttendanceByDate
+ * @param {number} courseId - The ID of the course
+ * @param {string} date - The date to fetch attendance for (YYYY-MM-DD)
+ * @returns {Promise<Array>} The attendance records
+ * @throws {Error} If the API request fails
+ */
+export const getAttendanceByDate = async (courseId, date) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Authentication token not found");
+    }
+
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/attendance/course/${courseId}/date/${date}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch attendance records");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching attendance by date:", error);
+    throw error;
+  }
+};
+
+/**
+ * Updates the status of an attendance record
+ * @async
+ * @function updateAttendanceStatus
+ * @param {number} attendanceId - The ID of the attendance record to update
+ * @param {string} status - The new status ("present", "absent", "late", etc.)
+ * @returns {Promise<Object>} The updated attendance record
+ * @throws {Error} If the API request fails
+ */
+export const updateAttendanceStatus = async (attendanceId, status) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Authentication token not found");
+    }
+
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/attendance/${attendanceId}`,
+      {
+        method: "PATCH", // Changed from PUT to PATCH
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to update attendance status");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating attendance status:", error);
+    throw error;
+  }
+};
+
+/**
+ * Fetches all attendance records for a specific user in a course
+ * @async
+ * @function getUserAttendanceInCourse
+ * @param {number} courseId - The ID of the course
+ * @param {number} userId - The ID of the user
+ * @returns {Promise<Array>} The attendance records for the user
+ * @throws {Error} If the API request fails
+ */
+export const getUserAttendanceInCourse = async (courseId, userId) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Authentication token not found");
+    }
+
+    const response = await fetchWithInterceptor(
+      `${API_BASE_URL}/attendance/course/${courseId}/user/${userId}`,
+      {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch user attendance records");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching user attendance:", error);
+    throw error;
+  }
+};
+
 export default {
-  getLearnerRoster
+  getLearnerRoster,
+  createAttendance,
+  getAttendanceByDate,
+  updateAttendanceStatus,
+  getUserAttendanceInCourse
 };

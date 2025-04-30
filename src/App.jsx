@@ -297,7 +297,7 @@ function AppRoutes() {
                         element={
                           <RoleBasedRoute
                             allowedRoles={[
-                              "admin",
+
                               "teacher",
                               "student_teacher",
                             ]}
@@ -311,7 +311,7 @@ function AppRoutes() {
                         element={
                           <RoleBasedRoute
                             allowedRoles={[
-                              "admin",
+
                               "teacher",
                               "student_teacher",
                             ]}
