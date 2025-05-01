@@ -1,6 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Home, Megaphone, BookOpen, ClipboardList, User, LineChart, ChevronDown, ArrowLeft, Award, BookCheck, AlertCircle, Users } from "lucide-react";
+import { 
+  Home, 
+  Megaphone, 
+  BookOpen, 
+  ClipboardList, 
+  User, 
+  LineChart, 
+  ChevronDown, 
+  Filter,
+  Users,
+  Search,
+  AlertCircle,
+  BarChart,
+  TrendingUp,
+  Eye,
+  EyeOff
+} from "lucide-react";
 import Sidebar from "../../components/common/layout/Sidebar";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
@@ -8,6 +24,9 @@ import Header from "../../components/common/layout/Header";
 import { useCourse } from "../../contexts/CourseContext";
 import { getModulesByCourseId, getModuleGrade } from "../../services/moduleService";
 import { getCourseAssessments, getAssessmentSubmissions, getSubmissionDetails } from "../../services/assessmentService";
+import { getLearnerRoster } from "../../services/attendanceService";
+import PerformanceVisualization from "../../components/specific/performance/PerformanceVisualization";
+import PerformanceTrendChart from "../../components/specific/performance/PerformanceTrendChart";
 
 const TeacherProgressTracker = () => {
   const [loading, setLoading] = useState(true);
@@ -21,8 +40,17 @@ const TeacherProgressTracker = () => {
   const [studentSubmissions, setStudentSubmissions] = useState({});
   const [expandedStudents, setExpandedStudents] = useState(new Set());
   const [studentCount, setStudentCount] = useState(0);
+  const [studentData, setStudentData] = useState({});
+  const [expandedStudentModules, setExpandedStudentModules] = useState({});
   const { selectedCourse: contextCourse } = useCourse();
   const navigate = useNavigate();
+
+  const [lateScorePreferences, setLateScorePreferences] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [studentStats, setStudentStats] = useState({});
+  const [showPerformanceGraph, setShowPerformanceGraph] = useState(false);
+  const [performanceTrendData, setPerformanceTrendData] = useState(null);
 
   const navItems = [
     { text: "Home", icon: <Home size={20} />, route: "/Teacher/Dashboard" },
@@ -66,6 +94,25 @@ const TeacherProgressTracker = () => {
         
         setStudentCount(contextCourse.studentCount || 0);
         
+        const learnerRoster = await getLearnerRoster(contextCourse.id);
+        if (!learnerRoster || !Array.isArray(learnerRoster)) {
+          throw new Error("Failed to fetch student roster");
+        }
+        
+        const studentSubmissionsMap = {};
+        const allSubmissions = [];
+        
+        learnerRoster.forEach(student => {
+          studentSubmissionsMap[student.id] = {
+            student: {
+              id: student.id,
+              name: student.name,
+              email: student.email
+            },
+            modules: {}
+          };
+        });
+        
         const modulesResponse = await getModulesByCourseId(contextCourse.id);
         if (!modulesResponse || !Array.isArray(modulesResponse)) {
           throw new Error("Failed to fetch modules");
@@ -78,41 +125,104 @@ const TeacherProgressTracker = () => {
         for (const module of modulesResponse) {
           try {
             const assessmentResponse = await getCourseAssessments(module.module_id, true);
+            
             if (assessmentResponse.success) {
-              assessmentsByModule[module.module_id] = assessmentResponse.assessments;
+              const moduleAssessments = assessmentResponse.assessments;
+              assessmentsByModule[module.module_id] = moduleAssessments;
               
-              for (const assessment of assessmentResponse.assessments) {
+              learnerRoster.forEach(student => {
+                if (!studentSubmissionsMap[student.id].modules[module.module_id]) {
+                  studentSubmissionsMap[student.id].modules[module.module_id] = {
+                    moduleId: module.module_id,
+                    moduleName: module.name,
+                    assessments: {}
+                  };
+                }
+                
+                moduleAssessments.forEach(assessment => {
+                  studentSubmissionsMap[student.id].modules[module.module_id].assessments[assessment.id] = {
+                    assessment,
+                    submissions: []
+                  };
+                });
+              });
+              
+              for (const assessment of moduleAssessments) {
                 try {
                   const submissionsResponse = await getAssessmentSubmissions(assessment.id);
+                  
                   if (submissionsResponse.success) {
-                    const detailedSubmissions = await Promise.all(
+                    const processedSubmissions = await Promise.all(
                       submissionsResponse.submissions.map(async (sub) => {
                         try {
                           const detailsResponse = await getSubmissionDetails(sub.id);
+                          
                           if (detailsResponse.success && detailsResponse.submission) {
-                            const scores = calculateSubmissionScore(detailsResponse.submission);
-                            return {
+                            const submissionData = detailsResponse.submission;
+                            const studentId = submissionData.user?.id;
+                            
+                            if (!studentId) return null;
+                            
+                            const scores = calculateSubmissionScore(submissionData);
+                            const isGraded = areAllQuestionsGraded(submissionData);
+                            
+                            const submission = {
                               id: sub.id,
                               student: {
-                                name: `${detailsResponse.submission.user?.first_name || ''} ${detailsResponse.submission.user?.last_name || ''}`.trim(),
-                                id: detailsResponse.submission.user?.id
+                                id: studentId,
+                                name: `${submissionData.user?.first_name || ''} ${submissionData.user?.last_name || ''}`.trim()
                               },
-                              status: areAllQuestionsGraded(detailsResponse.submission) ? 'graded' : 'Not Graded',
+                              moduleId: module.module_id,
+                              moduleName: module.name,
+                              assessmentId: assessment.id,
+                              assessmentTitle: assessment.title,
+                              assessment: assessment,
+                              status: isGraded ? 'graded' : 'Not Graded',
                               score: scores.total,
                               maxScore: scores.possible,
-                              percentage: scores.possible > 0 ? ((scores.total / scores.possible) * 100).toFixed(1) : '0',
+                              percentage: scores.percentage,
                               submit_time: sub.submit_time,
-                              isLate: detailsResponse.submission.is_late,
-                              fullSubmission: detailsResponse.submission
+                              isLate: submissionData.is_late,
+                              fullSubmission: submissionData,
+                              answers: submissionData.answers || []
                             };
+                            
+                            allSubmissions.push(submission);
+                            return submission;
                           }
                         } catch (err) {
-                          console.error(`Error fetching details for submission ${sub.id}:`, err);
+                          console.error(`Error processing submission ${sub.id}:`, err);
                         }
                         return null;
                       })
                     );
-                    submissionsByAssessment[assessment.id] = detailedSubmissions.filter(Boolean);
+                    
+                    const validSubmissions = processedSubmissions.filter(Boolean);
+                    submissionsByAssessment[assessment.id] = validSubmissions;
+
+                    validSubmissions.forEach(submission => {
+                      const studentId = submission.student?.id;
+                      if (studentId && studentSubmissionsMap[studentId]) {
+                        const moduleId = submission.moduleId;
+                        
+                        if (!studentSubmissionsMap[studentId].modules[moduleId]?.assessments[assessment.id]) {
+                          if (!studentSubmissionsMap[studentId].modules[moduleId]) {
+                            studentSubmissionsMap[studentId].modules[moduleId] = {
+                              moduleId: moduleId,
+                              moduleName: module.name,
+                              assessments: {}
+                            };
+                          }
+                          
+                          studentSubmissionsMap[studentId].modules[moduleId].assessments[assessment.id] = {
+                            assessment: assessment,
+                            submissions: []
+                          };
+                        }
+                        
+                        studentSubmissionsMap[studentId].modules[moduleId].assessments[assessment.id].submissions.push(submission);
+                      }
+                    });
                   }
                 } catch (err) {
                   console.warn(`Failed to fetch submissions for assessment ${assessment.id}:`, err);
@@ -138,6 +248,8 @@ const TeacherProgressTracker = () => {
         setModuleAssessments(assessmentsByModule);
         setModuleGrades(gradesByModule);
         setStudentSubmissions(submissionsByAssessment);
+        setStudentData(studentSubmissionsMap);
+        setStudents(learnerRoster);
         
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -150,16 +262,967 @@ const TeacherProgressTracker = () => {
     fetchData();
   }, [contextCourse?.id, navigate]);
 
-  const toggleModule = (moduleId) => {
-    setExpandedModules(prev => {
-      const next = new Set(prev);
-      if (next.has(moduleId)) {
-        next.delete(moduleId);
-      } else {
-        next.add(moduleId);
+  useEffect(() => {
+    if (expandedStudentModules && Object.keys(expandedStudentModules).length > 0) {
+      setExpandedStudentModules(prev => ({...prev}));
+    }
+  }, [lateScorePreferences]);
+
+  useEffect(() => {
+    if (!students.length || Object.keys(studentSubmissions).length === 0) return;
+    
+    const allAssessments = [];
+    const assessmentDates = {};
+    
+    Object.values(moduleAssessments).forEach(moduleAsm => {
+      moduleAsm.forEach(assessment => {
+        allAssessments.push({
+          id: assessment.id,
+          title: assessment.title,
+          moduleId: assessment.module_id,
+          dueDate: new Date(assessment.due_date || new Date())
+        });
+        assessmentDates[assessment.id] = assessment.due_date;
+      });
+    });
+    
+    const sortedAssessments = allAssessments.sort((a, b) => {
+      return new Date(a.dueDate) - new Date(b.dueDate);
+    });
+    
+    const scoreMatrix = {};
+    
+    students.forEach(student => {
+      scoreMatrix[student.id] = sortedAssessments.map(assessment => {
+        const bestSubmission = findBestSubmission(
+          student.id,
+          assessment.id,
+          Object.values(studentSubmissions).flat()
+        );
+        
+        return bestSubmission ? parseFloat(bestSubmission.percentage) : 0;
+      });
+    });
+    
+    setPerformanceTrendData({
+      students,
+      assessments: sortedAssessments,
+      scoreMatrix
+    });
+  }, [students, moduleAssessments, studentSubmissions]);
+
+  const calculateSubmissionScore = (submission) => {
+    if (!submission?.answers || !Array.isArray(submission.answers)) {
+      return { total: 0, possible: 0, percentage: 0 };
+    }
+    
+    const total = submission.answers.reduce((sum, answer) => {
+      return sum + (parseFloat(answer.points_awarded) || 0);
+    }, 0);
+    
+    const possible = submission.answers.reduce((sum, answer) => {
+      return sum + (parseFloat(answer.question?.points) || 0);
+    }, 0);
+    
+    const percentage = possible > 0 ? (total / possible) * 100 : 0;
+    
+    return {
+      total: parseFloat(total),
+      possible: parseFloat(possible),
+      percentage: parseFloat(percentage.toFixed(1))
+    };
+  };
+
+  const areAllQuestionsGraded = (submission) => {
+    if (!submission?.answers || !Array.isArray(submission.answers)) return false;
+    
+    return submission.answers.every(answer => 
+      answer.points_awarded !== null && answer.points_awarded !== undefined
+    );
+  };
+
+  const findBestSubmission = (studentId, assessmentId, allSubmissions) => {
+    if (!studentId || !assessmentId || !allSubmissions) return null;
+    
+    const studentSubmissions = allSubmissions.filter(
+      sub => sub.student?.id === studentId && sub.assessmentId === assessmentId
+    );
+    
+    if (!studentSubmissions || studentSubmissions.length === 0) return null;
+    
+    const allSubmissionsAreLate = studentSubmissions.every(sub => sub.isLate);
+    const hasLateSubmissions = studentSubmissions.some(sub => sub.isLate);
+    const hasOnTimeSubmissions = studentSubmissions.some(sub => !sub.isLate);
+    
+    if (lateScorePreferences[assessmentId] || (allSubmissionsAreLate && hasLateSubmissions)) {
+      const lateSubmissions = studentSubmissions.filter(sub => sub.isLate);
+      if (lateSubmissions.length > 0) {
+        return lateSubmissions.sort((a, b) => {
+          const scoreA = parseFloat(a.percentage) || 0;
+          const scoreB = parseFloat(b.percentage) || 0;
+          return scoreB - scoreA;
+        })[0];
       }
+    }
+
+    if (!lateScorePreferences[assessmentId] && hasOnTimeSubmissions) {
+      const onTimeSubmissions = studentSubmissions.filter(sub => !sub.isLate);
+      const gradedOnTimeSubmissions = onTimeSubmissions.filter(sub => 
+        sub.status === 'graded' || 
+        (sub.fullSubmission && areAllQuestionsGraded(sub.fullSubmission))
+      );
+      
+      if (gradedOnTimeSubmissions.length > 0) {
+        return gradedOnTimeSubmissions.sort((a, b) => {
+          const scoreA = parseFloat(a.percentage) || 0;
+          const scoreB = parseFloat(b.percentage) || 0;
+          return scoreB - scoreA;
+        })[0];
+      }
+      
+      if (onTimeSubmissions.length > 0) {
+        return onTimeSubmissions.sort((a, b) => {
+          const scoreA = parseFloat(a.percentage) || 0;
+          const scoreB = parseFloat(b.percentage) || 0;
+          return scoreB - scoreA;
+        })[0];
+      }
+    }
+    
+    return studentSubmissions.sort((a, b) => {
+      const scoreA = parseFloat(a.percentage) || 0;
+      const scoreB = parseFloat(b.percentage) || 0;
+      return scoreB - scoreA;
+    })[0];
+  };
+
+  const toggleStudentModule = (studentId, moduleId) => {
+    setExpandedStudentModules(prev => {
+      const next = {...prev};
+      const key = `${studentId}-${moduleId}`;
+      next[key] = !next[key];
       return next;
     });
+  };
+
+  const calculateModuleAverage = (moduleId, studentId = null) => {
+    let totalScore = 0;
+    let submissionCount = 0;
+    
+    const assessmentsInModule = moduleAssessments[moduleId] || [];
+    
+    const studentsToProcess = studentId 
+      ? [studentData[studentId]].filter(Boolean) 
+      : Object.values(studentData);
+    
+    studentsToProcess.forEach(student => {
+      if (student?.modules[moduleId]?.assessments) {
+        Object.values(student.modules[moduleId].assessments).forEach(assessmentInfo => {
+          const bestSubmission = findBestSubmission(
+            student.student.id,
+            assessmentInfo.assessment.id,
+            Object.values(studentSubmissions).flat()
+          );
+          
+          if (bestSubmission) {
+            totalScore += parseFloat(bestSubmission.percentage) || 0;
+            submissionCount++;
+          }
+        });
+      }
+    });
+    
+    return submissionCount > 0 ? totalScore / submissionCount : 0;
+  };
+
+  const calculateStudentOverallAverage = (studentId) => {
+    const studentInfo = studentData[studentId];
+    if (!studentInfo) return null;
+    
+    let totalPercentage = 0;
+    let assessmentCount = 0;
+    
+    Object.values(studentInfo.modules).forEach(moduleInfo => {
+      Object.values(moduleInfo.assessments).forEach(assessmentInfo => {
+        const bestSubmission = findBestSubmission(
+          studentId,
+          assessmentInfo.assessment.id,
+          Object.values(studentSubmissions).flat()
+        );
+        
+        if (bestSubmission) {
+          totalPercentage += parseFloat(bestSubmission.percentage) || 0;
+          assessmentCount++;
+        }
+      });
+    });
+    
+    return assessmentCount > 0 ? (totalPercentage / assessmentCount).toFixed(1) : null;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "Not available";
+    
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (e) {
+      return "Invalid date";
+    }
+  };
+
+  const navigateToSubmissionView = (submission) => {
+    if (!submission) {
+      console.error("Cannot navigate: submission is undefined");
+      return;
+    }
+    
+    try {
+      const assessmentData = {
+        id: submission.assessment.id,
+        title: submission.assessment.title,
+        moduleId: submission.moduleId,
+        moduleName: submission.moduleName,
+        type: submission.assessment.type || "quiz",
+        passing_score: parseFloat(submission.assessment.passing_score) || 75,
+        max_score: parseFloat(submission.assessment.max_score) || 100,
+        description: submission.assessment.instructions || submission.assessment.description || "",
+        questions: submission.assessment.questions || [],
+        due_date: submission.assessment.due_date,
+      };
+      
+      const submissionData = {
+        id: submission.id,
+        studentName: submission.student.name,
+        studentId: submission.student.id,
+        status: submission.isLate ? "Late" : (submission.status === 'graded' ? "Graded" : "Submitted"),
+        score: submission.score,
+        maxScore: submission.maxScore,
+        percentage: submission.percentage,
+        submit_time: submission.submit_time,
+        is_late: submission.isLate,
+      };
+      
+      navigate(`/Teacher/Assessment/Submission/${submission.id}`, {
+        state: {
+          assessment: assessmentData,
+          submission: submissionData
+        }
+      });
+    } catch (error) {
+      console.error("Error navigating to submission view:", error);
+      alert("Failed to view submission details. Please try again.");
+    }
+  };
+
+  const getTypeStyle = (type) => {
+    switch(type?.toLowerCase()) {
+      case 'quiz': return 'bg-blue-100';
+      case 'exam': return 'bg-purple-100';
+      case 'assignment': return 'bg-green-100';
+      default: return 'bg-gray-100';
+    }
+  };
+
+  const formatPassingPercentage = (passingScore, maxScore) => {
+    if (!passingScore) return "0";
+    return `${passingScore}`;
+  };
+
+  const getSubmissionScoreClass = (score, maxScore, percentage, passingScore) => {
+    if (score === 0) return "text-gray-500";
+    
+    const passingPercentage = passingScore && maxScore ? 
+      (parseFloat(passingScore) / parseFloat(maxScore)) * 100 : 
+      75;
+      
+    if (percentage >= passingPercentage) return "text-green-600";
+    if (percentage >= passingPercentage * 0.8) return "text-yellow-600";
+    return "text-red-600";
+  };
+
+  const getStudentAttemptCount = (studentId, assessmentId) => {
+    if (!studentId || !assessmentId) return 0;
+    
+    const studentSubmissionsForAssessment = Object.values(studentSubmissions)
+      .flat()
+      .filter(sub => sub.student?.id === studentId && sub.assessmentId === assessmentId);
+    
+    return studentSubmissionsForAssessment.length || 0;
+  };
+
+  const renderNoSubmissionItem = (assessment, index) => {
+    const passingScore = parseFloat(assessment.passing_score) || 75;
+    const maxScore = parseFloat(assessment.max_score) || 100;
+    const maxAllowedAttempts = assessment.allowed_attempts || assessment.max_attempts || 1;
+    
+    const formattedDueDate = assessment.due_date
+      ? formatDate(assessment.due_date)
+      : 'No due date';
+    const typeStyle = getTypeStyle(assessment.type);
+
+    return (
+      <div key={assessment.id}>
+        {index > 0 && <div className="mx-6 border-t border-gray-200"></div>}
+        
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 flex items-center justify-center rounded-full ${typeStyle}`}>
+                {assessment.type === 'quiz' && <BarChart className="text-blue-600" />}
+                {assessment.type === 'exam' && <BookOpen className="text-purple-600" />}
+                {assessment.type === 'assignment' && <ClipboardList className="text-green-600" />}
+                {!['quiz', 'exam', 'assignment'].includes(assessment.type) && 
+                  <ClipboardList className="text-gray-600" />}
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-800">{assessment.title}</h4>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xs text-gray-500">
+                    {assessment.type || 'Assessment'}
+                  </span>
+                  <span className="inline-block w-1 h-1 rounded-full bg-gray-300"></span>
+                  <span className="text-xs px-1.5 py-0.5 rounded border bg-gray-100 text-gray-800 border-gray-200">
+                    Not Submitted
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-500">Not submitted</span>
+              <span className="text-xs text-gray-500">
+                Passing: {formatPassingPercentage(passingScore)}/{maxScore}
+              </span>
+            </div>
+          </div>
+          
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-3 rounded-lg border border-gray-100">
+            <div className="md:col-span-1 flex flex-col">
+              <span className="text-xs font-medium text-gray-500 uppercase mb-1">Best Score</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-semibold text-gray-500">N/A</span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                Due: {formattedDueDate}
+              </div>
+            </div>
+            
+            <div className="md:col-span-2">
+              <span className="text-xs font-medium text-gray-500 uppercase mb-1">Submission Details</span>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="block text-xs text-gray-500">Date Submitted</span>
+                  <span className="font-medium text-gray-700">Not submitted</span>
+                </div>
+                <div>
+                  <span className="block text-xs text-gray-500">Attempts</span>
+                  <span className="font-medium text-gray-700">
+                    0 / {maxAllowedAttempts}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="md:col-span-1 flex items-end justify-end">
+              <span className="text-sm text-gray-500">No submission</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSubmissionItem = (submission, index) => {
+    const assessment = submission.assessment;
+    const score = submission.score;
+    const maxScore = submission.maxScore;
+    const percentage = submission.percentage;
+    
+    const passingScoreValue = parseFloat(assessment.passing_score) || 75;
+    const maxScoreValue = parseFloat(maxScore) || 100;
+    
+    const passingPercentage = (passingScoreValue / maxScoreValue) * 100;
+    
+    const maxAllowedAttempts = assessment.allowed_attempts || assessment.max_attempts || 1;
+    const studentAttempts = getStudentAttemptCount(submission.student?.id, assessment.id);
+    
+    const isGraded = submission.status === 'graded' || 
+      (submission.fullSubmission && areAllQuestionsGraded(submission.fullSubmission));
+    const isLate = submission.isLate;
+    const statusText = isLate ? 'Late' : isGraded ? 'Graded' : 'Submitted';
+    const statusStyle = isLate 
+      ? 'bg-amber-100 text-amber-800 border-amber-200' 
+      : isGraded
+        ? 'bg-green-100 text-green-800 border-green-200'
+        : 'bg-blue-100 text-blue-800 border-blue-200';
+    
+    const formattedDueDate = assessment.due_date
+      ? formatDate(assessment.due_date)
+      : 'No due date';
+    const submissionDate = submission.submit_time
+      ? formatDate(submission.submit_time)
+      : 'Not available';
+    const typeStyle = getTypeStyle(assessment.type);
+    const scoreClass = getSubmissionScoreClass(score, maxScore, percentage, passingScoreValue);
+
+    const hasLateSubmissions = Object.values(studentSubmissions)
+      .flat()
+      .some(sub => 
+        sub.student?.id === submission.student?.id && 
+        sub.assessmentId === submission.assessmentId &&
+        sub.isLate
+      );
+    
+    const hasOnTimeSubmissions = Object.values(studentSubmissions)
+      .flat()
+      .some(sub => 
+        sub.student?.id === submission.student?.id && 
+        sub.assessmentId === submission.assessmentId &&
+        !sub.isLate
+      );
+    
+    const showToggle = hasLateSubmissions && hasOnTimeSubmissions;
+    
+    const showingLate = lateScorePreferences[submission.assessmentId] || false;
+    const onlyHasLateSubmissions = hasLateSubmissions && !hasOnTimeSubmissions;
+
+    const isPassing = percentage >= passingPercentage;
+
+    return (
+      <div key={submission.id}>
+        {index > 0 && <div className="mx-6 border-t border-gray-200"></div>}
+        
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 flex items-center justify-center rounded-full ${typeStyle}`}>
+                {assessment.type === 'quiz' && <BarChart className="text-blue-600" />}
+                {assessment.type === 'exam' && <BookOpen className="text-purple-600" />}
+                {assessment.type === 'assignment' && <ClipboardList className="text-green-600" />}
+                {!['quiz', 'exam', 'assignment'].includes(assessment.type) && 
+                  <ClipboardList className="text-gray-600" />}
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-800">{assessment.title}</h4>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xs text-gray-500">
+                    {assessment.type || 'Assessment'}
+                  </span>
+                  <span className="inline-block w-1 h-1 rounded-full bg-gray-300"></span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded border ${statusStyle}`}>
+                    {statusText}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-sm font-medium ${scoreClass}`}>
+                {`${score} / ${maxScore} (${percentage}%)`}
+              </span>
+              <span className="text-xs text-gray-500">
+                Passing: {passingScoreValue}/{maxScore}
+              </span>
+            </div>
+          </div>
+          
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-3 rounded-lg border border-gray-100">
+            <div className="md:col-span-1 flex flex-col">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs font-medium text-gray-500 uppercase">Best Score</span>
+                {showToggle && (
+                  <div className="flex items-center">
+                    <label className="inline-flex items-center cursor-pointer">
+                      <span className={`text-xs ${showingLate ? "text-amber-700" : "text-gray-700"}`}>
+                        {showingLate ? "Late" : "On-time"}
+                      </span>
+                      <div className="relative ml-2">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer" 
+                          checked={showingLate}
+                          onChange={() => {
+                            setLateScorePreferences(prev => ({
+                              ...prev, 
+                              [submission.assessmentId]: !prev[submission.assessmentId]
+                            }));
+                          }}
+                        />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                      </div>
+                    </label>
+                  </div>
+                )}
+                {onlyHasLateSubmissions && (
+                  <span className="text-xs text-amber-700">Late only</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-xl font-semibold ${scoreClass}`}>
+                  {percentage}%
+                </span>
+                {isPassing ? (
+                  <span className="inline-block p-1 bg-green-100 text-green-700 text-xs rounded-full">
+                    PASSED
+                  </span>
+                ) : (
+                  <span className="inline-block p-1 bg-red-100 text-red-700 text-xs rounded-full">
+                    FAILED
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                Due: {formattedDueDate}
+              </div>
+              {isLate && (
+                <div className="mt-1">
+                  <span className="bg-amber-100 text-amber-800 border border-amber-200 text-xs px-1.5 py-0.5 rounded-full">
+                    {onlyHasLateSubmissions ? "ONLY LATE SUBMISSION" : "LATE SUBMISSION"}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            <div className="md:col-span-2">
+              <span className="text-xs font-medium text-gray-500 uppercase mb-1">Submission Details</span>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="block text-xs text-gray-500">Date Submitted</span>
+                  <span className="font-medium text-gray-700">{submissionDate}</span>
+                </div>
+                <div>
+                  <span className="block text-xs text-gray-500">Attempts</span>
+                  <span className="font-medium text-gray-700">
+                    {studentAttempts} / {maxAllowedAttempts}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="md:col-span-1 flex items-end justify-end">
+              <button
+                className="px-4 py-2 bg-[#212529] text-white text-sm rounded hover:bg-[#F6BA18] hover:text-[#212529] transition-colors flex items-center gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigateToSubmissionView(submission);
+                }}
+              >
+                <span>View Submission</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderHeader = () => (
+    <div>
+      <Header
+        title={contextCourse?.name || "Progress Tracker"}
+        subtitle={contextCourse?.code}
+      />
+      <div className="relative z-50">
+        <MobileNavBar navItems={navItems} />
+      </div>
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={() => setShowPerformanceGraph(prev => !prev)}
+          className="flex items-center gap-2 px-4 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
+        >
+          {showPerformanceGraph ? (
+            <>
+              <EyeOff size={18} />
+              <span>Hide Performance Graph</span>
+            </>
+          ) : (
+            <>
+              <TrendingUp size={18} />
+              <span>Show Performance Graph</span>
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderPerformanceGraph = () => {
+    if (!showPerformanceGraph) return null;
+    
+    const studentMetrics = students.map(student => {
+      const studentAvg = calculateStudentOverallAverage(student.id) || '0';
+      
+      let completedAssessments = 0;
+      let totalAssessments = 0;
+      let onTimeSubmissions = 0;
+      let lateSubmissions = 0;
+      
+      let highPerformance = 0;
+      let mediumPerformance = 0;
+      let lowPerformance = 0;
+      
+      Object.values(studentData[student.id]?.modules || {}).forEach(moduleInfo => {
+        Object.values(moduleInfo.assessments || {}).forEach(assessmentInfo => {
+          totalAssessments++;
+          
+          const bestSubmission = findBestSubmission(
+            student.id,
+            assessmentInfo.assessment.id,
+            Object.values(studentSubmissions).flat()
+          );
+          
+          if (bestSubmission) {
+            completedAssessments++;
+            if (bestSubmission.isLate) {
+              lateSubmissions++;
+            } else {
+              onTimeSubmissions++;
+            }
+            
+            const score = parseFloat(bestSubmission.percentage) || 0;
+            if (score >= 85) highPerformance++;
+            else if (score >= 70) mediumPerformance++;
+            else lowPerformance++;
+          }
+        });
+      });
+      
+      const completionRate = totalAssessments > 0 ? 
+        (completedAssessments / totalAssessments) * 100 : 0;
+      
+      return {
+        student,
+        averageScore: parseFloat(studentAvg),
+        completedAssessments,
+        totalAssessments,
+        onTimeSubmissions,
+        lateSubmissions,
+        completionRate,
+        highPerformance,
+        mediumPerformance,
+        lowPerformance
+      };
+    }).sort((a, b) => b.averageScore - a.averageScore);
+    
+    const studentAverages = {};
+    studentMetrics.forEach(metric => {
+      studentAverages[metric.student.id] = metric.averageScore;
+    });
+    
+    const moduleMetrics = modules.map(module => {
+      const moduleAssessmentsList = moduleAssessments[module.module_id] || [];
+      let totalScore = 0;
+      let totalSubmissionCount = 0;
+      
+      let totalPossibleSubmissions = moduleAssessmentsList.length * students.length;
+      let submittedCount = 0;
+      let passedCount = 0;
+      let failedCount = 0;
+      
+      let studentsCompletedAll = 0;
+      
+      const studentCompletions = {};
+      students.forEach(student => {
+        studentCompletions[student.id] = {
+          completedAssessments: 0,
+          totalAssessments: moduleAssessmentsList.length,
+          totalAttempts: 0,
+          passedAssessments: 0,
+          failedAssessments: 0
+        };
+      });
+      
+      let totalAttempts = 0;
+      let assessmentsWithSubmissions = 0;
+      
+      let totalAssessmentsCompleted = 0;
+      let totalAssessmentsPassed = 0;
+      
+      students.forEach(student => {
+        if (studentData[student.id]?.modules[module.module_id]?.assessments) {
+          let studentCompletedCount = 0;
+          let studentPassedCount = 0;
+          
+          moduleAssessmentsList.forEach(assessment => {
+            const studentSubmissionsForAssessment = Object.values(studentSubmissions)
+              .flat()
+              .filter(sub => 
+                sub.student?.id === student.id && 
+                sub.assessmentId === assessment.id
+              );
+            
+            const attemptCount = studentSubmissionsForAssessment.length;
+            
+            if (attemptCount > 0) {
+              studentCompletions[student.id].totalAttempts += attemptCount;
+              totalAttempts += attemptCount;
+              
+              assessmentsWithSubmissions++;
+              
+              const bestSubmission = findBestSubmission(
+                student.id,
+                assessment.id,
+                Object.values(studentSubmissions).flat()
+              );
+              
+              if (bestSubmission) {
+                submittedCount++;
+                studentCompletedCount++;
+                totalAssessmentsCompleted++;
+                
+                studentCompletions[student.id].completedAssessments++;
+                
+                const score = parseFloat(bestSubmission.percentage) || 0;
+                totalScore += score;
+                totalSubmissionCount++;
+                
+                const passingScore = parseFloat(assessment.passing_score) || 0;
+                const maxScore = parseFloat(assessment.max_score) || 100;
+                const passingPercentage = maxScore > 0 ? (passingScore / maxScore) * 100 : 75;
+                
+                if (score >= passingPercentage) {
+                  passedCount++;
+                  studentPassedCount++;
+                  totalAssessmentsPassed++;
+                  studentCompletions[student.id].passedAssessments++;
+                } else {
+                  failedCount++;
+                  studentCompletions[student.id].failedAssessments++;
+                }
+              }
+            }
+          });
+          
+          if (studentCompletedCount === moduleAssessmentsList.length && moduleAssessmentsList.length > 0) {
+            studentsCompletedAll++;
+          }
+        }
+      });
+      
+      const averageScore = totalSubmissionCount > 0 ? 
+        totalScore / totalSubmissionCount : 0;
+        
+      const averageAttempts = assessmentsWithSubmissions > 0 ? 
+        totalAttempts / assessmentsWithSubmissions : 0;
+      
+      const passRatio = totalAssessmentsCompleted > 0 ? 
+        (totalAssessmentsPassed / totalAssessmentsCompleted) * 100 : 0;
+      
+      return {
+        module,
+        averageScore,
+        totalAssessments: moduleAssessmentsList.length,
+        submittedCount,
+        passedCount,
+        failedCount,
+        totalPossibleSubmissions,
+        studentsCompleted: studentsCompletedAll,
+        totalStudents: students.length,
+        totalAttempts,
+        averageAttempts,
+        passRatio
+      };
+    });
+    
+    return (
+      <div className="mb-8">
+        <PerformanceTrendChart 
+          performanceData={performanceTrendData}
+          title="Student Performance Trends"
+          topPerformerAverages={studentAverages}
+        />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-lg font-medium text-gray-700 mb-4">Average Performance by Module</h3>
+            
+            <div className="space-y-6">
+              {moduleMetrics.map((moduleMetric) => {
+                const averageScore = moduleMetric.averageScore.toFixed(1);
+                
+                const getScoreColor = (score) => {
+                  if (score >= 80) return 'text-green-600';
+                  if (score >= 70) return 'text-blue-600'; 
+                  return 'text-red-600';
+                };
+
+                return (
+                  <div key={moduleMetric.module.module_id} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-800">{moduleMetric.module.name}</h4>
+                        <p className="text-xs text-gray-500">
+                          {moduleMetric.totalAssessments} {moduleMetric.totalAssessments === 1 ? 'assessment' : 'assessments'} • 
+                          {moduleMetric.submittedCount} submissions
+                        </p>
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className={`text-lg font-semibold ${getScoreColor(moduleMetric.averageScore)}`}>
+                          {averageScore}%
+                        </div>
+                        <div className="text-xs text-gray-500">from best submissions</div>
+                      </div>
+                    </div>
+                    
+                    <div className="relative">
+                      <div className="w-full h-3 bg-red-300 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-green-500 rounded-r-none"
+                          style={{ width: `${moduleMetric.passRatio}%` }}
+                        ></div>
+                      </div>
+                      
+                      <div className="flex justify-between mt-1 text-xs text-gray-600">
+                        <div className="flex items-center">
+                          <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                          <span className="text-green-700 font-medium">
+                            {moduleMetric.passedCount} assessments passed
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center">
+                          <span className="text-gray-600 font-medium">
+                            {moduleMetric.studentsCompleted}/{moduleMetric.totalStudents} completed
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center">
+                          <span className="inline-block w-2 h-2 bg-red-400 rounded-full mr-1"></span>
+                          <span className="text-red-700 font-medium">
+                            {moduleMetric.failedCount} assessments failed
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-center mt-2 pt-2 border-t border-gray-100">
+                        <div className="text-xs text-amber-600 font-medium">
+                          <span className="inline-block w-2 h-2 bg-amber-500 rounded-full mr-1"></span>
+                          Avg {moduleMetric.averageAttempts.toFixed(1)} attempt{moduleMetric.averageAttempts !== 1 ? 's' : ''} per assessment
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            <div className="mt-4 pt-2 border-t border-gray-100 text-xs text-gray-500">
+              <p>* Average score is calculated from each student's <strong>best submission</strong> for each assessment</p>
+              <p>* Progress bar shows the proportion of <strong>passed assessments</strong> (green) vs <strong>failed assessments</strong> (red)</p>
+              <p>* A student is counted as "completed" if they've submitted all assessments in the module</p>
+            </div>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-700">Top Performers</h3>
+              <div className="flex items-center text-xs text-gray-500">
+                <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded mr-1">High</span>
+                <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded mr-1">Medium</span>
+                <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded">Low</span>
+              </div>
+            </div>
+            
+            <div className="space-y-5">
+              {studentMetrics.slice(0, 5).map((metric, index) => {
+                return (
+                  <div key={metric.student.id} className="border-b border-gray-100 pb-4 last:border-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#212529] to-gray-700 flex items-center justify-center text-white text-sm mr-3">
+                          {metric.student.name.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-800">{metric.student.name}</span>
+                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                              {index + 1 <= 3 ? `#${index + 1}` : ''}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {metric.completedAssessments}/{metric.totalAssessments} assessments completed ({metric.completionRate.toFixed(0)}%)
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`text-lg font-bold ${
+                          metric.averageScore >= 85 ? 'text-green-600' : 
+                          metric.averageScore >= 70 ? 'text-blue-600' : 'text-red-600'
+                        }`}>
+                          {metric.averageScore.toFixed(1)}%
+                        </div>
+                        <div className="text-xs text-gray-500">Average score</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2 mb-1 ml-11">
+                      <div className="flex-1 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                        <div className="flex h-full">
+                          {metric.highPerformance > 0 && (
+                            <div 
+                              className="bg-green-500 h-full" 
+                              style={{ flex: metric.highPerformance }}
+                              title={`${metric.highPerformance} high scores (>85%)`}
+                            ></div>
+                          )}
+                          {metric.mediumPerformance > 0 && (
+                            <div 
+                              className="bg-blue-500 h-full" 
+                              style={{ flex: metric.mediumPerformance }}
+                              title={`${metric.mediumPerformance} medium scores (70-85%)`}
+                            ></div>
+                          )}
+                          {metric.lowPerformance > 0 && (
+                            <div 
+                              className="bg-red-500 h-full" 
+                              style={{ flex: metric.lowPerformance }}
+                              title={`${metric.lowPerformance} low scores (<70%)`}
+                            ></div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="ml-11 flex justify-between text-xs text-gray-500">
+                      <div className="flex gap-3">
+                        {metric.highPerformance > 0 && (
+                          <span className="text-green-600">{metric.highPerformance} high</span>
+                        )}
+                        {metric.mediumPerformance > 0 && (
+                          <span className="text-blue-600">{metric.mediumPerformance} medium</span>
+                        )}
+                        {metric.lowPerformance > 0 && (
+                          <span className="text-red-600">{metric.lowPerformance} low</span>
+                        )}
+                      </div>
+                      <span>
+                        {metric.onTimeSubmissions} on time / {metric.lateSubmissions} late
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {studentMetrics.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                No student data available
+              </div>
+            )}
+            
+            <div className="mt-4 pt-2 border-t border-gray-100 text-xs text-gray-500">
+              <p>* Performance categories: High (≥85%), Medium (70-85%), Low (&lt;70%)</p>
+              <p>* Rankings based on average scores across all submitted assessments</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const toggleStudent = (studentId) => {
@@ -174,217 +1237,156 @@ const TeacherProgressTracker = () => {
     });
   };
 
-  const getSubmissionScoreClass = (score, passingScore) => {
-    if (score === null || score === undefined) return 'text-gray-400';
-    return score >= passingScore ? 'text-green-600' : 'text-red-600';
-  };
-
-  const calculateSubmissionScore = (submission) => {
-    if (!submission?.answers) return { total: 0, possible: 0 };
-
-    const totalAwarded = submission.answers.reduce((sum, answer) => {
-      if (answer.points_awarded !== null && answer.points_awarded !== undefined) {
-        return sum + (parseFloat(answer.points_awarded) || 0);
-      }
-      return sum;
-    }, 0);
-
-    const totalPossible = submission.assessment.questions.reduce((sum, question) => {
-      return sum + (parseFloat(question.points) || 0);
-    }, 0);
-
-    return { total: totalAwarded, possible: totalPossible };
-  };
-
-  const areAllQuestionsGraded = (submission) => {
-    if (!submission?.answers) return false;
-
-    return submission.answers.every((answer) => {
-      const hasPoints = answer.points_awarded !== null && answer.points_awarded !== undefined;
-      const isAutoGraded = submission.assessment?.questions?.find(
-        (q) => q.id === answer.question_id
-      )?.question_type === "multiple_choice" ||
-      submission.assessment?.questions?.find(
-        (q) => q.id === answer.question_id
-      )?.question_type === "true_false";
-
-      return hasPoints || (isAutoGraded && answer.is_auto_graded);
-    });
-  };
-
-  const fetchStudentSubmissions = async (assessment) => {
-    try {
-      const submissionsResponse = await getAssessmentSubmissions(assessment.id);
-      if (submissionsResponse.success) {
-        const detailedSubmissions = await Promise.all(
-          submissionsResponse.submissions.map(async (sub) => {
-            try {
-              const detailsResponse = await getSubmissionDetails(sub.id);
-              if (detailsResponse.success && detailsResponse.submission) {
-                const scores = calculateSubmissionScore(detailsResponse.submission);
-                const allGraded = areAllQuestionsGraded(detailsResponse.submission);
-
-                return {
-                  id: sub.id,
-                  student: {
-                    name: `${detailsResponse.submission.user?.first_name || ''} ${detailsResponse.submission.user?.last_name || ''}`.trim(),
-                    id: detailsResponse.submission.user?.id
-                  },
-                  status: allGraded ? 'graded' : 'Not Graded',
-                  score: scores.total,
-                  maxScore: scores.possible,
-                  percentage: scores.possible > 0 ? ((scores.total / scores.possible) * 100).toFixed(1) : '0',
-                  submit_time: sub.submit_time,
-                  isLate: detailsResponse.submission.is_late,
-                  fullSubmission: detailsResponse.submission
-                };
-              }
-            } catch (err) {
-              console.error(`Error fetching details for submission ${sub.id}:`, err);
-            }
-            return null;
-          })
-        );
-
-        setStudentSubmissions(prev => ({
-          ...prev,
-          [assessment.id]: detailedSubmissions.filter(Boolean)
-        }));
-      }
-    } catch (err) {
-      console.error("Error fetching student submissions:", err);
-    }
-  };
-
-  const countUniqueSubmissions = (assessment) => {
-    if (!assessment) return { submitted: 0, total: contextCourse?.studentCount || 0 };
+  const renderStudentModules = (studentId) => {
+    const studentInfo = studentData[studentId];
+    if (!studentInfo || !studentInfo.modules) return null;
     
-    const assessmentSubmissions = studentSubmissions[assessment.id] || [];
-    
-    const uniqueStudents = new Set();
-    assessmentSubmissions.forEach(submission => {
-      if (submission.student?.id) {
-        uniqueStudents.add(submission.student.id);
-      }
-    });
+    return (
+      <div className="divide-y divide-gray-200">
+        {Object.entries(studentInfo.modules).map(([moduleId, moduleInfo]) => {
+          const isExpanded = expandedStudentModules[`${studentId}-${moduleId}`];
+          const assessments = Object.values(moduleInfo.assessments || {});
+          
+          const totalAssessments = assessments.length;
+          const completedAssessments = assessments.filter(assessmentInfo => {
+            return assessmentInfo.submissions && assessmentInfo.submissions.length > 0;
+          }).length;
 
-    return {
-      submitted: uniqueStudents.size,
-      total: contextCourse?.studentCount || 0
-    };
-  };
+          return (
+            <div key={moduleId}>
+              <div 
+                className={`flex items-center justify-between px-6 py-4 cursor-pointer ${
+                  isExpanded ? "bg-gray-100" : "hover:bg-gray-50"
+                }`}
+                onClick={() => toggleStudentModule(studentId, moduleId)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200">
+                    <BookOpen className="text-gray-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-800">{moduleInfo.moduleName}</h4>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-gray-500">{totalAssessments} assessments</p>
+                      <span className="text-xs bg-gray-200 px-2 py-0.5 rounded-full text-gray-700">
+                        {completedAssessments}/{totalAssessments} completed
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <ChevronDown 
+                    className={`w-4 h-4 text-gray-400 transform transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} 
+                  />
+                </div>
+              </div>
 
-  const groupSubmissionsByStudent = (submissions) => {
-    return submissions.reduce((acc, submission) => {
-      const studentId = submission.student.id;
-      if (!acc[studentId]) {
-        acc[studentId] = {
-          student: submission.student,
-          submissions: []
-        };
-      }
-      acc[studentId].submissions.push(submission);
-      return acc;
-    }, {});
-  };
-
-  const getTypeStyle = (type) => {
-    switch (type?.toLowerCase()) {
-      case 'quiz':
-        return 'bg-blue-100 text-blue-800 border border-blue-200';
-      case 'exam':
-        return 'bg-purple-100 text-purple-800 border border-purple-200';
-      case 'assignment':
-        return 'bg-green-100 text-green-800 border border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border border-gray-200';
-    }
-  };
-
-  const getScoreStyle = (score, passingScore, maxScore) => {
-    if (score === null || score === undefined) return 'text-gray-400';
-    const percentage = (score / maxScore) * 100;
-    return percentage >= passingScore ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold';
-  };
-
-  const formatPassingPercentage = (passing, max) => {
-    if (!passing || !max) return 'N/A';
-    const percentage = (passing / max) * 100;
-    return `${percentage.toFixed(1)}%`;
-  };
-
-  const calculateAverageScore = (submissions) => {
-    if (!submissions || submissions.length === 0) return null;
-    
-    const studentBestScores = Object.values(
-      submissions.reduce((acc, submission) => {
-        const studentId = submission.student.id;
-        if (!acc[studentId] || (submission.score / submission.maxScore) > (acc[studentId].score / acc[studentId].maxScore)) {
-          acc[studentId] = {
-            score: submission.score,
-            maxScore: submission.maxScore
-          };
-        }
-        return acc;
-      }, {})
+              {isExpanded && (
+                <div className="bg-gray-50 border-b border-gray-200">
+                  {assessments.map((assessmentInfo, index) => {
+                    const assessment = assessmentInfo.assessment;
+                    
+                    const bestSubmission = findBestSubmission(
+                      studentId, 
+                      assessment.id, 
+                      Object.values(studentSubmissions).flat()
+                    );
+                    
+                    if (!bestSubmission) {
+                      return renderNoSubmissionItem(assessment, index);
+                    }
+                    
+                    return renderSubmissionItem(bestSubmission, index);
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     );
-
-    if (studentBestScores.length === 0) return null;
-
-    const sum = studentBestScores.reduce((total, score) => {
-      return total + ((score.score / score.maxScore) * 100);
-    }, 0);
-
-    return sum / studentBestScores.length;
   };
 
-  const calculateModuleAverage = (moduleId) => {
-    const assessments = moduleAssessments[moduleId] || [];
-    if (!assessments.length) return null;
+  const renderStudentList = () => {
+    if (!students || students.length === 0) {
+      return (
+        <div className="text-center p-8 bg-white rounded-lg shadow-sm border border-gray-200">
+          <Users className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Students</h3>
+          <p className="text-gray-500">There are no students enrolled in this course yet.</p>
+        </div>
+      );
+    }
 
-    const moduleSubmissions = assessments.flatMap(assessment => 
-      studentSubmissions[assessment.id] || []
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-6 bg-gradient-to-r from-[#212529] to-gray-800 text-white">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Enrolled Students</h2>
+          </div>
+          
+          <p className="text-sm text-gray-300 mb-4">
+            Track individual student performance and assessment completion status
+          </p>
+          
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search students..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-gray-700/50 text-white placeholder:text-gray-400 border border-gray-600 rounded-lg py-2.5 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-[#F6BA18] transition-all"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+          </div>
+        </div>
+        
+        <div className="divide-y divide-gray-200">
+          {students.map(student => {
+            const isExpanded = expandedStudents.has(student.id);
+            const studentInfo = studentData[student.id];
+
+            return (
+              <div key={student.id} className="divide-y divide-gray-100">
+                <div 
+                  className={`px-6 py-4 bg-white cursor-pointer ${
+                    isExpanded ? "bg-gray-50 border-l-4 border-[#F6BA18]" : "hover:bg-gray-50"
+                  }`}
+                  onClick={() => toggleStudent(student.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#212529] to-gray-700 flex items-center justify-center text-white shadow-sm">
+                        {student.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-800">{student.name}</h4>
+                        <p className="text-sm text-gray-500">{student.email}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500">
+                          {studentInfo?.modules ? Object.keys(studentInfo.modules).length : 0} modules
+                        </p>
+                      </div>
+                      <ChevronDown className={`w-5 h-5 text-gray-400 transform transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+                    </div>
+                  </div>
+                </div>
+                
+                {isExpanded && (
+                  <div className="bg-gray-50 border-b border-gray-200">
+                    {renderStudentModules(student.id)}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     );
-
-    const studentBestScores = {};
-    
-    moduleSubmissions.forEach(submission => {
-      const studentId = submission.student.id;
-      const assessmentId = submission.fullSubmission.assessment.id;
-      
-      if (!studentBestScores[studentId]) {
-        studentBestScores[studentId] = {};
-      }
-      
-      if (!studentBestScores[studentId][assessmentId] || 
-          (submission.score / submission.maxScore) > 
-          (studentBestScores[studentId][assessmentId].score / studentBestScores[studentId][assessmentId].maxScore)) {
-        studentBestScores[studentId][assessmentId] = {
-          score: submission.score,
-          maxScore: submission.maxScore
-        };
-      }
-    });
-
-    let totalAverage = 0;
-    let studentCount = 0;
-
-    Object.values(studentBestScores).forEach(studentScores => {
-      const assessmentScores = Object.values(studentScores);
-      if (assessmentScores.length > 0) {
-        const studentAverage = assessmentScores.reduce((sum, score) => 
-          sum + (score.score / score.maxScore * 100), 0) / assessmentScores.length;
-        totalAverage += studentAverage;
-        studentCount++;
-      }
-    });
-
-    return studentCount > 0 ? totalAverage / studentCount : null;
-  };
-
-  const allStudentsPassed = (moduleId) => {
-    const moduleAvg = calculateModuleAverage(moduleId);
-    return moduleAvg !== null && moduleAvg >= 75;
   };
 
   const renderStatCards = () => {
@@ -409,463 +1411,68 @@ const TeacherProgressTracker = () => {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-blue-800 text-sm font-medium mb-2">Modules</h3>
-              <p className="text-3xl font-bold text-blue-900">{modules.length}</p>
+              <h3 className="text-gray-700 text-sm font-medium mb-2">Modules</h3>
+              <p className="text-3xl font-bold text-[#212529]">{modules.length}</p>
             </div>
-            <div className="p-3 bg-blue-200 rounded-lg">
-              <BookOpen size={24} className="text-blue-700" />
+            <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
+              <BookOpen size={24} className="text-[#212529]" />
             </div>
           </div>
-          <p className="text-blue-600 text-xs mt-4">
+          <p className="text-gray-600 text-xs mt-4">
             {modules.length === 1 ? '1 module' : `${modules.length} modules`} in this course
           </p>
         </div>
         
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-purple-800 text-sm font-medium mb-2">Assessments</h3>
-              <p className="text-3xl font-bold text-purple-900">{totalAssessments}</p>
+              <h3 className="text-gray-700 text-sm font-medium mb-2">Assessments</h3>
+              <p className="text-3xl font-bold text-[#212529]">{totalAssessments}</p>
             </div>
-            <div className="p-3 bg-purple-200 rounded-lg">
-              <ClipboardList size={24} className="text-purple-700" />
+            <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
+              <ClipboardList size={24} className="text-[#212529]" />
             </div>
           </div>
-          <p className="text-purple-600 text-xs mt-4">
+          <p className="text-gray-600 text-xs mt-4">
             {totalAssessments === 1 ? '1 assessment' : `${totalAssessments} assessments`} created
           </p>
         </div>
         
-        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-emerald-800 text-sm font-medium mb-2">Average Score</h3>
-              <p className="text-3xl font-bold text-emerald-900">{overallAverage}%</p>
+              <h3 className="text-gray-700 text-sm font-medium mb-2">Average Score</h3>
+              <p className="text-3xl font-bold text-[#212529]">{overallAverage}%</p>
             </div>
-            <div className="p-3 bg-emerald-200 rounded-lg">
-              <Award size={24} className="text-emerald-700" />
+            <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
+              <Users size={24} className="text-[#212529]" />
             </div>
           </div>
-          <p className="text-emerald-600 text-xs mt-4">
+          <p className="text-gray-600 text-xs mt-4">
             Overall class average
           </p>
         </div>
         
-        <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-amber-800 text-sm font-medium mb-2">Submission Rate</h3>
-              <p className="text-3xl font-bold text-amber-900">{submissionRate}%</p>
+              <h3 className="text-gray-700 text-sm font-medium mb-2">Submission Rate</h3>
+              <p className="text-3xl font-bold text-[#212529]">{submissionRate}%</p>
             </div>
-            <div className="p-3 bg-amber-200 rounded-lg">
-              <Users size={24} className="text-amber-700" />
+            <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
+              <Users size={24} className="text-[#212529]" />
             </div>
           </div>
-          <p className="text-amber-600 text-xs mt-4">
+          <p className="text-gray-600 text-xs mt-4">
             {studentCount} {studentCount === 1 ? 'learner' : 'learners'} enrolled
           </p>
         </div>
       </div>
     );
   };
-
-  const renderModuleProgress = () => (
-    <div className="space-y-6">
-      {modules.map(module => {
-        const hasAssessments = moduleAssessments[module.module_id]?.length > 0;
-        const hasSubmissions = hasAssessments && moduleAssessments[module.module_id].some(
-          assessment => (studentSubmissions[assessment.id]?.length || 0) > 0
-        );
-        const moduleAverage = calculateModuleAverage(module.module_id);
-        const passedModuleStatus = allStudentsPassed(module.module_id);
-
-        return (
-          <div key={module.module_id} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-            <div 
-              className={`p-6 hover:bg-gray-50 transition-colors cursor-pointer flex justify-between items-center ${
-                expandedModules.has(module.module_id) ? 'border-b border-gray-200' : ''
-              }`}
-              onClick={() => toggleModule(module.module_id)}
-            >
-              <div className="flex-1">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 mr-4">
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                      passedModuleStatus ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {passedModuleStatus ? (
-                        <BookCheck size={24} />
-                      ) : (
-                        <AlertCircle size={24} />
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-800">{module.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{module.description}</p>
-                  </div>
-                </div>
-                
-                <div className="flex flex-wrap gap-3 mt-3 ml-16">
-                  <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {moduleAssessments[module.module_id]?.length || 0} Assessments
-                  </span>
-                  
-                  {moduleAverage !== null && (
-                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-                      moduleAverage >= 75
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      Average: {moduleAverage.toFixed(1)}%
-                    </span>
-                  )}
-                  
-                  {hasSubmissions && (
-                    <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-                      passedModuleStatus
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {passedModuleStatus ? 'All Passed' : 'Some Failed'}
-                    </span>
-                  )}
-                </div>
-              </div>
-              
-              <ChevronDown className={`w-6 h-6 text-gray-400 transform transition-transform duration-200 ${
-                expandedModules.has(module.module_id) ? "rotate-180" : ""
-              }`} />
-            </div>
-
-            {expandedModules.has(module.module_id) && (
-              <div className="p-6 bg-gray-50">
-                {moduleAssessments[module.module_id]?.length === 0 ? (
-                  <div className="text-center p-8 bg-white rounded-lg border-2 border-dashed border-gray-200">
-                    <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-1">No Assessments</h3>
-                    <p className="text-gray-500">This module doesn't have any assessments yet.</p>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="bg-white rounded-lg shadow-sm p-4 mb-4 border border-gray-200">
-                      <div className="grid grid-cols-6 gap-4 text-sm font-medium text-gray-500">
-                        <div>Assessment</div>
-                        <div>Type</div>
-                        <div>Due Date</div>
-                        <div>Submissions</div>
-                        <div>Average Score</div>
-                        <div>Pass Rate</div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      {(moduleAssessments[module.module_id] || []).map(assessment => (
-                        <div key={assessment.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden transition-all">
-                          <div 
-                            className="grid grid-cols-6 gap-4 items-center p-4 hover:bg-gray-50 cursor-pointer"
-                            onClick={() => {
-                              if (selectedAssessment?.id === assessment.id) {
-                                setSelectedAssessment(null);
-                              } else {
-                                setSelectedAssessment(assessment);
-                              }
-                            }}
-                          >
-                            <div className="font-medium text-gray-900">
-                              <div className="flex items-center">
-                                <ChevronDown 
-                                  className={`w-4 h-4 mr-2 text-gray-400 transform transition-transform duration-200 ${
-                                    selectedAssessment?.id === assessment.id ? "rotate-180" : ""
-                                  }`} 
-                                />
-                                {assessment.title}
-                              </div>
-                            </div>
-                            <div>
-                              <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${getTypeStyle(assessment.type)}`}>
-                                {assessment.type?.toUpperCase()}
-                              </span>
-                            </div>
-                            <div className="text-gray-600 text-sm">
-                              {new Date(assessment.due_date).toLocaleDateString(undefined, {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                              })}
-                            </div>
-                            <div>
-                              {(() => {
-                                const counts = countUniqueSubmissions(assessment);
-                                const submissionRate = (counts.submitted / Math.max(1, counts.total)) * 100;
-                                return (
-                                  <div className="flex items-center">
-                                    <div className="w-full bg-gray-200 rounded-full h-2 mr-2">
-                                      <div 
-                                        className="bg-blue-500 h-2 rounded-full" 
-                                        style={{width: `${submissionRate}%`}}
-                                      ></div>
-                                    </div>
-                                    <span className="text-xs text-gray-600">
-                                      {counts.submitted}/{counts.total}
-                                    </span>
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                            <div>
-                              <span className={`font-medium ${
-                                calculateAverageScore(studentSubmissions[assessment.id]) === null 
-                                  ? 'text-gray-400' 
-                                  : getSubmissionScoreClass(
-                                      calculateAverageScore(studentSubmissions[assessment.id]),
-                                      assessment.passing_score
-                                    )
-                              }`}>
-                                {calculateAverageScore(studentSubmissions[assessment.id]) === null 
-                                  ? '-' 
-                                  : `${calculateAverageScore(studentSubmissions[assessment.id]).toFixed(1)}%`
-                                }
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-gray-600 text-sm">
-                                {formatPassingPercentage(assessment.passing_score, assessment.max_score)}
-                              </span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedAssessment(
-                                    selectedAssessment?.id === assessment.id ? null : assessment
-                                  );
-                                }}
-                                className="px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors"
-                              >
-                                {selectedAssessment?.id === assessment.id ? "Hide" : "View"} Details
-                              </button>
-                            </div>
-                          </div>
-                          
-                          {selectedAssessment?.id === assessment.id && (
-                            <div className="border-t border-gray-200">
-                              {renderStudentSubmissions(assessment)}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  const renderStudentSubmissions = (assessment) => {
-    const submissions = studentSubmissions[assessment.id] || [];
-    const groupedSubmissions = groupSubmissionsByStudent(submissions);
-    
-    return (
-      <div className="p-6 bg-gray-50">
-        <div className="mb-4">
-          <h4 className="text-lg font-semibold text-gray-800 mb-2">Student Submissions</h4>
-          <p className="text-sm text-gray-600">
-            Review individual student performance for {assessment.title}
-          </p>
-        </div>
-        
-        {submissions.length === 0 ? (
-          <div className="text-center p-8 bg-white rounded-lg border-2 border-dashed border-gray-200">
-            <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No Submissions</h3>
-            <p className="text-gray-500">No students have submitted this assessment yet.</p>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Latest Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Best Score</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Attempts</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Submission</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {Object.entries(groupedSubmissions).length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
-                      No submissions found
-                    </td>
-                  </tr>
-                ) : (
-                  Object.values(groupedSubmissions).map((group) => {
-                    const latestSubmission = group.submissions[0];
-                    const bestSubmission = group.submissions.reduce((best, current) => {
-                      if (!best.score || (current.score > best.score)) return current;
-                      return best;
-                    }, group.submissions[0]);
-                    
-                    const scorePercentage = (bestSubmission.score / bestSubmission.maxScore) * 100;
-                    const isPassingScore = scorePercentage >= assessment.passing_score;
-                    
-                    return (
-                      <React.Fragment key={group.student.id}>
-                        <tr 
-                          className={`hover:bg-gray-50 cursor-pointer ${
-                            expandedStudents.has(group.student.id) ? 'bg-gray-50' : ''
-                          }`}
-                          onClick={() => toggleStudent(group.student.id)}
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <ChevronDown 
-                                className={`w-4 h-4 mr-2 text-gray-400 transform transition-transform duration-200 ${
-                                  expandedStudents.has(group.student.id) ? "rotate-180" : ""
-                                }`}
-                              />
-                              <div className="font-medium text-gray-900">{group.student.name}</div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              latestSubmission.status === 'graded' 
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {latestSubmission.status?.toUpperCase()}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="mr-2">
-                                <span className={getScoreStyle(
-                                  bestSubmission.score,
-                                  assessment.passing_score,
-                                  bestSubmission.maxScore
-                                )}>
-                                  {bestSubmission.score}/{bestSubmission.maxScore}
-                                </span>
-                              </div>
-                              <div className="w-16 bg-gray-200 rounded-full h-2">
-                                <div 
-                                  className={`h-2 rounded-full ${isPassingScore ? 'bg-green-500' : 'bg-red-500'}`} 
-                                  style={{width: `${scorePercentage}%`}}
-                                ></div>
-                              </div>
-                              <span className="ml-2 text-xs text-gray-500">
-                                ({scorePercentage.toFixed(1)}%)
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                            {group.submissions.length}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {new Date(latestSubmission.submit_time).toLocaleString()}
-                          </td>
-                        </tr>
-                        
-                        {expandedStudents.has(group.student.id) && (
-                          <tr>
-                            <td colSpan="5" className="px-6 py-4 bg-gray-50">
-                              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                                  <h5 className="text-sm font-medium text-gray-700">
-                                    Submission History - {group.student.name}
-                                  </h5>
-                                </div>
-                                <table className="min-w-full divide-y divide-gray-200">
-                                  <thead className="bg-gray-50">
-                                    <tr>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Attempt</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Submission Time</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-gray-200">
-                                    {group.submissions.map((submission, index) => {
-                                      const submissionPercentage = (submission.score / submission.maxScore) * 100;
-                                      const isPassed = submissionPercentage >= assessment.passing_score;
-                                      
-                                      return (
-                                        <tr key={submission.id} className="hover:bg-gray-50">
-                                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                            #{index + 1}
-                                          </td>
-                                          <td className="px-4 py-3 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                              <span className={getSubmissionScoreClass(
-                                                submission.score,
-                                                assessment.passing_score
-                                              )}>
-                                                {submission.score}/{submission.maxScore}
-                                              </span>
-                                              <div className="ml-2 w-12 bg-gray-200 rounded-full h-1.5">
-                                                <div 
-                                                  className={`h-1.5 rounded-full ${isPassed ? 'bg-green-500' : 'bg-red-500'}`} 
-                                                  style={{width: `${submissionPercentage}%`}}
-                                                ></div>
-                                              </div>
-                                            </div>
-                                          </td>
-                                          <td className="px-4 py-3 whitespace-nowrap">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                              submission.status === 'graded' 
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-yellow-100 text-yellow-800'
-                                            }`}>
-                                              {submission.status?.toUpperCase()}
-                                            </span>
-                                          </td>
-                                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                                            {new Date(submission.submit_time).toLocaleString()}
-                                            {submission.isLate && 
-                                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                LATE
-                                              </span>
-                                            }
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderHeader = () => (
-    <div>
-      <Header
-        title={contextCourse?.name || "Progress Tracker"}
-        subtitle={contextCourse?.code}
-      />
-      <div className="relative z-50">
-        <MobileNavBar navItems={navItems} />
-      </div>
-    </div>
-  );
 
   return (
     <div className="flex h-screen flex-col bg-gray-100">
@@ -885,7 +1492,7 @@ const TeacherProgressTracker = () => {
             <div className="flex flex-col items-center justify-center py-16 px-4 h-[60vh]">
               <AlertCircle size={48} className="text-red-500 mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Progress Data</h3>
-              <p className="text-gray-600 text-center mb-6">{error}</p>
+              <p className="text-gray-500 text-center mb-6">{error}</p>
               <button 
                 onClick={() => window.location.reload()}
                 className="px-6 py-2 bg-[#212529] text-white rounded-md hover:bg-[#F6BA18] hover:text-[#212529] transition-colors"
@@ -896,7 +1503,8 @@ const TeacherProgressTracker = () => {
           ) : (
             <>
               {renderStatCards()}
-              {renderModuleProgress()}
+              {renderPerformanceGraph()}
+              {renderStudentList()}
             </>
           )}
         </div>
