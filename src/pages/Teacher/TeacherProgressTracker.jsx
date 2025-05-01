@@ -1307,6 +1307,24 @@ const TeacherProgressTracker = () => {
     );
   };
 
+  const filteredStudents = useMemo(() => {
+    if (!students || students.length === 0) {
+      return [];
+    }
+
+    return students.filter(student => {
+      const matchesSearch = 
+        student.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        student.email.toLowerCase().includes(searchQuery.toLowerCase());
+        
+      if (!matchesSearch) return false;
+      
+      if (filterType === 'all') return true;
+      
+      return true;
+    });
+  }, [students, searchQuery, filterType]);
+
   const renderStudentList = () => {
     if (!students || students.length === 0) {
       return (
@@ -1342,72 +1360,87 @@ const TeacherProgressTracker = () => {
         </div>
         
         <div className="divide-y divide-gray-200">
-          {students.map(student => {
-            const isExpanded = expandedStudents.has(student.id);
-            const studentInfo = studentData[student.id];
+          {filteredStudents.length > 0 ? (
+            filteredStudents.map(student => {
+              const isExpanded = expandedStudents.has(student.id);
+              const studentInfo = studentData[student.id];
 
-            return (
-              <div key={student.id} className="divide-y divide-gray-100">
-                <div 
-                  className={`px-6 py-4 bg-white cursor-pointer ${
-                    isExpanded ? "bg-gray-50 border-l-4 border-[#F6BA18]" : "hover:bg-gray-50"
-                  }`}
-                  onClick={() => toggleStudent(student.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#212529] to-gray-700 flex items-center justify-center text-white shadow-sm">
-                        {student.name.charAt(0)}
+              return (
+                <div key={student.id} className="divide-y divide-gray-100">
+                  <div 
+                    className={`px-6 py-4 bg-white cursor-pointer ${
+                      isExpanded ? "bg-gray-50 border-l-4 border-[#F6BA18]" : "hover:bg-gray-50"
+                    }`}
+                    onClick={() => toggleStudent(student.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#212529] to-gray-700 flex items-center justify-center text-white shadow-sm">
+                          {student.name.charAt(0)}
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-800">{student.name}</h4>
+                          <p className="text-sm text-gray-500">{student.email}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-medium text-gray-800">{student.name}</h4>
-                        <p className="text-sm text-gray-500">{student.email}</p>
+                      
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500">
+                            {studentInfo?.modules ? Object.keys(studentInfo.modules).length : 0} modules
+                          </p>
+                        </div>
+                        <ChevronDown className={`w-5 h-5 text-gray-400 transform transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500">
-                          {studentInfo?.modules ? Object.keys(studentInfo.modules).length : 0} modules
-                        </p>
-                      </div>
-                      <ChevronDown className={`w-5 h-5 text-gray-400 transform transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
                     </div>
                   </div>
+                  
+                  {isExpanded && (
+                    <div className="bg-gray-50 border-b border-gray-200">
+                      {renderStudentModules(student.id)}
+                    </div>
+                  )}
                 </div>
-                
-                {isExpanded && (
-                  <div className="bg-gray-50 border-b border-gray-200">
-                    {renderStudentModules(student.id)}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              );
+            })
+          ) : (
+            <div className="py-8 text-center">
+              <Users className="mx-auto h-10 w-10 text-gray-400 mb-2" />
+              <p className="text-gray-500">No students match your search</p>
+            </div>
+          )}
         </div>
       </div>
     );
   };
 
-  const renderStatCards = () => {
-    const totalAssessments = Object.values(moduleAssessments).flat().length;
+  const calculateOverallStats = () => {
+    const totalPossibleSubmissions = students.length * Object.values(moduleAssessments).flat().length;
     const totalSubmissions = Object.values(studentSubmissions).flat().length;
-    
-    const submissionRate = studentCount > 0 ? 
-      (totalSubmissions / (totalAssessments * studentCount) * 100).toFixed(1) : 0;
-    
+    const submissionRate = totalPossibleSubmissions > 0 
+      ? ((totalSubmissions / totalPossibleSubmissions) * 100).toFixed(1) 
+      : '0.0';
     let totalScore = 0;
-    let totalCount = 0;
-    
-    modules.forEach(module => {
-      const moduleAvg = calculateModuleAverage(module.module_id);
-      if (moduleAvg !== null) {
-        totalScore += moduleAvg;
-        totalCount++;
+    let scoredSubmissions = 0;
+    Object.values(studentSubmissions).flat().forEach(submission => {
+      if (submission && submission.percentage) {
+        totalScore += parseFloat(submission.percentage);
+        scoredSubmissions++;
       }
     });
-    
-    const overallAverage = totalCount > 0 ? (totalScore / totalCount).toFixed(1) : 0;
+    const averageScore = scoredSubmissions > 0 
+      ? (totalScore / scoredSubmissions).toFixed(1) 
+      : '0.0';
+    return {
+      submissionRate,
+      averageScore,
+      totalAssessments: Object.values(moduleAssessments).flat().length,
+      totalSubmissions
+    };
+  };
+
+  const renderStatCards = () => {
+    const stats = calculateOverallStats();
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
@@ -1430,44 +1463,46 @@ const TeacherProgressTracker = () => {
           <div className="flex items-start justify-between">
             <div>
               <h3 className="text-gray-700 text-sm font-medium mb-2">Assessments</h3>
-              <p className="text-3xl font-bold text-[#212529]">{totalAssessments}</p>
+              <p className="text-3xl font-bold text-[#212529]">{stats.totalAssessments}</p>
             </div>
             <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
               <ClipboardList size={24} className="text-[#212529]" />
             </div>
           </div>
           <p className="text-gray-600 text-xs mt-4">
-            {totalAssessments === 1 ? '1 assessment' : `${totalAssessments} assessments`} created
+            {stats.totalAssessments === 1 ? '1 assessment' : `${stats.totalAssessments} assessments`} created
           </p>
         </div>
         
-        <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
+        <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200" 
+             title="Average score across all student submissions">
           <div className="flex items-start justify-between">
             <div>
               <h3 className="text-gray-700 text-sm font-medium mb-2">Average Score</h3>
-              <p className="text-3xl font-bold text-[#212529]">{overallAverage}%</p>
+              <p className="text-3xl font-bold text-[#212529]">{stats.averageScore}%</p>
             </div>
             <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
               <Users size={24} className="text-[#212529]" />
             </div>
           </div>
           <p className="text-gray-600 text-xs mt-4">
-            Overall class average
+            Average of all student scores
           </p>
         </div>
         
-        <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
+        <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200"
+             title="Percentage of assessments submitted out of total possible submissions">
           <div className="flex items-start justify-between">
             <div>
               <h3 className="text-gray-700 text-sm font-medium mb-2">Submission Rate</h3>
-              <p className="text-3xl font-bold text-[#212529]">{submissionRate}%</p>
+              <p className="text-3xl font-bold text-[#212529]">{stats.submissionRate}%</p>
             </div>
             <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
               <Users size={24} className="text-[#212529]" />
             </div>
           </div>
           <p className="text-gray-600 text-xs mt-4">
-            {studentCount} {studentCount === 1 ? 'learner' : 'learners'} enrolled
+            {stats.totalSubmissions} of {students.length * stats.totalAssessments} possible submissions
           </p>
         </div>
       </div>

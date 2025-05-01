@@ -424,7 +424,7 @@ const PerformanceTrendChart = ({ performanceData, title = "Student Performance T
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Search students..."
-                      className="w-full px-3 py-2 pl-9 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                      className="w-full px-3 py-2 pl-9 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-[#F6BA18] focus:border-transparent"
                     />
                     <Search size={16} className="absolute top-1/2 left-2.5 -translate-y-1/2 text-gray-400" />
                     {searchTerm && (
