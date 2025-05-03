@@ -93,25 +93,25 @@ const validateBirthDate = (date) => {
     return "Birth date is required";
   }
   const birthDate = new Date(date);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Create mutable date object that can be modified
+  const currentDate = new Date();
+  const today = new Date(currentDate.setHours(0, 0, 0, 0));
 
   if (birthDate > today) {
     return "Birth date cannot be in the future";
   }
 
-  // Calculate age
+  // Calculate age using the mutable date
   const age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && today.getDate() < birthDate.getDate())
-  ) {
-    age--;
-  }
+  const dayDiff = today.getDate() - birthDate.getDate();
 
-  if (age < 7) {
-    return "The minimum age is 7 years old";
+  // Adjust age if birthday hasn't occurred this year
+  const adjustedAge =
+    monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+
+  if (adjustedAge < 6) {
+    return "The minimum age is 6 years old";
   }
 
   return null;
