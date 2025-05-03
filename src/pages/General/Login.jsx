@@ -12,6 +12,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import MagicLinkLogin from "../Auth/MagicLinkLogin";
 import NumericCodeLogin from "../Auth/NumericCodeLogin";
 import PictureCodeLogin from "../Auth/PictureCodeLogin";
+import { validateEmail, validatePassword } from "../../utils/validationUtils";
 
 /**
  * Login component for user authentication.
@@ -41,7 +42,7 @@ function Login() {
     }
 
     if (touched.password) {
-      const passwordError = validatePassword(password);
+      const passwordError = validatePassword(password, true); // Pass true for login form
       setValidationErrors((prev) => ({ ...prev, password: passwordError }));
     }
   }, [email, password, touched]);
@@ -55,24 +56,6 @@ function Login() {
       recaptchaRef.current.reset();
     }
     setCaptchaResponse(null);
-  };
-
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) {
-      return "Email is required";
-    }
-    if (!emailRegex.test(email)) {
-      return "Please enter a valid email address";
-    }
-    return null;
-  };
-
-  const validatePassword = (password) => {
-    if (!password) {
-      return "Password is required";
-    }
-    return null;
   };
 
   // Handle input blur to mark fields as touched
@@ -97,7 +80,7 @@ function Login() {
 
     // Validate inputs before proceeding
     const emailError = validateEmail(email);
-    const passwordError = validatePassword(password);
+    const passwordError = validatePassword(password, true);
 
     const newValidationErrors = {
       email: emailError,

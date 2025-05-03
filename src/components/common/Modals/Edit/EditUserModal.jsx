@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { X, AlertTriangle } from "lucide-react";
 import { updateUser } from "../../../../services/userService";
+import {
+  validateEmail,
+  validateName,
+  validateMiddleInitial,
+  validateContactNo,
+  validateBirthDate,
+} from "../../../../utils/validationUtils";
 
 function EditUserModal({ user, onClose, onSave }) {
   const [editedUser, setEditedUser] = useState({ ...user });
@@ -13,35 +20,37 @@ function EditUserModal({ user, onClose, onSave }) {
     setEditedUser(user);
   }, [user]);
 
-  // Updated email validation function
-  const validateEmail = (email) => {
-    const allowedDomains = [
-      "gmail.com",
-      "yahoo.com",
-      "ust.edu.ph",
-      "hotmail.com",
-      "outlook.com",
-      "icloud.com",
-      "mail.com",
-      "protonmail.com",
-      "edu.ph"
-    ];
+  const validateForm = () => {
+    const errors = {};
 
-    if (!email) {
-      return "Email is required";
+    // Use imported validation functions
+    const firstNameError = validateName(editedUser.first_name, "First name");
+    if (firstNameError) errors.first_name = firstNameError;
+
+    const lastNameError = validateName(editedUser.last_name, "Last name");
+    if (lastNameError) errors.last_name = lastNameError;
+
+    const middleInitialError = validateMiddleInitial(editedUser.middle_initial);
+    if (middleInitialError) errors.middle_initial = middleInitialError;
+
+    const emailError = validateEmail(editedUser.email);
+    if (emailError) errors.email = emailError;
+
+    const contactError = validateContactNo(editedUser.contact_no);
+    if (contactError) errors.contact_no = contactError;
+
+    const birthDateError = validateBirthDate(editedUser.birth_date);
+    if (birthDateError) errors.birth_date = birthDateError;
+
+    if (!editedUser.school_id) {
+      errors.school_id = "School is required";
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return "Please enter a valid email address";
+    if (!editedUser.role) {
+      errors.role = "Role is required";
     }
 
-    const domain = email.split("@")[1].toLowerCase();
-    if (!allowedDomains.some(allowedDomain => domain === allowedDomain || domain.endsWith(`.${allowedDomain}`))) {
-      return "Please use a valid email domain (e.g. gmail.com, yahoo.com, ust.edu.ph)";
-    }
-
-    return null;
+    return errors;
   };
 
   const handleInputChange = (e) => {
@@ -53,49 +62,54 @@ function EditUserModal({ user, onClose, onSave }) {
     if (name === "contact_no") {
       // Clean and format contact number
       let cleanedValue = value.replace(/\D/g, "");
-
-      if (!cleanedValue.startsWith("0") && !value.startsWith("+63")) {
+      if (!cleanedValue.startsWith("0")) {
         cleanedValue = "0" + cleanedValue;
       }
-
       cleanedValue = cleanedValue.slice(0, 11);
 
-      // Format with hyphens
-      let formattedContactNo = cleanedValue;
-      if (formattedContactNo.length > 4) {
-        formattedContactNo = formattedContactNo.replace(/^(\d{4})/, "$1-");
-      }
-      if (formattedContactNo.length > 8) {
-        formattedContactNo = formattedContactNo.replace(/-(\d{3})/, "-$1-");
+      // Validate the cleaned value
+      const error = validateContactNo(cleanedValue);
+      if (error) {
+        setFieldErrors((prev) => ({ ...prev, contact_no: error }));
+      } else {
+        setFieldErrors((prev) => ({ ...prev, contact_no: null }));
       }
 
       setEditedUser((prev) => ({
         ...prev,
-        [name]: formattedContactNo,
+        [name]: cleanedValue,
       }));
-    } else if (name === "middle_initial") {
-      // Force uppercase and limit to 2 characters
-      setEditedUser((prev) => ({
-        ...prev,
-        [name]: value.toUpperCase().slice(0, 2),
-      }));
-      return; // Exit early after handling middle initial
     } else {
+      // Handle other field validations
+      let error = null;
+      switch (name) {
+        case "first_name":
+        case "last_name":
+          error = validateName(
+            value,
+            name === "first_name" ? "First name" : "Last name"
+          );
+          break;
+        case "email":
+          error = validateEmail(value);
+          break;
+        case "birth_date":
+          error = validateBirthDate(value);
+          break;
+        case "middle_initial":
+          error = validateMiddleInitial(value);
+          break;
+      }
+
+      setFieldErrors((prev) => ({
+        ...prev,
+        [name]: error,
+      }));
+
       setEditedUser((prev) => ({
         ...prev,
         [name]: value,
       }));
-    }
-
-    // Clear field error when user types
-    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
-
-    // Validate email as user types
-    if (name === "email") {
-      const emailError = validateEmail(value);
-      if (emailError) {
-        setFieldErrors((prev) => ({ ...prev, email: emailError }));
-      }
     }
   };
 
@@ -104,10 +118,9 @@ function EditUserModal({ user, onClose, onSave }) {
     setLoading(true);
     setFieldErrors({});
 
-    // Validate email before submission
-    const emailError = validateEmail(editedUser.email);
-    if (emailError) {
-      setFieldErrors((prev) => ({ ...prev, email: emailError }));
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
       setLoading(false);
       return;
     }
@@ -144,34 +157,32 @@ function EditUserModal({ user, onClose, onSave }) {
   // Determine available role options based on current user role
   const getRoleOptions = () => {
     const currentRole = editedUser.role;
-    
+
     if (currentRole === "teacher" || currentRole === "student_teacher") {
       // Teachers and student teachers can only switch between these two roles
       return [
         { value: "teacher", label: "Teacher" },
-        { value: "student_teacher", label: "Student Teacher" }
+        { value: "student_teacher", label: "Student Teacher" },
       ];
     } else if (currentRole === "learner") {
       // Learners cannot change their role, so return only their current role
-      return [
-        { value: "learner", label: "Learner" }
-      ];
+      return [{ value: "learner", label: "Learner" }];
     } else if (currentRole === "admin") {
       // Admins can choose any role
       return [
         { value: "admin", label: "Admin" },
         { value: "teacher", label: "Teacher" },
         { value: "learner", label: "Learner" },
-        { value: "student_teacher", label: "Student Teacher" }
+        { value: "student_teacher", label: "Student Teacher" },
       ];
     }
-    
+
     // Default case - all options
     return [
       { value: "admin", label: "Admin" },
       { value: "teacher", label: "Teacher" },
       { value: "learner", label: "Learner" },
-      { value: "student_teacher", label: "Student Teacher" }
+      { value: "student_teacher", label: "Student Teacher" },
     ];
   };
 
@@ -414,14 +425,16 @@ function EditUserModal({ user, onClose, onSave }) {
                   } rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
                 >
                   <option value="">Select Role</option>
-                  {roleOptions.map(option => (
+                  {roleOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
                 </select>
                 {fieldErrors.role && (
-                  <p className="text-red-500 text-xs mt-1">{fieldErrors.role}</p>
+                  <p className="text-red-500 text-xs mt-1">
+                    {fieldErrors.role}
+                  </p>
                 )}
               </div>
             ) : (
@@ -434,11 +447,7 @@ function EditUserModal({ user, onClose, onSave }) {
                   <div className="mt-1 px-3 py-2 border border-gray-300 bg-gray-50 rounded-md text-gray-500">
                     {roleOptions[0].label}
                   </div>
-                  <input 
-                    type="hidden" 
-                    name="role" 
-                    value={editedUser.role} 
-                  />
+                  <input type="hidden" name="role" value={editedUser.role} />
                 </div>
               )
             )}

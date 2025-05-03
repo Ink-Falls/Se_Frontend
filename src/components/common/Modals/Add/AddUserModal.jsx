@@ -1,6 +1,15 @@
 import React, { useState } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
 import { createUser } from "../../../../services/userService";
+import {
+  validateEmail,
+  validatePassword,
+  validateName,
+  validateMiddleInitial,
+  validateContactNo,
+  validateBirthDate,
+  validateConfirmPassword,
+} from "../../../../utils/validationUtils";
 
 const AddUserModal = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -23,127 +32,38 @@ const AddUserModal = ({ onClose, onSubmit }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const validateEmail = (email) => {
-    const allowedDomains = [
-      "gmail.com",
-      "yahoo.com",
-      "ust.edu.ph",
-      "hotmail.com",
-      "outlook.com",
-      "icloud.com",
-      "mail.com",
-      "protonmail.com",
-      "edu.ph",
-    ];
-
-    if (!email) {
-      return "Email is required";
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return "Please enter a valid email address";
-    }
-
-    const domain = email.split("@")[1].toLowerCase();
-    if (
-      !allowedDomains.some(
-        (allowedDomain) =>
-          domain === allowedDomain || domain.endsWith(`.${allowedDomain}`)
-      )
-    ) {
-      return "Please use a valid email domain (e.g. gmail.com, yahoo.com, ust.edu.ph)";
-    }
-
-    return null;
-  };
-
-  const validatePassword = (password) => {
-    if (!password) return "Password is required";
-
-    const minLength = 8;
-    const hasNumber = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    const hasLetter = /[a-zA-Z]/.test(password);
-
-    if (password.length < minLength) {
-      return "Password must be at least 8 characters long";
-    }
-    if (!hasNumber) {
-      return "Password must contain at least one number";
-    }
-    if (!hasSpecialChar) {
-      return "Password must contain at least one special character";
-    }
-    if (!hasLetter) {
-      return "Password must contain at least one letter";
-    }
-    return null;
-  };
-
   const validateForm = () => {
     const errors = {};
 
-    // Name validations
-    if (!/^[a-zA-Z\s]{2,30}$/.test(formData.first_name.trim())) {
-      errors.first_name =
-        "First name must be 2-30 characters and contain only letters";
-    }
+    // Use imported validation functions
+    const firstNameError = validateName(formData.first_name, "First name");
+    if (firstNameError) errors.first_name = firstNameError;
 
-    if (!/^[a-zA-Z\s]{2,30}$/.test(formData.last_name.trim())) {
-      errors.last_name =
-        "Last name must be 2-30 characters and contain only letters";
-    }
+    const lastNameError = validateName(formData.last_name, "Last name");
+    if (lastNameError) errors.last_name = lastNameError;
 
-    if (
-      formData.middle_initial &&
-      !/^[A-Z]{1,2}$/.test(formData.middle_initial)
-    ) {
-      errors.middle_initial = "Middle initial must be 1-2 uppercase letters";
-    }
+    const middleInitialError = validateMiddleInitial(formData.middle_initial);
+    if (middleInitialError) errors.middle_initial = middleInitialError;
 
-    // Email validation using the updated function
     const emailError = validateEmail(formData.email);
-    if (emailError) {
-      errors.email = emailError;
-    }
+    if (emailError) errors.email = emailError;
 
-    // Contact number validation
-    const cleanedPhone = formData.contact_no.replace(/[-\s()]/g, "");
-    if (!cleanedPhone) {
-      errors.contact_no = "Contact number is required";
-    } else if (!cleanedPhone.startsWith("09")) {
-      errors.contact_no = "Contact number must start with 09";
-    } else if (cleanedPhone.length !== 11) {
-      errors.contact_no = "Contact number must be 11 digits";
-    }
+    const contactError = validateContactNo(formData.contact_no);
+    if (contactError) errors.contact_no = contactError;
 
-    // Birth date validation
-    const birthDate = new Date(formData.birth_date);
-    const today = new Date();
-    if (birthDate > today) {
-      errors.birth_date = "Birth date cannot be in the future";
-    }
+    const birthDateError = validateBirthDate(formData.birth_date);
+    if (birthDateError) errors.birth_date = birthDateError;
 
-    // Enhanced password validation
-    if (!formData.password) {
-      errors.password = "Password is required";
-    } else if (formData.password.length < 8) {
-      errors.password = "Password must be at least 8 characters long";
-    } else if (!/\d/.test(formData.password)) {
-      errors.password = "Password must contain at least one number";
-    } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) {
-      errors.password = "Password must contain at least one special character";
-    }
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) errors.password = passwordError;
 
-    // Confirm password validation
-    if (!formData.confirm_password) {
-      errors.confirm_password = "Please confirm your password";
-    } else if (formData.password !== formData.confirm_password) {
-      errors.confirm_password = "Passwords do not match";
-    }
+    const confirmPasswordError = validateConfirmPassword(
+      formData.confirm_password,
+      formData.password
+    );
+    if (confirmPasswordError) errors.confirm_password = confirmPasswordError;
 
-    // Student teacher specific validations
+    // Role-specific validations
     if (formData.role === "student_teacher") {
       if (!formData.section || formData.section.length < 2) {
         errors.section = "Section must be at least 2 characters";
@@ -153,13 +73,20 @@ const AddUserModal = ({ onClose, onSubmit }) => {
       }
     }
 
+    if (!formData.school_id) {
+      errors.school_id = "School is required";
+    }
+
+    if (!formData.role) {
+      errors.role = "Role is required";
+    }
+
     return errors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate email before submission using the new validation function
     const emailError = validateEmail(formData.email);
     if (emailError) {
       setFieldErrors((prev) => ({ ...prev, email: emailError }));
@@ -179,7 +106,6 @@ const AddUserModal = ({ onClose, onSubmit }) => {
     try {
       const { confirm_password, ...userData } = formData;
 
-      // Clean data before sending to API
       if (userData.contact_no) {
         userData.contact_no = userData.contact_no.replace(/[-\s()]/g, "");
       }
@@ -195,18 +121,15 @@ const AddUserModal = ({ onClose, onSubmit }) => {
     } catch (err) {
       console.error("User creation error:", err);
 
-      // Handle specific API errors
       if (err.message === "Email already exists") {
         setFieldErrors({
           email: "Email already exists. Please use a different email.",
         });
       } else if (err.message.includes("validation")) {
-        // Handle validation errors from API
         setFieldErrors({
           general: "Please check your input and try again.",
         });
       } else {
-        // Handle general errors
         setError(err.message || "Failed to create user. Please try again.");
       }
     } finally {
@@ -219,72 +142,42 @@ const AddUserModal = ({ onClose, onSubmit }) => {
     let newValue = value;
     let error = null;
 
-    // Handle special cases first
     if (name === "contact_no") {
-      // Only allow numbers and limit to 11 chars
       newValue = value.replace(/\D/g, "").slice(0, 11);
 
-      // Validate number
-      if (!newValue) {
-        error = "Contact number is required";
-      } else if (!newValue.startsWith("09")) {
-        error = "Contact number must start with 09";
-      } else if (newValue.length !== 11) {
-        error = "Contact number must be 11 digits";
-      }
+      error = validateContactNo(newValue);
     } else if (name === "middle_initial") {
       newValue = value.toUpperCase().slice(0, 2);
-      if (newValue && !/^[A-Z]{1,2}$/.test(newValue)) {
-        error = "Middle initial must be 1-2 uppercase letters";
-      }
+      error = validateMiddleInitial(newValue);
     } else {
-      // Handle other validations
       switch (name) {
         case "first_name":
         case "last_name":
-          if (value && !/^[a-zA-Z\s]{2,30}$/.test(value.trim())) {
-            error = `${
-              name === "first_name" ? "First" : "Last"
-            } name must be 2-30 characters and contain only letters`;
-          }
+          error = validateName(
+            value,
+            name === "first_name" ? "First name" : "Last name"
+          );
           break;
         case "email":
           error = validateEmail(value);
           break;
         case "password":
-          if (!value) {
-            error = "Password is required";
-          } else if (value.length < 8) {
-            error = "Password must be at least 8 characters long";
-          } else if (!/\d/.test(value)) {
-            error = "Password must contain at least one number";
-          } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
-            error = "Password must contain at least one special character";
-          }
+          error = validatePassword(value);
           break;
         case "confirm_password":
-          if (value !== formData.password) {
-            error = "Passwords do not match";
-          }
+          error = validateConfirmPassword(value, formData.password);
           break;
         case "birth_date":
-          const birthDate = new Date(value);
-          const today = new Date();
-          if (birthDate > today) {
-            error = "Birth date cannot be in the future";
-          }
+          error = validateBirthDate(value);
           break;
       }
     }
 
-    // Update form data
     setFormData((prev) => ({ ...prev, [name]: newValue }));
 
-    // Update field errors
     setFieldErrors((prev) => ({
       ...prev,
       [name]: error,
-      // Special case for confirm_password when password changes
       ...(name === "password" && formData.confirm_password
         ? {
             confirm_password:
@@ -297,11 +190,10 @@ const AddUserModal = ({ onClose, onSubmit }) => {
   };
 
   const handleMiddleInitialChange = (e) => {
-    // Only allow up to 2 letters and convert to uppercase
     const value = e.target.value
-      .replace(/[^A-Za-z]/g, "") // Remove non-letters
-      .substring(0, 2) // Limit to 2 characters
-      .toUpperCase(); // Convert to uppercase
+      .replace(/[^A-Za-z]/g, "")
+      .substring(0, 2)
+      .toUpperCase();
 
     setFormData((prev) => ({
       ...prev,
