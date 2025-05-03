@@ -2,38 +2,27 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/images/ARALKADEMYLOGO.png";
 import { checkEnrollmentStatus } from "../../services/enrollmentCheckService";
+import { validateEmail } from "../../utils/validationUtils";
 
 function Enrollment() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("Unknown");
   const [statusColor, setStatusColor] = useState("#F6BA18");
   const [errorMessage, setErrorMessage] = useState("");
-  const [isValidEmail, setIsValidEmail] = useState(true);
   const navigate = useNavigate();
-
-  const validateEmail = (email) => {
-    const validTLDs = ["com", "edu", "ph", "org", "net", "gov", "edu.ph"];
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return false;
-    }
-    const domain = email.split("@")[1];
-    return validTLDs.some((tld) => domain.toLowerCase().endsWith(`.${tld}`));
-  };
 
   const handleEmailChange = (e) => {
     const newEmail = e.target.value;
     setEmail(newEmail);
-    setIsValidEmail(validateEmail(newEmail));
-    setErrorMessage("");
+    const error = validateEmail(newEmail);
+    setErrorMessage(error || "");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMessage("");
-
-    if (!validateEmail(email)) {
-      setErrorMessage("Please enter a valid email address");
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setErrorMessage(emailError);
       setStatus("Error");
       setStatusColor("gray");
       return;
@@ -158,17 +147,10 @@ function Enrollment() {
                     onChange={handleEmailChange}
                     required
                     className={`mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[0.6vw] w-full border ${
-                      !isValidEmail && email
-                        ? "border-red-500"
-                        : "border-[#64748B]"
+                      errorMessage ? "border-red-500" : "border-[#64748B]"
                     } rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]`}
                     placeholder="Enter your email"
                   />
-                  {!isValidEmail && email && (
-                    <p className="text-red-500 mt-2 text-[2.5vw] lg:text-[0.8vw]">
-                      Please enter a valid email address
-                    </p>
-                  )}
                   {errorMessage && (
                     <p className="text-red-500 mt-2 text-[2.5vw] lg:text-[0.8vw]">
                       {errorMessage}

@@ -1,21 +1,30 @@
 import React, { useState } from "react";
 import { requestMagicLink } from "../../services/authService";
+import { validateEmail } from "../../utils/validationUtils";
 
 function MagicLinkLogin() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [touched, setTouched] = useState(false);
+  const [validationError, setValidationError] = useState(null);
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) {
-      return "Email is required";
+  const handleEmailChange = (e) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    if (touched) {
+      const error = validateEmail(newEmail);
+      setValidationError(error);
+      setError(error);
     }
-    if (!emailRegex.test(email)) {
-      return "Please enter a valid email address";
-    }
-    return null;
+  };
+
+  const handleBlur = () => {
+    setTouched(true);
+    const error = validateEmail(email);
+    setValidationError(error);
+    setError(error);
   };
 
   const handleSubmit = async (e) => {
@@ -23,6 +32,7 @@ function MagicLinkLogin() {
     const emailError = validateEmail(email);
 
     if (emailError) {
+      setValidationError(emailError);
       setError(emailError);
       return;
     }
@@ -67,12 +77,6 @@ function MagicLinkLogin() {
       onSubmit={handleSubmit}
       className="space-y-[1vw] w-full flex flex-col justify-center flex-1"
     >
-      {error && (
-        <p className="text-red-500 text-left text-[3vw] lg:text-[0.8vw] max-lg:text-[2.5vw]" data-testid="error-message">
-          {error}
-        </p>
-      )}
-
       <div className="w-full">
         <label
           htmlFor="email"
@@ -84,11 +88,21 @@ function MagicLinkLogin() {
           type="email"
           id="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={handleEmailChange}
+          onBlur={handleBlur}
           required
-          className="mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[1vw] xl:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[1vw] xl:px-[0.8vw] xl:py-[0.8vw] w-full border border-[#64748B] rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]"
+          className={`mt-[1vw] text-[3vw] px-[3vw] py-[2vw] lg:mt-[0.2vw] lg:text-[1vw] xl:text-[0.8vw] max-lg:text-[2.5vw] lg:px-[1vw] lg:py-[1vw] xl:px-[0.8vw] xl:py-[0.8vw] w-full border ${
+            touched && validationError
+              ? "border-red-500 ring-1 ring-red-500"
+              : "border-[#64748B]"
+          } rounded-md focus:outline-none focus:ring-2 focus:ring-[#64748B] placeholder-[#64748B] text-[#212529]`}
           placeholder="Enter your email"
         />
+        {touched && validationError && (
+          <p className="text-red-500 text-left text-[0.8vw] max-lg:text-[2.5vw] mt-1">
+            {validationError}
+          </p>
+        )}
       </div>
 
       {/* Spacer div that appears on mobile and medium screens */}

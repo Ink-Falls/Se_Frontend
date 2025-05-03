@@ -4,6 +4,15 @@ import logo from "../../assets/images/ARALKADEMYLOGO.png";
 import { createEnrollment } from "../../services/enrollmentService";
 import { Eye, EyeOff } from "lucide-react";
 import ConsentForm from "../../components/enrollment/ConsentForm";
+import {
+  validateName,
+  validateMiddleInitial,
+  validateContactNo,
+  validateBirthDate,
+  validatePassword,
+  validateConfirmPassword,
+  validateEmail,
+} from "../../utils/validationUtils";
 
 function NewEnrollment() {
   const [formData, setFormData] = useState({
@@ -25,144 +34,31 @@ function NewEnrollment() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showConsent, setShowConsent] = useState(true);
-  const [isSubmitSuccess, setIsSubmitSuccess] = useState(false); // New state for tracking successful submission
+  const [isSubmitSuccess, setIsSubmitSuccess] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Always show the consent when first loading the page
     setShowConsent(true);
   }, []);
 
-  // Add individual validation functions
-  const validateName = (name, fieldName) => {
-    if (!name.trim()) {
-      return `${fieldName} is required`;
-    }
-    if (!/^[a-zA-Z\s]{2,30}$/.test(name)) {
-      return `${fieldName} must be 2-30 characters and contain only letters`;
-    }
-    return null;
-  };
-
-  const validateMiddleInitial = (mi) => {
-    if (mi && !/^[A-Z]{1,2}$/.test(mi)) {
-      return "Middle initial must be 1-2 uppercase letters";
-    }
-    return null;
-  };
-
-  const validateContactNo = (contactNo) => {
-    const cleanedContactNo = contactNo.replace(/[-\s()]/g, "");
-    if (!cleanedContactNo) {
-      return "Contact number is required";
-    }
-    if (!cleanedContactNo.startsWith("09")) {
-      return "Contact number must start with 09";
-    }
-    if (cleanedContactNo.length !== 11) {
-      return "Contact number must be 11 digits";
-    }
-    return null;
-  };
-
-  const validateBirthDate = (date) => {
-    if (!date) {
-      return "Birth date is required";
-    }
-    const birthDate = new Date(date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (birthDate > today) {
-      return "Birth date cannot be in the future";
-    }
-    return null;
-  };
-
-  const validatePassword = (password) => {
-    if (!password) {
-      return "Password is required";
-    }
-    if (password.length < 8) {
-      return "Password must be at least 8 characters long";
-    }
-    if (!/\d/.test(password)) {
-      return "Password must contain at least one number";
-    }
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      return "Password must contain at least one special character";
-    }
-    if (!/[a-zA-Z]/.test(password)) {
-      return "Password must contain at least one letter";
-    }
-    return null;
-  };
-
-  const validateConfirmPassword = (confirmPassword, password) => {
-    if (!confirmPassword) {
-      return "Please confirm your password";
-    }
-    if (confirmPassword !== password) {
-      return "Passwords do not match";
-    }
-    return null;
-  };
-
-  const validateEmail = (email) => {
-    const allowedDomains = [
-      "gmail.com",
-      "yahoo.com",
-      "ust.edu.ph",
-      "hotmail.com",
-      "outlook.com",
-      "icloud.com",
-      "mail.com",
-      "protonmail.com",
-      "edu.ph",
-    ];
-
-    if (!email) {
-      return "Email is required";
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return "Please enter a valid email address";
-    }
-
-    const domain = email.split("@")[1].toLowerCase();
-    if (
-      !allowedDomains.some(
-        (allowedDomain) =>
-          domain === allowedDomain || domain.endsWith(`.${allowedDomain}`)
-      )
-    ) {
-      return "Please use a valid email domain (e.g. gmail.com, yahoo.com, ust.edu.ph)";
-    }
-
-    return null;
-  };
-
-  // Modify handleInputChange to include real-time validation
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     let newValue = value;
     let error = null;
 
-    // Handle special cases first
     if (name === "middle_initial") {
       newValue = value.toUpperCase().slice(0, 2);
       error = validateMiddleInitial(newValue);
     } else if (name === "contact_no") {
       let cleanedValue = value.replace(/\D/g, "");
-      if (cleanedValue.startsWith("63")) {
-        cleanedValue = "0" + cleanedValue.slice(2);
-      }
-      if (!cleanedValue.startsWith("0") && !value.startsWith("+63")) {
+      if (!cleanedValue.startsWith("0")) {
         cleanedValue = "0" + cleanedValue;
+      }
+      if (!cleanedValue.startsWith("09")) {
+        cleanedValue = "09";
       }
       cleanedValue = cleanedValue.slice(0, 11);
 
-      // Format with hyphens
       newValue = cleanedValue;
       if (newValue.length > 4) {
         newValue = newValue.replace(/^(\d{4})/, "$1-");
@@ -172,7 +68,6 @@ function NewEnrollment() {
       }
       error = validateContactNo(newValue);
     } else {
-      // Handle other validations
       switch (name) {
         case "first_name":
           error = validateName(value, "First name");
@@ -195,14 +90,11 @@ function NewEnrollment() {
       }
     }
 
-    // Update form data
     setFormData((prev) => ({ ...prev, [name]: newValue }));
 
-    // Update errors immediately
     setErrors((prev) => ({
       ...prev,
       [name]: error,
-      // Special case for confirm_password when password changes
       ...(name === "password" && formData.confirm_password
         ? {
             confirm_password: validateConfirmPassword(
@@ -214,7 +106,6 @@ function NewEnrollment() {
     }));
   };
 
-  // Keep validateForm for final submission check
   const validateForm = () => {
     const errors = {};
 
@@ -237,7 +128,6 @@ function NewEnrollment() {
       errors.year_level = "Please select your year level";
     }
 
-    // Remove null errors
     Object.keys(errors).forEach((key) => {
       if (errors[key] === null) {
         delete errors[key];
@@ -253,7 +143,6 @@ function NewEnrollment() {
     setSuccessMessage("");
     setIsLoading(true);
 
-    // Validate form
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -261,7 +150,6 @@ function NewEnrollment() {
       return;
     }
 
-    // Prepare data for submission
     const dataToSend = {
       ...formData,
       contact_no: formData.contact_no.replace(/[-\s()]/g, ""),
@@ -270,7 +158,7 @@ function NewEnrollment() {
     try {
       await createEnrollment(dataToSend);
       setSuccessMessage("Enrollment submitted successfully!");
-      setIsSubmitSuccess(true); // Set submission as successful
+      setIsSubmitSuccess(true);
       setFormData({
         first_name: "",
         last_name: "",
@@ -297,10 +185,8 @@ function NewEnrollment() {
           general: error.message || "Network error. Please try again.",
         });
       }
-      setIsLoading(false); // Only set loading false on error
-      // Don't set isSubmitSuccess to true if there was an error
+      setIsLoading(false);
     }
-    // Don't set isLoading to false on success - keep the button disabled
   };
 
   const handleAcceptConsent = () => {
@@ -308,7 +194,7 @@ function NewEnrollment() {
   };
 
   const handleDeclineConsent = () => {
-    navigate("/Enrollment"); // Go back to enrollment page
+    navigate("/Enrollment");
   };
 
   return (
@@ -320,7 +206,6 @@ function NewEnrollment() {
             "url(https://upload.wikimedia.org/wikipedia/commons/7/7b/400_Year_old_Beauty.jpg)",
         }}
       >
-        {/* Show consent modal if needed */}
         {showConsent && (
           <ConsentForm
             onAccept={handleAcceptConsent}
@@ -328,7 +213,6 @@ function NewEnrollment() {
           />
         )}
 
-        {/* Semi-transparent black overlay */}
         <div className="absolute inset-0 bg-black opacity-30"></div>
 
         <header className="relative z-10 py-[3vw] px-[4vw] lg:py-[1.5vw] lg:px-[2vw] bg-[#121212] text-[#F6BA18] flex justify-between items-center shadow-xl">
@@ -348,7 +232,6 @@ function NewEnrollment() {
           </button>
         </header>
 
-        {/* Only show the form if consent has been accepted */}
         {!showConsent && (
           <div className="relative z-10 flex items-center justify-center min-h-screen pb-[15vw] md:pb-[10vw] lg:pb-0">
             <div className="mt-[10vw] md:mt-[15vw] lg:mt-[0vw] flex flex-col lg:flex-row items-center rounded-lg">
@@ -369,7 +252,6 @@ function NewEnrollment() {
                   </p>
                 )}
 
-                {/* Enrollment Form */}
                 <form onSubmit={handleSubmit} className="space-y-[1.5vw]">
                   <div className="flex flex-wrap gap-[2vw]">
                     {[
