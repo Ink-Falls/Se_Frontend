@@ -1417,9 +1417,6 @@ const TeacherProgressTracker = () => {
   const calculateOverallStats = () => {
     const totalPossibleSubmissions = students.length * Object.values(moduleAssessments).flat().length;
     const totalSubmissions = Object.values(studentSubmissions).flat().length;
-    const submissionRate = totalPossibleSubmissions > 0 
-      ? ((totalSubmissions / totalPossibleSubmissions) * 100).toFixed(1) 
-      : '0.0';
     let totalScore = 0;
     let scoredSubmissions = 0;
     Object.values(studentSubmissions).flat().forEach(submission => {
@@ -1432,10 +1429,8 @@ const TeacherProgressTracker = () => {
       ? (totalScore / scoredSubmissions).toFixed(1) 
       : '0.0';
     return {
-      submissionRate,
       averageScore,
       totalAssessments: Object.values(moduleAssessments).flat().length,
-      totalSubmissions
     };
   };
 
@@ -1443,7 +1438,7 @@ const TeacherProgressTracker = () => {
     const stats = calculateOverallStats();
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
           <div className="flex items-start justify-between">
             <div>
@@ -1487,22 +1482,6 @@ const TeacherProgressTracker = () => {
           </div>
           <p className="text-gray-600 text-xs mt-4">
             Average of all student scores
-          </p>
-        </div>
-        
-        <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200"
-             title="Percentage of assessments submitted out of total possible submissions">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-gray-700 text-sm font-medium mb-2">Submission Rate</h3>
-              <p className="text-3xl font-bold text-[#212529]">{stats.submissionRate}%</p>
-            </div>
-            <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
-              <Users size={24} className="text-[#212529]" />
-            </div>
-          </div>
-          <p className="text-gray-600 text-xs mt-4">
-            {stats.totalSubmissions} of {students.length * stats.totalAssessments} possible submissions
           </p>
         </div>
       </div>

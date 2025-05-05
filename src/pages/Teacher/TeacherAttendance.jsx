@@ -90,7 +90,6 @@ const TeacherAttendance = () => {
     averageAttendance: 0,
     totalStudents: 0,
     totalAssessments: 0,
-    averageSubmissionRate: 0,
   });
 
   // Add new states for attendance tracking
@@ -377,14 +376,11 @@ const TeacherAttendance = () => {
     
     // Calculate overall stats
     const avgAttendance = totalStudentsCount > 0 ? totalAttendanceRate / totalStudentsCount : 0;
-    const submissionRate = (assessmentsList.length * totalStudentsCount) > 0 ?
-      totalSubmissions / (assessmentsList.length * totalStudentsCount) : 0;
       
     setOverallStats({
       averageAttendance: avgAttendance * 100,
       totalStudents: totalStudentsCount,
       totalAssessments: assessmentsList.length,
-      averageSubmissionRate: submissionRate * 100
     });
   };
 
@@ -726,7 +722,7 @@ const TeacherAttendance = () => {
 
   // Header for statistics display - updated color scheme
   const renderStatistics = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
       <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
         <div className="flex items-start justify-between">
           <div>
@@ -764,19 +760,6 @@ const TeacherAttendance = () => {
           </div>
         </div>
         <p className="text-gray-600 text-xs mt-4">Published assessments</p>
-      </div>
-
-      <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-gray-700 text-sm font-medium mb-2">Submission Rate</h3>
-            <p className="text-3xl font-bold text-[#212529]">{overallStats.averageSubmissionRate.toFixed(1)}%</p>
-          </div>
-          <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
-            <Award size={24} className="text-[#212529]" />
-          </div>
-        </div>
-        <p className="text-gray-600 text-xs mt-4">Assessment completion rate</p>
       </div>
     </div>
   );
@@ -1187,42 +1170,48 @@ const TeacherAttendance = () => {
           />
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
         </div>
-        <div className="flex flex-wrap items-center gap-2 mt-4">
-          <span className="text-gray-400 text-sm">Filter by:</span>
-          <button
-            onClick={() => setFilterType("all")}
-            className={`px-3 py-1.5 rounded-full text-sm ${
-              filterType === "all"
-                ? "bg-[#F6BA18] text-[#212529] font-medium"
-                : "bg-gray-700/50 text-white/70 hover:bg-gray-700"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setFilterType("present")}
-            className={`px-3 py-1.5 rounded-full text-sm ${
-              filterType === "present"
-                ? "bg-[#F6BA18] text-[#212529] font-medium"
-                : "bg-gray-700/50 text-white/70 hover:bg-gray-700"
-            }`}
-          >
-            High Attendance
-          </button>
-          <button
-            onClick={() => setFilterType("absent")}
-            className={`px-3 py-1.5 rounded-full text-sm ${
-              filterType === "absent"
-                ? "bg-[#F6BA18] text-[#212529] font-medium"
-                : "bg-gray-700/50 text-white/70 hover:bg-gray-700"
-            }`}
-          >
-            Low Attendance
-          </button>
+
+        {/* Updated filter section with responsive design */}
+        <div className="mt-4">
+          <div className="text-gray-400 text-sm mb-2">Filter by:</div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setFilterType("all")}
+              className={`px-3 py-1.5 rounded-full text-xs sm:text-sm flex-1 sm:flex-none ${
+                filterType === "all"
+                  ? "bg-[#F6BA18] text-[#212529] font-medium"
+                  : "bg-gray-700/50 text-white/70 hover:bg-gray-700"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setFilterType("present")}
+              className={`px-3 py-1.5 rounded-full text-xs sm:text-sm flex-1 sm:flex-none ${
+                filterType === "present"
+                  ? "bg-[#F6BA18] text-[#212529] font-medium"
+                  : "bg-gray-700/50 text-white/70 hover:bg-gray-700"
+              }`}
+            >
+              <span className="sm:hidden">High</span>
+              <span className="hidden sm:inline">High Attendance</span>
+            </button>
+            <button
+              onClick={() => setFilterType("absent")}
+              className={`px-3 py-1.5 rounded-full text-xs sm:text-sm flex-1 sm:flex-none ${
+                filterType === "absent"
+                  ? "bg-[#F6BA18] text-[#212529] font-medium"
+                  : "bg-gray-700/50 text-white/70 hover:bg-gray-700"
+              }`}
+            >
+              <span className="sm:hidden">Low</span>
+              <span className="hidden sm:inline">Low Attendance</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Student listing - updated design */}
+      {/* Student listing - updated design with improved overflow handling */}
       <div className="overflow-y-auto bg-gray-50" style={{ maxHeight: "calc(100vh - 370px)" }}>
         {isRefreshing ? (
           <div className="flex items-center justify-center py-12">
@@ -1252,57 +1241,73 @@ const TeacherAttendance = () => {
               return (
                 <div
                   key={student.id}
-                  className={`px-6 py-4 transition-all bg-white ${
+                  className={`px-4 py-4 transition-all bg-white ${
                     selectedStudent?.id === student.id
                       ? "bg-gray-50 border-l-4 border-[#F6BA18]"
                       : "hover:bg-gray-50"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    {/* Content Container - modified to use flex-grow instead of flex and add min-width */}
                     <div 
-                      className="flex-grow flex items-center gap-3 cursor-pointer"
+                      className="flex-grow min-w-0 flex items-center gap-3 cursor-pointer"
                       onClick={() => handleStudentSelect(student)}
                     >
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#212529] to-gray-700 flex items-center justify-center text-sm font-medium text-white shadow-sm">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-[#212529] to-gray-700 flex items-center justify-center text-sm font-medium text-white shadow-sm">
                         {student.name[0]}
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="text-sm font-medium text-gray-900">{student.name}</h3>
+                      <div className="min-w-0 flex-grow">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">{student.name}</h3>
                         <p className="text-xs text-gray-500 truncate">{student.email}</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-4">
-                      <div className="flex-shrink-0">
-                        <div className="flex flex-col items-end">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <div className="w-20 h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full rounded-full transition-all duration-500 ease-out"
-                                style={{ 
-                                  width: `${attendancePercentage}%`, 
-                                  backgroundColor: attendanceColor 
-                                }}
-                              ></div>
-                            </div>
-                            <span className="text-sm font-semibold" style={{ color: attendanceColor }}>
-                              {attendancePercentage}%
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-500">
-                            {attendanceInfo.submissionCount} submissions
-                          </p>
+                    {/* Actions Section - modified to be more compact and handle overflow */}
+                    <div className="flex-shrink-0 flex items-center gap-2">
+                      <div className="hidden sm:flex items-center gap-2">
+                        <div className="w-16 h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full rounded-full transition-all duration-500 ease-out"
+                            style={{ 
+                              width: `${attendancePercentage}%`, 
+                              backgroundColor: attendanceColor 
+                            }}
+                          ></div>
                         </div>
+                        <span className="text-xs font-semibold whitespace-nowrap" style={{ color: attendanceColor }}>
+                          {attendancePercentage}%
+                        </span>
                       </div>
                       
                       <button
                         onClick={(e) => handleViewSubmissionHistory(student, e)}
-                        className="p-2 rounded-md border border-gray-200 bg-white hover:bg-[#F6BA18] hover:text-[#212529] hover:border-[#F6BA18] text-gray-600 transition-colors"
+                        className="p-1.5 rounded-md border border-gray-200 bg-white hover:bg-[#F6BA18] hover:text-[#212529] hover:border-[#F6BA18] text-gray-600 transition-colors flex-shrink-0"
                         title="View submission history"
                       >
-                        <FileText size={18} />
+                        <FileText size={16} />
                       </button>
                     </div>
+                  </div>
+                  
+                  {/* Mobile view stats - show below name for small screens */}
+                  <div className="sm:hidden mt-2 flex items-center gap-2">
+                    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full rounded-full transition-all duration-500 ease-out"
+                        style={{ 
+                          width: `${attendancePercentage}%`, 
+                          backgroundColor: attendanceColor 
+                        }}
+                      ></div>
+                    </div>
+                    <span className="text-xs font-semibold whitespace-nowrap" style={{ color: attendanceColor }}>
+                      {attendancePercentage}%
+                    </span>
+                  </div>
+                  
+                  {/* Submission count - moved below */}
+                  <div className="text-xs text-gray-500 mt-1">
+                    {attendanceInfo.submissionCount} submissions
                   </div>
                 </div>
               );

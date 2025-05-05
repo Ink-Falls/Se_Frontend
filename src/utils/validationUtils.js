@@ -14,6 +14,7 @@ const validateEmail = (email) => {
     "outlook.com",
     "edu.ph",
     "aralkademy.com",
+    "example.com"
   ];
 
   const domain = email.split("@")[1].toLowerCase();

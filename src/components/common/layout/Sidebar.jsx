@@ -1,6 +1,5 @@
-// src/components/common/Sidebar/Sidebar.jsx  (Assuming it's a common component)
 import { ChevronFirst, ChevronLast, LogOut } from "lucide-react";
-import PropTypes from 'prop-types'; // Add prop types
+import PropTypes from 'prop-types';
 import React, { createContext, useContext, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "/src/assets/images/ARALKADEMYLOGO.png";
@@ -10,35 +9,21 @@ const SidebarContext = createContext();
 
 /**
  * Sidebar component for navigation.
- *
- * @component
- * @param {object} props - The component's props.
- * @param {Array<object>} props.navItems - An array of navigation items.  Each item should have `icon`, `text`, and `route` properties.
- * @param {boolean} props.isSidebarOpen - Controls whether the sidebar is open (for mobile responsiveness).
- * @param {function} props.setIsSidebarOpen - Function to toggle the sidebar's open/closed state.
- * @returns {JSX.Element} The Sidebar component.
  */
 export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
-  const [expanded, setExpanded] = useState(true); // Controls the expanded/collapsed state of the sidebar (desktop)
-  const [isLoggingOut, setIsLoggingOut] = useState(false); // Add loading state
-  const location = useLocation();  // Get the current route path
-  const navigate = useNavigate();   // For programmatic navigation
-  const { logout, user } = useAuth(); // Add useAuth hook
+  const [expanded, setExpanded] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
-  /**
-   * Handles user logout.
-   * @async
-   * @function handleLogout
-   */
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
       await logout();
-      // Use navigate and force reload
       window.location.replace('/login');
     } catch (error) {
       console.error('Logout failed:', error);
-      // Force redirect to login even if logout fails
       window.location.replace('/login'); 
     } finally {
       setIsLoggingOut(false);
@@ -47,60 +32,81 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
 
   return (
     <aside
-      className={`fixed lg:relative h-screen flex justify-center items-center bg-gray-100 z-50 transform transition-transform duration-300 ease-in-out ${
+      className={`fixed lg:relative h-screen z-50 transform transition-transform duration-300 ease-in-out ${
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       } lg:translate-x-0`}
     >
-      <nav className="h-full flex flex-col bg-[#212529] border-r">
-        <div className="p-5 pt-7 pb-1 flex justify-between items-center">
-          <img
-            src={logo}
-            className={`overflow-hidden transition-all duration-300 ease-out ${
-              expanded ? "w-40" : "w-0"
-            }`}
-            alt="ARALKADEMY Logo"
-          />
-          <button
-            onClick={() => setExpanded((curr) => !curr)}
-            className="p-1 rounded-lg bg-gray-50 hover:bg-gray-100 border-2 border-gray-300"
-          >
-            {expanded ? <ChevronFirst /> : <ChevronLast />}
-          </button>
+      <nav className={`h-full flex flex-col ${expanded ? 'w-60' : 'w-[70px]'} transition-all duration-300 bg-gradient-to-b from-[#1c1f23] to-[#212529] shadow-xl border-r border-gray-800/30 overflow-hidden`}>
+        {/* Enhanced header with better logo placement */}
+        <div className="p-4 flex flex-col items-center border-b border-gray-800/40">
+          <div className="flex w-full justify-between items-center mb-4">
+            <div className={`transition-all duration-300 ease-out overflow-hidden ${expanded ? "w-36" : "w-0"}`}>
+              <img
+                src={logo}
+                className="max-h-9 object-contain"
+                alt="ARALKADEMY Logo"
+              />
+            </div>
+            <button
+              onClick={() => setExpanded((curr) => !curr)}
+              className="p-1.5 rounded-lg bg-gray-800/40 hover:bg-gray-700/50 text-gray-400 hover:text-white transition-all border border-gray-700/50"
+            >
+              {expanded ? <ChevronFirst size={18} /> : <ChevronLast size={18} />}
+            </button>
+          </div>
+          
+          {/* Decorative accent bar */}
+          <div className={`h-1 bg-gradient-to-r from-[#F6BA18]/20 via-[#F6BA18] to-[#F6BA18]/20 rounded-full transition-all ${
+            expanded ? "w-full" : "w-10"
+          }`}></div>
         </div>
 
-        <SidebarContext.Provider
-          value={{ expanded, currentPath: location.pathname }}
-        >
-          <ul className="flex-1 px-3">
-            {navItems.map((item) => (
+        <SidebarContext.Provider value={{ expanded, currentPath: location.pathname }}>
+          {/* Navigation section with consistent spacing */}
+          <ul className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-hide">
+            {navItems.map((item, index) => (
               <SidebarItem
-                key={item.text}  // Use a unique key
+                key={item.text}
                 icon={item.icon}
                 text={item.text}
                 route={item.route}
+                isFirst={index === 0}
+                isLast={index === navItems.length - 1}
               />
             ))}
           </ul>
         </SidebarContext.Provider>
 
-        <div className="mt-auto px-3 py-3">
+        {/* Enhanced logout section */}
+        <div className="mt-auto border-t border-gray-800/40 px-3 py-4">
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="flex w-full py-3 px-4 my-5 font-medium items-center text-gray-50 hover:bg-[#F6BA18] hover:text-black rounded-md p-2 transition-colors group"
+            className={`flex w-full py-2.5 px-3 items-center text-gray-400 hover:bg-gray-800/50 hover:text-white rounded-md transition-all ${
+              expanded ? "justify-start" : "justify-center"
+            } focus:outline-none focus:ring-2 focus:ring-[#F6BA18]/50 focus:ring-offset-1 focus:ring-offset-gray-800/10`}
           >
             {isLoggingOut ? (
-              <div className="flex items-center justify-center w-full gap-2">
-                <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                <span>Logging out...</span>
+              <div className={`flex items-center justify-center ${expanded ? "w-full" : ""} gap-2`}>
+                <div className="animate-spin h-5 w-5 border-2 border-gray-500 border-t-white rounded-full"></div>
+                {expanded && <span>Logging out...</span>}
               </div>
             ) : (
               <>
-                <LogOut className="mr-1" size={20} />
-                {expanded && <span>Logout</span>}
+                <LogOut size={20} className={expanded ? "mr-2.5" : ""} />
+                <span className={`transition-all duration-300 overflow-hidden ${
+                  expanded ? "w-24 opacity-100" : "w-0 opacity-0"
+                }`}>Logout</span>
               </>
             )}
           </button>
+          
+          {/* Branding footer - subtle branding element */}
+          {expanded && (
+            <div className="mt-4 pt-2 text-center border-t border-gray-800/20">
+              <span className="text-xs text-gray-600">ARALKADEMY</span>
+            </div>
+          )}
         </div>
       </nav>
     </aside>
@@ -120,36 +126,58 @@ Sidebar.propTypes = {
 
 /**
  * SidebarItem component for individual navigation items.
- *
- * @component
- * @param {object} props - The component's props.
- * @param {JSX.Element} props.icon - The icon for the navigation item.
- * @param {string} props.text - The text label for the navigation item.
- * @param {string} props.route - The route path for the navigation item.
- * @returns {JSX.Element} A single sidebar item.
  */
-export function SidebarItem({ icon, text, route }) {
+export function SidebarItem({ icon, text, route, isFirst, isLast }) {
   const { expanded, currentPath } = useContext(SidebarContext);
-  const isActive = currentPath === route; // Check if the current route matches the item's route
+  const isActive = currentPath === route;
 
   return (
-    <li
-      className={`relative flex items-center py-3 px-4 my-4 font-medium rounded-md cursor-pointer transition-all group ${
-        isActive
-          ? "bg-[#F6BA18] text-black"
-          : "hover:bg-[#F6BA18] text-gray-50 hover:text-black"
-      }`}
-    >
-      <Link to={route} className="flex items-center w-full">
-        {icon}
-        <span
-          className={`overflow-hidden transition-all duration-300 ease-out ${
-            expanded ? "w-52 ml-3" : "w-0"
-          }`}
-        >
-          {text}
-        </span>
+    <li className="relative">
+      <Link 
+        to={route} 
+        className={`flex items-center py-2.5 px-3 rounded-md cursor-pointer transition-all hover:bg-opacity-80 ${
+          isActive
+            ? "bg-[#F6BA18] text-[#212529] font-medium"
+            : "text-gray-400 hover:bg-gray-800/40 hover:text-white"
+        } focus:outline-none focus:ring-2 ${isActive ? 'focus:ring-[#F6BA18]/70' : 'focus:ring-gray-700'}`}
+      >
+        <div className="flex items-center">
+          <span className={`flex-shrink-0 ${isActive ? 'animate-subtle-pulse' : ''}`}>
+            {React.cloneElement(icon, { size: 20 })}
+          </span>
+          <span
+            className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-out ${
+              expanded ? "ml-3 w-40 opacity-100" : "w-0 opacity-0"
+            }`}
+          >
+            {text}
+          </span>
+        </div>
       </Link>
+
+      {/* Add subtle connector lines between menu items when expanded */}
+      {expanded && !isLast && !isActive && (
+        <div className="absolute left-[18px] top-[44px] w-px h-3 bg-gray-800/30"></div>
+      )}
+      
+      {/* Enhanced tooltip with arrow for collapsed state */}
+      {!expanded && (
+        <div className="absolute left-full rounded-md px-2.5 py-1.5 ml-2 bg-gray-900 text-white text-xs invisible opacity-0 -translate-x-3 transition-all group-hover:visible group-hover:opacity-100 group-hover:translate-x-0 whitespace-nowrap z-50 shadow-lg">
+          {text}
+          <div className="absolute top-1/2 -left-1 w-2 h-2 bg-gray-900 transform rotate-45 -translate-y-1/2"></div>
+        </div>
+      )}
     </li>
   );
 }
+
+SidebarItem.propTypes = {
+  icon: PropTypes.element.isRequired,
+  text: PropTypes.string.isRequired,
+  route: PropTypes.string.isRequired,
+  isFirst: PropTypes.bool,
+  isLast: PropTypes.bool
+};
+
+// Add this CSS to your global styles file or add inline styles with a <style> tag somewhere in your app
+// This will hide the scrollbar for the navigation menu
