@@ -1042,8 +1042,6 @@ const TeacherProgressTracker = () => {
             
             <div className="space-y-6">
               {moduleMetrics.map((moduleMetric) => {
-                const averageScore = moduleMetric.averageScore.toFixed(1);
-                
                 const getScoreColor = (score) => {
                   if (score >= 80) return 'text-green-600';
                   if (score >= 70) return 'text-blue-600'; 
@@ -1059,13 +1057,6 @@ const TeacherProgressTracker = () => {
                           {moduleMetric.totalAssessments} {moduleMetric.totalAssessments === 1 ? 'assessment' : 'assessments'} • 
                           {moduleMetric.submittedCount} submissions
                         </p>
-                      </div>
-                      
-                      <div className="text-right">
-                        <div className={`text-lg font-semibold ${getScoreColor(moduleMetric.averageScore)}`}>
-                          {averageScore}%
-                        </div>
-                        <div className="text-xs text-gray-500">from best submissions</div>
                       </div>
                     </div>
                     
@@ -1415,19 +1406,39 @@ const TeacherProgressTracker = () => {
   };
 
   const calculateOverallStats = () => {
+    // Count all possible submissions (students × assessments)
     const totalPossibleSubmissions = students.length * Object.values(moduleAssessments).flat().length;
     const totalSubmissions = Object.values(studentSubmissions).flat().length;
+    
     let totalScore = 0;
-    let scoredSubmissions = 0;
-    Object.values(studentSubmissions).flat().forEach(submission => {
-      if (submission && submission.percentage) {
-        totalScore += parseFloat(submission.percentage);
-        scoredSubmissions++;
-      }
+    let assessmentCount = 0;
+    
+    // Get all assessments
+    const allAssessments = Object.values(moduleAssessments).flat();
+    
+    // For each student and assessment combination, find the best submission or count as zero
+    students.forEach(student => {
+      allAssessments.forEach(assessment => {
+        assessmentCount++; // Count each student-assessment pair
+        
+        // Find the best submission for this student and assessment
+        const bestSubmission = findBestSubmission(
+          student.id,
+          assessment.id,
+          Object.values(studentSubmissions).flat()
+        );
+        
+        // Add the score (or zero if no submission)
+        const score = bestSubmission ? parseFloat(bestSubmission.percentage) : 0;
+        totalScore += score;
+      });
     });
-    const averageScore = scoredSubmissions > 0 
-      ? (totalScore / scoredSubmissions).toFixed(1) 
+    
+    // Calculate the average including zeros
+    const averageScore = assessmentCount > 0 
+      ? (totalScore / assessmentCount).toFixed(1) 
       : '0.0';
+      
     return {
       averageScore,
       totalAssessments: Object.values(moduleAssessments).flat().length,
