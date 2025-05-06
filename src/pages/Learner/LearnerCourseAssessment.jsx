@@ -309,8 +309,14 @@ const LearnerCourseAssessment = () => {
         return sum + (parseInt(answer.points_awarded) || 0);
       }, 0) || 0;
 
-    const percentage = (score / totalPoints) * 100;
-    const isPassed = percentage >= assessment.passing_score;
+    // Calculate percentage based on max score
+    const maxPossibleScore = assessment.max_score || totalPoints;
+    const percentage = (score / maxPossibleScore) * 100;
+    
+    // Compare against passing score to determine if passed
+    const passingScore = assessment.passing_score || 0;
+    const passingPercentage = (passingScore / maxPossibleScore) * 100;
+    const isPassed = percentage >= passingPercentage;
 
     return (
       <div className="flex flex-col items-end">
@@ -324,7 +330,7 @@ const LearnerCourseAssessment = () => {
               {score}
             </span>
             <span className="text-base md:text-lg text-gray-500">
-              /{totalPoints}
+              /{maxPossibleScore}
             </span>
           </div>
           {submission.status === "graded" && (
@@ -342,11 +348,10 @@ const LearnerCourseAssessment = () => {
         {submission.status === "graded" && (
           <div className="text-xs text-gray-500 mt-1">
             {isPassed ? (
-              <span>Passed ({percentage.toFixed(1)})</span>
+              <span>Passed ({percentage.toFixed(1)}%)</span>
             ) : (
               <span>
-                Need {assessment.passing_score - percentage.toFixed(1)} more to
-                pass
+                Need {(passingPercentage - percentage).toFixed(1)}% more to pass
               </span>
             )}
           </div>
@@ -371,12 +376,12 @@ const LearnerCourseAssessment = () => {
     if (!submission?.answers) return 0;
 
     const earnedPoints = submission.answers.reduce(
-      (total, answer) => total + (answer.points_awarded || 0),
+      (total, answer) => total + (parseFloat(answer.points_awarded) || 0),
       0
     );
 
     const totalPoints = submission.assessment.questions.reduce(
-      (total, question) => total + (question.points || 0),
+      (total, question) => total + (parseFloat(question.points) || 0),
       0
     );
 
@@ -386,7 +391,9 @@ const LearnerCourseAssessment = () => {
   const checkAssessmentPassed = (assessment, submission) => {
     if (!submission || submission.status !== "graded") return false;
     const score = calculateAssessmentScore(submission);
-    return score >= assessment.passing_score;
+    // Compare against passing score percentage
+    const passingPercentage = assessment.passing_score;
+    return score >= passingPercentage;
   };
 
   const checkModuleCompleted = (moduleId) => {

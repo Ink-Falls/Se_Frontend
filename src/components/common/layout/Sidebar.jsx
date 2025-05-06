@@ -37,9 +37,9 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
       } lg:translate-x-0`}
     >
       <nav className={`h-full flex flex-col ${expanded ? 'w-60' : 'w-[70px]'} transition-all duration-300 bg-gradient-to-b from-[#1c1f23] to-[#212529] shadow-xl border-r border-gray-800/30 overflow-hidden`}>
-        {/* Enhanced header with better logo placement */}
+        {/* Header with logo and toggle button - removed decorative accent bar */}
         <div className="p-4 flex flex-col items-center border-b border-gray-800/40">
-          <div className="flex w-full justify-between items-center mb-4">
+          <div className="flex w-full justify-between items-center">
             <div className={`transition-all duration-300 ease-out overflow-hidden ${expanded ? "w-36" : "w-0"}`}>
               <img
                 src={logo}
@@ -54,11 +54,6 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
               {expanded ? <ChevronFirst size={18} /> : <ChevronLast size={18} />}
             </button>
           </div>
-          
-          {/* Decorative accent bar */}
-          <div className={`h-1 bg-gradient-to-r from-[#F6BA18]/20 via-[#F6BA18] to-[#F6BA18]/20 rounded-full transition-all ${
-            expanded ? "w-full" : "w-10"
-          }`}></div>
         </div>
 
         <SidebarContext.Provider value={{ expanded, currentPath: location.pathname }}>
@@ -77,7 +72,7 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
           </ul>
         </SidebarContext.Provider>
 
-        {/* Enhanced logout section */}
+        {/* Enhanced logout section - removed branding footer */}
         <div className="mt-auto border-t border-gray-800/40 px-3 py-4">
           <button
             onClick={handleLogout}
@@ -100,13 +95,6 @@ export default function Sidebar({ navItems, isSidebarOpen, setIsSidebarOpen }) {
               </>
             )}
           </button>
-          
-          {/* Branding footer - subtle branding element */}
-          {expanded && (
-            <div className="mt-4 pt-2 text-center border-t border-gray-800/20">
-              <span className="text-xs text-gray-600">ARALKADEMY</span>
-            </div>
-          )}
         </div>
       </nav>
     </aside>

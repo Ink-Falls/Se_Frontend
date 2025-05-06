@@ -51,6 +51,7 @@ const TeacherProgressTracker = () => {
   const [studentStats, setStudentStats] = useState({});
   const [showPerformanceGraph, setShowPerformanceGraph] = useState(false);
   const [performanceTrendData, setPerformanceTrendData] = useState(null);
+  const [selectedModule, setSelectedModule] = useState(null);
 
   const navItems = [
     { text: "Home", icon: <Home size={20} />, route: "/Teacher/Dashboard" },
@@ -858,6 +859,44 @@ const TeacherProgressTracker = () => {
       
       let completedAssessments = 0;
       let totalAssessments = 0;
+      
+      if (selectedModule) {
+        const moduleAsms = moduleAssessments[selectedModule.module_id] || [];
+        totalAssessments = moduleAsms.length;
+        
+        if (studentData[student.id]?.modules[selectedModule.module_id]?.assessments) {
+          Object.values(studentData[student.id].modules[selectedModule.module_id].assessments).forEach(assessmentInfo => {
+            const bestSubmission = findBestSubmission(
+              student.id,
+              assessmentInfo.assessment.id,
+              Object.values(studentSubmissions).flat()
+            );
+            
+            if (bestSubmission) {
+              completedAssessments++;
+            }
+          });
+        }
+      } else {
+        Object.values(moduleAssessments).forEach(moduleAsms => {
+          totalAssessments += moduleAsms.length;
+        });
+        
+        Object.values(studentData[student.id]?.modules || {}).forEach(moduleInfo => {
+          Object.values(moduleInfo.assessments || {}).forEach(assessmentInfo => {
+            const bestSubmission = findBestSubmission(
+              student.id,
+              assessmentInfo.assessment.id,
+              Object.values(studentSubmissions).flat()
+            );
+            
+            if (bestSubmission) {
+              completedAssessments++;
+            }
+          });
+        });
+      }
+      
       let onTimeSubmissions = 0;
       let lateSubmissions = 0;
       
@@ -865,31 +904,53 @@ const TeacherProgressTracker = () => {
       let mediumPerformance = 0;
       let lowPerformance = 0;
       
-      Object.values(studentData[student.id]?.modules || {}).forEach(moduleInfo => {
-        Object.values(moduleInfo.assessments || {}).forEach(assessmentInfo => {
-          totalAssessments++;
-          
-          const bestSubmission = findBestSubmission(
-            student.id,
-            assessmentInfo.assessment.id,
-            Object.values(studentSubmissions).flat()
-          );
-          
-          if (bestSubmission) {
-            completedAssessments++;
-            if (bestSubmission.isLate) {
-              lateSubmissions++;
-            } else {
-              onTimeSubmissions++;
-            }
+      if (selectedModule) {
+        if (studentData[student.id]?.modules[selectedModule.module_id]) {
+          Object.values(studentData[student.id].modules[selectedModule.module_id].assessments || {}).forEach(assessmentInfo => {
+            const bestSubmission = findBestSubmission(
+              student.id,
+              assessmentInfo.assessment.id,
+              Object.values(studentSubmissions).flat()
+            );
             
-            const score = parseFloat(bestSubmission.percentage) || 0;
-            if (score >= 85) highPerformance++;
-            else if (score >= 70) mediumPerformance++;
-            else lowPerformance++;
-          }
+            if (bestSubmission) {
+              if (bestSubmission.isLate) {
+                lateSubmissions++;
+              } else {
+                onTimeSubmissions++;
+              }
+              
+              const score = parseFloat(bestSubmission.percentage) || 0;
+              if (score >= 85) highPerformance++;
+              else if (score >= 70) mediumPerformance++;
+              else lowPerformance++;
+            }
+          });
+        }
+      } else {
+        Object.values(studentData[student.id]?.modules || {}).forEach(moduleInfo => {
+          Object.values(moduleInfo.assessments || {}).forEach(assessmentInfo => {
+            const bestSubmission = findBestSubmission(
+              student.id,
+              assessmentInfo.assessment.id,
+              Object.values(studentSubmissions).flat()
+            );
+            
+            if (bestSubmission) {
+              if (bestSubmission.isLate) {
+                lateSubmissions++;
+              } else {
+                onTimeSubmissions++;
+              }
+              
+              const score = parseFloat(bestSubmission.percentage) || 0;
+              if (score >= 85) highPerformance++;
+              else if (score >= 70) mediumPerformance++;
+              else lowPerformance++;
+            }
+          });
         });
-      });
+      }
       
       const completionRate = totalAssessments > 0 ? 
         (completedAssessments / totalAssessments) * 100 : 0;
@@ -932,7 +993,8 @@ const TeacherProgressTracker = () => {
           totalAssessments: moduleAssessmentsList.length,
           totalAttempts: 0,
           passedAssessments: 0,
-          failedAssessments: 0
+          failedAssessments: 0,
+          hasCompletedAllAssessments: false
         };
       });
       
@@ -947,58 +1009,63 @@ const TeacherProgressTracker = () => {
           let studentCompletedCount = 0;
           let studentPassedCount = 0;
           
-          moduleAssessmentsList.forEach(assessment => {
-            const studentSubmissionsForAssessment = Object.values(studentSubmissions)
-              .flat()
-              .filter(sub => 
-                sub.student?.id === student.id && 
-                sub.assessmentId === assessment.id
-              );
+          if (moduleAssessmentsList.length > 0) {
+            studentCompletedCount = 0;
             
-            const attemptCount = studentSubmissionsForAssessment.length;
-            
-            if (attemptCount > 0) {
-              studentCompletions[student.id].totalAttempts += attemptCount;
-              totalAttempts += attemptCount;
+            moduleAssessmentsList.forEach(assessment => {
+              const studentSubmissionsForAssessment = Object.values(studentSubmissions)
+                .flat()
+                .filter(sub => 
+                  sub.student?.id === student.id && 
+                  sub.assessmentId === assessment.id
+                );
               
-              assessmentsWithSubmissions++;
+              const attemptCount = studentSubmissionsForAssessment.length;
               
-              const bestSubmission = findBestSubmission(
-                student.id,
-                assessment.id,
-                Object.values(studentSubmissions).flat()
-              );
-              
-              if (bestSubmission) {
-                submittedCount++;
-                studentCompletedCount++;
-                totalAssessmentsCompleted++;
+              if (attemptCount > 0) {
+                studentCompletions[student.id].totalAttempts += attemptCount;
+                totalAttempts += attemptCount;
                 
-                studentCompletions[student.id].completedAssessments++;
+                assessmentsWithSubmissions++;
                 
-                const score = parseFloat(bestSubmission.percentage) || 0;
-                totalScore += score;
-                totalSubmissionCount++;
+                const bestSubmission = findBestSubmission(
+                  student.id,
+                  assessment.id,
+                  Object.values(studentSubmissions).flat()
+                );
                 
-                const passingScore = parseFloat(assessment.passing_score) || 0;
-                const maxScore = parseFloat(assessment.max_score) || 100;
-                const passingPercentage = maxScore > 0 ? (passingScore / maxScore) * 100 : 75;
-                
-                if (score >= passingPercentage) {
-                  passedCount++;
-                  studentPassedCount++;
-                  totalAssessmentsPassed++;
-                  studentCompletions[student.id].passedAssessments++;
-                } else {
-                  failedCount++;
-                  studentCompletions[student.id].failedAssessments++;
+                if (bestSubmission) {
+                  submittedCount++;
+                  studentCompletedCount++;
+                  totalAssessmentsCompleted++;
+                  
+                  studentCompletions[student.id].completedAssessments++;
+                  
+                  const score = parseFloat(bestSubmission.percentage) || 0;
+                  totalScore += score;
+                  totalSubmissionCount++;
+                  
+                  const passingScore = parseFloat(assessment.passing_score) || 0;
+                  const maxScore = parseFloat(assessment.max_score) || 100;
+                  const passingPercentage = maxScore > 0 ? (passingScore / maxScore) * 100 : 75;
+                  
+                  if (score >= passingPercentage) {
+                    passedCount++;
+                    studentPassedCount++;
+                    totalAssessmentsPassed++;
+                    studentCompletions[student.id].passedAssessments++;
+                  } else {
+                    failedCount++;
+                    studentCompletions[student.id].failedAssessments++;
+                  }
                 }
               }
+            });
+            
+            if (studentCompletedCount === moduleAssessmentsList.length) {
+              studentsCompletedAll++;
+              studentCompletions[student.id].hasCompletedAllAssessments = true;
             }
-          });
-          
-          if (studentCompletedCount === moduleAssessmentsList.length && moduleAssessmentsList.length > 0) {
-            studentsCompletedAll++;
           }
         }
       });
@@ -1027,18 +1094,35 @@ const TeacherProgressTracker = () => {
         passRatio
       };
     });
+
+    const filteredPerformanceData = selectedModule ? {
+      ...performanceTrendData,
+      assessments: performanceTrendData.assessments.filter(a => 
+        moduleAssessments[selectedModule.module_id]?.some(ma => ma.id === a.id)
+      )
+    } : performanceTrendData;
     
     return (
       <div className="mb-8">
         <PerformanceTrendChart 
-          performanceData={performanceTrendData}
-          title="Student Performance Trends"
+          performanceData={filteredPerformanceData}
+          title={selectedModule ? `${selectedModule.name} - Performance Trends` : "Student Performance Trends"}
           topPerformerAverages={studentAverages}
         />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-lg font-medium text-gray-700 mb-4">Average Performance by Module</h3>
+          <div className="bg-white p-6 rounded-xl shadow-sm overflow-hidden border border-gray-200/50">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-700">Average Performance by Module</h3>
+              {selectedModule && (
+                <button 
+                  onClick={() => setSelectedModule(null)}
+                  className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                >
+                  Clear Selection
+                </button>
+              )}
+            </div>
             
             <div className="space-y-6">
               {moduleMetrics.map((moduleMetric) => {
@@ -1048,8 +1132,16 @@ const TeacherProgressTracker = () => {
                   return 'text-red-600';
                 };
 
+                const isSelected = selectedModule?.module_id === moduleMetric.module.module_id;
+
                 return (
-                  <div key={moduleMetric.module.module_id} className="space-y-2">
+                  <div 
+                    key={moduleMetric.module.module_id} 
+                    className={`space-y-2 p-3 rounded-lg transition-colors cursor-pointer ${
+                      isSelected ? "bg-blue-50 border border-blue-200" : "hover:bg-gray-50"
+                    }`}
+                    onClick={() => setSelectedModule(isSelected ? null : moduleMetric.module)}
+                  >
                     <div className="flex justify-between items-center">
                       <div>
                         <h4 className="text-sm font-medium text-gray-800">{moduleMetric.module.name}</h4>
@@ -1077,16 +1169,10 @@ const TeacherProgressTracker = () => {
                         </div>
                         
                         <div className="flex items-center">
-                          <span className="text-gray-600 font-medium">
-                            {moduleMetric.studentsCompleted}/{moduleMetric.totalStudents} completed
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center">
-                          <span className="inline-block w-2 h-2 bg-red-400 rounded-full mr-1"></span>
                           <span className="text-red-700 font-medium">
                             {moduleMetric.failedCount} assessments failed
                           </span>
+                          <span className="inline-block w-2 h-2 bg-red-400 rounded-full ml-1"></span>
                         </div>
                       </div>
 
@@ -1105,13 +1191,15 @@ const TeacherProgressTracker = () => {
             <div className="mt-4 pt-2 border-t border-gray-100 text-xs text-gray-500">
               <p>* Average score is calculated from each student's <strong>best submission</strong> for each assessment</p>
               <p>* Progress bar shows the proportion of <strong>passed assessments</strong> (green) vs <strong>failed assessments</strong> (red)</p>
-              <p>* A student is counted as "completed" if they've submitted all assessments in the module</p>
+              <p>* Click on a module to see detailed performance for that module</p>
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white p-6 rounded-xl shadow-sm overflow-hidden border border-gray-200/50">
             <div className="flex justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-700">Top Performers</h3>
+              <h3 className="text-lg font-medium text-gray-700">
+                {selectedModule ? `Top Performers - ${selectedModule.name}` : "Top Performers"}
+              </h3>
               <div className="flex items-center text-xs text-gray-500">
                 <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded mr-1">High</span>
                 <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded mr-1">Medium</span>
@@ -1209,6 +1297,9 @@ const TeacherProgressTracker = () => {
             <div className="mt-4 pt-2 border-t border-gray-100 text-xs text-gray-500">
               <p>* Performance categories: High (≥85%), Medium (70-85%), Low (&lt;70%)</p>
               <p>* Rankings based on average scores across all submitted assessments</p>
+              {selectedModule && (
+                <p>* Currently showing data filtered for module: <strong>{selectedModule.name}</strong></p>
+              )}
             </div>
           </div>
         </div>
@@ -1319,7 +1410,7 @@ const TeacherProgressTracker = () => {
   const renderStudentList = () => {
     if (!students || students.length === 0) {
       return (
-        <div className="text-center p-8 bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="text-center p-8 bg-white rounded-xl shadow-sm border border-gray-200/50">
           <Users className="mx-auto h-12 w-12 text-gray-400 mb-3" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Students</h3>
           <p className="text-gray-500">There are no students enrolled in this course yet.</p>
@@ -1328,8 +1419,8 @@ const TeacherProgressTracker = () => {
     }
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-6 bg-gradient-to-r from-[#212529] to-gray-800 text-white">
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200/50">
+        <div className="p-6 bg-gradient-to-r from-gray-900 to-gray-600 text-white">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">Enrolled Students</h2>
           </div>
@@ -1406,35 +1497,29 @@ const TeacherProgressTracker = () => {
   };
 
   const calculateOverallStats = () => {
-    // Count all possible submissions (students × assessments)
     const totalPossibleSubmissions = students.length * Object.values(moduleAssessments).flat().length;
     const totalSubmissions = Object.values(studentSubmissions).flat().length;
     
     let totalScore = 0;
     let assessmentCount = 0;
     
-    // Get all assessments
     const allAssessments = Object.values(moduleAssessments).flat();
     
-    // For each student and assessment combination, find the best submission or count as zero
     students.forEach(student => {
       allAssessments.forEach(assessment => {
-        assessmentCount++; // Count each student-assessment pair
+        assessmentCount++;
         
-        // Find the best submission for this student and assessment
         const bestSubmission = findBestSubmission(
           student.id,
           assessment.id,
           Object.values(studentSubmissions).flat()
         );
         
-        // Add the score (or zero if no submission)
         const score = bestSubmission ? parseFloat(bestSubmission.percentage) : 0;
         totalScore += score;
       });
     });
     
-    // Calculate the average including zeros
     const averageScore = assessmentCount > 0 
       ? (totalScore / assessmentCount).toFixed(1) 
       : '0.0';
@@ -1450,48 +1535,48 @@ const TeacherProgressTracker = () => {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-gray-700 text-sm font-medium mb-2">Modules</h3>
-              <p className="text-3xl font-bold text-[#212529]">{modules.length}</p>
+              <h3 className="text-blue-800 text-sm font-medium mb-2">Modules</h3>
+              <p className="text-3xl font-bold text-blue-900">{modules.length}</p>
             </div>
-            <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
-              <BookOpen size={24} className="text-[#212529]" />
+            <div className="p-3 bg-blue-200 rounded-lg">
+              <BookOpen size={24} className="text-blue-700" />
             </div>
           </div>
-          <p className="text-gray-600 text-xs mt-4">
+          <p className="text-blue-600 text-xs mt-4">
             {modules.length === 1 ? '1 module' : `${modules.length} modules`} in this course
           </p>
         </div>
         
-        <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
+        <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-gray-700 text-sm font-medium mb-2">Assessments</h3>
-              <p className="text-3xl font-bold text-[#212529]">{stats.totalAssessments}</p>
+              <h3 className="text-rose-800 text-sm font-medium mb-2">Assessments</h3>
+              <p className="text-3xl font-bold text-rose-900">{stats.totalAssessments}</p>
             </div>
-            <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
-              <ClipboardList size={24} className="text-[#212529]" />
+            <div className="p-3 bg-rose-200 rounded-lg">
+              <ClipboardList size={24} className="text-rose-700" />
             </div>
           </div>
-          <p className="text-gray-600 text-xs mt-4">
+          <p className="text-rose-600 text-xs mt-4">
             {stats.totalAssessments === 1 ? '1 assessment' : `${stats.totalAssessments} assessments`} created
           </p>
         </div>
         
-        <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200" 
+        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow" 
              title="Average score across all student submissions">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-gray-700 text-sm font-medium mb-2">Average Score</h3>
-              <p className="text-3xl font-bold text-[#212529]">{stats.averageScore}%</p>
+              <h3 className="text-emerald-800 text-sm font-medium mb-2">Average Score</h3>
+              <p className="text-3xl font-bold text-emerald-900">{stats.averageScore}%</p>
             </div>
-            <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
-              <Users size={24} className="text-[#212529]" />
+            <div className="p-3 bg-emerald-200 rounded-lg">
+              <Users size={24} className="text-emerald-700" />
             </div>
           </div>
-          <p className="text-gray-600 text-xs mt-4">
+          <p className="text-emerald-600 text-xs mt-4">
             Average of all student scores
           </p>
         </div>
