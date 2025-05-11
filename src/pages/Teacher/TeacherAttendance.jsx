@@ -90,7 +90,6 @@ const TeacherAttendance = () => {
     averageAttendance: 0,
     totalStudents: 0,
     totalAssessments: 0,
-    averageSubmissionRate: 0,
   });
 
   // Add new states for attendance tracking
@@ -377,14 +376,11 @@ const TeacherAttendance = () => {
     
     // Calculate overall stats
     const avgAttendance = totalStudentsCount > 0 ? totalAttendanceRate / totalStudentsCount : 0;
-    const submissionRate = (assessmentsList.length * totalStudentsCount) > 0 ?
-      totalSubmissions / (assessmentsList.length * totalStudentsCount) : 0;
       
     setOverallStats({
       averageAttendance: avgAttendance * 100,
       totalStudents: totalStudentsCount,
       totalAssessments: assessmentsList.length,
-      averageSubmissionRate: submissionRate * 100
     });
   };
 
@@ -724,67 +720,54 @@ const TeacherAttendance = () => {
     });
   }, [students, searchQuery, filterType, studentStats]);
 
-  // Header for statistics display - updated color scheme
+  // Header for statistics display - updated color scheme with gradients
   const renderStatistics = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-      <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-gray-700 text-sm font-medium mb-2">Average Attendance</h3>
-            <p className="text-3xl font-bold text-[#212529]">{overallStats.averageAttendance.toFixed(1)}%</p>
+            <h3 className="text-blue-800 text-sm font-medium mb-2">Average Attendance</h3>
+            <p className="text-3xl font-bold text-blue-900">{overallStats.averageAttendance.toFixed(1)}%</p>
           </div>
-          <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
-            <UserCheck size={24} className="text-[#212529]" />
+          <div className="p-3 bg-blue-200 rounded-lg">
+            <UserCheck size={24} className="text-blue-700" />
           </div>
         </div>
-        <p className="text-gray-600 text-xs mt-4">Class participation rate</p>
+        <p className="text-blue-600 text-xs mt-4">Class participation rate</p>
       </div>
 
-      <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
+      <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-gray-700 text-sm font-medium mb-2">Total Students</h3>
-            <p className="text-3xl font-bold text-[#212529]">{overallStats.totalStudents}</p>
+            <h3 className="text-emerald-800 text-sm font-medium mb-2">Total Students</h3>
+            <p className="text-3xl font-bold text-emerald-900">{overallStats.totalStudents}</p>
           </div>
-          <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
-            <Users size={24} className="text-[#212529]" />
+          <div className="p-3 bg-emerald-200 rounded-lg">
+            <Users size={24} className="text-emerald-700" />
           </div>
         </div>
-        <p className="text-gray-600 text-xs mt-4">Enrolled learners</p>
+        <p className="text-emerald-600 text-xs mt-4">Enrolled learners</p>
       </div>
 
-      <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
+      <div className="bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-gray-700 text-sm font-medium mb-2">Assessments</h3>
-            <p className="text-3xl font-bold text-[#212529]">{overallStats.totalAssessments}</p>
+            <h3 className="text-violet-800 text-sm font-medium mb-2">Assessments</h3>
+            <p className="text-3xl font-bold text-violet-900">{overallStats.totalAssessments}</p>
           </div>
-          <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
-            <ClipboardList size={24} className="text-[#212529]" />
-          </div>
-        </div>
-        <p className="text-gray-600 text-xs mt-4">Published assessments</p>
-      </div>
-
-      <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border border-gray-200">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-gray-700 text-sm font-medium mb-2">Submission Rate</h3>
-            <p className="text-3xl font-bold text-[#212529]">{overallStats.averageSubmissionRate.toFixed(1)}%</p>
-          </div>
-          <div className="p-3 bg-[#F6BA18] rounded-lg shadow-sm">
-            <Award size={24} className="text-[#212529]" />
+          <div className="p-3 bg-violet-200 rounded-lg">
+            <ClipboardList size={24} className="text-violet-700" />
           </div>
         </div>
-        <p className="text-gray-600 text-xs mt-4">Assessment completion rate</p>
+        <p className="text-violet-600 text-xs mt-4">Published assessments</p>
       </div>
     </div>
   );
 
-  // Render calendar - updated color scheme
+  // Render calendar - updated color scheme with rounded corners and shadows
   const renderCalendar = () => (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
-      <div className="p-6 bg-gradient-to-r from-[#212529] to-[#343a40] text-white">
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200/50">
+      <div className="p-6 bg-gradient-to-r from-gray-900 to-gray-600 text-white">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Attendance Calendar</h2>
           <div className="flex items-center gap-2">
@@ -824,7 +807,7 @@ const TeacherAttendance = () => {
         </div>
         
         {selectedStudent && attendanceMode === 'assessment' ? (
-          <div className="bg-[#343a40]/70 p-3.5 rounded-lg backdrop-blur-sm shadow-inner">
+          <div className="bg-gray-800/50 p-3.5 rounded-lg backdrop-blur-sm shadow-inner">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-[#F6BA18] flex items-center justify-center text-lg font-bold text-[#212529] shadow-sm">
                 {selectedStudent.name[0]}
@@ -849,19 +832,18 @@ const TeacherAttendance = () => {
             </div>
           </div>
         ) : attendanceMode === 'assessment' ? (
-          <div className="bg-[#343a40]/70 p-3.5 rounded-lg backdrop-blur-sm shadow-inner">
+          <div className="bg-gray-800/50 p-3.5 rounded-lg backdrop-blur-sm shadow-inner">
             <p className="text-center text-sm">Select a student to view their attendance</p>
           </div>
         ) : (
-          <div className="bg-[#343a40]/70 p-3.5 rounded-lg backdrop-blur-sm shadow-inner">
+          <div className="bg-gray-800/50 p-3.5 rounded-lg backdrop-blur-sm shadow-inner">
             <p className="text-center text-sm">Click on a date to manage attendance for all students</p>
           </div>
         )}
       </div>
 
-      {/* Calendar content with days - leave mostly unchanged for functionality */}
+      {/* Calendar content and the rest of the calendar code */}
       <div className="p-4">
-        {/* Days of week headers */}
         <div className="grid grid-cols-7 gap-1 mb-1">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
             <div key={day} className="text-center text-sm font-medium text-gray-600 p-2">
@@ -870,7 +852,6 @@ const TeacherAttendance = () => {
           ))}
         </div>
 
-        {/* Calendar days grid with date click handling */}
         <div className="grid grid-cols-7 gap-1.5">
           {calendarDays.map((day, i) => {
             const dateStr = day.date.toISOString().split('T')[0];
@@ -883,7 +864,6 @@ const TeacherAttendance = () => {
             );
             const hasAssessments = dayAssessments.length > 0;
             
-            // Get manual attendance info if in manual mode
             const hasManualAttendance = attendanceMode === "manual" && manualAttendanceData[dateStr]?.length > 0;
             const presentCount = hasManualAttendance ? 
               manualAttendanceData[dateStr].filter(record => record.status === "present").length : 0;
@@ -893,12 +873,10 @@ const TeacherAttendance = () => {
               manualAttendanceData[dateStr].filter(record => record.status === "late").length : 0;
             const totalStudents = students.length;
             
-            // Find any assessments that start on this day
             const startsToday = assessments.some(assessment => 
               isDateEqual(day.date, assessment.created_at || assessment.createdAt)
             );
             
-            // Find any assessments that are due on this day
             const dueToday = assessments.some(assessment => 
               isDateEqual(day.date, assessment.due_date)
             );
@@ -906,7 +884,6 @@ const TeacherAttendance = () => {
               isDateEqual(day.date, assessment.due_date)
             );
             
-            // For a selected student, find if they submitted anything on this day
             let submittedToday = false;
             let isLateSubmission = false;
             let submittedAssessments = [];
@@ -914,7 +891,6 @@ const TeacherAttendance = () => {
             if (selectedStudent && attendanceData[selectedStudent.id]) {
               const studentSubmissions = attendanceData[selectedStudent.id];
               
-              // Filter submissions that were made on this specific date
               const submissionsOnDate = studentSubmissions.filter(sub => 
                 isDateEqual(day.date, sub.submissionDate)
               );
@@ -922,7 +898,6 @@ const TeacherAttendance = () => {
               submittedToday = submissionsOnDate.length > 0;
               isLateSubmission = submissionsOnDate.some(sub => !sub.onTime);
               
-              // Get assessment details for the submissions made today
               submittedAssessments = submissionsOnDate.map(sub => {
                 const assessment = assessments.find(a => a.id === sub.assessmentId);
                 return {
@@ -944,7 +919,6 @@ const TeacherAttendance = () => {
                   {day.date.getDate()}
                 </div>
                 
-                {/* Show different indicators based on attendance mode */}
                 {attendanceMode === "manual" && hasManualAttendance && (
                   <div className="mt-2 text-xs">
                     {presentCount === 0 && absentCount === 0 && lateCount === 0 ? (
@@ -977,10 +951,8 @@ const TeacherAttendance = () => {
                   </div>
                 )}
                 
-                {/* Keep existing assessment indicators if in assessment mode */}
                 {attendanceMode === "assessment" && (
                   <>
-                    {/* Corner indicators for start and due dates */}
                     <div className="absolute top-0 left-0 right-0 flex justify-between">
                       {startsToday && (
                         <div className="w-0 h-0 border-t-[16px] border-t-blue-500 border-r-[16px] border-r-transparent">
@@ -999,7 +971,6 @@ const TeacherAttendance = () => {
                       )}
                     </div>
                     
-                    {/* Assessment details shown for all users */}
                     {(dueToday || startsToday) && (
                       <div className="mt-5 mb-2 text-[9px] space-y-1">
                         {dueToday && (
@@ -1018,7 +989,6 @@ const TeacherAttendance = () => {
                       </div>
                     )}
                     
-                    {/* Show assessment names always, regardless of student selection */}
                     {dayAssessments.length > 0 && (
                       <div className="mt-2">
                         {dayAssessments.slice(0, 2).map((assessment, idx) => (
@@ -1035,7 +1005,6 @@ const TeacherAttendance = () => {
                       </div>
                     )}
                     
-                    {/* Student-specific assessment stats */}
                     {selectedStudent && dateStatus.details?.assessmentStats && dateStatus.details.assessmentStats.length > 0 && (
                       <div className="mt-2">
                         {dateStatus.details.assessmentStats.map((stat, idx) => (
@@ -1054,7 +1023,6 @@ const TeacherAttendance = () => {
                       </div>
                     )}
                     
-                    {/* Submission indicators */}
                     {submittedToday && submittedAssessments.length > 0 && (
                       <div className="absolute bottom-2 right-2 flex items-center gap-1">
                         <div 
@@ -1078,7 +1046,6 @@ const TeacherAttendance = () => {
                       </div>
                     )}
                     
-                    {/* Progress bar */}
                     {selectedStudent && dateStatus.status === 'partial' && (
                       <div className="absolute bottom-1 left-1 right-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div 
@@ -1088,7 +1055,6 @@ const TeacherAttendance = () => {
                       </div>
                     )}
                     
-                    {/* Status indicators */}
                     {selectedStudent && (dateStatus.status === 'present' || dateStatus.status === 'partial') && (
                       <div className="absolute top-2 right-2 bg-green-100 rounded-full p-1">
                         <Check size={14} className={`${
@@ -1110,7 +1076,6 @@ const TeacherAttendance = () => {
         </div>
       </div>
 
-      {/* Updated legend with mode-specific descriptions */}
       <div className="p-4 border-t border-gray-200 bg-gray-50">
         <div className="flex flex-wrap gap-4 text-sm">
           {attendanceMode === "assessment" ? (
@@ -1158,8 +1123,8 @@ const TeacherAttendance = () => {
 
   // Updated student list with refreshed design
   const renderStudentList = () => (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-full">
-      <div className="p-6 bg-gradient-to-r from-[#212529] to-[#343a40] text-white">
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200/50 h-full">
+      <div className="p-6 bg-gradient-to-r from-gray-900 to-gray-600 text-white">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Learners</h2>
           
@@ -1187,43 +1152,47 @@ const TeacherAttendance = () => {
           />
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
         </div>
-        <div className="flex flex-wrap items-center gap-2 mt-4">
-          <span className="text-gray-400 text-sm">Filter by:</span>
-          <button
-            onClick={() => setFilterType("all")}
-            className={`px-3 py-1.5 rounded-full text-sm ${
-              filterType === "all"
-                ? "bg-[#F6BA18] text-[#212529] font-medium"
-                : "bg-gray-700/50 text-white/70 hover:bg-gray-700"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setFilterType("present")}
-            className={`px-3 py-1.5 rounded-full text-sm ${
-              filterType === "present"
-                ? "bg-[#F6BA18] text-[#212529] font-medium"
-                : "bg-gray-700/50 text-white/70 hover:bg-gray-700"
-            }`}
-          >
-            High Attendance
-          </button>
-          <button
-            onClick={() => setFilterType("absent")}
-            className={`px-3 py-1.5 rounded-full text-sm ${
-              filterType === "absent"
-                ? "bg-[#F6BA18] text-[#212529] font-medium"
-                : "bg-gray-700/50 text-white/70 hover:bg-gray-700"
-            }`}
-          >
-            Low Attendance
-          </button>
+
+        <div className="mt-4">
+          <div className="text-gray-300 text-sm mb-2">Filter by:</div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setFilterType("all")}
+              className={`px-3 py-1.5 rounded-full text-xs sm:text-sm flex-1 sm:flex-none ${
+                filterType === "all"
+                  ? "bg-[#F6BA18] text-[#212529] font-medium"
+                  : "bg-gray-700/50 text-white/70 hover:bg-gray-700"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setFilterType("present")}
+              className={`px-3 py-1.5 rounded-full text-xs sm:text-sm flex-1 sm:flex-none ${
+                filterType === "present"
+                  ? "bg-[#F6BA18] text-[#212529] font-medium"
+                  : "bg-gray-700/50 text-white/70 hover:bg-gray-700"
+              }`}
+            >
+              <span className="sm:hidden">High</span>
+              <span className="hidden sm:inline">High Attendance</span>
+            </button>
+            <button
+              onClick={() => setFilterType("absent")}
+              className={`px-3 py-1.5 rounded-full text-xs sm:text-sm flex-1 sm:flex-none ${
+                filterType === "absent"
+                  ? "bg-[#F6BA18] text-[#212529] font-medium"
+                  : "bg-gray-700/50 text-white/70 hover:bg-gray-700"
+              }`}
+            >
+              <span className="sm-hidden">Low</span>
+              <span className="hidden sm:inline">Low Attendance</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Student listing - updated design */}
-      <div className="overflow-y-auto bg-gray-50" style={{ maxHeight: "calc(100vh - 370px)" }}>
+      <div className="overflow-y-auto" style={{ maxHeight: "calc(100vh - 370px)" }}>
         {isRefreshing ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#212529]"></div>
@@ -1252,57 +1221,69 @@ const TeacherAttendance = () => {
               return (
                 <div
                   key={student.id}
-                  className={`px-6 py-4 transition-all bg-white ${
+                  className={`px-4 py-4 transition-all bg-white ${
                     selectedStudent?.id === student.id
                       ? "bg-gray-50 border-l-4 border-[#F6BA18]"
                       : "hover:bg-gray-50"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <div 
-                      className="flex-grow flex items-center gap-3 cursor-pointer"
+                      className="flex-grow min-w-0 flex items-center gap-3 cursor-pointer"
                       onClick={() => handleStudentSelect(student)}
                     >
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#212529] to-gray-700 flex items-center justify-center text-sm font-medium text-white shadow-sm">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-[#212529] to-gray-700 flex items-center justify-center text-sm font-medium text-white shadow-sm">
                         {student.name[0]}
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="text-sm font-medium text-gray-900">{student.name}</h3>
+                      <div className="min-w-0 flex-grow">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">{student.name}</h3>
                         <p className="text-xs text-gray-500 truncate">{student.email}</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-4">
-                      <div className="flex-shrink-0">
-                        <div className="flex flex-col items-end">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <div className="w-20 h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full rounded-full transition-all duration-500 ease-out"
-                                style={{ 
-                                  width: `${attendancePercentage}%`, 
-                                  backgroundColor: attendanceColor 
-                                }}
-                              ></div>
-                            </div>
-                            <span className="text-sm font-semibold" style={{ color: attendanceColor }}>
-                              {attendancePercentage}%
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-500">
-                            {attendanceInfo.submissionCount} submissions
-                          </p>
+                    <div className="flex-shrink-0 flex items-center gap-2">
+                      <div className="hidden sm:flex items-center gap-2">
+                        <div className="w-16 h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full rounded-full transition-all duration-500 ease-out"
+                            style={{ 
+                              width: `${attendancePercentage}%`, 
+                              backgroundColor: attendanceColor 
+                            }}
+                          ></div>
                         </div>
+                        <span className="text-xs font-semibold whitespace-nowrap" style={{ color: attendanceColor }}>
+                          {attendancePercentage}%
+                        </span>
                       </div>
                       
                       <button
                         onClick={(e) => handleViewSubmissionHistory(student, e)}
-                        className="p-2 rounded-md border border-gray-200 bg-white hover:bg-[#F6BA18] hover:text-[#212529] hover:border-[#F6BA18] text-gray-600 transition-colors"
+                        className="p-1.5 rounded-md border border-gray-200 bg-white hover:bg-[#F6BA18] hover:text-[#212529] hover:border-[#F6BA18] text-gray-600 transition-colors flex-shrink-0"
                         title="View submission history"
                       >
-                        <FileText size={18} />
+                        <FileText size={16} />
                       </button>
                     </div>
+                  </div>
+                  
+                  <div className="sm:hidden mt-2 flex items-center gap-2">
+                    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full rounded-full transition-all duration-500 ease-out"
+                        style={{ 
+                          width: `${attendancePercentage}%`, 
+                          backgroundColor: attendanceColor 
+                        }}
+                      ></div>
+                    </div>
+                    <span className="text-xs font-semibold whitespace-nowrap" style={{ color: attendanceColor }}>
+                      {attendancePercentage}%
+                    </span>
+                  </div>
+                  
+                  <div className="text-xs text-gray-500 mt-1">
+                    {attendanceInfo.submissionCount} submissions
                   </div>
                 </div>
               );
@@ -1364,7 +1345,6 @@ const TeacherAttendance = () => {
         </div>
       </div>
 
-      {/* Attendance Modal */}
       {showAttendanceModal && selectedDate && (
         <AttendanceModal
           isOpen={showAttendanceModal}
@@ -1377,7 +1357,6 @@ const TeacherAttendance = () => {
         />
       )}
 
-      {/* Submission History Modal */}
       {showSubmissionModal && (
         <SubmissionHistoryModal
           isOpen={showSubmissionModal}
