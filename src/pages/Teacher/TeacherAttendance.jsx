@@ -51,15 +51,29 @@ const getDayName = (date) => {
   return new Date(date).toLocaleDateString('en-US', { weekday: 'short' });
 };
 
+// Replace the isDateEqual function with a more precise implementation
 const isDateEqual = (date1, date2) => {
-  return new Date(date1).toDateString() === new Date(date2).toDateString();
+  // Convert both dates to YYYY-MM-DD format at UTC
+  const formatDate = (date) => {
+    const d = new Date(date);
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+  };
+  
+  return formatDate(date1) === formatDate(date2);
 };
 
+// Also fix the isDateInRange function similarly
 const isDateInRange = (date, startDate, endDate) => {
-  const checkDate = new Date(date).setHours(0, 0, 0, 0);
-  const start = new Date(startDate).setHours(0, 0, 0, 0);
-  const end = new Date(endDate).setHours(0, 0, 0, 0);
-  return checkDate >= start && checkDate <= end;
+  const formatDate = (date) => {
+    const d = new Date(date);
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+  };
+  
+  const checkDateStr = formatDate(date);
+  const startDateStr = formatDate(startDate);
+  const endDateStr = formatDate(endDate);
+  
+  return checkDateStr >= startDateStr && checkDateStr <= endDateStr;
 };
 
 // Add the missing formatMonthYear function
@@ -304,7 +318,7 @@ const TeacherAttendance = () => {
     fetchData();
   }, [selectedCourse, navigate, refreshTrigger]);
   
-  // New effect to fetch manual attendance data when date changes or mode changes
+  // Update the useEffect that fetches manual attendance to use the same date format
   useEffect(() => {
     const fetchManualAttendance = async () => {
       if (attendanceMode !== "manual" || !selectedCourse?.id) return;
@@ -312,7 +326,7 @@ const TeacherAttendance = () => {
       try {
         setIsLoadingAttendance(true);
         
-        // Fetch attendance records for the selected month
+        // Use local dates to avoid timezone issues
         const firstDayOfMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), 1);
         const lastDayOfMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0);
         
@@ -320,7 +334,12 @@ const TeacherAttendance = () => {
         const attendanceMap = {};
         
         for (let day = new Date(firstDayOfMonth); day <= lastDayOfMonth; day.setDate(day.getDate() + 1)) {
-          const dateStr = day.toISOString().split('T')[0];
+          // Format the date string consistently
+          const year = day.getFullYear();
+          const month = String(day.getMonth() + 1).padStart(2, '0');
+          const dayNum = String(day.getDate()).padStart(2, '0');
+          const dateStr = `${year}-${month}-${dayNum}`;
+          
           try {
             const response = await getAttendanceByDate(selectedCourse.id, dateStr);
             if (response && Array.isArray(response)) {
@@ -475,26 +494,29 @@ const TeacherAttendance = () => {
     if (!day.isCurrentMonth) return "opacity-30"; // Dimmed for non-current month days
     if (day.isWeekend) return "bg-gray-50"; // Light gray for weekends
     
-    const dateStr = day.date.toISOString().split('T')[0];
+    // Ensure consistent date string format for lookup - IMPORTANT FIX
+    const year = day.date.getFullYear();
+    const month = String(day.date.getMonth() + 1).padStart(2, '0');
+    const dayNum = String(day.date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${dayNum}`;
     
     if (attendanceMode === "manual") {
       // Handle manual attendance mode
       const hasAttendanceRecord = manualAttendanceData[dateStr] && manualAttendanceData[dateStr].length > 0;
       
       if (hasAttendanceRecord) {
-        return "bg-green-50 border-green-200 border-l-4 cursor-pointer";
+        return "bg-green-50 border-green-200 border-l-4 cursor-pointer"; // This should match the legend
       }
       
       // Date has no attendance record but is in the past or today
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       if (day.date <= today) {
-        return "bg-yellow-50 border-yellow-100 border-dashed border-2 cursor-pointer";
+        return "bg-yellow-50 border-yellow-100 border-dashed border-2 cursor-pointer"; // This should match the legend
       }
       
       return "bg-white cursor-pointer";
     } else {
-      // Assessment-based attendance (original logic)
       if (!selectedStudent) return "bg-white";
       
       const status = getDateCellStatus(day.date);
@@ -526,10 +548,21 @@ const TeacherAttendance = () => {
     }
   };
 
-  // Handle calendar date click for manual attendance
+  // Fix handleDateClick to preserve the exact date from the clicked calendar cell
   const handleDateClick = (date) => {
     if (attendanceMode === "manual") {
-      setSelectedDate(date);
+      // Create a date string from the clicked date that preserves the day information
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const day = date.getDate();
+      
+      // Use the local date constructor to prevent timezone offset issues
+      const normalizedDate = new Date(year, month, day, 12, 0, 0);
+      console.log("Calendar date clicked:", date.toDateString());
+      console.log("Normalized date constructed:", normalizedDate.toDateString());
+      console.log("Date for API:", normalizedDate.toISOString().split('T')[0]);
+      
+      setSelectedDate(normalizedDate);
       setShowAttendanceModal(true);
     }
   };
@@ -539,38 +572,43 @@ const TeacherAttendance = () => {
     setRefreshTrigger(prev => prev + 1);
   };
 
-  // Updated handleSaveAttendance function to properly handle attendance IDs
+  // Fix handleSaveAttendance function to use local date consistently
   const handleSaveAttendance = async (dateStr, attendanceRecords) => {
     try {
       setIsLoadingAttendance(true);
       console.log("Saving attendance for date:", dateStr);
-      console.log("Records to save:", attendanceRecords);
+      
+      // Use the dateStr directly from the modal (already in YYYY-MM-DD format)
+      const normalizedDateStr = dateStr;
+      console.log("Date string for API:", normalizedDateStr);
       
       // Check if attendance already exists for this date
-      const existingRecords = manualAttendanceData[dateStr] || [];
+      const existingRecords = manualAttendanceData[normalizedDateStr] || [];
       
-      // If we have no existing records for this date, create all records in batch
+      // First-time creation: create all records in batch
       if (existingRecords.length === 0) {
         console.log("Creating new attendance records in batch");
         try {
+          // Create all attendance records in a single batch API call
           await createAttendance({
             courseId: selectedCourse.id,
-            date: dateStr,
+            date: normalizedDateStr, 
             records: attendanceRecords.map(record => ({
               student_id: record.student_id,
               status: record.status
             }))
           });
         } catch (err) {
+          console.error("Error creating attendance records:", err);
+          
           if (err.message && err.message.includes("already exists")) {
             console.warn("Some records already exist, falling back to individual updates");
             // If batch create fails, try individual updates
             for (const record of attendanceRecords) {
               try {
-                // Try to create each record individually
                 await createAttendance({
                   courseId: selectedCourse.id,
-                  date: dateStr,
+                  date: normalizedDateStr,
                   records: [{
                     student_id: record.student_id,
                     status: record.status
@@ -578,7 +616,6 @@ const TeacherAttendance = () => {
                 });
               } catch (innerErr) {
                 console.error(`Failed to create individual record for student ${record.student_id}:`, innerErr);
-                // Continue with next record even if one fails
               }
             }
           } else {
@@ -596,68 +633,48 @@ const TeacherAttendance = () => {
             String(r.user_id) === String(record.student_id)
           );
           
-          // Use attendance_id instead of id - this is the key fix
-          if (existingRecord && existingRecord.attendance_id) {
-            // Use the correct ID from the existing record
-            console.log(`Updating existing record ID ${existingRecord.attendance_id} for student ${record.student_id}`);
-            try {
+          try {
+            // Use attendance_id instead of id - this is the key fix
+            if (existingRecord && existingRecord.attendance_id) {
+              // Use the correct ID from the existing record
               await updateAttendanceStatus(existingRecord.attendance_id, record.status);
-            } catch (updateErr) {
-              console.error(`Failed to update attendance for student ${record.student_id}:`, updateErr);
-            }
-          } else if (record.id) {
-            // Use the ID from the record itself if available
-            console.log(`Using provided record ID ${record.id} for student ${record.student_id}`);
-            try {
+            } else if (record.id) {
+              // Use the ID from the record itself if available
               await updateAttendanceStatus(record.id, record.status);
-            } catch (updateErr) {
-              console.error(`Failed to update attendance using record ID for student ${record.student_id}:`, updateErr);
-            }
-          } else {
-            // Create a new record
-            console.log(`Creating new record for student ${record.student_id}`);
-            try {
+            } else {
+              // Create a new record
               await createAttendance({
                 courseId: selectedCourse.id,
-                date: dateStr,
+                date: normalizedDateStr,
                 records: [{
                   student_id: record.student_id,
                   status: record.status
                 }]
               });
-            } catch (createErr) {
-              console.error(`Failed to create record for student ${record.student_id}:`, createErr);
             }
+          } catch (updateErr) {
+            console.error(`Failed to update attendance for student ${record.student_id}:`, updateErr);
           }
         }
       }
       
-      // Refresh attendance data
-      console.log("Refreshing attendance data for date:", dateStr);
-      const response = await getAttendanceByDate(selectedCourse.id, dateStr);
+      // Always refresh attendance data after saving
+      console.log("Refreshing attendance data for date:", normalizedDateStr);
+      const response = await getAttendanceByDate(selectedCourse.id, normalizedDateStr);
       
       if (response && Array.isArray(response)) {
-        console.log(`Successfully fetched ${response.length} attendance records for ${dateStr}`);
+        console.log(`Successfully fetched ${response.length} attendance records for ${normalizedDateStr}`);
         setManualAttendanceData(prev => ({
           ...prev,
-          [dateStr]: response
+          [normalizedDateStr]: response
         }));
       }
       
       setShowAttendanceModal(false);
+      
     } catch (err) {
       console.error("Error saving attendance:", err);
-      
-      // Provide a more helpful error message based on the specific error
-      let errorMessage = "Failed to save attendance records";
-      
-      if (err.message && err.message.includes("already exists")) {
-        errorMessage = "Some attendance records already exist for this date. Please refresh and try again.";
-      } else if (err.message && err.message.includes("undefined")) {
-        errorMessage = "Could not find attendance record IDs. Try refreshing the page.";
-      }
-      
-      alert(errorMessage);
+      alert("Failed to save attendance records. Please try again.");
     } finally {
       setIsLoadingAttendance(false);
     }
@@ -764,7 +781,7 @@ const TeacherAttendance = () => {
     </div>
   );
 
-  // Render calendar - updated color scheme with rounded corners and shadows
+  // Fix renderCalendar to use consistent date format
   const renderCalendar = () => (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200/50">
       <div className="p-6 bg-gradient-to-r from-gray-900 to-gray-600 text-white">
@@ -854,7 +871,12 @@ const TeacherAttendance = () => {
 
         <div className="grid grid-cols-7 gap-1.5">
           {calendarDays.map((day, i) => {
-            const dateStr = day.date.toISOString().split('T')[0];
+            // Create a date string that properly accounts for timezone
+            const year = day.date.getFullYear();
+            const month = String(day.date.getMonth() + 1).padStart(2, '0');
+            const dayNum = String(day.date.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${dayNum}`; // Consistent YYYY-MM-DD format
+            
             const dateStatus = selectedStudent && attendanceMode === "assessment" 
               ? getDateCellStatus(day.date) 
               : { status: 'none' };
@@ -864,7 +886,9 @@ const TeacherAttendance = () => {
             );
             const hasAssessments = dayAssessments.length > 0;
             
-            const hasManualAttendance = attendanceMode === "manual" && manualAttendanceData[dateStr]?.length > 0;
+            // Fix date check for manual attendance
+            const hasManualAttendance = attendanceMode === "manual" && 
+              manualAttendanceData[dateStr]?.length > 0;
             const presentCount = hasManualAttendance ? 
               manualAttendanceData[dateStr].filter(record => record.status === "present").length : 0;
             const absentCount = hasManualAttendance ? 
@@ -873,6 +897,7 @@ const TeacherAttendance = () => {
               manualAttendanceData[dateStr].filter(record => record.status === "late").length : 0;
             const totalStudents = students.length;
             
+            // Fix checks for assessment dates to use normalized date format
             const startsToday = assessments.some(assessment => 
               isDateEqual(day.date, assessment.created_at || assessment.createdAt)
             );
@@ -1102,10 +1127,12 @@ const TeacherAttendance = () => {
             </>
           ) : (
             <>
+              {/* Fix the "Has Attendance Record" indicator to match the cell styling */}
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 rounded-md bg-green-50 border-l-4 border-green-200"></div>
                 <span className="text-gray-700">Has Attendance Record</span>
               </div>
+              {/* Fix the "No Attendance Record" indicator to match the cell styling */}
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 rounded-md bg-yellow-50 border-dashed border-2 border-yellow-100"></div>
                 <span className="text-gray-700">No Attendance Record</span>
@@ -1349,7 +1376,7 @@ const TeacherAttendance = () => {
         <AttendanceModal
           isOpen={showAttendanceModal}
           onClose={() => setShowAttendanceModal(false)}
-          date={selectedDate}
+          date={selectedDate} // This date should now be consistently handled
           students={students}
           existingAttendance={manualAttendanceData[selectedDate.toISOString().split('T')[0]] || []}
           onSave={handleSaveAttendance}

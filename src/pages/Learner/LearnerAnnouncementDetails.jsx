@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
 import BlackHeader from "../../components/common/layout/BlackHeader";
@@ -16,16 +15,21 @@ import {
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
 import { getAnnouncementById } from "../../services/announcementService";
+import { getCourseById } from "../../services/courseService";
 import booksIcon from "../../assets/images/icons/books_icon.png";
 import schoolIcon from "../../assets/images/icons/school_icon.png";
 
 const LearnerAnnouncementDetails = () => {
   const { id } = useParams();
-  const { selectedCourse } = useCourse();
+  const location = useLocation();
+  const { setCourse, selectedCourse } = useCourse();
   const navigate = useNavigate();
-  const [announcement, setAnnouncement] = useState(null);
+  const [announcement, setAnnouncement] = useState(location.state?.notification || null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Get courseId from state if available
+  const courseId = location.state?.courseId || announcement?.course_id || null;
 
   const navItems = [
     {
@@ -49,19 +53,14 @@ const LearnerAnnouncementDetails = () => {
       route: "/Learner/Assessment",
     },
     {
-      text: "Grades", // New Grades item
+      text: "Grades",
       icon: <GraduationCap size={20} />,
       route: "/Learner/Grades",
     },
   ];
 
   useEffect(() => {
-    if (!selectedCourse?.id) {
-      navigate("/Learner/Dashboard");
-      return;
-    }
-
-    const fetchAnnouncementDetails = async () => {
+    const fetchAnnouncementAndCourse = async () => {
       if (!id) {
         setError("Announcement ID not found");
         setIsLoading(false);
@@ -71,8 +70,9 @@ const LearnerAnnouncementDetails = () => {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await getAnnouncementById(id);
         
+        // Fetch announcement details
+        const response = await getAnnouncementById(id);
         const announcementData = response.announcement || response;
         
         if (!announcementData || (!announcementData.title && !announcementData.message)) {
@@ -80,6 +80,19 @@ const LearnerAnnouncementDetails = () => {
         }
         
         setAnnouncement(announcementData);
+
+        // If this is a course announcement, fetch and set the course context
+        if (announcementData.course_id || courseId) {
+          const announcementCourseId = announcementData.course_id || courseId;
+          try {
+            const courseData = await getCourseById(announcementCourseId);
+            if (courseData) {
+              setCourse(courseData);
+            }
+          } catch (courseErr) {
+            console.error("Failed to fetch course details:", courseErr);
+          }
+        }
       } catch (err) {
         console.error("Failed to fetch announcement details:", err);
         setError(err.message || "Failed to load announcement details");
@@ -88,8 +101,18 @@ const LearnerAnnouncementDetails = () => {
       }
     };
 
-    fetchAnnouncementDetails();
-  }, [id, selectedCourse, navigate]);
+    fetchAnnouncementAndCourse();
+  }, [id, courseId, setCourse]);
+
+  const handleGoBack = () => {
+    // If we came from a specific course, go back to that course's announcements
+    if (selectedCourse?.id) {
+      navigate("/Learner/CourseAnnouncements");
+    } else {
+      // Otherwise go to notifications
+      navigate("/Learner/Notifications");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -113,7 +136,7 @@ const LearnerAnnouncementDetails = () => {
             <h2 className="text-xl font-medium mb-2">Error Loading Announcement</h2>
             <p className="text-gray-600 mb-6">{error || "Announcement not found"}</p>
             <button
-              onClick={() => navigate(-1)}
+              onClick={handleGoBack}
               className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
             >
               Go Back
@@ -138,7 +161,7 @@ const LearnerAnnouncementDetails = () => {
           title={
             <div className="flex items-center space-x-3">
               <button
-                onClick={() => navigate(-1)}
+                onClick={handleGoBack}
                 className="p-2 rounded hover:bg-gray-700"
               >
                 <ArrowLeft size={20} />
@@ -167,7 +190,7 @@ const LearnerAnnouncementDetails = () => {
                     {announcement.course_id ? "Course Announcement" : "Global Announcement"}
                   </span>
                   <span className="text-xs text-gray-500">
-                    {new Date(announcement.createdAt).toLocaleString()}
+                    {new Date(announcement.createdAt || announcement.created_at).toLocaleString()}
                   </span>
                 </div>
                 
@@ -182,14 +205,14 @@ const LearnerAnnouncementDetails = () => {
                 <p className="text-gray-700 whitespace-pre-wrap">{announcement.message}</p>
               </div>
               
-              {announcement.course && (
+              {(announcement.course || announcement.course_name || announcement.course_id) && (
                 <div className="mt-4 text-sm text-gray-600">
-                  <span className="font-medium">Course:</span> {announcement.course.name || announcement.course_id}
+                  <span className="font-medium">Course:</span> {announcement.course?.name || announcement.course_name || `Course ID: ${announcement.course_id}`}
                 </div>
               )}
               
               <div className="mt-2 text-xs text-gray-500">
-                Last Updated: {new Date(announcement.updatedAt || announcement.createdAt).toLocaleString()}
+                Last Updated: {new Date(announcement.updatedAt || announcement.updated_at || announcement.createdAt || announcement.created_at).toLocaleString()}
               </div>
             </div>
           </div>

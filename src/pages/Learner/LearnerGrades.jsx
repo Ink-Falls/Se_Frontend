@@ -12,6 +12,7 @@ import {
   Users,
   CheckCircle,
   Target,
+  UserCheck,
 } from "lucide-react";
 import { useCourse } from "../../contexts/CourseContext";
 import Sidebar from "../../components/common/layout/Sidebar";
@@ -26,6 +27,7 @@ import {
   getCourseAssessments,
   getUserSubmission,
 } from "../../services/assessmentService";
+import { getUserAttendanceInCourse } from "../../services/attendanceService";
 
 const LearnerGrades = () => {
   const { selectedCourse } = useCourse();
@@ -37,6 +39,13 @@ const LearnerGrades = () => {
   const [assessments, setAssessments] = useState([]);
   const [submissions, setSubmissions] = useState({});
   const [moduleAssessments, setModuleAssessments] = useState({});
+  const [attendanceStats, setAttendanceStats] = useState({
+    present: 0,
+    absent: 0,
+    late: 0,
+    total: 0,
+    attendanceRate: 0,
+  });
   const [overallStats, setOverallStats] = useState({
     totalAssessments: 0,
     completedAssessments: 0,
@@ -205,6 +214,45 @@ const LearnerGrades = () => {
         }
 
         setModules(modulesResponse);
+
+        // Fetch attendance data for the current user
+        try {
+          const userData = JSON.parse(localStorage.getItem("user"));
+          const userId = userData?.id;
+
+          if (userId) {
+            const attendanceData = await getUserAttendanceInCourse(
+              selectedCourse.id,
+              userId
+            );
+
+            if (Array.isArray(attendanceData)) {
+              const presentCount = attendanceData.filter(
+                (record) => record.status === "present"
+              ).length;
+              const absentCount = attendanceData.filter(
+                (record) => record.status === "absent"
+              ).length;
+              const lateCount = attendanceData.filter(
+                (record) => record.status === "late"
+              ).length;
+              const totalCount = attendanceData.length;
+
+              setAttendanceStats({
+                present: presentCount,
+                absent: absentCount,
+                late: lateCount,
+                total: totalCount,
+                attendanceRate:
+                  totalCount > 0
+                    ? ((presentCount + lateCount) / totalCount) * 100
+                    : 0,
+              });
+            }
+          }
+        } catch (attendanceErr) {
+          console.error("Error fetching attendance data:", attendanceErr);
+        }
 
         let allAssessments = [];
         let allSubmissions = {};
@@ -399,28 +447,34 @@ const LearnerGrades = () => {
         </p>
       </div>
 
-      <div className="bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+      <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-violet-800 text-sm font-medium mb-2">
-              Completion Rate
+            <h3 className="text-amber-800 text-sm font-medium mb-2">
+              Attendance Rate
             </h3>
-            <p className="text-3xl font-bold text-violet-900">
-              {(
-                (overallStats.completedAssessments /
-                  Math.max(overallStats.totalAssessments, 1)) *
-                100
-              ).toFixed(0)}
-              %
+            <p className="text-3xl font-bold text-amber-900">
+              {attendanceStats.attendanceRate.toFixed(1)}%
             </p>
           </div>
-          <div className="p-3 bg-violet-200 rounded-lg">
-            <Users size={24} className="text-violet-700" />
+          <div className="p-3 bg-amber-200 rounded-lg">
+            <UserCheck size={24} className="text-amber-700" />
           </div>
         </div>
-        <p className="text-violet-600 text-xs mt-4">
-          Progress toward course completion
-        </p>
+        <div className="text-amber-600 text-xs mt-4 space-y-1">
+          <div className="flex justify-between">
+            <span>Present:</span>
+            <span className="font-medium">{attendanceStats.present}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Late:</span>
+            <span className="font-medium">{attendanceStats.late}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Absent:</span>
+            <span className="font-medium">{attendanceStats.absent}</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -452,12 +506,10 @@ const LearnerGrades = () => {
             key={module.module_id}
             className="relative bg-gradient-to-b from-white to-gray-50/50 rounded-2xl overflow-hidden"
           >
-            {/* Decorative Elements */}
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5" />
             <div className="absolute right-0 top-0 h-64 w-64 transform translate-x-32 -translate-y-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl" />
 
             <div className="relative">
-              {/* Module Header */}
               <div className="p-8 pb-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="flex-1">
@@ -492,7 +544,6 @@ const LearnerGrades = () => {
                 </div>
               </div>
 
-              {/* Assessments List */}
               {moduleAssessmentList.length > 0 && (
                 <div className="px-8 pb-8">
                   <div className="bg-white/50 backdrop-blur-sm rounded-xl divide-y divide-gray-100 border border-gray-100">
