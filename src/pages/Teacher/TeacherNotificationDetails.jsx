@@ -1,16 +1,15 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
 import Header from "../../components/common/layout/Header";
-import { ArrowLeft, Book, Bell, Hash, Image, Clock, AlertCircle } from "lucide-react";
+import { ArrowLeft, Book, Bell, Hash, Image, Clock, AlertCircle, BookOpen } from "lucide-react";
 import MobileNavBar from "../../components/common/layout/MobileNavbar";
 import admin_icon from "/src/assets/images/icons/admin_icon.png";
-import learner_icon from "/src/assets/images/icons/learner_icon.png";
-import { getAnnouncementById } from "../../services/announcementService";
+import books_icon from "/src/assets/images/icons/books_icon.png";
+import { getAnnouncementById, getCoursesByUserId } from "../../services/announcementService";
 
 const NotificationPage = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
   const { id } = useParams();
   const location = useLocation();
   const notificationFromState = location.state?.notification;
@@ -18,38 +17,7 @@ const NotificationPage = () => {
   const [notification, setNotification] = useState(notificationFromState);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  // Fetch the notification data if not provided in location state
-  useEffect(() => {
-    if (!notificationFromState && id) {
-      fetchAnnouncementData();
-    }
-  }, [id, notificationFromState]);
-
-  // Fetch announcement data using announcement ID
-  const fetchAnnouncementData = async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Try to get the announcement directly by ID
-      const response = await getAnnouncementById(id);
-      const announcementData = response.announcement || response;
-      
-      if (announcementData && (announcementData.title || announcementData.message)) {
-        setNotification(announcementData);
-        setIsLoading(false);
-        return;
-      } else {
-        throw new Error("Announcement not found");
-      }
-    } catch (err) {
-      console.error("Failed to fetch notification details:", err);
-      setError(err.message || "Failed to load notification details");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [userCourses, setUserCourses] = useState([]);
 
   // Updated navItems to match TeacherDashboard
   const navItems = [
@@ -70,6 +38,74 @@ const NotificationPage = () => {
       route: "/Teacher/PictureCodeGenerator",
     },
   ];
+
+  // Fetch the notification data if not provided in location state
+  useEffect(() => {
+    if (!notificationFromState && id) {
+      fetchAnnouncementData();
+    }
+  }, [id, notificationFromState]);
+
+  // Fetch user courses to check for redirection options
+  useEffect(() => {
+    const fetchUserCourses = async () => {
+      try {
+        const courses = await getCoursesByUserId();
+        setUserCourses(courses);
+      } catch (err) {
+        console.error("Failed to fetch user courses:", err);
+      }
+    };
+    
+    fetchUserCourses();
+  }, []);
+
+  // Fetch announcement data using announcement ID
+  const fetchAnnouncementData = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Try to get the announcement directly by ID
+      const response = await getAnnouncementById(id);
+      const announcementData = response.announcement || response;
+      
+      if (announcementData && (announcementData.title || announcementData.message)) {
+        // If the announcement has a course_id, determine if it belongs to user's courses
+        if (announcementData.course_id) {
+          // Add isCourse flag for styling
+          announcementData.isCourse = true;
+          
+          // Fetch courses to get course name if not already in the data
+          if (!announcementData.course_name) {
+            try {
+              const courses = await getCoursesByUserId();
+              const course = courses.find(c => c.id === announcementData.course_id);
+              if (course) {
+                announcementData.course_name = course.name;
+              }
+            } catch (err) {
+              console.error("Error fetching course details:", err);
+            }
+          }
+        } else {
+          // This is a global announcement
+          announcementData.isGlobal = true;
+        }
+        
+        setNotification(announcementData);
+        setIsLoading(false);
+        return;
+      } else {
+        throw new Error("Announcement not found");
+      }
+    } catch (err) {
+      console.error("Failed to fetch notification details:", err);
+      setError(err.message || "Failed to load notification details");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -141,12 +177,7 @@ const NotificationPage = () => {
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
                   <img
-                    src={
-                      notification.userImage ||
-                      (notification.type && notification.type.toLowerCase().includes("admin")
-                        ? admin_icon
-                        : learner_icon)
-                    }
+                    src={notification.isCourse ? books_icon : admin_icon}
                     alt=""
                     className="h-12 w-12 rounded-full border-2 border-gray-200"
                   />
@@ -155,28 +186,55 @@ const NotificationPage = () => {
                   <div className="flex items-center space-x-2">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                        notification.type && notification.type.toLowerCase().includes("submission")
+                        notification.isCourse
                           ? "bg-blue-100 text-blue-800 border-blue-200"
                           : "bg-yellow-100 text-yellow-800 border-yellow-200"
                       }`}
                     >
-                      {notification.type || notification.title}
+                      {notification.isCourse ? "Course Announcement" : "Global Announcement"}
                     </span>
                     <span className="flex items-center text-xs text-gray-500">
                       <Clock size={12} className="mr-1" />
-                      {notification.time || new Date(notification.createdAt || Date.now()).toLocaleString()}
+                      {notification.time || new Date(notification.createdAt || notification.created_at || Date.now()).toLocaleString()}
                     </span>
                   </div>
-                  <div className="mt-4 prose max-w-none">
-                    <p className="text-gray-900 text-lg font-medium">
-                      {notification.description || notification.message}
-                    </p>
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                      <p className="text-gray-600 text-sm leading-relaxed">
-                        {notification.details ||
-                          "No additional details are available for this notification."}
+                  
+                  {/* Course information if present */}
+                  {(notification.course_name || notification.course_id) && (
+                    <div className="flex items-center mt-2 text-sm text-gray-600">
+                      <BookOpen size={16} className="mr-2" />
+                      <span>
+                        Course: {notification.course_name || `Course ID: ${notification.course_id}`}
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className="mt-6">
+                    {/* Display the title as a heading */}
+                    <h1 className="text-xl font-bold text-gray-900 mb-4">
+                      {notification.title || "Notification"}
+                    </h1>
+                    
+                    {/* Display the message content - ensuring no duplication */}
+                    <div className="prose max-w-none">
+                      <p className="text-gray-700 whitespace-pre-wrap text-base leading-relaxed">
+                        {notification.message || notification.details || "No details available for this notification."}
                       </p>
                     </div>
+                    
+                    {/* Author information if available */}
+                    {notification.user && (
+                      <div className="mt-6 pt-4 border-t border-gray-100">
+                        <div className="text-sm text-gray-600">
+                          Posted by: <span className="font-medium">{notification.user.first_name} {notification.user.last_name}</span>
+                        </div>
+                        {notification.updated_at && notification.updated_at !== notification.created_at && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Last updated: {new Date(notification.updated_at).toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

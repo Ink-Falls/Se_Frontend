@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Sidebar from "../../components/common/layout/Sidebar";
@@ -10,7 +9,7 @@ import books_icon from "/src/assets/images/icons/books_icon.png";
 import { getAnnouncementById, getCoursesByUserId } from "../../services/announcementService";
 
 const NotificationDetails = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
   const { id } = useParams();
   const location = useLocation();
   const notificationFromState = location.state?.notification;
@@ -133,9 +132,6 @@ const NotificationDetails = () => {
     );
   }
 
-  // Find if this announcement belongs to a course the user is enrolled in
-  const relatedCourse = userCourses.find(course => course.id === notification.course_id);
-
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar navItems={navItems} />
@@ -188,7 +184,7 @@ const NotificationDetails = () => {
                     </span>
                     <span className="flex items-center text-xs text-gray-500">
                       <Clock size={12} className="mr-1" />
-                      {notification.time || new Date(notification.createdAt || Date.now()).toLocaleString()}
+                      {notification.time || new Date(notification.createdAt || notification.created_at || Date.now()).toLocaleString()}
                     </span>
                   </div>
                   
@@ -202,38 +198,32 @@ const NotificationDetails = () => {
                     </div>
                   )}
                   
-                  <div className="mt-4 prose max-w-none">
-                    <p className="text-gray-900 text-lg font-medium">
-                      {notification.description || notification.message}
-                    </p>
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                      <p className="text-gray-600 text-sm leading-relaxed">
-                        {notification.details ||
-                          "No additional details are available for this notification."}
+                  <div className="mt-6">
+                    {/* Display the title as a heading */}
+                    <h1 className="text-xl font-bold text-gray-900 mb-4">
+                      {notification.title || notification.type || "Notification"}
+                    </h1>
+                    
+                    {/* Display the message content - ensuring no duplication */}
+                    <div className="prose max-w-none">
+                      <p className="text-gray-700 whitespace-pre-wrap text-base leading-relaxed">
+                        {notification.message || notification.details || "No details available for this notification."}
                       </p>
                     </div>
                     
-                    {/* Navigation buttons based on notification type */}
-                    <div className="mt-6 flex flex-wrap gap-3">
-                      {relatedCourse && (
-                        <button
-                          onClick={() => navigate(`/Learner/CourseModules/${relatedCourse.id}`)}
-                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-                        >
-                          <BookOpen size={16} className="mr-2" />
-                          Go to Course
-                        </button>
-                      )}
-                      
-                      {notification.type === "Assignment Due" && (
-                        <button
-                          onClick={() => navigate("/Learner/Assessment")}
-                          className="inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-                        >
-                          Go to Assignment
-                        </button>
-                      )}
-                    </div>
+                    {/* Author information if available */}
+                    {notification.user && (
+                      <div className="mt-6 pt-4 border-t border-gray-100">
+                        <div className="text-sm text-gray-600">
+                          Posted by: <span className="font-medium">{notification.user.first_name} {notification.user.last_name}</span>
+                        </div>
+                        {notification.updated_at && notification.updated_at !== notification.created_at && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Last updated: {new Date(notification.updated_at).toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

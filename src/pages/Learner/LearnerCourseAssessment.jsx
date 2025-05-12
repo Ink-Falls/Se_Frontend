@@ -317,6 +317,9 @@ const LearnerCourseAssessment = () => {
     const passingScore = assessment.passing_score || 0;
     const passingPercentage = (passingScore / maxPossibleScore) * 100;
     const isPassed = percentage >= passingPercentage;
+    
+    // Check if we have auto-graded score but status is still "submitted"
+    const isPartialAutoGrade = submission.status === "submitted" && score > 0;
 
     return (
       <div className="flex flex-col items-end">
@@ -344,6 +347,11 @@ const LearnerCourseAssessment = () => {
               {isPassed ? "Passed" : "Failed"}
             </span>
           )}
+          {isPartialAutoGrade && (
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              Auto-graded
+            </span>
+          )}
         </div>
         {submission.status === "graded" && (
           <div className="text-xs text-gray-500 mt-1">
@@ -354,6 +362,11 @@ const LearnerCourseAssessment = () => {
                 Need {(passingPercentage - percentage).toFixed(1)}% more to pass
               </span>
             )}
+          </div>
+        )}
+        {isPartialAutoGrade && (
+          <div className="text-xs text-amber-600 mt-1">
+            <span>Partial score - awaiting final grading</span>
           </div>
         )}
       </div>
@@ -747,8 +760,6 @@ const LearnerCourseAssessment = () => {
           subtitle={selectedCourse?.code}
         />
         <div className="relative z-50">
-          {" "}
-          {/* Add wrapper with high z-index */}
           <MobileNavBar navItems={navItems} />
         </div>
 
@@ -775,7 +786,7 @@ const LearnerCourseAssessment = () => {
         )}
 
         {!loading && !error && (
-          <div className="flex flex-col gap-4 mt-4">
+          <div className="flex flex-col gap-4 mt-4 overflow-y-auto max-h-[calc(100vh-160px)] pr-1 pb-6">
             {modules.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-lg shadow-sm">
                 <div className="text-gray-400 mb-4">
